@@ -67,6 +67,16 @@ export default class extends BotCommand {
 			return msg.channel.send('You need at least 15 Agility and Strength to do Barbarian Fishing.');
 		}
 
+		if (
+			fish.name === 'Minnow' &&
+			(!msg.author.hasItemEquippedOrInBank('Angler top') ||
+				!msg.author.hasItemEquippedOrInBank('Angler waders') ||
+				!msg.author.hasItemEquippedOrInBank('Angler boots') ||
+				!msg.author.hasItemEquippedOrInBank('Angler hat'))
+		) {
+			return msg.channel.send('You need the Angler Outfit equipped or in the bank to fish for Minnows.');
+		}
+
 		// If no quantity provided, set it to the max.
 		let scaledTimePerFish =
 			Time.Second * fish.timePerFish * (1 + (100 - msg.author.skillLevel(SkillsEnum.Fishing)) / 100);
@@ -95,7 +105,7 @@ export default class extends BotCommand {
 				}
 				break;
 			default:
-				if (msg.author.hasItemEquippedAnywhere(itemID('Crystal harpoon'))) {
+				if (msg.author.hasItemEquippedAnywhere(itemID('Crystal harpoon')) && fish.name !== 'Minnow') {
 					scaledTimePerFish *= 0.95;
 					boosts.push('5% for Crystal harpoon');
 				}
