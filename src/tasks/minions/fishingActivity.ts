@@ -7,7 +7,7 @@ import addSkillingClueToLoot from '../../lib/minions/functions/addSkillingClueTo
 import Fishing from '../../lib/skilling/skills/fishing';
 import { SkillsEnum } from '../../lib/skilling/types';
 import { FishingActivityTaskOptions } from '../../lib/types/minions';
-import { anglerBoostPercent, roll } from '../../lib/util';
+import { anglerBoostPercent, rand, roll } from '../../lib/util';
 import { handleTripFinish } from '../../lib/util/handleTripFinish';
 import itemID from '../../lib/util/itemID';
 
@@ -23,12 +23,13 @@ export default class extends Task {
 		let leapingSturgeon = 0;
 		let leapingSalmon = 0;
 		let leapingTrout = 0;
+		let minnowQty = 0;
 		let agilityXpReceived = 0;
 		let strengthXpReceived = 0;
 		if (fish.name === 'Barbarian fishing') {
 			for (let i = 0; i < quantity; i++) {
 				if (
-					roll(255 / (8 + Math.floor(0.5714 * user.skillLevel(SkillsEnum.Fishing)))) &&
+					roll(255 / (8 + Math.floor(0.5714 * currentLevel))) &&
 					user.skillLevel(SkillsEnum.Fishing) >= 70 &&
 					user.skillLevel(SkillsEnum.Agility) >= 45 &&
 					user.skillLevel(SkillsEnum.Strength) >= 45
@@ -38,7 +39,7 @@ export default class extends Task {
 					agilityXpReceived += 7;
 					strengthXpReceived += 7;
 				} else if (
-					roll(255 / (16 + Math.floor(0.8616 * user.skillLevel(SkillsEnum.Fishing)))) &&
+					roll(255 / (16 + Math.floor(0.8616 * currentLevel))) &&
 					user.skillLevel(SkillsEnum.Fishing) >= 58 &&
 					user.skillLevel(SkillsEnum.Agility) >= 30 &&
 					user.skillLevel(SkillsEnum.Strength) >= 30
@@ -47,7 +48,7 @@ export default class extends Task {
 					leapingSalmon += 1;
 					agilityXpReceived += 6;
 					strengthXpReceived += 6;
-				} else if (roll(255 / (32 + Math.floor(1.632 * user.skillLevel(SkillsEnum.Fishing))))) {
+				} else if (roll(255 / (32 + Math.floor(1.632 * currentLevel)))) {
 					xpReceived += 50;
 					leapingTrout += 1;
 					agilityXpReceived += 5;
@@ -106,21 +107,25 @@ export default class extends Task {
 
 		let lootQuantity = quantity;
 
+		if (fish.id === itemID('Minnow')) {
+			for (let i = 0; i < quantity; i++) {
+				if (currentLevel > 98) {
+					minnowQty += rand(13, 14);
+				} else if (currentLevel >= 95) {
+					minnowQty += rand(12, 14);
+				} else if (currentLevel >= 90) {
+					minnowQty += rand(11, 13);
+				} else if (currentLevel >= 85) {
+					minnowQty += rand(11, 12);
+				} else {
+					minnowQty += rand(10, 11);
+				}
+			}
+			lootQuantity = minnowQty;
+		}
+
 		if (fish.id === itemID('Raw karambwanji')) {
 			lootQuantity *= 1 + Math.floor(user.skillLevel(SkillsEnum.Fishing) / 5);
-		}
-		if (fish.id === itemID('Minnow')) {
-			if (user.skillLevel(SkillsEnum.Fishing) >= 99) {
-				lootQuantity *= 14;
-			} else if (user.skillLevel(SkillsEnum.Fishing) >= 95) {
-				lootQuantity *= 13;
-			} else if (user.skillLevel(SkillsEnum.Fishing) >= 90) {
-				lootQuantity *= 12;
-			} else if (user.skillLevel(SkillsEnum.Fishing) >= 85) {
-				lootQuantity *= 11;
-			} else if (user.skillLevel(SkillsEnum.Fishing) >= 82) {
-				lootQuantity *= 10;
-			}
 		}
 		let loot = new Bank({
 			[fish.id]: lootQuantity
