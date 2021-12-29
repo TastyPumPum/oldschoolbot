@@ -67,15 +67,24 @@ export default class extends BotCommand {
 			return msg.channel.send('You need at least 15 Agility and Strength to do Barbarian Fishing.');
 		}
 
-		if (
-			fish.name === 'Minnow' &&
-			(!msg.author.hasItemEquippedOrInBank('Angler top') ||
-				!msg.author.hasItemEquippedOrInBank('Angler waders') ||
-				!msg.author.hasItemEquippedOrInBank('Angler boots') ||
-				!msg.author.hasItemEquippedOrInBank('Angler hat'))
-		) {
-			return msg.channel.send('You need the Angler Outfit equipped or in the bank to fish for Minnows.');
+<<<<<<< HEAD
+		const anglerOutfit = Object.keys(Fishing.anglerItems).map(i => itemNameFromID(parseInt(i)));
+		if (fish.name === 'Minnow' && anglerOutfit.some(test => !msg.author.hasItemEquippedOrInBank(test!))) {
+			return msg.channel.send('You need to own the Angler Outfit to fish for Minnows.');
 		}
+=======
+		const anglerOutfit = ['Angler hat', 'Angler top', 'Angler waders', 'Angler boots'];
+<<<<<<< HEAD
+        if (
+            fish.name === 'Minnow' && anglerOutfit.some(piece => !msg.author.hasItemEquippedOrInBank(piece))) {
+            return msg.channel.send('You need to own the Angler Outfit to fish for Minnows.');
+        }
+>>>>>>> 3837293b (Update fish.ts)
+=======
+		if (fish.name === 'Minnow' && anglerOutfit.some(piece => !msg.author.hasItemEquippedOrInBank(piece))) {
+			return msg.channel.send('You need to own the Angler Outfit to fish for Minnows.');
+		}
+>>>>>>> 9e35889f (Lint)
 
 		// If no quantity provided, set it to the max.
 		let scaledTimePerFish =
@@ -105,11 +114,21 @@ export default class extends BotCommand {
 				}
 				break;
 			default:
-				if (msg.author.hasItemEquippedAnywhere(itemID('Crystal harpoon')) && fish.name !== 'Minnow') {
+				if (msg.author.hasItemEquippedAnywhere(itemID('Crystal harpoon'))) {
 					scaledTimePerFish *= 0.95;
 					boosts.push('5% for Crystal harpoon');
 				}
 				break;
+		}
+
+if (fish.id === itemID('Minnow')) {
+			let minnowScale = 1;
+			for (const [level, bonus] of Object.entries(Fishing.minnowScaling)) {
+				if (msg.author.skillLevel(SkillsEnum.Fishing) >= parseInt(level)) {
+					minnowScale -= bonus;
+				}
+			}
+			scaledTimePerFish *= minnowScale;
 		}
 
 		const maxTripLength = msg.author.maxTripLength('Fishing');
