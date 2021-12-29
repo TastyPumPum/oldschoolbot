@@ -7,7 +7,7 @@ import addSkillingClueToLoot from '../../lib/minions/functions/addSkillingClueTo
 import Fishing from '../../lib/skilling/skills/fishing';
 import { SkillsEnum } from '../../lib/skilling/types';
 import { FishingActivityTaskOptions } from '../../lib/types/minions';
-import { anglerBoostPercent, rand, roll } from '../../lib/util';
+import { anglerBoostPercent, roll } from '../../lib/util';
 import { handleTripFinish } from '../../lib/util/handleTripFinish';
 import itemID from '../../lib/util/itemID';
 
@@ -23,7 +23,6 @@ export default class extends Task {
 		let leapingSturgeon = 0;
 		let leapingSalmon = 0;
 		let leapingTrout = 0;
-		let minnowQty = 0;
 		let agilityXpReceived = 0;
 		let strengthXpReceived = 0;
 		if (fish.name === 'Barbarian fishing') {
@@ -108,20 +107,17 @@ export default class extends Task {
 		let lootQuantity = quantity;
 
 		if (fish.id === itemID('Minnow')) {
-			for (let i = 0; i < quantity; i++) {
-				if (currentLevel > 98) {
-					minnowQty += rand(13, 14);
-				} else if (currentLevel >= 95) {
-					minnowQty += rand(12, 14);
-				} else if (currentLevel >= 90) {
-					minnowQty += rand(11, 13);
-				} else if (currentLevel >= 85) {
-					minnowQty += rand(11, 12);
-				} else {
-					minnowQty += rand(10, 11);
-				}
+			if (user.skillLevel(SkillsEnum.Fishing) >= 99) 
+			{ lootQuantity *=14
+			} else if (user.skillLevel(SkillsEnum.Fishing) >= 95)
+			{ lootQuantity *=13
+			} else if (user.skillLevel(SkillsEnum.Fishing) >= 90)
+			{ lootQuantity *=12
+			} else if (user.skillLevel(SkillsEnum.Fishing) >= 85)
+			{ lootQuantity *=11
+			} else if (user.skillLevel(SkillsEnum.Fishing) >= 82)
+			{ lootQuantity *=10
 			}
-			lootQuantity = minnowQty;
 		}
 
 		if (fish.id === itemID('Raw karambwanji')) {
