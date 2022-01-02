@@ -130,6 +130,7 @@ if (fish.id === itemID('Minnow')) {
 				}
 =======
 		if (fish.id === itemID('Minnow')) {
+<<<<<<< HEAD
 			if (msg.author.skillLevel(SkillsEnum.Fishing) >= 99) {
 				scaledTimePerFish *= 0.855225;
 			} else if (msg.author.skillLevel(SkillsEnum.Fishing) >= 95) {
@@ -141,6 +142,13 @@ if (fish.id === itemID('Minnow')) {
 			} else if (msg.author.skillLevel(SkillsEnum.Fishing) >= 82) {
 				scaledTimePerFish *= 1.05;
 >>>>>>> 4c735777 (Allow crystal harpoon boost)
+=======
+			let minnowScale = 1;
+			for (const [level, bonus] of Object.entries(Fishing.minnowScaling)) {
+				if (msg.author.skillLevel(SkillsEnum.Fishing) >= parseInt(level)) {
+					minnowScale -= bonus;
+				}
+>>>>>>> 2ff5d2e1 (reduced if statements to loops)
 			}
 			scaledTimePerFish *= minnowScale;
 		}

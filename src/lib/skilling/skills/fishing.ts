@@ -225,12 +225,20 @@ const anglerItems: { [key: number]: number } = {
 	[itemID('Angler boots')]: 0.2
 };
 
+const minnowScaling: { [key: number]: number } = {
+	85: 0.0685,
+	90: 0.001,
+	95: 0.017,
+	99: 0.099
+};
+
 const Fishing = {
 	aliases: ['fishing'],
 	Fishes: fishes,
 	id: SkillsEnum.Fishing,
 	emoji: Emoji.Fishing,
 	anglerItems,
+	minnowScaling,
 	name: 'Fishing'
 };
 
