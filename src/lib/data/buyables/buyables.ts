@@ -737,6 +737,7 @@ const Buyables: Buyable[] = [
 		gpCost: 95_000,
 		minigameScoreReq: ['barb_assault', 10]
 	},
+
 	{
 		name: 'Raw shark',
 		itemCost: resolveNameBank({
@@ -746,6 +747,7 @@ const Buyables: Buyable[] = [
 			'Raw shark': 1
 		})
 	},
+
 
 	...sepulchreBuyables,
 	...constructionBuyables,
