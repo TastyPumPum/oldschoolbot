@@ -9,8 +9,8 @@ export default class extends BotCommand {
 			aliases: ['lb']
 		});
 	}
-
+	
 	async run(msg: KlasaMessage) {
-		return msg.channel.send(COMMAND_BECAME_SLASH_COMMAND_MESSAGE(msg));
+		return msg.channel.send(COMMAND_BECAME_SLASH_COMMAND_MESSAGE(msg, 'lb'));
 	}
 }
