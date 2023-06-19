@@ -6,6 +6,7 @@ import { SkillsEnum } from 'oldschooljs/dist/constants';
 import { Events } from '../../../lib/constants';
 import { trackLoot } from '../../../lib/lootTrack';
 import { getMinigameEntity, incrementMinigameScore } from '../../../lib/settings/minigames';
+import { bloodEssence } from '../../../lib/skilling/functions/calcsRunecrafting';
 import Runecraft from '../../../lib/skilling/skills/runecraft';
 import { itemID, stringMatches } from '../../../lib/util';
 import { handleTripFinish } from '../../../lib/util/handleTripFinish';
@@ -101,6 +102,9 @@ export const guardiansOfTheRiftTask: MinionTask = {
 			}
 		}
 
+		let bloodRunes = 0;
+		let bonusBlood = 0;
+
 		for (let i = 0; i < quantity * 10; i++) {
 			let rune = '';
 			const isElemental = i % 2 === 0;
@@ -112,6 +116,9 @@ export const guardiansOfTheRiftTask: MinionTask = {
 				}
 			} else {
 				rune = randArrItem(catalyticRunesArray);
+				if ((rune = 'Blood rune')) {
+					bloodRunes += quantity;
+				}
 			}
 			const runeObj = Runecraft.Runes.find(
 				_rune => stringMatches(_rune.name, rune) || stringMatches(_rune.name.split(' ')[0], rune)
@@ -121,6 +128,7 @@ export const guardiansOfTheRiftTask: MinionTask = {
 			}
 			const quantityPerEssence = calcMaxRCQuantity(runeObj, user);
 			runesLoot.add(rune, Math.floor(quantityPerEssence * inventorySize * setBonus));
+			bonusBlood = await bloodEssence(user, bloodRunes);
 		}
 
 		let rewardsGuardianLoot = new Bank();
@@ -143,6 +151,7 @@ export const guardiansOfTheRiftTask: MinionTask = {
 		const totalLoot = new Bank();
 		totalLoot.add(rewardsGuardianLoot);
 		totalLoot.add(runesLoot);
+		totalLoot.add(bonusBlood);
 
 		const { previousCL } = await transactItems({
 			userID: user.id,
@@ -177,6 +186,9 @@ export const guardiansOfTheRiftTask: MinionTask = {
 			);
 		}
 
+		if (bonusBlood > 0) {
+			str += `\n\n**Blood essence Quantity:** ${bonusBlood.toLocaleString()}`;
+		}
 		updateBankSetting('gotr_loot', totalLoot);
 		await trackLoot({
 			id: 'guardians_of_the_rift',
