@@ -116,7 +116,7 @@ export const guardiansOfTheRiftTask: MinionTask = {
 				}
 			} else {
 				rune = randArrItem(catalyticRunesArray);
-				if ((rune = 'Blood rune')) {
+				if (rune === 'Blood rune') {
 					bloodRunes += quantity;
 				}
 			}
