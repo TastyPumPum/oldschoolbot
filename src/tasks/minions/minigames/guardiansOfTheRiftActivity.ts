@@ -116,9 +116,7 @@ export const guardiansOfTheRiftTask: MinionTask = {
 				}
 			} else {
 				rune = randArrItem(catalyticRunesArray);
-				if (rune === 'Blood rune') {
-					bloodRunes += quantity;
-				}
+				if (rune === 'Blood rune') bloodRunes += 1;
 			}
 			const runeObj = Runecraft.Runes.find(
 				_rune => stringMatches(_rune.name, rune) || stringMatches(_rune.name.split(' ')[0], rune)
@@ -128,7 +126,6 @@ export const guardiansOfTheRiftTask: MinionTask = {
 			}
 			const quantityPerEssence = calcMaxRCQuantity(runeObj, user);
 			runesLoot.add(rune, Math.floor(quantityPerEssence * inventorySize * setBonus));
-			bonusBlood = await bloodEssence(user, bloodRunes);
 		}
 
 		let rewardsGuardianLoot = new Bank();
@@ -147,6 +144,8 @@ export const guardiansOfTheRiftTask: MinionTask = {
 			},
 			{}
 		);
+
+		bonusBlood = await bloodEssence(user, bloodRunes);
 
 		const totalLoot = new Bank();
 		totalLoot.add(rewardsGuardianLoot);
