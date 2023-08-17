@@ -1,7 +1,8 @@
 import { exec } from 'node:child_process';
 
 import { miniID, toTitleCase } from '@oldschoolgg/toolkit';
-import { ButtonBuilder, ButtonStyle } from 'discord.js';
+import type { Prisma } from '@prisma/client';
+import { ButtonBuilder, ButtonStyle, time } from 'discord.js';
 import { objectEntries, Time } from 'e';
 import { Bank, Items } from 'oldschooljs';
 import { ItemBank } from 'oldschooljs/dist/meta/types';
@@ -213,5 +214,48 @@ export function checkRangeGearWeapon(gear: Gear) {
 	return {
 		weapon,
 		ammo
+	};
+}
+
+export function getToaKCs(toaRaidLevelsBank: Prisma.JsonValue) {
+	let entryKC = 0;
+	let normalKC = 0;
+	let expertKC = 0;
+	for (const [levelStr, qty] of Object.entries(toaRaidLevelsBank as ItemBank)) {
+		const level = Number(levelStr);
+		if (level >= 300) {
+			expertKC += qty;
+			continue;
+		}
+		if (level >= 150) {
+			normalKC += qty;
+			continue;
+		}
+		entryKC += qty;
+	}
+	return { entryKC, normalKC, expertKC, totalKC: entryKC + normalKC + expertKC };
+}
+export const alphabeticalSort = (a: string, b: string) => a.localeCompare(b);
+
+export function dateFm(date: Date) {
+	return `${time(date, 'T')} (${time(date, 'R')})`;
+}
+
+export function getInterval(intervalHours: number) {
+	const currentTime = new Date();
+	const currentHour = currentTime.getHours();
+
+	// Find the nearest interval start hour (0, intervalHours, 2*intervalHours, etc.)
+	const startHour = currentHour - (currentHour % intervalHours);
+	const startInterval = new Date(currentTime);
+	startInterval.setHours(startHour, 0, 0, 0);
+
+	const endInterval = new Date(startInterval);
+	endInterval.setHours(startHour + intervalHours);
+
+	return {
+		start: startInterval,
+		end: endInterval,
+		nextResetStr: dateFm(endInterval)
 	};
 }

@@ -51,7 +51,8 @@ export const Roles = {
 	TopSacrificer: DISCORD_SETTINGS.Roles?.TopSacrificer ?? '795933981715464192',
 	TopMinigamer: DISCORD_SETTINGS.Roles?.TopMinigamer ?? '832798997033779220',
 	TopClueHunter: DISCORD_SETTINGS.Roles?.TopClueHunter ?? '839135887467610123',
-	TopSlayer: DISCORD_SETTINGS.Roles?.TopSlayer ?? '856080958247010324'
+	TopSlayer: DISCORD_SETTINGS.Roles?.TopSlayer ?? '856080958247010324',
+	TopGlobalCL: '1072426869028294747'
 };
 
 export const enum Emoji {
@@ -224,7 +225,10 @@ export enum BitField {
 	BothBotsMaxedFreeTierOnePerks = 24,
 	HasBloodbarkScroll = 25,
 	DisableAutoFarmContractButton = 26,
-	DisableGrandExchangeDMs = 27
+	DisableGrandExchangeDMs = 27,
+	HadAllSlayerUnlocks = 28,
+	HasSwampbarkScroll = 29,
+	HasSaradominsLight = 30
 }
 
 interface BitFieldData {
@@ -255,6 +259,9 @@ export const BitFieldData: Record<BitField, BitFieldData> = {
 	[BitField.HasTornPrayerScroll]: { name: 'Torn Prayer Scroll Used', protected: false, userConfigurable: false },
 	[BitField.HasSlepeyTablet]: { name: 'Slepey Tablet Used', protected: false, userConfigurable: false },
 	[BitField.HasBloodbarkScroll]: { name: 'Runescroll of bloodbark Used', protected: false, userConfigurable: false },
+	[BitField.HasSwampbarkScroll]: { name: 'Runescroll of swampbark Used', protected: false, userConfigurable: false },
+	[BitField.HasSaradominsLight]: { name: "Saradomin's light Used", protected: false, userConfigurable: false },
+	[BitField.HadAllSlayerUnlocks]: { name: 'Had All Slayer Unlocks', protected: false, userConfigurable: false },
 
 	[BitField.BypassAgeRestriction]: { name: 'Bypassed Age Restriction', protected: false, userConfigurable: false },
 	[BitField.HasPermanentEventBackgrounds]: {
@@ -441,6 +448,7 @@ export type NMZStrategy = (typeof NMZ_STRATEGY)[number];
 export const UNDERWATER_AGILITY_THIEVING_TRAINING_SKILL = ['agility', 'thieving', 'agility+thieving'] as const;
 export type UnderwaterAgilityThievingTrainingSkill = (typeof UNDERWATER_AGILITY_THIEVING_TRAINING_SKILL)[number];
 
+export const busyImmuneCommands = ['admin', 'rp'];
 export const usernameCache = new Map<string, string>();
 export const badgesCache = new Map<string, string>();
 export const minionBuyButton = new ButtonBuilder()
@@ -513,3 +521,4 @@ export const globalConfig = globalConfigSchema.parse({
 });
 
 export const ONE_TRILLION = 1_000_000_000_000;
+export const demonBaneWeapons = resolveItems(['Silverlight', 'Darklight', 'Arclight']);
