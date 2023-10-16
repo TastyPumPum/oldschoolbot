@@ -1,5 +1,6 @@
 import { toTitleCase } from '@oldschoolgg/toolkit';
 import { increaseNumByPercent, reduceNumByPercent } from 'e';
+import { Monsters } from 'oldschooljs';
 import { SkillsEnum } from 'oldschooljs/dist/constants';
 
 import { collectables } from '../../mahoji/lib/abstracted_commands/collectCommand';
@@ -63,6 +64,7 @@ import {
 	PickpocketActivityTaskOptions,
 	PlunderActivityTaskOptions,
 	RaidsOptions,
+	RevenantOptions,
 	RunecraftActivityTaskOptions,
 	SawmillActivityTaskOptions,
 	ScatteringActivityTaskOptions,
@@ -542,6 +544,13 @@ export function minionStatus(user: MUser) {
 		}
 		case 'Trekking': {
 			return `${name} is currently Temple Trekking. ${formattedDuration}`;
+		}
+		case 'Revenants': {
+			const data = currentTask as RevenantOptions;
+			const durationRemaining = data.finishDate - data.duration + data.fakeDuration - Date.now();
+			return `${data.skulled ? `${Emoji.OSRSSkull} ` : ''} ${name} is currently killing ${data.quantity}x ${
+				Monsters.get(data.monsterID)!.name
+			} in the wilderness. If they don't die, the trip should take ${formatDuration(durationRemaining)}.`;
 		}
 		case 'PestControl': {
 			const data = currentTask as MinigameActivityTaskOptionsWithNoChanges;

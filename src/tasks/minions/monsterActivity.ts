@@ -6,7 +6,6 @@ import { Emoji } from '../../lib/constants';
 import { KourendKebosDiary, userhasDiaryTier } from '../../lib/diaries';
 import { trackLoot } from '../../lib/lootTrack';
 import killableMonsters from '../../lib/minions/data/killableMonsters';
-import { revenantMonsters } from '../../lib/minions/data/killableMonsters/revs';
 import { addMonsterXP } from '../../lib/minions/functions';
 import announceLoot from '../../lib/minions/functions/announceLoot';
 import { prisma } from '../../lib/settings/prisma';
@@ -37,18 +36,7 @@ export const monsterTask: MinionTask = {
 			pkEncounters,
 			hasWildySupplies
 		} = data;
-
-		let monster = killableMonsters.find(mon => mon.id === monsterID)!;
-		let revenants = false;
-
-		const matchedRevenantMonster = revenantMonsters.find(mon => mon.id === monsterID)!;
-		if (matchedRevenantMonster) {
-			monster = matchedRevenantMonster;
-			revenants = true;
-		}
-
-		let skulled = false;
-		if (revenants) skulled = true;
+		const monster = killableMonsters.find(mon => mon.id === monsterID)!;
 
 		const messages: string[] = [];
 
@@ -89,7 +77,7 @@ export const monsterTask: MinionTask = {
 
 		if (pkEncounters && pkEncounters > 0) {
 			// Handle lost kc quantity because of pkers
-			let lostQuantity = Math.max(
+			const lostQuantity = Math.max(
 				Math.round((quantity / (Math.round(duration / Time.Minute) * (died ? 1 : 2))) * pkEncounters),
 				1
 			);
@@ -97,9 +85,7 @@ export const monsterTask: MinionTask = {
 				quantity -= lostQuantity;
 				quantity = Math.max(0, quantity);
 				messages.push(
-					`You missed out on ${Math.max(1, lostQuantity)}x kills because of pk encounters${
-						died ? ' and death' : ''
-					}`
+					`You missed out on ${lostQuantity}x kills because of pk encounters${died ? ' and death' : ''}`
 				);
 			}
 
@@ -115,7 +101,7 @@ export const monsterTask: MinionTask = {
 					smited: hasPrayerLevel && !protectItem,
 					protectItem: hasPrayerLevel,
 					after20wilderness: monster.pkBaseDeathChance && monster.pkBaseDeathChance >= 5 ? true : false,
-					skulled
+					skulled: false
 				});
 
 				let reEquipedItems = false;
