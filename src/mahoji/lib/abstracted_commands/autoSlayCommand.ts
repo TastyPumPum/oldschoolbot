@@ -236,7 +236,7 @@ export async function autoSlayCommand({
 	const isOnTask = usersTask.assignedTask !== null && usersTask.currentTask !== null;
 
 	if (!isOnTask) {
-		return slayerNewTaskCommand({ userID: user.id, channelID, interaction });
+		return slayerNewTaskCommand({ userID: user.id, channelID, interaction, showButtons: true });
 	}
 	const savedMethod = determineAutoslayMethod(autoslayOptions as AutoslayOptionsEnum[]);
 	const method = modeOverride ?? savedMethod;
@@ -256,7 +256,8 @@ export async function autoSlayCommand({
 		guildID: isGuildChannel(channel) ? channel.guild.id : undefined,
 		user,
 		member: null,
-		interaction
+		interaction,
+		continueDeltaMillis: null
 	};
 
 	if (method === 'low') {

@@ -53,6 +53,26 @@ const usableUnlocks: UsableUnlock[] = [
 		item: getOSItem("Saradomin's light"),
 		bitfield: BitField.HasSaradominsLight,
 		resultMessage: "You used your Saradomin's light."
+	},
+	{
+		item: getOSItem('Frozen tablet'),
+		bitfield: BitField.UsedFrozenTablet,
+		resultMessage: 'You used your Frozen tablet.'
+	},
+	{
+		item: getOSItem('Scarred tablet'),
+		bitfield: BitField.UsedScarredTablet,
+		resultMessage: 'You used your Scarred tablet.'
+	},
+	{
+		item: getOSItem('Sirenic tablet'),
+		bitfield: BitField.UsedSirenicTablet,
+		resultMessage: 'You used your Sirenic tablet.'
+	},
+	{
+		item: getOSItem('Strangled tablet'),
+		bitfield: BitField.UsedStrangledTablet,
+		resultMessage: 'You used your Strangled tablet.'
 	}
 ];
 for (const usableUnlock of usableUnlocks) {
@@ -118,7 +138,7 @@ export async function useCommand(user: MUser, _firstItem: string, _secondItem?: 
 	for (const i of items) checkBank.add(i.id);
 	if (!bank.has(checkBank)) return `You don't own ${checkBank}.`;
 
-	const usable = usables.find(i => i.items.length === items.length && items.every(t => i.items.includes(t)));
-	if (!usable) return "That's not a usable item.";
+	const usable = usables.find(i => i.items.length === items.length && i.items.every(t => items.includes(t)));
+	if (!usable) return `That's not a usable ${items.length === 1 ? 'item' : 'combination'}.`;
 	return usable.run(user);
 }

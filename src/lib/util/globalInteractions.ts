@@ -3,7 +3,6 @@ import { ButtonBuilder, ButtonInteraction, ButtonStyle, Interaction } from 'disc
 import { removeFromArr, Time, uniqueArr } from 'e';
 import { Bank } from 'oldschooljs';
 
-import { buyBingoTicketCommand } from '../../mahoji/commands/bingo';
 import { cancelGEListingCommand } from '../../mahoji/lib/abstracted_commands/cancelGEListingCommand';
 import { autoContract } from '../../mahoji/lib/abstracted_commands/farmingContractCommand';
 import { shootingStarsCommand, starCache } from '../../mahoji/lib/abstracted_commands/shootingStarsCommand';
@@ -95,6 +94,15 @@ export function makeBirdHouseTripButton() {
 		.setStyle(ButtonStyle.Secondary)
 		.setEmoji('692946556399124520');
 }
+
+export function makeAutoSlayButton() {
+	return new ButtonBuilder()
+		.setCustomId('AUTO_SLAY')
+		.setLabel('Auto Slay')
+		.setEmoji('630911040560824330')
+		.setStyle(ButtonStyle.Secondary);
+}
+
 const reactionTimeLimits = {
 	0: Time.Hour * 12,
 	[PerkTier.One]: Time.Hour * 12,
@@ -151,7 +159,8 @@ async function giveawayButtonHandler(user: MUser, customID: string, interaction:
 			member: interaction.member,
 			channelID: interaction.channelId,
 			guildID: interaction.guildId,
-			interaction
+			interaction,
+			continueDeltaMillis: null
 		});
 	}
 
@@ -237,7 +246,8 @@ async function handleGearPresetEquip(user: MUser, id: string, interaction: Butto
 		member: interaction.member,
 		channelID: interaction.channelId,
 		guildID: interaction.guildId,
-		interaction
+		interaction,
+		continueDeltaMillis: null
 	});
 }
 
@@ -339,7 +349,8 @@ export async function interactionHook(interaction: Interaction) {
 		member: interaction.member ?? null,
 		channelID: interaction.channelId,
 		guildID: interaction.guildId,
-		interaction
+		interaction,
+		continueDeltaMillis: null
 	};
 
 	const cd = Cooldowns.get(userID, 'button', Time.Second * 3);
@@ -422,10 +433,6 @@ export async function interactionHook(interaction: Interaction) {
 			bypassInhibitors: true,
 			...options
 		});
-	}
-
-	if (id === 'BUY_BINGO_TICKET') {
-		return interactionReply(interaction, await buyBingoTicketCommand(null, userID, 1));
 	}
 
 	if (id === 'OPEN_BEGINNER_CASKET') {

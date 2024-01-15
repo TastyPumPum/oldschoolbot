@@ -399,6 +399,15 @@ export const allOpenables: UnifiedOpenable[] = [
 		allItems: resolveItems(['Tokkul', 'Lava scale shard', 'Onyx bolt tips'])
 	},
 	{
+		name: 'Scaly blue dragonhide',
+		id: 27_897,
+		openedItem: getOSItem('Scaly blue dragonhide'),
+		aliases: ['Scaly blue dragonhide'],
+		output: new LootTable().add('Blue dragon scale', 50),
+		emoji: Emoji.Casket,
+		allItems: resolveItems(['Blue dragon scale'])
+	},
+	{
 		name: 'Spoils of war',
 		id: itemID('Spoils of war'),
 		openedItem: getOSItem('Spoils of war'),
@@ -441,3 +450,17 @@ for (const openable of allOpenables) {
 }
 
 export const allOpenablesIDs = new Set(allOpenables.map(i => i.id));
+
+export function getOpenableLoot({
+	openable,
+	quantity,
+	user
+}: {
+	openable: UnifiedOpenable;
+	quantity: number;
+	user: MUser;
+}) {
+	return openable.output instanceof LootTable
+		? { bank: openable.output.roll(quantity), message: null }
+		: openable.output({ user, self: openable, quantity });
+}

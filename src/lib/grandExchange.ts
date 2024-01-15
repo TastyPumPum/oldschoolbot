@@ -152,7 +152,7 @@ class GrandExchangeSingleton {
 				{
 					has: (user: MUser) => user.perkTier() >= PerkTier.Four,
 					name: 'Tier 3 Patron',
-					amount: 4
+					amount: 10
 				}
 			]
 		}
@@ -865,7 +865,6 @@ ${type} ${toKMB(quantity)} ${item.name} for ${toKMB(price)} each, for a total of
 		}
 
 		stopwatch.stop();
-		geLog(`GE tick took ${stopwatch}`);
 	}
 
 	async totalReset() {
