@@ -1,4 +1,5 @@
 Lul i got global muted on discord until tomorrow 
+cant type in servers or dms only join Vc's
 {
 	"scripts": {
 		"gen": "concurrently \"prisma generate\" \"prisma generate --schema prisma/robochimp.prisma\" && echo \"Generated Prisma Client\"",
