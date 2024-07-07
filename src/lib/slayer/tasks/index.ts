@@ -1,4 +1,4 @@
-import { AssignableSlayerTask } from '../types';
+import type { AssignableSlayerTask } from '../types';
 import { bossTasks } from './bossTasks';
 import { chaeldarTasks } from './chaeldarTasks';
 import { duradelTasks } from './duradelTasks';
@@ -18,3 +18,5 @@ export const allSlayerTasks: AssignableSlayerTask[] = [
 	...vannakaTasks,
 	...duradelTasks
 ];
+
+export const allSlayerMonsters = allSlayerTasks.map(m => m.monster);

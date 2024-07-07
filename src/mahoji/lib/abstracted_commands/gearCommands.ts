@@ -1,17 +1,18 @@
 import { toTitleCase } from '@oldschoolgg/toolkit';
-import { GearPreset } from '@prisma/client';
-import { ChatInputCommandInteraction } from 'discord.js';
+import type { GearPreset } from '@prisma/client';
+import type { ChatInputCommandInteraction } from 'discord.js';
 import { objectValues } from 'e';
-import { CommandResponse } from 'mahoji/dist/lib/structures/ICommand';
+import type { CommandResponse } from 'mahoji/dist/lib/structures/ICommand';
 import { Bank } from 'oldschooljs';
 
 import { MAX_INT_JAVA, PATRON_ONLY_GEAR_SETUP, PerkTier } from '../../../lib/constants';
 import { generateAllGearImage, generateGearImage } from '../../../lib/gear/functions/generateGearImage';
-import { GearSetup, GearSetupType, GearStat } from '../../../lib/gear/types';
+import type { GearSetup, GearSetupType } from '../../../lib/gear/types';
+import { GearStat } from '../../../lib/gear/types';
 import getUserBestGearFromBank from '../../../lib/minions/functions/getUserBestGearFromBank';
 import { unEquipAllCommand } from '../../../lib/minions/functions/unequipAllCommand';
 import { prisma } from '../../../lib/settings/prisma';
-import { defaultGear, Gear, globalPresets } from '../../../lib/structures/Gear';
+import { Gear, defaultGear, globalPresets } from '../../../lib/structures/Gear';
 import { assert, formatSkillRequirements, isValidGearSetup, stringMatches } from '../../../lib/util';
 import calculateGearLostOnDeathWilderness from '../../../lib/util/calculateGearLostOnDeathWilderness';
 import { gearEquipMultiImpl } from '../../../lib/util/equipMulti';
@@ -39,6 +40,10 @@ export async function gearPresetEquipCommand(user: MUser, gearSetup: string, pre
 		return "You don't have a gear preset with that name.";
 	}
 	const preset = (userPreset ?? globalPreset) as GearPreset;
+	if (preset.two_handed !== null) {
+		preset.weapon = null;
+		preset.shield = null;
+	}
 
 	// Checks the preset to make sure the user has the required stats for every item in the preset
 	for (const gearItemId of Object.values(preset)) {
@@ -331,7 +336,7 @@ export async function gearStatsCommand(user: MUser, input: string): CommandRespo
 	const gear = { ...defaultGear };
 	for (const name of input.split(',')) {
 		const item = getItem(name);
-		if (item && item.equipment) {
+		if (item?.equipment) {
 			gear[item.equipment.slot] = { item: item.id, quantity: 1 };
 		}
 	}
@@ -349,7 +354,7 @@ export async function gearViewCommand(user: MUser, input: string, text: boolean)
 							.join('\n')
 					),
 					name: 'gear.txt'
-			  }
+				}
 			: { attachment: await generateAllGearImage(user), name: 'osbot.png' };
 		return {
 			content: 'Here are all your gear setups',

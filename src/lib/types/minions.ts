@@ -1,12 +1,12 @@
 import type { CropUpgradeType } from '@prisma/client';
 
-import { NMZStrategy, UnderwaterAgilityThievingTrainingSkill } from '../constants';
+import type { ItemBank } from '.';
+import type { NMZStrategy, TwitcherGloves, UnderwaterAgilityThievingTrainingSkill } from '../constants';
 import type { IPatchData } from '../minions/farming/types';
 import type { MinigameName } from '../settings/minigames';
-import { RaidLevel } from '../simulation/toa';
+import type { RaidLevel } from '../simulation/toa';
 import type { Peak } from '../tickers';
 import type { BirdhouseData } from './../skilling/skills/hunter/defaultBirdHouseTrap';
-import type { ItemBank } from '.';
 
 export interface ActivityTaskOptions {
 	userID: string;
@@ -45,7 +45,8 @@ export interface ActivityTaskOptionsWithNoChanges extends ActivityTaskOptions {
 		| 'Easter'
 		| 'ShootingStars'
 		| 'HalloweenEvent'
-		| 'StrongholdOfSecurity';
+		| 'StrongholdOfSecurity'
+		| 'CombatRing';
 }
 
 export interface ActivityTaskOptionsWithQuantity extends ActivityTaskOptions {
@@ -62,6 +63,8 @@ export interface ActivityTaskOptionsWithQuantity extends ActivityTaskOptions {
 		| 'CamdozaalMining'
 		| 'CamdozaalSmithing';
 	quantity: number;
+	// iQty is 'input quantity.' This is the number specified at command time, so we can accurately repeat such trips.
+	iQty?: number;
 }
 
 export interface ShootingStarsOptions extends ActivityTaskOptions {
@@ -123,6 +126,7 @@ export interface MonsterActivityTaskOptions extends ActivityTaskOptions {
 	type: 'MonsterKilling';
 	monsterID: number;
 	quantity: number;
+	iQty?: number;
 	usingCannon?: boolean;
 	cannonMulti?: boolean;
 	chinning?: boolean;
@@ -130,6 +134,7 @@ export interface MonsterActivityTaskOptions extends ActivityTaskOptions {
 	died?: boolean;
 	pkEncounters?: number;
 	hasWildySupplies?: boolean;
+	isInWilderness?: boolean;
 }
 
 export interface ClueActivityTaskOptions extends ActivityTaskOptions {
@@ -145,6 +150,7 @@ export interface FishingActivityTaskOptions extends ActivityTaskOptions {
 	type: 'Fishing';
 	fishID: number;
 	quantity: number;
+	iQty?: number;
 }
 
 export interface MiningActivityTaskOptions extends ActivityTaskOptions {
@@ -154,6 +160,7 @@ export interface MiningActivityTaskOptions extends ActivityTaskOptions {
 	oreID: number;
 	quantity: number;
 	powermine: boolean;
+	iQty?: number;
 }
 
 export interface MotherlodeMiningActivityTaskOptions extends ActivityTaskOptions {
@@ -161,6 +168,7 @@ export interface MotherlodeMiningActivityTaskOptions extends ActivityTaskOptions
 	fakeDurationMax: number;
 	fakeDurationMin: number;
 	quantity: number;
+	iQty?: number;
 }
 
 export interface SmeltingActivityTaskOptions extends ActivityTaskOptions {
@@ -187,8 +195,11 @@ export interface WoodcuttingActivityTaskOptions extends ActivityTaskOptions {
 	fakeDurationMax: number;
 	fakeDurationMin: number;
 	powerchopping: boolean;
+	forestry?: boolean;
+	twitchers?: TwitcherGloves;
 	logID: number;
 	quantity: number;
+	iQty?: number;
 }
 
 export interface CraftingActivityTaskOptions extends ActivityTaskOptions {
@@ -438,6 +449,14 @@ export interface TheatreOfBloodTaskOptions extends ActivityTaskOptionsWithUsers 
 	solo?: boolean;
 }
 
+export interface ColoTaskOptions extends ActivityTaskOptions {
+	type: 'Colosseum';
+	fakeDuration: number;
+	diedAt?: number;
+	loot?: ItemBank;
+	maxGlory: number;
+}
+
 type UserID = string;
 type Points = number;
 type RoomIDsDiedAt = number[];
@@ -589,4 +608,5 @@ export type ActivityTaskData =
 	| FightCavesActivityTaskOptions
 	| ActivityTaskOptionsWithQuantity
 	| MinigameActivityTaskOptionsWithNoChanges
-	| CutLeapingFishActivityTaskOptions;
+	| CutLeapingFishActivityTaskOptions
+	| ColoTaskOptions;

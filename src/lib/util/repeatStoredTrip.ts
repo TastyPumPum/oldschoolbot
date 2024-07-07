@@ -1,14 +1,16 @@
-import { Activity, activity_type_enum, Prisma } from '@prisma/client';
-import { ButtonBuilder, ButtonInteraction, ButtonStyle } from 'discord.js';
+import type { Activity, Prisma } from '@prisma/client';
+import { activity_type_enum } from '@prisma/client';
+import type { ButtonInteraction } from 'discord.js';
+import { ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Time } from 'e';
 
 import { autocompleteMonsters } from '../../mahoji/commands/k';
-import { PvMMethod } from '../constants';
+import type { PvMMethod } from '../constants';
 import { SlayerActivityConstants } from '../minions/data/combatConstants';
 import { darkAltarRunes } from '../minions/functions/darkAltarCommand';
 import { convertStoredActivityToFlatActivity, prisma } from '../settings/prisma';
 import { runCommand } from '../settings/settings';
-import {
+import type {
 	ActivityTaskOptionsWithQuantity,
 	AgilityActivityTaskOptions,
 	AlchingActivityTaskOptions,
@@ -34,7 +36,6 @@ import {
 	GuardiansOfTheRiftActivityTaskOptions,
 	HerbloreActivityTaskOptions,
 	HunterActivityTaskOptions,
-	KourendFavourActivityTaskOptions,
 	MahoganyHomesActivityTaskOptions,
 	MiningActivityTaskOptions,
 	MonsterActivityTaskOptions,
@@ -51,15 +52,15 @@ import {
 	ShadesOfMortonOptions,
 	SmeltingActivityTaskOptions,
 	SmithingActivityTaskOptions,
+	TOAOptions,
 	TempleTrekkingActivityTaskOptions,
 	TheatreOfBloodTaskOptions,
 	TiaraRunecraftActivityTaskOptions,
-	TOAOptions,
 	WoodcuttingActivityTaskOptions
 } from '../types/minions';
 import { itemNameFromID } from '../util';
 import { giantsFoundryAlloys } from './../../mahoji/lib/abstracted_commands/giantsFoundryCommand';
-import { NightmareZoneActivityTaskOptions, UnderwaterAgilityThievingTaskOptions } from './../types/minions';
+import type { NightmareZoneActivityTaskOptions, UnderwaterAgilityThievingTaskOptions } from './../types/minions';
 import getOSItem from './getOSItem';
 import { deferInteraction } from './interactionReply';
 
@@ -76,7 +77,9 @@ export const taskCanBeRepeated = (activity: Activity) => {
 			activity_type_enum.BlastFurnace,
 			activity_type_enum.Easter,
 			activity_type_enum.TokkulShop,
-			activity_type_enum.Birdhouse
+			activity_type_enum.Birdhouse,
+			activity_type_enum.StrongholdOfSecurity,
+			activity_type_enum.CombatRing
 		] as activity_type_enum[]
 	).includes(activity.type);
 };
@@ -99,6 +102,10 @@ export const tripHandlers = {
 		args: () => ({})
 	},
 	[activity_type_enum.StrongholdOfSecurity]: {
+		commandName: 'm',
+		args: () => ({})
+	},
+	[activity_type_enum.CombatRing]: {
 		commandName: 'm',
 		args: () => ({})
 	},
@@ -130,6 +137,10 @@ export const tripHandlers = {
 		commandName: 'm',
 		args: () => ({})
 	},
+	[activity_type_enum.KourendFavour]: {
+		commandName: 'm',
+		args: () => ({})
+	},
 	[activity_type_enum.AerialFishing]: {
 		commandName: 'activities',
 		args: () => ({ aerial_fishing: {} })
@@ -141,10 +152,6 @@ export const tripHandlers = {
 			quantity: data.quantity,
 			alch: Boolean(data.alch)
 		})
-	},
-	[activity_type_enum.AgilityArena]: {
-		commandName: 'minigames',
-		args: () => ({ agility_arena: { start: {} } })
 	},
 	[activity_type_enum.AgilityArena]: {
 		commandName: 'minigames',
@@ -165,7 +172,7 @@ export const tripHandlers = {
 	[activity_type_enum.CamdozaalMining]: {
 		commandName: 'activities',
 		args: (data: ActivityTaskOptionsWithQuantity) => ({
-			camdozaal: { action: 'mining', quantity: data.quantity }
+			camdozaal: { action: 'mining', quantity: data.iQty }
 		})
 	},
 	[activity_type_enum.CamdozaalSmithing]: {
@@ -177,7 +184,7 @@ export const tripHandlers = {
 	[activity_type_enum.CamdozaalFishing]: {
 		commandName: 'activities',
 		args: (data: ActivityTaskOptionsWithQuantity) => ({
-			camdozaal: { action: 'fishing', quantity: data.quantity }
+			camdozaal: { action: 'fishing', quantity: data.iQty }
 		})
 	},
 	[activity_type_enum.BarbarianAssault]: {
@@ -232,7 +239,10 @@ export const tripHandlers = {
 	},
 	[activity_type_enum.Cooking]: {
 		commandName: 'cook',
-		args: (data: CookingActivityTaskOptions) => ({ name: itemNameFromID(data.cookableID), quantity: data.quantity })
+		args: (data: CookingActivityTaskOptions) => ({
+			name: itemNameFromID(data.cookableID),
+			quantity: data.quantity
+		})
 	},
 	[activity_type_enum.Crafting]: {
 		commandName: 'craft',
@@ -279,7 +289,7 @@ export const tripHandlers = {
 			data.autoFarmed
 				? {
 						auto_farm: {}
-				  }
+					}
 				: {}
 	},
 	[activity_type_enum.FightCaves]: {
@@ -295,7 +305,7 @@ export const tripHandlers = {
 	},
 	[activity_type_enum.Fishing]: {
 		commandName: 'fish',
-		args: (data: FishingActivityTaskOptions) => ({ name: data.fishID, quantity: data.quantity })
+		args: (data: FishingActivityTaskOptions) => ({ name: data.fishID, quantity: data.iQty })
 	},
 	[activity_type_enum.FishingTrawler]: {
 		commandName: 'minigames',
@@ -351,10 +361,6 @@ export const tripHandlers = {
 		commandName: 'activities',
 		args: () => ({ inferno: { action: 'start' } })
 	},
-	[activity_type_enum.KourendFavour]: {
-		commandName: 'activities',
-		args: (data: KourendFavourActivityTaskOptions) => ({ favour: { name: data.favour } })
-	},
 	[activity_type_enum.LastManStanding]: {
 		commandName: 'minigames',
 		args: () => ({ lms: { start: {} } })
@@ -379,7 +385,7 @@ export const tripHandlers = {
 		commandName: 'mine',
 		args: (data: MiningActivityTaskOptions) => ({
 			name: data.oreID,
-			quantity: data.quantity,
+			quantity: data.iQty,
 			powermine: data.powermine
 		})
 	},
@@ -387,7 +393,7 @@ export const tripHandlers = {
 		commandName: 'mine',
 		args: (data: MotherlodeMiningActivityTaskOptions) => ({
 			name: 'Motherlode mine',
-			quantity: data.quantity
+			quantity: data.iQty
 		})
 	},
 	[activity_type_enum.MonsterKilling]: {
@@ -400,8 +406,9 @@ export const tripHandlers = {
 			else if (data.burstOrBarrage === SlayerActivityConstants.IceBurst) method = 'burst';
 			return {
 				name: autocompleteMonsters.find(i => i.id === data.monsterID)?.name ?? data.monsterID.toString(),
-				quantity: data.quantity,
-				method
+				quantity: data.iQty,
+				method,
+				wilderness: data.isInWilderness
 			};
 		}
 	},
@@ -410,7 +417,8 @@ export const tripHandlers = {
 		args: (data: NexTaskOptions) => {
 			return {
 				name: 'nex',
-				quantity: data.quantity
+				quantity: data.quantity,
+				solo: data.userDetails.length === 1
 			};
 		}
 	},
@@ -549,8 +557,10 @@ export const tripHandlers = {
 		commandName: 'chop',
 		args: (data: WoodcuttingActivityTaskOptions) => ({
 			name: itemNameFromID(data.logID),
-			quantity: data.quantity,
-			powerchop: data.powerchopping
+			quantity: data.iQty,
+			powerchop: data.powerchopping,
+			forestry_events: data.forestry,
+			twitchers_gloves: data.twitchers
 		})
 	},
 	[activity_type_enum.GiantsFoundry]: {
@@ -616,6 +626,12 @@ export const tripHandlers = {
 			underwater: {
 				drift_net_fishing: { minutes: Math.floor(data.duration / Time.Minute) }
 			}
+		})
+	},
+	[activity_type_enum.Colosseum]: {
+		commandName: 'k',
+		args: () => ({
+			name: 'colosseum'
 		})
 	}
 } as const;

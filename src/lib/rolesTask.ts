@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { noOp, notEmpty } from 'e';
 
-import { production, SupportServer } from '../config';
+import { SupportServer, production } from '../config';
 import { ClueTiers } from '../lib/clues/clueTiers';
 import { Roles, usernameCache } from '../lib/constants';
 import { getCollectionItems } from '../lib/data/Collections';
@@ -11,7 +11,7 @@ import Skills from '../lib/skilling/skills';
 import { convertXPtoLVL } from '../lib/util';
 import { logError } from '../lib/util/logError';
 import { TeamLoot } from './simulation/TeamLoot';
-import { ItemBank } from './types';
+import type { ItemBank } from './types';
 
 function addToUserMap(userMap: Record<string, string[]>, id: string, reason: string) {
 	if (!userMap[id]) userMap[id] = [];
@@ -44,7 +44,7 @@ LIMIT 1;`;
 const mostSlayerTasksDoneQuery = `SELECT user_id::text as id, 'Most Tasks' as desc
 FROM slayer_tasks
 GROUP BY user_id
-ORDER BY count(user_id) DESC
+ORDER BY count(user_id)::int DESC
 LIMIT 1;`;
 
 async function addRoles({
@@ -61,15 +61,15 @@ async function addRoles({
 	if (process.env.TEST) return '';
 	const g = globalClient.guilds.cache.get(SupportServer);
 	if (!g) throw new Error('No support guild');
-	let added: string[] = [];
-	let removed: string[] = [];
-	let _role = await g.roles.fetch(role).catch(noOp);
+	const added: string[] = [];
+	const removed: string[] = [];
+	const _role = await g.roles.fetch(role).catch(noOp);
 	if (!_role) return `\nCould not check ${role} role`;
 	for (const u of users.filter(notEmpty)) {
 		await g.members.fetch(u).catch(noOp);
 	}
 	const roleName = _role.name!;
-	let noChangeUserDescriptions: string[] = [];
+	const noChangeUserDescriptions: string[] = [];
 	for (const mem of g.members.cache.values()) {
 		const mUser = await mUserFetch(mem.user.id);
 		if (mem.roles.cache.has(role) && !users.includes(mem.user.id)) {
@@ -108,9 +108,9 @@ async function addRoles({
 		str += `\nRemoved from: ${removed.join(', ')}.`;
 	}
 	if (userMap) {
-		let userArr = [];
+		const userArr = [];
 		for (const [id, arr] of Object.entries(userMap)) {
-			let username = usernameCache.get(id) ?? 'Unknown';
+			const username = usernameCache.get(id) ?? 'Unknown';
 			userArr.push(`${username}(${arr.join(', ')})`);
 		}
 		str += `\n${userArr.join(',')}`;
@@ -126,8 +126,7 @@ async function addRoles({
 export async function runRolesTask() {
 	const skillVals = Object.values(Skills);
 
-	let results: string[] = [];
-	// eslint-disable-next-line @typescript-eslint/unbound-method
+	const results: string[] = [];
 	const q = async <T>(str: string) => {
 		const result = await prisma.$queryRawUnsafe<T>(str).catch(err => {
 			logError(`This query failed: ${str}`, err);
@@ -231,7 +230,7 @@ SELECT id, (cardinality(u.cl_keys) - u.inverse_length) as qty
 							.catch(handleErr)
 					]);
 
-					let result = [];
+					const result = [];
 					const userID = users[0]?.id;
 					const ironmanID = ironUsers[0]?.id;
 
@@ -272,7 +271,7 @@ SELECT id, (cardinality(u.cl_keys) - u.inverse_length) as qty
 	// Top sacrificers
 	async function topSacrificers() {
 		const userMap = {};
-		let topSacrificers: string[] = [];
+		const topSacrificers: string[] = [];
 		const mostValue = await q<any[]>('SELECT id FROM users ORDER BY "sacrificedValue" DESC LIMIT 3;');
 		for (let i = 0; i < 3; i++) {
 			if (mostValue[i] !== undefined) {
@@ -287,12 +286,12 @@ SELECT id, (cardinality(u.cl_keys) - u.inverse_length) as qty
 		addToUserMap(userMap, mostValueIronman[0].id, 'Rank 1 Ironman Sacrificed Value');
 
 		const mostUniques = await q<any[]>(`SELECT u.id, u.sacbanklength FROM (
-  SELECT (SELECT COUNT(*) FROM JSONB_OBJECT_KEYS("sacrificed_bank")) sacbanklength, user_id::text as id FROM user_stats
+  SELECT (SELECT COUNT(*)::int FROM JSONB_OBJECT_KEYS("sacrificed_bank")) sacbanklength, user_id::text as id FROM user_stats
 ) u
 ORDER BY u.sacbanklength DESC LIMIT 1;`);
 
 		const mostUniquesIron = await q<any[]>(`SELECT u.id, u.sacbanklength FROM (
-  SELECT (SELECT COUNT(*) FROM JSONB_OBJECT_KEYS("sacrificed_bank")) sacbanklength, user_id::text as id FROM user_stats
+  SELECT (SELECT COUNT(*)::int FROM JSONB_OBJECT_KEYS("sacrificed_bank")) sacbanklength, user_id::text as id FROM user_stats
   INNER JOIN users ON "user_stats"."user_id"::text = "users"."id"
   WHERE "users"."minion.ironman" = true
 ) u
@@ -307,7 +306,7 @@ ORDER BY u.sacbanklength DESC LIMIT 1;`);
 
 	// Top minigamers
 	async function topMinigamers() {
-		let topMinigamers = (
+		const topMinigamers = (
 			await Promise.all(
 				minigames.map(m =>
 					q(
@@ -318,9 +317,9 @@ LIMIT 1;`
 					)
 				)
 			)
-		).map((i: any) => [i[0].user_id, Minigames.find(m => m.column === i[0].m)!.name]);
+		).map((i: any) => [i[0].user_id, Minigames.find(m => m.column === i[0].m)?.name]);
 
-		let userMap = {};
+		const userMap = {};
 		for (const [id, m] of topMinigamers) {
 			addToUserMap(userMap, id, `Rank 1 ${m}`);
 		}
@@ -337,7 +336,7 @@ LIMIT 1;`
 
 	// Top clue hunters
 	async function topClueHunters() {
-		let topClueHunters = (
+		const topClueHunters = (
 			await Promise.all(
 				ClueTiers.map(t =>
 					q(
@@ -354,7 +353,7 @@ LIMIT 1;`
 			.filter((i: any) => Boolean(i[0]?.id))
 			.map((i: any) => [i[0]?.id, i[0]?.n]);
 
-		let userMap = {};
+		const userMap = {};
 
 		for (const [id, n] of topClueHunters) {
 			addToUserMap(userMap, id, `Rank 1 ${n} Clues`);
@@ -388,15 +387,15 @@ LIMIT 2;`,
 FROM activity
 WHERE type = 'Farming'
 GROUP BY user_id
-ORDER BY count(user_id) DESC
+ORDER BY count(user_id)::int DESC
 LIMIT 2;`,
 			`SELECT user_id::text as id, 'Top 2 Tithe Farm' as desc
 FROM user_stats
 ORDER BY "tithe_farms_completed" DESC
 LIMIT 2;`
 		];
-		let res = (await Promise.all(queries.map(q))).map((i: any) => [i[0]?.id, i[0]?.desc]);
-		let userMap = {};
+		const res = (await Promise.all(queries.map(q))).map((i: any) => [i[0]?.id, i[0]?.desc]);
+		const userMap = {};
 		for (const [id, desc] of res) {
 			addToUserMap(userMap, id, desc);
 		}
@@ -413,7 +412,7 @@ LIMIT 2;`
 
 	// Top slayers
 	async function slayer() {
-		let topSlayers = (
+		const topSlayers = (
 			await Promise.all(
 				[mostSlayerPointsQuery, longerSlayerTaskStreakQuery, mostSlayerTasksDoneQuery].map(query => q(query))
 			)
@@ -421,7 +420,7 @@ LIMIT 2;`
 			.filter((i: any) => Boolean(i[0]?.id))
 			.map((i: any) => [i[0]?.id, i[0]?.desc]);
 
-		let userMap = {};
+		const userMap = {};
 		for (const [id, desc] of topSlayers) {
 			addToUserMap(userMap, id, desc);
 		}
@@ -445,7 +444,7 @@ LIMIT 2;`
 			'982989775399174184',
 			'346304390858145792'
 		];
-		const res = await prisma.$queryRaw<{ user_id: string; qty: number }[]>`SELECT user_id, COUNT(user_id) AS qty
+		const res = await prisma.$queryRaw<{ user_id: string; qty: number }[]>`SELECT user_id, COUNT(user_id)::int AS qty
 FROM giveaway
 WHERE channel_id IN (${Prisma.join(GIVEAWAY_CHANNELS)})
 AND user_id NOT IN ('157797566833098752')
@@ -470,7 +469,7 @@ LIMIT 50;`;
 			giveawayBank.add(giveaway.user_id, giveaway.loot as ItemBank);
 		}
 
-		let userMap = {};
+		const userMap = {};
 		const [[highestID, loot]] = giveawayBank.entries().sort((a, b) => b[1].value() - a[1].value());
 		addToUserMap(userMap, highestID, `Most Value Given Away (${loot.value()})`);
 
@@ -486,9 +485,7 @@ LIMIT 50;`;
 
 	// Global CL %
 	async function globalCL() {
-		const result = await roboChimpClient.$queryRaw<
-			{ id: string; total_cl_percent: number }[]
-		>`SELECT ((osb_cl_percent + bso_cl_percent) / 2) AS total_cl_percent, id::text AS id
+		const result = await roboChimpClient.$queryRaw<{ id: string; total_cl_percent: number }[]>`SELECT ((osb_cl_percent + bso_cl_percent) / 2) AS total_cl_percent, id::text AS id
 FROM public.user
 WHERE osb_cl_percent IS NOT NULL AND bso_cl_percent IS NOT NULL
 ORDER BY total_cl_percent DESC
@@ -515,7 +512,7 @@ LIMIT 10;`;
 		['Global CL', globalCL]
 	] as const;
 
-	let failed: string[] = [];
+	const failed: string[] = [];
 	await Promise.all(
 		tup.map(async ([name, fn]) => {
 			try {
@@ -530,7 +527,7 @@ LIMIT 10;`;
 		})
 	);
 
-	let res = `**Roles**
+	const res = `**Roles**
 ${results.join('\n')}
 ${failed.length > 0 ? `Failed: ${failed.join(', ')}` : ''}`;
 

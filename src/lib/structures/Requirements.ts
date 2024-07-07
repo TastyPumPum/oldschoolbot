@@ -1,18 +1,19 @@
-import { Minigame } from '@prisma/client';
+import type { Minigame } from '@prisma/client';
 import { calcWhatPercent, objectEntries } from 'e';
-import { Bank } from 'oldschooljs';
+import type { Bank } from 'oldschooljs';
 
-import { getParsedStashUnits, ParsedUnit } from '../../mahoji/lib/abstracted_commands/stashUnitsCommand';
-import { ClueTier } from '../clues/clueTiers';
-import { BitField, BitFieldData, BOT_TYPE } from '../constants';
-import { diariesObject, DiaryTierName, userhasDiaryTier } from '../diaries';
+import type { ParsedUnit } from '../../mahoji/lib/abstracted_commands/stashUnitsCommand';
+import { getParsedStashUnits } from '../../mahoji/lib/abstracted_commands/stashUnitsCommand';
+import type { ClueTier } from '../clues/clueTiers';
+import type { BitField } from '../constants';
+import { BOT_TYPE, BitFieldData } from '../constants';
+import { diaries, userhasDiaryIDTier } from '../diaries';
 import { effectiveMonsters } from '../minions/data/killableMonsters';
-import { UserKourendFavour } from '../minions/data/kourendFavour';
-import { ClueBank } from '../minions/types';
+import type { ClueBank, DiaryID, DiaryTierName } from '../minions/types';
 import type { RobochimpUser } from '../roboChimp';
-import { MinigameName } from '../settings/minigames';
+import type { MinigameName } from '../settings/minigames';
 import Agility from '../skilling/skills/agility';
-import { Skills } from '../types';
+import type { Skills } from '../types';
 import { itemNameFromID } from '../util';
 import { MUserStats } from './MUserStats';
 
@@ -51,11 +52,10 @@ type Requirement = {
 	| { qpRequirement: number }
 	| { lapsRequirement: Record<number, number> }
 	| { sacrificedItemsRequirement: Bank }
-	| { favour: Partial<UserKourendFavour> }
 	| { OR: Requirement[] }
 	| { minigames: Partial<Record<MinigameName, number>> }
 	| { bitfieldRequirement: BitField }
-	| { diaryRequirement: [keyof typeof diariesObject, DiaryTierName][] }
+	| { diaryRequirement: [DiaryID, DiaryTierName][] }
 	| { clueCompletions: Partial<Record<ClueTier['name'], number>> }
 );
 
@@ -89,7 +89,7 @@ export class Requirements {
 		if ('kcRequirement' in req) {
 			requirementParts.push(
 				`Kill Count Requirement: ${Object.entries(req.kcRequirement)
-					.map(([k, v]) => `${v}x ${effectiveMonsters.find(i => i.id === Number(k))!.name}`)
+					.map(([k, v]) => `${v}x ${effectiveMonsters.find(i => i.id === Number(k))?.name}`)
 					.join(', ')}.`
 			);
 		}
@@ -101,21 +101,13 @@ export class Requirements {
 		if ('lapsRequirement' in req) {
 			requirementParts.push(
 				`Agility Course Laps Requirements: ${Object.entries(req.lapsRequirement)
-					.map(([k, v]) => `${v}x laps of ${Agility.Courses.find(i => i.id === Number(k))!.name}`)
+					.map(([k, v]) => `${v}x laps of ${Agility.Courses.find(i => i.id === Number(k))?.name}`)
 					.join(', ')}.`
 			);
 		}
 
 		if ('sacrificedItemsRequirement' in req) {
 			requirementParts.push(`Sacrificed Items Requirement: ${req.sacrificedItemsRequirement.toString()}`);
-		}
-
-		if ('favour' in req) {
-			requirementParts.push(
-				`Kourend Favour Requirement: ${Object.entries(req.favour)
-					.map(([k, v]) => `${v}% favour in ${k}`)
-					.join(', ')}.`
-			);
 		}
 
 		if ('minigames' in req) {
@@ -133,7 +125,7 @@ export class Requirements {
 		if ('diaryRequirement' in req) {
 			requirementParts.push(
 				`Achievement Diary Requirement: ${req.diaryRequirement
-					.map(i => `${i[1]} ${diariesObject[i[0]].name}`)
+					.map(i => `${i[1]} ${diaries.find(d => d.id === i[0])?.name}`)
 					.join(', ')}`
 			);
 		}
@@ -221,7 +213,7 @@ export class Requirements {
 			for (const [id, amount] of Object.entries(requirement.kcRequirement)) {
 				if (!kcs[id] || kcs[id] < amount) {
 					missingMonsterNames.push(
-						`${amount}x ${effectiveMonsters.find(m => m.id === parseInt(id))?.name ?? id}`
+						`${amount}x ${effectiveMonsters.find(m => m.id === Number.parseInt(id))?.name ?? id}`
 					);
 				}
 			}
@@ -246,7 +238,7 @@ export class Requirements {
 				if (!laps[id] || laps[id] < amount) {
 					results.push({
 						reason: `You need ${amount}x laps in the ${
-							Agility.Courses.find(i => i.id.toString() === id)!.name
+							Agility.Courses.find(i => i.id.toString() === id)?.name
 						} agility course.`
 					});
 				}
@@ -258,20 +250,6 @@ export class Requirements {
 			if (!sacBank.has(requirement.sacrificedItemsRequirement)) {
 				results.push({
 					reason: `You need to have sacrificed these items: ${requirement.sacrificedItemsRequirement}.`
-				});
-			}
-		}
-
-		if ('favour' in requirement) {
-			const insufficientFavour = [];
-			for (const [house, favour] of objectEntries(requirement.favour)) {
-				if (user.kourendFavour[house] < favour!) {
-					insufficientFavour.push(`${favour}% favour in ${house}`);
-				}
-			}
-			if (insufficientFavour.length > 0) {
-				results.push({
-					reason: `You need these favour: ${insufficientFavour.join(', ')}.`
 				});
 			}
 		}
@@ -302,12 +280,15 @@ export class Requirements {
 		if ('diaryRequirement' in requirement) {
 			const unmetDiaries = (
 				await Promise.all(
-					requirement.diaryRequirement.map(async ([diary, tier]) => ({
-						has: await userhasDiaryTier(user, diariesObject[diary][tier]),
-						tierName: `${tier} ${diariesObject[diary].name}`
-					}))
+					requirement.diaryRequirement.map(async ([diary, tier]) => {
+						const res = await userhasDiaryIDTier(user, diary, tier);
+						return {
+							has: res.hasDiary,
+							tierName: `${tier} ${res.diaryGroup.name}`
+						};
+					})
 				)
-			).filter(i => !i.has[0]);
+			).filter(i => !i.has);
 			if (unmetDiaries.length > 0) {
 				results.push({
 					reason: `You need to finish these achievement diaries: ${unmetDiaries
@@ -362,7 +343,7 @@ export class Requirements {
 		}));
 
 		const results = await Promise.all(requirementResults);
-		const flatReasons = results.map(r => r.result).flat();
+		const flatReasons = results.flatMap(r => r.result);
 
 		const totalRequirements = this.requirements.length;
 		const metRequirements = results.filter(i => i.result.length === 0).length;

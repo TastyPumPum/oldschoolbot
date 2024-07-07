@@ -1,11 +1,12 @@
-import { ApplicationCommandOptionType, CommandRunOptions } from 'mahoji';
+import type { CommandRunOptions } from 'mahoji';
+import { ApplicationCommandOptionType } from 'mahoji';
 import { Bank } from 'oldschooljs';
-import { Item } from 'oldschooljs/dist/meta/types';
+import type { Item } from 'oldschooljs/dist/meta/types';
 
-import { Events } from '../../lib/constants';
+import { Emoji, Events } from '../../lib/constants';
 import { cats } from '../../lib/growablePets';
 import minionIcons from '../../lib/minions/data/minionIcons';
-import { ItemBank } from '../../lib/types';
+import type { ItemBank } from '../../lib/types';
 import { toKMB } from '../../lib/util';
 import { handleMahojiConfirmation } from '../../lib/util/handleMahojiConfirmation';
 import { deferInteraction } from '../../lib/util/interactionReply';
@@ -13,7 +14,7 @@ import { parseBank } from '../../lib/util/parseStringBank';
 import resolveItems from '../../lib/util/resolveItems';
 import { updateBankSetting } from '../../lib/util/updateBankSetting';
 import { filterOption } from '../lib/mahojiCommandOptions';
-import { OSBMahojiCommand } from '../lib/util';
+import type { OSBMahojiCommand } from '../lib/util';
 import { userStatsBankUpdate } from '../mahojiSettings';
 import { sellPriceOfItem } from './sell';
 
@@ -42,7 +43,12 @@ const noSacPrice = resolveItems([
 	'Helm of neitiznot',
 	'Cannon barrels',
 	'Broad arrowheads',
-	'Rope'
+	'Rope',
+	'Eye of newt',
+	'Bronze pickaxe',
+	'Iron pickaxe',
+	'Red dye',
+	'Cannon furnace'
 ]);
 
 export function sacrificePriceOfItem(item: Item, qty: number) {
@@ -77,12 +83,23 @@ export const sacrificeCommand: OSBMahojiCommand = {
 		options,
 		interaction
 	}: CommandRunOptions<{ items?: string; filter?: string; search?: string }>) => {
+		const user = await mUserFetch(userID);
+		const currentIcon = user.user.minion_icon;
+		const sacVal = Number(user.user.sacrificedValue);
+		const { sacrificed_bank: sacrificedBank } = await user.fetchStats({ sacrificed_bank: true });
+		const sacUniqVal = sacrificedBank !== null ? Object.keys(sacrificedBank).length : 0;
+
+		// Show user sacrifice stats if no options are given for /sacrifice
 		if (!options.filter && !options.items && !options.search) {
-			return "You didn't provide any items, filter or search.";
+			return (
+				`${Emoji.Incinerator} **Your Sacrifice Stats** ${Emoji.Incinerator}\n\n` +
+				`**Current Minion Icon:** ${currentIcon === null ? Emoji.Minion : currentIcon}\n` +
+				`**Sacrificed Value:** ${sacVal.toLocaleString()} GP\n` +
+				`**Unique Items Sacrificed:** ${sacUniqVal.toLocaleString()} item${sacUniqVal === 1 ? '' : 's'}`
+			);
 		}
 
 		deferInteraction(interaction);
-		const user = await mUserFetch(userID);
 
 		const bankToSac = parseBank({
 			inputStr: options.items,
@@ -94,8 +111,6 @@ export const sacrificeCommand: OSBMahojiCommand = {
 			maxSize: 70,
 			noDuplicateItems: true
 		});
-
-		const sacVal = Number(user.user.sacrificedValue);
 
 		if (!user.owns(bankToSac)) {
 			return `You don't own ${bankToSac}.`;
@@ -162,7 +177,7 @@ export const sacrificeCommand: OSBMahojiCommand = {
 		await trackSacBank(user, bankToSac);
 
 		let str = '';
-		const currentIcon = user.user.minion_icon;
+
 		// Ignores notifying the user/server if the user is using a custom icon
 		if (!currentIcon || minionIcons.find(m => m.emoji === currentIcon)) {
 			for (const icon of minionIcons) {

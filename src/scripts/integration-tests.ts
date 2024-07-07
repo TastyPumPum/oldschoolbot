@@ -1,22 +1,39 @@
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
+import path from 'node:path';
+import { config } from 'dotenv';
 import { sleep } from 'e';
 
 async function main() {
 	try {
 		execSync('docker compose up -d --wait', { stdio: 'inherit' });
-		await sleep(1000);
 
-		execSync('dotenv -e .env.example -- prisma db push --schema="./prisma/schema.prisma"', { stdio: 'inherit' });
-		execSync('dotenv -e .env.example -- prisma db push --schema="./prisma/robochimp.prisma"', { stdio: 'inherit' });
-		execSync('yarn prebuild:scripts', { stdio: 'inherit' });
-		execSync('yarn build:esbuild', { stdio: 'inherit' });
+		console.log('Waiting...');
+		await sleep(2000);
 
-		execSync('vitest run --coverage --config vitest.integration.config.ts', {
-			stdio: 'inherit'
-		});
+		console.log('Getting ready...');
+		const env = { ...process.env, ...config({ path: path.resolve('.env.test') }).parsed };
+
+		execSync('npx prisma db push --schema="./prisma/schema.prisma"', { stdio: 'inherit', env });
+		execSync('npx prisma db push --schema="./prisma/robochimp.prisma"', { stdio: 'inherit', env });
+
+		console.log('Building...');
+		execSync('yarn build', { stdio: 'inherit' });
+
+		console.log('Starting tests...');
+		const runs = 1;
+		for (let i = 0; i < runs; i++) {
+			console.log(`Starting run ${i + 1}/${runs}`);
+			execSync('vitest run --config vitest.integration.config.mts', {
+				stdio: 'inherit',
+				encoding: 'utf-8'
+			});
+			console.log(`Finished run ${i + 1}/${runs}`);
+		}
 	} catch (err) {
-		throw new Error(`Failed to run integration tests: ${err}`);
+		console.error(err);
+		throw new Error(err as any);
 	} finally {
+		console.log('Shutting down containers...');
 		execSync('docker-compose down', { stdio: 'inherit' });
 	}
 }

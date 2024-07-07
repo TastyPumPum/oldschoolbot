@@ -6,9 +6,11 @@ import { getPOH } from '../mahoji/lib/abstracted_commands/pohCommand';
 import { MIMIC_MONSTER_ID, NEX_ID, ZALCANO_ID } from './constants';
 import { championScrolls } from './data/CollectionsExport';
 import { RandomEvents } from './randomEvents';
-import { MinigameName, Minigames } from './settings/minigames';
+import type { MinigameName } from './settings/minigames';
+import { Minigames } from './settings/minigames';
 import { getUsersActivityCounts, prisma } from './settings/prisma';
-import { RequirementFailure, Requirements } from './structures/Requirements';
+import type { RequirementFailure } from './structures/Requirements';
+import { Requirements } from './structures/Requirements';
 import { itemNameFromID } from './util';
 import resolveItems from './util/resolveItems';
 
@@ -26,7 +28,7 @@ export const musicCapeRequirements = new Requirements()
 			}
 			return [
 				{
-					reason: 'You need to complete 20 slayer tasks'
+					reason: 'You need to complete 20 slayer tasks.'
 				}
 			];
 		}
@@ -205,19 +207,16 @@ AND data->>'runeID' IS NOT NULL;`;
 		}
 	})
 	.add({
-		name: 'One of Every Random Event',
-		has: async ({ stats, user }) => {
+		name: 'One Random Event with a unique music track',
+		has: async ({ stats }) => {
 			const results: RequirementFailure[] = [];
 			const eventBank = stats.randomEventCompletionsBank();
+			const uniqueTracks = RandomEvents.filter(i => i.uniqueMusic);
 
-			const notDoneRandomEvents = RandomEvents.filter(i => {
-				if (i.outfit && i.outfit.every(id => user.cl.has(id))) return false;
-				return !eventBank[i.id];
-			}).map(i => i.name);
-
-			if (notDoneRandomEvents.length > 0) {
+			if (!uniqueTracks.some(i => eventBank[i.id])) {
+				const tracksNeeded = RandomEvents.filter(i => i.uniqueMusic).map(i => i.name);
 				results.push({
-					reason: `You need to do these random events at least once: ${notDoneRandomEvents.join(', ')}.`
+					reason: `You need to do one of these random events: ${tracksNeeded.join(', ')}.`
 				});
 			}
 			return results;
@@ -233,21 +232,7 @@ AND data->>'runeID' IS NOT NULL;`;
 					return [];
 				}
 			}
-			return [{ reason: 'You need to build something in your POH' }];
-		}
-	})
-	.add({
-		name: 'Must have atleast 25% in each house favour',
-		has: async ({ user }) => {
-			const results: RequirementFailure[] = [];
-			const favour = user.kourendFavour;
-
-			const notDoneFavours = Object.entries(favour).filter(([_, value]) => value < 25);
-
-			if (notDoneFavours.length > 0) {
-				results.push({ reason: `You need atleast 25% favour in ${notDoneFavours.map(i => i[0]).join(', ')}.` });
-			}
-			return results;
+			return [{ reason: 'You need to build something in your POH.' }];
 		}
 	})
 	.add({
@@ -256,6 +241,6 @@ AND data->>'runeID' IS NOT NULL;`;
 			for (const scroll of championScrolls) {
 				if (user.cl.has(scroll)) return [];
 			}
-			return [{ reason: 'You need to have a Champion Scroll in your CL' }];
+			return [{ reason: 'You need to have a Champion Scroll in your CL.' }];
 		}
 	});

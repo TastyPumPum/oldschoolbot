@@ -1,8 +1,8 @@
 import { SimpleTable } from '@oldschoolgg/toolkit';
 import { percentChance, roll, sumArr } from 'e';
 import { Bank, LootTable } from 'oldschooljs';
-import { LootBank } from 'oldschooljs/dist/meta/types';
-import { convertLootBanksToItemBanks, JSONClone } from 'oldschooljs/dist/util';
+import type { LootBank } from 'oldschooljs/dist/meta/types';
+import { JSONClone, convertLootBanksToItemBanks } from 'oldschooljs/dist/util';
 
 import { TOBRooms } from '../data/tob';
 import { assert } from '../util/logError';
@@ -50,7 +50,6 @@ const HardModeUniqueTable = new LootTable()
 	.add('Avernic defender hilt', 1, 7);
 
 const NonUniqueTable = new LootTable()
-	.tertiary(25, 'Clue scroll (elite)')
 	.add('Vial of blood', [50, 60], 2)
 	.add('Death rune', [500, 600])
 	.add('Blood rune', [500, 600])
@@ -93,6 +92,7 @@ export class TheatreOfBloodClass {
 		if (deaths.length === TOBRooms.length) {
 			return new Bank().add('Cabbage');
 		}
+
 		const loot = new Bank();
 		for (let i = 0; i < 3; i++) {
 			loot.add(NonUniqueTable.roll());
@@ -101,11 +101,16 @@ export class TheatreOfBloodClass {
 		if (isHardMode) {
 			// Add 15% extra regular loot for hard mode:
 			for (const [itemID] of Object.entries(loot.bank)) {
-				loot.bank[parseInt(itemID)] = Math.ceil(loot.bank[parseInt(itemID)] * 1.15);
+				loot.bank[Number.parseInt(itemID)] = Math.ceil(loot.bank[Number.parseInt(itemID)] * 1.15);
 			}
 			// Add HM Tertiary drops: dust / kits
 			loot.add(HardModeExtraTable.roll());
 		}
+
+		if (roll(25)) {
+			loot.add('Clue scroll (elite)');
+		}
+
 		let petChance = isHardMode ? 500 : 650;
 		if (member.numDeaths > 0) {
 			petChance *= member.numDeaths;
@@ -146,7 +151,7 @@ export class TheatreOfBloodClass {
 
 		const totalDeaths = sumArr(parsedTeam.map(i => i.numDeaths));
 
-		let percentBaseChanceOfUnique = (options.hardMode ? 13 : 11) * (teamPoints / maxPointsTeamCanGet);
+		const percentBaseChanceOfUnique = (options.hardMode ? 13 : 11) * (teamPoints / maxPointsTeamCanGet);
 
 		const purpleReceived = percentChance(percentBaseChanceOfUnique);
 		const purpleRecipient = purpleReceived ? this.uniqueDecide(parsedTeam) : null;

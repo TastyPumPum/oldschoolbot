@@ -1,7 +1,8 @@
 import { formatOrdinal } from '@oldschoolgg/toolkit';
-import { PrismaClient, TriviaQuestion, User } from '@prisma/robochimp';
-import deepEqual from 'deep-equal';
+import type { TriviaQuestion, User } from '@prisma/robochimp';
+import { PrismaClient } from '@prisma/robochimp';
 import { calcWhatPercent, round, sumArr } from 'e';
+import deepEqual from 'fast-deep-equal';
 
 import { BOT_TYPE, masteryKey } from './constants';
 import { getTotalCl } from './data/Collections';
@@ -9,14 +10,7 @@ import { calculateMastery } from './mastery';
 import { MUserStats } from './structures/MUserStats';
 
 declare global {
-	const roboChimpClient: PrismaClient;
-}
-declare global {
-	namespace NodeJS {
-		interface Global {
-			roboChimpClient: PrismaClient;
-		}
-	}
+	var roboChimpClient: PrismaClient;
 }
 
 export type RobochimpUser = User;
@@ -83,7 +77,7 @@ export async function roboChimpUserFetch(userID: string) {
 
 export async function calculateOwnCLRanking(userID: string) {
 	const clPercentRank = (
-		await roboChimpClient.$queryRaw<{ count: number }[]>`SELECT COUNT(*)
+		await roboChimpClient.$queryRaw<{ count: number }[]>`SELECT COUNT(*)::int
 FROM public.user
 WHERE osb_cl_percent >= (SELECT osb_cl_percent FROM public.user WHERE id = ${BigInt(userID)});`
 	)[0].count;

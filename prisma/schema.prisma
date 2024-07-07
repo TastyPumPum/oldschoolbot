@@ -134,6 +134,8 @@ model ClientStorage {
   nmz_cost                     Json     @default("{}") @db.Json
   toa_cost                     Json     @default("{}") @db.Json
   toa_loot                     Json     @default("{}") @db.Json
+  colo_cost                    Json     @default("{}") @db.Json
+  colo_loot                    Json     @default("{}") @db.Json
 
   grand_exchange_is_locked Boolean @default(false)
   grand_exchange_total_tax BigInt  @default(0)
@@ -393,6 +395,7 @@ model User {
   tum_shadow_charges     Int @default(0)
   blood_essence_charges  Int @default(0)
   trident_charges        Int @default(0)
+  venator_bow_charges    Int @default(0)
 
   scythe_of_vitur_charges Int @default(0)
 
@@ -428,7 +431,8 @@ model User {
   farmingPatches_flower     Json? @map("farmingPatches.flower") @db.Json
   farmingPatches_mushroom   Json? @map("farmingPatches.mushroom") @db.Json
   farmingPatches_belladonna Json? @map("farmingPatches.belladonna") @db.Json
-  kourend_favour            Json? @map("kourend_favour") @db.Json
+
+  cached_networth_value BigInt?
 
   geListings        GEListing[]
   bingo_participant BingoParticipant[]
@@ -492,6 +496,7 @@ enum XpGainSource {
   CamdozaalMining
   CamdozaalSmithing
   CamdozaalFishing
+  ForestryEvents
 }
 
 model XPGain {
@@ -569,6 +574,7 @@ model Minigame {
   nmz                     Int    @default(0)
   shades_of_morton        Int    @default(0)
   tombs_of_amascut        Int    @default(0)
+  colosseum               Int    @default(0)
 
   new_user NewUser?
 
@@ -734,10 +740,11 @@ model UserStats {
   high_gambles             Int @default(0)
   honour_points            Int @default(0)
 
-  slayer_task_streak     Int @default(0)
-  slayer_superior_count  Int @default(0)
-  slayer_unsired_offered Int @default(0)
-  slayer_chewed_offered  Int @default(0)
+  slayer_task_streak       Int @default(0)
+  slayer_wildy_task_streak Int @default(0)
+  slayer_superior_count    Int @default(0)
+  slayer_unsired_offered   Int @default(0)
+  slayer_chewed_offered    Int @default(0)
 
   tob_cost        Json @default("{}")
   tob_loot        Json @default("{}")
@@ -758,6 +765,15 @@ model UserStats {
   last_tears_of_guthix_timestamp BigInt @default(0)
 
   herbs_cleaned_while_farming_bank Json @default("{}") @db.Json
+
+  forestry_event_completions_bank Json @default("{}") @db.Json
+
+  colo_cost      Json @default("{}") @db.Json
+  colo_loot      Json @default("{}") @db.Json
+  colo_kc_bank   Json @default("{}") @db.Json
+  colo_max_glory Int?
+
+  quivers_sacrificed Int @default(0)
 
   @@map("user_stats")
 }
@@ -934,10 +950,12 @@ enum activity_type_enum {
   TombsOfAmascut
   UnderwaterAgilityThieving
   StrongholdOfSecurity
+  CombatRing
   SpecificQuest
   CamdozaalFishing
   CamdozaalMining
   CamdozaalSmithing
+  Colosseum
 }
 
 enum xp_gains_skill_enum {
@@ -1013,10 +1031,10 @@ model GETransaction {
 
   total_tax_paid BigInt
 
-  buy_listing    GEListing @relation("buy_transactions", fields: [buy_listing_id], references: [id])
+  buy_listing    GEListing @relation("buy_transactions", fields: [buy_listing_id], references: [id], onDelete: Cascade)
   buy_listing_id Int
 
-  sell_listing    GEListing @relation("sell_transactions", fields: [sell_listing_id], references: [id])
+  sell_listing    GEListing @relation("sell_transactions", fields: [sell_listing_id], references: [id], onDelete: Cascade)
   sell_listing_id Int
 
   @@index([sell_listing_id])
@@ -1110,4 +1128,32 @@ model GiftBox {
   items Json @default("{}") @db.Json
 
   @@map("gift_box")
+}
+
+model ItemMetadata {
+  id Int @id
+
+  name String?
+
+  @@map("item_metadata")
+}
+
+enum UserEventType {
+  MaxXP
+  MaxTotalXP
+  MaxLevel
+  MaxTotalLevel
+  CLCompletion
+}
+
+model UserEvent {
+  id   String   @id @default(uuid()) @db.Uuid
+  date DateTime @default(now()) @db.Timestamp(6)
+
+  user_id             String               @db.Text
+  type                UserEventType
+  skill               xp_gains_skill_enum?
+  collection_log_name String?
+
+  @@map("user_event")
 }

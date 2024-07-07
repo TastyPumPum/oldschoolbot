@@ -1,14 +1,14 @@
-import { Minigame } from '@prisma/client';
+import type { Minigame } from '@prisma/client';
 import { objectEntries } from 'e';
 import { Bank } from 'oldschooljs';
-import { Item } from 'oldschooljs/dist/meta/types';
+import type { Item } from 'oldschooljs/dist/meta/types';
 
 import { growablePets } from '../growablePets';
 import { implings } from '../implings';
-import { MinigameScore } from '../settings/minigames';
+import type { MinigameScore } from '../settings/minigames';
 import getOSItem from '../util/getOSItem';
 import resolveItems from '../util/resolveItems';
-import { UserStatsDataNeededForCL } from './Collections';
+import type { UserStatsDataNeededForCL } from './Collections';
 import {
 	gracefulCapes,
 	gracefulFeet,
@@ -343,13 +343,14 @@ export const grotesqueGuardiansCL = resolveItems([
 	'Granite dust'
 ]);
 export const hesporiCL = resolveItems(['Bottomless compost bucket', 'Iasor seed', 'Kronos seed', 'Attas seed']);
-export const theInfernoCL = resolveItems(['Jal-nib-rek', 'Infernal cape', 'Tokkul']);
+export const theInfernoCL = resolveItems(['Jal-nib-rek', 'Infernal cape']);
 export const kalphiteQueenCL = resolveItems([
 	'Kalphite princess',
 	'Kq head',
 	'Jar of sand',
 	'Dragon 2h sword',
-	'Dragon chainbody'
+	'Dragon chainbody',
+	'Dragon pickaxe'
 ]);
 export const kingBlackDragonCL = resolveItems([
 	'Prince black dragon',
@@ -391,12 +392,12 @@ export const spiritAnglerOutfit = resolveItems([
 export const temporossCL = resolveItems([
 	'Tiny tempor',
 	'Big harpoonfish',
+	...spiritAnglerOutfit,
 	'Tome of water (empty)',
 	'Soaked page',
 	'Tackle box',
 	'Fish barrel',
 	'Dragon harpoon',
-	...spiritAnglerOutfit,
 	'Spirit flakes'
 ]);
 export const thermonuclearSmokeDevilCL = resolveItems([
@@ -1488,7 +1489,12 @@ export const troubleBrewingCL = resolveItems([
 	'Red rum (trouble brewing)',
 	'Blue rum (trouble brewing)'
 ]);
-export const volcanicMineCL = resolveItems(['Ash covered tome', 'Large water container', 'Volcanic mine teleport']);
+export const volcanicMineCL = resolveItems([
+	'Ash covered tome',
+	'Large water container',
+	'Volcanic mine teleport',
+	'Dragon pickaxe (broken)'
+]);
 export const anglerOutfit = resolveItems(['Angler hat', 'Angler top', 'Angler waders', 'Angler boots']);
 export const aerialFishingCL = resolveItems([
 	'Golden tench',
@@ -1554,7 +1560,8 @@ export const allPetsCL = resolveItems([
 	'Wisp',
 	"Lil'viathan",
 	'Butch',
-	'Baron'
+	'Baron',
+	'Scurry'
 ]);
 export const camdozaalCL = resolveItems([
 	'Barronite mace',
@@ -1624,6 +1631,8 @@ export const cyclopsCL = resolveItems([
 	'Dragon defender'
 ]);
 export const forestryCL = resolveItems([
+	'Fox whistle',
+	'Golden pheasant egg',
 	'Lumberjack hat',
 	'Lumberjack top',
 	'Lumberjack legs',
@@ -1632,10 +1641,19 @@ export const forestryCL = resolveItems([
 	'Forestry top',
 	'Forestry legs',
 	'Forestry boots',
+	"Twitcher's gloves",
 	'Funky shaped log',
 	'Log basket',
 	'Log brace',
-	'Clothes pouch blueprint'
+	'Clothes pouch blueprint',
+	'Cape pouch',
+	'Felling axe handle',
+	'Pheasant hat',
+	'Pheasant legs',
+	'Pheasant boots',
+	'Pheasant cape',
+	'Petal garland',
+	'Sturdy beehive parts'
 ]);
 
 export const fossilIslandNotesCL = resolveItems([
@@ -1828,10 +1846,15 @@ export const slayerCL = resolveItems([
 	'Mystic gloves (dusk)',
 	'Mystic boots (dusk)',
 	'Basilisk jaw',
-	// "Dagon'hai hat",
-	// "Dagon'hai robe top",
-	// "Dagon'hai robe bottom",
-	'Blood shard'
+	"Dagon'hai hat",
+	"Dagon'hai robe top",
+	"Dagon'hai robe bottom",
+	'Blood shard',
+	'Ancient ceremonial mask',
+	'Ancient ceremonial top',
+	'Ancient ceremonial legs',
+	'Ancient ceremonial gloves',
+	'Ancient ceremonial boots'
 ]);
 export const tzHaarCL = resolveItems([
 	'Obsidian cape',
@@ -2216,14 +2239,16 @@ export const metamorphPets = resolveItems([
 	'Ziggy',
 	'Red',
 	'Great blue heron',
-	'Greatish guardian'
+	'Greatish guardian',
+	28_670, // use id to not get mixed up with the "Fox" quest item
+	'Pheasant'
 ]);
 
 export const allPetIDs = [
 	...allPetsCL,
 	...chambersOfXericMetamorphPets,
 	...tobMetamorphPets,
-	...growablePets.map(petSeries => petSeries.stages).flat(1),
+	...growablePets.flatMap(petSeries => petSeries.stages),
 	...metamorphPets,
 	...toaMetamorphPets
 ];
@@ -2265,8 +2290,6 @@ export const LMSBuyables: LMSBuyable[] = [
 	{ item: getOSItem('Guthixian icon'), cost: 500 },
 	{ item: getOSItem('Trouver parchment'), cost: 18 },
 	{ item: getOSItem('Wilderness crabs teleport'), cost: 1 },
-	{ item: getOSItem('Blighted bind sack'), quantity: 300, cost: 1 },
-	{ item: getOSItem('Blighted snare sack'), quantity: 150, cost: 1 },
 	{ item: getOSItem('Blighted entangle sack'), quantity: 70, cost: 1 },
 	{ item: getOSItem('Blighted teleport spell sack'), quantity: 50, cost: 1 },
 	{ item: getOSItem('Blighted vengeance sack'), quantity: 50, cost: 1 },

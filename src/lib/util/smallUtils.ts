@@ -3,12 +3,14 @@ import { readFileSync } from 'node:fs';
 
 import { miniID, toTitleCase } from '@oldschoolgg/toolkit';
 import type { Prisma } from '@prisma/client';
+import { AlignmentEnum, AsciiTable3 } from 'ascii-table3';
 import deepmerge from 'deepmerge';
-import { ButtonBuilder, ButtonStyle, InteractionReplyOptions, time } from 'discord.js';
-import { clamp, objectEntries, roll, Time } from 'e';
-import { CommandResponse } from 'mahoji/dist/lib/structures/ICommand';
+import type { InteractionReplyOptions } from 'discord.js';
+import { ButtonBuilder, ButtonStyle, time } from 'discord.js';
+import { Time, clamp, objectEntries, roll } from 'e';
+import type { CommandResponse } from 'mahoji/dist/lib/structures/ICommand';
 import { Bank, Items } from 'oldschooljs';
-import { ItemBank } from 'oldschooljs/dist/meta/types';
+import type { ItemBank } from 'oldschooljs/dist/meta/types';
 import { MersenneTwister19937, shuffle } from 'random-js';
 
 import { skillEmoji } from '../data/emojis';
@@ -39,7 +41,7 @@ export function formatItemBoosts(items: ItemBank[]) {
 		const bonusStr = [];
 
 		for (const [itemID, boostAmount] of itemEntries) {
-			bonusStr.push(`${boostAmount}% for ${itemNameFromID(parseInt(itemID))}`);
+			bonusStr.push(`${boostAmount}% for ${itemNameFromID(Number.parseInt(itemID))}`);
 		}
 
 		if (multiple) {
@@ -69,7 +71,7 @@ export function formatDuration(ms: number, short = false) {
 		m: Math.floor(ms / 60_000) % 60,
 		s: Math.floor(ms / 1000) % 60
 	};
-	let nums = Object.entries(short ? shortTime : time).filter(val => val[1] !== 0);
+	const nums = Object.entries(short ? shortTime : time).filter(val => val[1] !== 0);
 	if (nums.length === 0) return '1 second';
 	return nums
 		.map(([key, val]) => `${val}${short ? '' : ' '}${key}${val === 1 || short ? '' : 's'}`)
@@ -77,7 +79,7 @@ export function formatDuration(ms: number, short = false) {
 }
 
 export function formatSkillRequirements(reqs: Record<string, number>, emojis = true) {
-	let arr = [];
+	const arr = [];
 	for (const [name, num] of objectEntries(reqs)) {
 		arr.push(`${emojis ? ` ${(skillEmoji as any)[name]} ` : ''}**${num}** ${toTitleCase(name)}`);
 	}
@@ -90,6 +92,10 @@ export function hasSkillReqs(user: MUser, reqs: Skills): [boolean, string | null
 		return [false, formatSkillRequirements(reqs)];
 	}
 	return [true, null];
+}
+
+export function pluraliseItemName(name: string): string {
+	return name + (name.endsWith('s') ? '' : 's');
 }
 
 /**
@@ -119,7 +125,7 @@ export function shuffleRandom<T>(input: number, arr: readonly T[]): T[] {
 }
 
 export function averageBank(bank: Bank, kc: number) {
-	let newBank = new Bank();
+	const newBank = new Bank();
 	for (const [item, qty] of bank.items()) {
 		newBank.add(item.id, Math.floor(qty / kc));
 	}
@@ -166,7 +172,7 @@ export function makeAutoFarmButton() {
 export const SQL_sumOfAllCLItems = (clItems: number[]) =>
 	`NULLIF(${clItems.map(i => `COALESCE(("collectionLogBank"->>'${i}')::int, 0)`).join(' + ')}, 0)`;
 
-export const generateGrandExchangeID = () => miniID(5).toLowerCase();
+export const generateGrandExchangeID = () => miniID(6).toLowerCase();
 
 export function tailFile(fileName: string, numLines: number): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -238,10 +244,10 @@ export function calculateSimpleMonsterDeathChance({
 }): number {
 	if (!currentKC) currentKC = 1;
 	currentKC = Math.max(1, currentKC);
-	let baseDeathChance = Math.min(highestDeathChance, (100 * hardness) / steepness);
+	const baseDeathChance = Math.min(highestDeathChance, (100 * hardness) / steepness);
 	const maxScalingKC = 5 + (75 * hardness) / steepness;
-	let reductionFactor = Math.min(1, currentKC / maxScalingKC);
-	let deathChance = baseDeathChance - reductionFactor * (baseDeathChance - lowestDeathChance);
+	const reductionFactor = Math.min(1, currentKC / maxScalingKC);
+	const deathChance = baseDeathChance - reductionFactor * (baseDeathChance - lowestDeathChance);
 	return clamp(deathChance, lowestDeathChance, highestDeathChance);
 }
 
@@ -327,4 +333,21 @@ export function containsBlacklistedWord(str: string): boolean {
 		}
 	}
 	return false;
+}
+
+export function ellipsize(str: string, maxLen = 2000) {
+	if (str.length > maxLen) {
+		return `${str.substring(0, maxLen - 3)}...`;
+	}
+	return str;
+}
+
+export function makeTable(headers: string[], rows: unknown[][]) {
+	return new AsciiTable3()
+		.setHeading(...headers)
+		.setAlign(1, AlignmentEnum.RIGHT)
+		.setAlign(2, AlignmentEnum.CENTER)
+		.setAlign(3, AlignmentEnum.LEFT)
+		.addRowMatrix(rows)
+		.toString();
 }

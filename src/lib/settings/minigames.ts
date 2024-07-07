@@ -1,4 +1,4 @@
-import { Minigame } from '@prisma/client';
+import type { Minigame } from '@prisma/client';
 
 import { prisma } from './prisma';
 
@@ -97,12 +97,12 @@ export const Minigames: readonly BotMinigame[] = [
 		column: 'castle_wars'
 	},
 	{
-		name: "Chamber's of Xeric",
+		name: 'Chambers of Xeric',
 		aliases: ['cox', 'raid1', 'raids1', 'chambers', 'xeric'],
 		column: 'raids'
 	},
 	{
-		name: "Chamber's of Xeric - Challenge Mode",
+		name: 'Chambers of Xeric - Challenge Mode',
 		aliases: ['coxcm', 'raid1cm', 'raids1cm', 'chamberscm', 'xericcm'],
 		column: 'raids_challenge_mode'
 	},
@@ -190,6 +190,11 @@ export const Minigames: readonly BotMinigame[] = [
 		name: 'Tombs of Amascut',
 		aliases: ['toa', 'tombs of amascut'],
 		column: 'tombs_of_amascut'
+	},
+	{
+		name: 'Fortis Colosseum',
+		aliases: ['colo'],
+		column: 'colosseum'
 	}
 ];
 

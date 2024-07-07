@@ -1,7 +1,7 @@
 import { mentionCommand } from '@oldschoolgg/toolkit';
-import { Prisma } from '@prisma/client';
-import { ChatInputCommandInteraction } from 'discord.js';
-import { ItemBank } from 'oldschooljs/dist/meta/types';
+import type { Prisma } from '@prisma/client';
+import type { ChatInputCommandInteraction } from 'discord.js';
+import type { ItemBank } from 'oldschooljs/dist/meta/types';
 
 import { BitField } from '../../../lib/constants';
 import { GrandExchange } from '../../../lib/grandExchange';
@@ -159,6 +159,7 @@ After becoming an ironman:
 	await prisma.newUser.deleteMany({ where: { id: user.id } });
 	await prisma.activity.deleteMany({ where: { user_id: BigInt(user.id) } });
 	await prisma.stashUnit.deleteMany({ where: { user_id: BigInt(user.id) } });
+	await prisma.userEvent.deleteMany({ where: { user_id: user.id } });
 	await prisma.userStats.deleteMany({ where: { user_id: BigInt(user.id) } });
 	await prisma.buyCommandTransaction.deleteMany({ where: { user_id: BigInt(user.id) } });
 

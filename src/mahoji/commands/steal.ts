@@ -1,21 +1,22 @@
 import { stringMatches } from '@oldschoolgg/toolkit';
-import { User } from 'discord.js';
+import type { User } from 'discord.js';
 import { randInt } from 'e';
-import { ApplicationCommandOptionType, CommandRunOptions } from 'mahoji';
+import type { CommandRunOptions } from 'mahoji';
+import { ApplicationCommandOptionType } from 'mahoji';
 
 import { ArdougneDiary, userhasDiaryTier } from '../../lib/diaries';
-import { Favours, gotFavour } from '../../lib/minions/data/kourendFavour';
 import removeFoodFromUser from '../../lib/minions/functions/removeFoodFromUser';
-import { Stealable, stealables } from '../../lib/skilling/skills/thieving/stealables';
+import type { Stealable } from '../../lib/skilling/skills/thieving/stealables';
+import { stealables } from '../../lib/skilling/skills/thieving/stealables';
 import { SkillsEnum } from '../../lib/skilling/types';
-import { PickpocketActivityTaskOptions } from '../../lib/types/minions';
+import type { PickpocketActivityTaskOptions } from '../../lib/types/minions';
 import { formatDuration } from '../../lib/util';
 import addSubTaskToActivityTask from '../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../lib/util/calcMaxTripLength';
 import { logError } from '../../lib/util/logError';
 import { updateBankSetting } from '../../lib/util/updateBankSetting';
 import { calcLootXPPickpocketing } from '../../tasks/minions/pickpocketActivity';
-import { OSBMahojiCommand } from '../lib/util';
+import type { OSBMahojiCommand } from '../lib/util';
 import { rogueOutfitPercentBonus } from '../mahojiSettings';
 
 export const stealCommand: OSBMahojiCommand = {
@@ -86,11 +87,6 @@ export const stealCommand: OSBMahojiCommand = {
 			return `${user.minionName} needs ${stealable.level} Thieving to ${
 				stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
 			} a ${stealable.name}.`;
-		}
-
-		const [hasFavour, requiredPoints] = gotFavour(user, Favours.Hosidius, 15);
-		if (!hasFavour && stealable.name === 'Fruit stall') {
-			return `${user.minionName} needs ${requiredPoints}% Hosidius Favour to steal fruit from the Fruit stalls!`;
 		}
 
 		const timeToTheft =

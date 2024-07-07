@@ -1,11 +1,12 @@
 import path from 'node:path';
 
-import { Image } from '@napi-rs/canvas';
-import { StoreBitfield } from '@oldschoolgg/toolkit';
-import { execSync } from 'child_process';
-import { APIButtonComponent, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { execSync } from 'node:child_process';
+import type { Image } from '@napi-rs/canvas';
+import { SimpleTable, StoreBitfield } from '@oldschoolgg/toolkit';
+import type { APIButtonComponent } from 'discord.js';
+import { ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import * as dotenv from 'dotenv';
-import { CommandOptions } from 'mahoji/dist/lib/types';
+import type { CommandOptions } from 'mahoji/dist/lib/types';
 import { z } from 'zod';
 
 import { DISCORD_SETTINGS, production } from '../config';
@@ -24,7 +25,8 @@ export const BOT_TYPE: 'BSO' | 'OSB' = 'OSB' as 'BSO' | 'OSB';
 
 export const Channel = {
 	General: DISCORD_SETTINGS.Channels?.General ?? '342983479501389826',
-	Notifications: production ? '469523207691436042' : '1042760447830536212',
+	Notifications:
+		DISCORD_SETTINGS.Channels?.Notifications ?? (production ? '469523207691436042' : '1042760447830536212'),
 	GrandExchange: DISCORD_SETTINGS.Channels?.GrandExchange ?? '682996313209831435',
 	Developers: DISCORD_SETTINGS.Channels?.Developers ?? '648196527294251020',
 	BlacklistLogs: DISCORD_SETTINGS.Channels?.BlacklistLogs ?? '782459317218967602',
@@ -41,8 +43,8 @@ export const Channel = {
 				? '346304390858145792'
 				: '1154056119019393035'
 			: production
-			? '792691343284764693'
-			: '1154056119019393035'
+				? '792691343284764693'
+				: '1154056119019393035'
 };
 
 export const Roles = {
@@ -68,7 +70,7 @@ export const Roles = {
 	TopGlobalCL: '1072426869028294747'
 };
 
-export const enum Emoji {
+export enum Emoji {
 	MoneyBag = '<:MoneyBag:493286312854683654>',
 	OSBot = '<:OSBot:601768469905801226>',
 	Joy = '😂',
@@ -177,7 +179,7 @@ export enum ActivityGroup {
 	Minigame = 'Minigame'
 }
 
-export const enum Events {
+export enum Events {
 	Error = 'error',
 	Log = 'log',
 	Verbose = 'verbose',
@@ -190,7 +192,7 @@ export const enum Events {
 
 export const COINS_ID = 995;
 
-export const enum PerkTier {
+export enum PerkTier {
 	/**
 	 * Boosters
 	 */
@@ -258,7 +260,11 @@ export enum BitField {
 	UsedFrozenTablet = 34,
 	CleanHerbsFarming = 35,
 	SelfGamblingLocked = 36,
-	DisabledFarmingReminders = 37
+	DisabledFarmingReminders = 37,
+	DisableClueButtons = 38,
+	DisableAutoSlayButton = 39,
+	DisableHighPeakTimeWarning = 40,
+	DisableOpenableNames = 41
 }
 
 interface BitFieldData {
@@ -338,10 +344,30 @@ export const BitFieldData: Record<BitField, BitFieldData> = {
 		name: 'Disable Farming Reminders',
 		protected: false,
 		userConfigurable: true
+	},
+	[BitField.DisableClueButtons]: {
+		name: 'Disable Clue Buttons',
+		protected: false,
+		userConfigurable: true
+	},
+	[BitField.DisableAutoSlayButton]: {
+		name: 'Disable Auto Slay Button',
+		protected: false,
+		userConfigurable: true
+	},
+	[BitField.DisableHighPeakTimeWarning]: {
+		name: 'Disable Wilderness High Peak Time Warning',
+		protected: false,
+		userConfigurable: true
+	},
+	[BitField.DisableOpenableNames]: {
+		name: 'Disable Names On Open',
+		protected: false,
+		userConfigurable: true
 	}
 } as const;
 
-export const enum PatronTierID {
+export enum PatronTierID {
 	One = '4608201',
 	Two = '4608226',
 	Three = '4720356',
@@ -491,6 +517,9 @@ export type NMZStrategy = (typeof NMZ_STRATEGY)[number];
 export const UNDERWATER_AGILITY_THIEVING_TRAINING_SKILL = ['agility', 'thieving', 'agility+thieving'] as const;
 export type UnderwaterAgilityThievingTrainingSkill = (typeof UNDERWATER_AGILITY_THIEVING_TRAINING_SKILL)[number];
 
+export const TWITCHERS_GLOVES = ['egg', 'ring', 'seed', 'clue'] as const;
+export type TwitcherGloves = (typeof TWITCHERS_GLOVES)[number];
+
 export const busyImmuneCommands = ['admin', 'rp'];
 export const usernameCache = new Map<string, string>();
 export const badgesCache = new Map<string, string>();
@@ -547,10 +576,10 @@ const globalConfigSchema = z.object({
 	patreonCampaignID: z.coerce.number().int().default(1),
 	patreonWebhookSecret: z.coerce.string().default(''),
 	httpPort: z.coerce.number().int().default(8080),
-	clientID: z.string().min(15).max(25),
+	clientID: z.string().min(10).max(25),
 	geAdminChannelID: z.string().default('')
 });
-dotenv.config({ path: path.resolve(process.cwd(), process.env.TEST ? '.env.example' : '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), process.env.TEST ? '.env.test' : '.env') });
 
 export const globalConfig = globalConfigSchema.parse({
 	patreonToken: process.env.PATREON_TOKEN,
@@ -597,3 +626,30 @@ export const patronFeatures = {
 		tier: PerkTier.Four
 	}
 };
+
+export const gearValidationChecks = new Set();
+
+export const BSO_MAX_TOTAL_LEVEL = 3120;
+
+export const winterTodtPointsTable = new SimpleTable<number>()
+	.add(420)
+	.add(470)
+	.add(500)
+	.add(505)
+	.add(510)
+	.add(520)
+	.add(550)
+	.add(560)
+	.add(590)
+	.add(600)
+	.add(620)
+	.add(650)
+	.add(660)
+	.add(670)
+	.add(680)
+	.add(700)
+	.add(720)
+	.add(740)
+	.add(750)
+	.add(780)
+	.add(850);

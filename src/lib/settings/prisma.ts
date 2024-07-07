@@ -1,18 +1,22 @@
-import { Activity, activity_type_enum, Prisma, PrismaClient } from '@prisma/client';
+import { isMainThread } from 'node:worker_threads';
+
+import type { Activity, Prisma } from '@prisma/client';
+import { PrismaClient, activity_type_enum } from '@prisma/client';
 
 import { production } from '../../config';
-import { ActivityTaskData } from '../types/minions';
+import type { ActivityTaskData } from '../types/minions';
+import { sqlLog } from '../util/logger';
 
 declare global {
-	namespace NodeJS {
-		interface Global {
-			prisma: PrismaClient | undefined;
-		}
-	}
+	var prisma: PrismaClient | undefined;
 }
 
 function makePrismaClient(): PrismaClient {
 	if (!production && !process.env.TEST) console.log('Making prisma client...');
+	if (!isMainThread && !process.env.TEST) {
+		throw new Error('Prisma client should only be created on the main thread.');
+	}
+
 	return new PrismaClient({
 		log: [
 			{
@@ -23,18 +27,22 @@ function makePrismaClient(): PrismaClient {
 	});
 }
 
+// biome-ignore lint/suspicious/noRedeclare: <explanation>
 export const prisma = global.prisma || makePrismaClient();
 global.prisma = prisma;
 
-export const prismaQueries: Prisma.QueryEvent[] = [];
-export let queryCountStore = { value: 0 };
-prisma.$on('query' as any, (_query: any) => {
-	if (!production && globalClient.isReady()) {
+export const queryCountStore = { value: 0 };
+
+if (isMainThread) {
+	// @ts-ignore ignore
+	prisma.$on('query' as any, (_query: any) => {
 		const query = _query as Prisma.QueryEvent;
-		prismaQueries.push(query);
-	}
-	queryCountStore.value++;
-});
+		if (!production) {
+			sqlLog(query.query);
+		}
+		queryCountStore.value++;
+	});
+}
 
 export function convertStoredActivityToFlatActivity(activity: Activity): ActivityTaskData {
 	return {
@@ -52,13 +60,13 @@ export function convertStoredActivityToFlatActivity(activity: Activity): Activit
  * ⚠️ Uses queryRawUnsafe
  */
 export async function countUsersWithItemInCl(itemID: number, ironmenOnly: boolean) {
-	const query = `SELECT COUNT(id)
+	const query = `SELECT COUNT(id)::int
 				   FROM users
 				   WHERE ("collectionLogBank"->>'${itemID}') IS NOT NULL 
 				   AND ("collectionLogBank"->>'${itemID}')::int >= 1
 				   ${ironmenOnly ? 'AND "minion.ironman" = true' : ''};`;
-	const result = parseInt(((await prisma.$queryRawUnsafe(query)) as any)[0].count);
-	if (isNaN(result)) {
+	const result = Number.parseInt(((await prisma.$queryRawUnsafe(query)) as any)[0].count);
+	if (Number.isNaN(result)) {
 		throw new Error(`countUsersWithItemInCl produced invalid number '${result}' for ${itemID}`);
 	}
 	return result;
@@ -70,7 +78,7 @@ FROM activity
 WHERE user_id = ${BigInt(user.id)}
 GROUP BY type;`;
 
-	let result: Record<activity_type_enum, number> = {} as Record<activity_type_enum, number>;
+	const result: Record<activity_type_enum, number> = {} as Record<activity_type_enum, number>;
 	for (const type of Object.values(activity_type_enum)) {
 		result[type] = 0;
 	}
