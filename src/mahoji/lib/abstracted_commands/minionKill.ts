@@ -1,4 +1,3 @@
-import type { ChartConfiguration } from 'chart.js';
 import type { ChatInputCommandInteraction, InteractionReplyOptions } from 'discord.js';
 import { bold } from 'discord.js';
 import {
@@ -53,7 +52,6 @@ import { maxOffenceStats } from '../../../lib/structures/Gear';
 import type { Peak } from '../../../lib/tickers';
 import type { MonsterActivityTaskOptions } from '../../../lib/types/minions';
 import {
-	calculateSimpleMonsterDeathChance,
 	calculateTripConsumableCost,
 	checkRangeGearWeapon,
 	convertAttackStyleToGearSetup,
@@ -71,7 +69,6 @@ import {
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { calcWildyPKChance, increaseWildEvasionXp } from '../../../lib/util/calcWildyPkChance';
-import { generateChart } from '../../../lib/util/chart';
 import findMonster from '../../../lib/util/findMonster';
 import getOSItem from '../../../lib/util/getOSItem';
 import { handleMahojiConfirmation } from '../../../lib/util/handleMahojiConfirmation';
@@ -157,10 +154,10 @@ export async function minionKillCommand(
 
 	if (stringMatches(name, 'colosseum')) return colosseumCommand(user, channelID);
 	if (stringMatches(name, 'nex')) return nexCommand(interaction, user, channelID, solo);
-	if (stringMatches(name, 'zalcano')) return zalcanoCommand(user, channelID);
+	if (stringMatches(name, 'zalcano')) return zalcanoCommand(user, channelID, quantity);
 	if (stringMatches(name, 'tempoross')) return temporossCommand(user, channelID, quantity);
 	if (name.toLowerCase().includes('nightmare')) return nightmareCommand(user, channelID, name, quantity);
-	if (name.toLowerCase().includes('wintertodt')) return wintertodtCommand(user, channelID);
+	if (name.toLowerCase().includes('wintertodt')) return wintertodtCommand(user, channelID, quantity);
 
 	let monster = findMonster(name);
 	let revenants = false;
@@ -211,7 +208,9 @@ export async function minionKillCommand(
 
 	// Add jelly check as can barrage in wilderness
 	const jelly = monster.id === Monsters.Jelly.id;
-	const wildyJelly = jelly && isInWilderness;
+	const bloodveld = monster.id === Monsters.Bloodveld.id;
+
+	const wildyBurst = (jelly || bloodveld) && isInWilderness;
 
 	// Set chosen boost based on priority:
 	const myCBOpts = user.combatOptions;
@@ -221,7 +220,7 @@ export async function minionKillCommand(
 		monster,
 		method,
 		isOnTask,
-		wildyJelly
+		wildyBurst
 	});
 
 	// Check requirements
@@ -484,7 +483,7 @@ export async function minionKillCommand(
 	}
 
 	if ((method === 'burst' || method === 'barrage') && !monster?.canBarrage) {
-		if (jelly) {
+		if (jelly || bloodveld) {
 			if (!isInWilderness) {
 				return `${monster.name} can only be barraged or burst in the wilderness.`;
 			}
@@ -497,7 +496,7 @@ export async function minionKillCommand(
 		}
 	}
 
-	if (boostChoice === 'barrage' && attackStyles.includes(SkillsEnum.Magic) && (monster?.canBarrage || wildyJelly)) {
+	if (boostChoice === 'barrage' && attackStyles.includes(SkillsEnum.Magic) && (monster?.canBarrage || wildyBurst)) {
 		consumableCosts.push(iceBarrageConsumables);
 		calculateVirtusBoost();
 		timeToFinish = reduceNumByPercent(timeToFinish, boostIceBarrage + virtusBoost);
@@ -506,7 +505,7 @@ export async function minionKillCommand(
 	} else if (
 		boostChoice === 'burst' &&
 		attackStyles.includes(SkillsEnum.Magic) &&
-		(monster?.canBarrage || wildyJelly)
+		(monster?.canBarrage || wildyBurst)
 	) {
 		consumableCosts.push(iceBurstConsumables);
 		calculateVirtusBoost();
@@ -577,12 +576,14 @@ export async function minionKillCommand(
 				degItemBeingUsed.push(degItem);
 			}
 		}
-	} else if (!isInWilderness) {
+	} else {
 		for (const degItem of degradeablePvmBoostItems) {
-			const isUsing =
-				convertPvmStylesToGearSetup(attackStyles).includes(degItem.attackStyle) &&
-				user.gear[degItem.attackStyle].hasEquipped(degItem.item.id);
-			if (isUsing) {
+			const isUsing = convertPvmStylesToGearSetup(attackStyles).includes(degItem.attackStyle);
+			const gearCheck = isInWilderness
+				? user.gear.wildy.hasEquipped(degItem.item.id)
+				: user.gear[degItem.attackStyle].hasEquipped(degItem.item.id);
+
+			if (isUsing && gearCheck) {
 				// We assume they have enough charges, add the boost, and degrade at the end to avoid doing it twice.
 				degItemBeingUsed.push(degItem);
 			}
@@ -848,7 +849,8 @@ export async function minionKillCommand(
 			wildyPeak!,
 			monster,
 			duration,
-			hasWildySupplies
+			hasWildySupplies,
+			cannonMulti
 		);
 		thePkCount = pkCount;
 		hasDied = died;
@@ -1186,55 +1188,6 @@ export async function monsterInfo(user: MUser, name: string): Promise<string | I
 	const response: InteractionReplyOptions = {
 		content: str.join('\n')
 	};
-
-	if (monster.deathProps) {
-		const maxKillCount = 200;
-		const values: [string, number][] = [];
-		for (let currentKC = 0; currentKC <= maxKillCount; currentKC += 5) {
-			const deathChancePercent = calculateSimpleMonsterDeathChance({ ...monster.deathProps, currentKC });
-			values.push([currentKC.toString(), round(deathChancePercent, 1)]);
-		}
-		const options: ChartConfiguration = {
-			type: 'line',
-			data: {
-				labels: values.map(i => `${i[0]}KC`),
-				datasets: [
-					{
-						data: values.map(i => i[1])
-					}
-				]
-			},
-			options: {
-				plugins: {
-					title: { display: true, text: 'Death Chance vs Kill Count' },
-					datalabels: {
-						font: {
-							weight: 'bolder'
-						},
-						formatter(value) {
-							return `${value}%`;
-						}
-					},
-					legend: {
-						display: false
-					}
-				},
-				scales: {
-					y: {
-						min: 1,
-						max: 100,
-						ticks: {
-							callback(value) {
-								return `${value}%`;
-							}
-						}
-					}
-				}
-			}
-		};
-		const chart = await generateChart(options);
-		response.files = [chart];
-	}
 
 	return response;
 }
