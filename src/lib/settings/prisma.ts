@@ -1,48 +1,9 @@
-import { isMainThread } from 'node:worker_threads';
-
 import type { Activity, Prisma } from '@prisma/client';
-import { PrismaClient, activity_type_enum } from '@prisma/client';
+import { activity_type_enum } from '@prisma/client';
 
-import { production } from '../../config';
 import type { ActivityTaskData } from '../types/minions';
-import { sqlLog } from '../util/logger';
-
-declare global {
-	var prisma: PrismaClient;
-}
-
-function makePrismaClient(): PrismaClient {
-	if (!production && !process.env.TEST) console.log('Making prisma client...');
-	if (!isMainThread && !process.env.TEST) {
-		throw new Error('Prisma client should only be created on the main thread.');
-	}
-
-	return new PrismaClient({
-		log: [
-			{
-				emit: 'event',
-				level: 'query'
-			}
-		]
-	});
-}
-
-// biome-ignore lint/suspicious/noRedeclare: <explanation>
-export const prisma = global.prisma || makePrismaClient();
-global.prisma = prisma;
 
 export const queryCountStore = { value: 0 };
-
-if (isMainThread) {
-	// @ts-ignore ignore
-	prisma.$on('query' as any, (_query: any) => {
-		const query = _query as Prisma.QueryEvent;
-		if (!production) {
-			sqlLog(query.query);
-		}
-		queryCountStore.value++;
-	});
-}
 
 export function convertStoredActivityToFlatActivity(activity: Activity): ActivityTaskData {
 	return {

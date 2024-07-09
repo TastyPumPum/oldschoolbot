@@ -1,12 +1,11 @@
 import { execSync } from 'node:child_process';
 import { inspect } from 'node:util';
 
-import { type CommandRunOptions, bulkUpdateCommands } from '@oldschoolgg/toolkit';
+import { type CommandRunOptions, Stopwatch, bulkUpdateCommands } from '@oldschoolgg/toolkit';
 import type { CommandResponse } from '@oldschoolgg/toolkit';
 import type { MahojiUserOption } from '@oldschoolgg/toolkit';
 import type { ClientStorage } from '@prisma/client';
 import { economy_transaction_type } from '@prisma/client';
-import { Stopwatch } from '@sapphire/stopwatch';
 import { isThenable } from '@sentry/utils';
 import type { InteractionReplyOptions } from 'discord.js';
 import { AttachmentBuilder, codeBlock, escapeCodeBlock } from 'discord.js';
@@ -33,8 +32,7 @@ import { economyLog } from '../../lib/economyLogs';
 import { generateGearImage } from '../../lib/gear/functions/generateGearImage';
 import type { GearSetup } from '../../lib/gear/types';
 import { GrandExchange } from '../../lib/grandExchange';
-import { runRolesTask } from '../../lib/rolesTask';
-import { countUsersWithItemInCl, prisma } from '../../lib/settings/prisma';
+import { countUsersWithItemInCl } from '../../lib/settings/prisma';
 import { cancelTask, minionActivityCacheDelete } from '../../lib/settings/settings';
 import { sorts } from '../../lib/sorts';
 import { Gear } from '../../lib/structures/Gear';
@@ -815,17 +813,18 @@ export const adminCommand: OSBMahojiCommand = {
 			return 'Done.';
 		}
 		if (options.sync_roles) {
-			try {
-				const result = await runRolesTask();
-				if (result.length < 2000) return result;
-				return {
-					content: 'The result was too big! Check the file.',
-					files: [new AttachmentBuilder(Buffer.from(result), { name: 'roles.txt' })]
-				};
-			} catch (err: any) {
-				logError(err);
-				return `Failed to run roles task. ${err.message}`;
-			}
+			// try {
+			// 	const result = await runRolesTask();
+			// 	if (result.length < 2000) return result;
+			// 	return {
+			// 		content: 'The result was too big! Check the file.',
+			// 		files: [new AttachmentBuilder(Buffer.from(result), { name: 'roles.txt' })]
+			// 	};
+			// } catch (err: any) {
+			// 	logError(err);
+			// 	return `Failed to run roles task. ${err.message}`;
+			// }
+			return 'The roles task is disabled for now.';
 		}
 
 		if (options.badges) {

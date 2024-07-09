@@ -11,6 +11,7 @@ import fetch from 'node-fetch';
 import { Bank } from 'oldschooljs';
 import type { Item } from 'oldschooljs/dist/meta/types';
 import { toKMB } from 'oldschooljs/dist/util/util';
+import { resolveItems } from 'oldschooljs/dist/util/util';
 
 import { BOT_TYPE, BitField, ItemIconPacks, PerkTier, toaPurpleItems } from '../lib/constants';
 import { allCLItems } from '../lib/data/Collections';
@@ -26,7 +27,6 @@ import { logError } from '../lib/util/logError';
 import { XPLamps } from '../mahoji/lib/abstracted_commands/lampCommand';
 import { TOBUniques } from './data/tob';
 import { marketPriceOfBank, marketPriceOrBotPrice } from './marketPrices';
-import resolveItems from './util/resolveItems';
 
 const fonts = {
 	OSRSFont: './src/lib/resources/osrs-font.ttf',
@@ -275,6 +275,7 @@ export class BankImageTask {
 	public _bgSpriteData: Image = new Image();
 	public bgSpriteList: Record<string, IBgSprite> = {};
 	public treeImage!: Image;
+	public ready!: Promise<void>;
 
 	public constructor() {
 		// This tells us simply whether the file exists or not on disk.
@@ -282,6 +283,8 @@ export class BankImageTask {
 
 		// If this file does exist, it might be cached in this, or need to be read from fs.
 		this.itemIconImagesCache = new Map();
+
+		this.ready = this.init();
 	}
 
 	async init() {
@@ -949,4 +952,3 @@ declare global {
 
 export const bankImageTask = new BankImageTask();
 global.bankImageGenerator = bankImageTask;
-bankImageGenerator.init();
