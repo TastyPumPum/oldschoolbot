@@ -11,12 +11,13 @@ import { shootingStarsCommand, starCache } from '../../mahoji/lib/abstracted_com
 import type { ClueTier } from '../clues/clueTiers';
 import { BitField, PerkTier } from '../constants';
 
+import { InteractionID } from '../InteractionID';
 import { runCommand } from '../settings/settings';
 import { toaHelpCommand } from '../simulation/toa';
 import type { ItemBank } from '../types';
 import { formatDuration, stringMatches } from '../util';
 import { updateGiveawayMessage } from './giveaway';
-import { deferInteraction, interactionReply } from './interactionReply';
+import { interactionReply } from './interactionReply';
 import { minionIsBusy } from './minionIsBusy';
 import { fetchRepeatTrips, repeatTrip } from './repeatStoredTrip';
 
@@ -310,7 +311,14 @@ async function handleGEButton(user: MUser, id: string, interaction: ButtonIntera
 
 export async function interactionHook(interaction: Interaction) {
 	if (!interaction.isButton()) return;
-	if (['CONFIRM', 'CANCEL', 'PARTY_JOIN'].includes(interaction.customId)) return;
+	const ignoredInteractionIDs = [
+		'CONFIRM',
+		'CANCEL',
+		'PARTY_JOIN',
+		...Object.values(InteractionID.PaginatedMessage),
+		...Object.values(InteractionID.Slayer)
+	];
+	if (ignoredInteractionIDs.includes(interaction.customId)) return;
 	if (['DYN_', 'LP_'].some(s => interaction.customId.startsWith(s))) return;
 
 	if (globalClient.isShuttingDown) {
@@ -320,11 +328,6 @@ export async function interactionHook(interaction: Interaction) {
 		});
 	}
 
-	debugLog(`Interaction hook for button [${interaction.customId}]`, {
-		user_id: interaction.user.id,
-		channel_id: interaction.channelId,
-		guild_id: interaction.guildId
-	});
 	const id = interaction.customId;
 	const userID = interaction.user.id;
 
@@ -336,9 +339,8 @@ export async function interactionHook(interaction: Interaction) {
 		});
 	}
 
-	await deferInteraction(interaction);
-
 	const user = await mUserFetch(userID);
+
 	if (id.includes('GIVEAWAY_')) return giveawayButtonHandler(user, id, interaction);
 	if (id.includes('REPEAT_TRIP')) return repeatTripHandler(user, interaction);
 	if (id.startsWith('GPE_')) return handleGearPresetEquip(user, id, interaction);
@@ -385,7 +387,7 @@ export async function interactionHook(interaction: Interaction) {
 	}
 
 	async function doClue(tier: ClueTier['name']) {
-		runCommand({
+		return runCommand({
 			commandName: 'clue',
 			args: { tier },
 			bypassInhibitors: true,
@@ -394,7 +396,7 @@ export async function interactionHook(interaction: Interaction) {
 	}
 
 	async function openCasket(tier: ClueTier['name']) {
-		runCommand({
+		return runCommand({
 			commandName: 'open',
 			args: {
 				name: tier,

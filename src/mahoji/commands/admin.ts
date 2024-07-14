@@ -1,5 +1,3 @@
-import { execSync } from 'node:child_process';
-
 import { type CommandRunOptions, bulkUpdateCommands } from '@oldschoolgg/toolkit';
 import type { MahojiUserOption } from '@oldschoolgg/toolkit';
 import type { ClientStorage } from '@prisma/client';
@@ -15,7 +13,6 @@ import { ADMIN_IDS, OWNER_IDS, SupportServer, production } from '../../config';
 import { mahojiUserSettingsUpdate } from '../../lib/MUser';
 import { BLACKLISTED_GUILDS, BLACKLISTED_USERS, syncBlacklists } from '../../lib/blacklists';
 import {
-	BOT_TYPE,
 	BadgesEnum,
 	BitField,
 	BitFieldData,
@@ -424,11 +421,6 @@ export const adminCommand: OSBMahojiCommand = {
 		},
 		{
 			type: ApplicationCommandOptionType.Subcommand,
-			name: 'debug_patreon',
-			description: 'Debug patreon.'
-		},
-		{
-			type: ApplicationCommandOptionType.Subcommand,
 			name: 'sync_commands',
 			description: 'Sync commands',
 			options: []
@@ -494,11 +486,6 @@ export const adminCommand: OSBMahojiCommand = {
 			type: ApplicationCommandOptionType.Subcommand,
 			name: 'sync_roles',
 			description: 'Sync roles'
-		},
-		{
-			type: ApplicationCommandOptionType.Subcommand,
-			name: 'sync_patreon',
-			description: 'Sync patreon'
 		},
 		{
 			type: ApplicationCommandOptionType.Subcommand,
@@ -640,11 +627,6 @@ export const adminCommand: OSBMahojiCommand = {
 				}
 			]
 		},
-		// {
-		// 	type: ApplicationCommandOptionType.Subcommand,
-		// 	name: 'wipe_bingo_temp_cls',
-		// 	description: 'Wipe all temp cls of bingo users'
-		// },
 		{
 			type: ApplicationCommandOptionType.Subcommand,
 			name: 'give_items',
@@ -678,14 +660,12 @@ export const adminCommand: OSBMahojiCommand = {
 	}: CommandRunOptions<{
 		reboot?: {};
 		shut_down?: {};
-		debug_patreon?: {};
 		sync_commands?: {};
 		item_stats?: { item: string };
 		sync_blacklist?: {};
 		loot_track?: { name: string };
 		cancel_task?: { user: MahojiUserOption };
 		sync_roles?: {};
-		sync_patreon?: {};
 		badges?: { user: MahojiUserOption; add?: string; remove?: string };
 		bypass_age?: { user: MahojiUserOption };
 		command?: { enable?: string; disable?: string };
@@ -693,7 +673,6 @@ export const adminCommand: OSBMahojiCommand = {
 		bitfield?: { user: MahojiUserOption; add?: string; remove?: string };
 		ltc?: { item?: string };
 		view?: { thing: string };
-		wipe_bingo_temp_cls?: {};
 		give_items?: { user: MahojiUserOption; items: string; reason?: string };
 	}>) => {
 		await deferInteraction(interaction);
@@ -907,6 +886,7 @@ ${META_CONSTANTS.RENDERED_STR}`
 			process.exit();
 		}
 		if (options.shut_down) {
+			debugLog('SHUTTING DOWN');
 			globalClient.isShuttingDown = true;
 			const timer = production ? Time.Second * 30 : Time.Second * 5;
 			await interactionReply(interaction, {
@@ -919,7 +899,7 @@ ${META_CONSTANTS.RENDERED_STR}`
 
 ${META_CONSTANTS.RENDERED_STR}`
 			}).catch(noOp);
-			execSync(`pm2 stop ${BOT_TYPE === 'OSB' ? 'osb' : 'bso'}`);
+			process.exit(0);
 		}
 
 		if (options.sync_blacklist) {
