@@ -966,7 +966,7 @@ async function srcMUserFetch(userID: string, updates?: Prisma.UserUpdateInput) {
 	if (!user) {
 		return srcMUserFetch(userID, {});
 	}
-	partialUserCache.set(userID, pick(user, ['bitfield', 'minion_hasBought', 'badges']));
+	partialUserCache.set(userID, pick(user, ['bitfield', 'minion_hasBought', 'badges', 'command_lockout_expiry']));
 	return new MUserClass(user);
 }
 

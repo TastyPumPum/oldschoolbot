@@ -166,6 +166,20 @@ const inhibitors: Inhibitor[] = [
 		canBeDisabled: true
 	},
 	{
+		name: 'commandLocked',
+		run: ({ cachedUser }) => {
+			if (cachedUser?.command_lockout_expiry && cachedUser.command_lockout_expiry.getTime() > Date.now()) {
+				return {
+					content: `You are command locked for another ${formatDuration(
+						cachedUser.command_lockout_expiry.getTime() - Date.now()
+					)}`
+				};
+			}
+			return false;
+		},
+		canBeDisabled: false
+	},
+	{
 		name: 'blacklisted',
 		run: ({ userID, guild }) => {
 			if (BLACKLISTED_USERS.has(userID)) {
