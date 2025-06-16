@@ -1,10 +1,12 @@
 import type { MahojiUserOption } from '@oldschoolgg/toolkit/util';
 import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import { formatDuration } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType } from 'discord.js';
-import { randArrItem } from 'e';
+import { randArrItem, Time } from 'e';
 import { Bank } from 'oldschooljs';
 
 import { BitField } from '../../lib/constants';
+import { parseDuration } from '../../lib/util/parseDuration';
 
 import { handleMahojiConfirmation } from '../../lib/util/handleMahojiConfirmation';
 import itemIsTradeable from '../../lib/util/itemIsTradeable';
@@ -88,6 +90,29 @@ export const gambleCommand: OSBMahojiCommand = {
 					name: 'amount',
 					description: 'The GP you want to duel for.',
 					required: false
+				}
+			]
+		},
+		/**
+		 *
+		 * Commands Duel
+		 */
+		{
+			type: ApplicationCommandOptionType.Subcommand,
+			name: 'commands',
+			description: 'Duel another user and command lock the loser for a period of time.',
+			options: [
+				{
+					type: ApplicationCommandOptionType.User,
+					name: 'user',
+					description: 'The user you want to duel.',
+					required: true
+				},
+				{
+					type: ApplicationCommandOptionType.String,
+					name: 'time',
+					description: 'Duration to lock commands for the loser.',
+					required: true
 				}
 			]
 		},
@@ -180,6 +205,7 @@ export const gambleCommand: OSBMahojiCommand = {
 		item?: { item?: string; autoconfirm?: boolean };
 		dice?: { amount?: string };
 		duel?: { user: MahojiUserOption; amount?: string };
+		commands?: { user: MahojiUserOption; time: string };
 		lucky_pick?: { amount: string };
 		slots?: { amount?: string };
 		hot_cold?: { choice?: 'hot' | 'cold'; amount?: string };
@@ -201,6 +227,17 @@ export const gambleCommand: OSBMahojiCommand = {
 				return 'One of you has gambling disabled and cannot participate in this duel!';
 			}
 			return duelCommand(user, interaction, targetUser, options.duel.user, options.duel.amount);
+		}
+
+		if (options.commands) {
+			const target = await mUserFetch(options.commands.user.user.id);
+			if (target.id === user.id) return "You can't duel yourself.";
+			const duration = parseDuration(options.commands.time);
+			if (!duration || duration <= 0) return 'Invalid time specified.';
+			if (duration > Time.Hour * 24) return 'The maximum time you can gamble for is 24 hours.';
+			const [winner, loser] = Math.random() > 0.5 ? [user, target] : [target, user];
+			await loser.update({ command_lockout_expiry: new Date(Date.now() + duration) });
+			return `${winner.badgedUsername} won the duel! ${loser.badgedUsername} is command locked for ${formatDuration(duration)}.`;
 		}
 
 		if (options.dice) {

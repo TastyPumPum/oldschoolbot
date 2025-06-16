@@ -5,7 +5,7 @@ import { LRUCache } from 'lru-cache';
 
 export const perkTierCache = new Map<string, 0 | PerkTier>();
 
-export type PartialUser = Pick<User, 'bitfield' | 'badges' | 'minion_hasBought'>;
+export type PartialUser = Pick<User, 'bitfield' | 'badges' | 'minion_hasBought' | 'command_lockout_expiry'>;
 export const partialUserCache = new Map<string, PartialUser>();
 
 type CachedGuild = Pick<Guild, 'disabledCommands' | 'id' | 'petchannel' | 'staffOnlyChannels'>;
