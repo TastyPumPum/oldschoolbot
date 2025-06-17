@@ -133,7 +133,10 @@ export function minionStatus(user: MUser) {
 
 			const course = Agility.Courses.find(course => course.id === data.courseID);
 
-			return `${name} is currently running ${data.quantity}x ${course?.name} laps. ${formattedDuration} Your ${
+			const fletchable = data.fletch ? zeroTimeFletchables.find(i => i.id === data.fletch!.id) : null;
+			const fletchingPart = fletchable ? `They are also fletching ${data.fletch!.qty}x ${fletchable.name}. ` : '';
+
+			return `${name} is currently running ${data.quantity}x ${course?.name} laps. ${fletchingPart}${formattedDuration} Your ${
 				Emoji.Agility
 			} Agility level is ${user.skillLevel(SkillsEnum.Agility)}`;
 		}

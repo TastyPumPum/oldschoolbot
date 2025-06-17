@@ -12,6 +12,7 @@ import getOSItem from '../../lib/util/getOSItem';
 import { handleTripFinish } from '../../lib/util/handleTripFinish';
 import { logError } from '../../lib/util/logError';
 import { updateClientGPTrackSetting, userStatsUpdate } from '../../mahoji/mahojiSettings';
+import { zeroTimeFletchables } from '../../lib/skilling/skills/fletching/fletchables';
 
 function chanceOfFailingAgilityPyramid(user: MUser) {
 	const lvl = user.skillLevel(SkillsEnum.Agility);
@@ -25,12 +26,18 @@ function chanceOfFailingAgilityPyramid(user: MUser) {
 export const agilityTask: MinionTask = {
 	type: 'Agility',
 	async run(data: AgilityActivityTaskOptions) {
-		const { courseID, quantity, userID, channelID, duration, alch } = data;
+		const { courseID, quantity, userID, channelID, duration, alch, fletch } = data;
 		const loot = new Bank();
 		const user = await mUserFetch(userID);
 		const currentLevel = user.skillLevel(SkillsEnum.Agility);
 
 		const course = Agility.Courses.find(course => course.id === courseID);
+
+		let fletchXpReceived = 0;
+		let fletchXpRes = '';
+		let fletchQuantity = 0;
+		const fletchingLoot = new Bank();
+		let fletchable: (typeof zeroTimeFletchables)[number] | undefined = undefined;
 
 		if (!course) {
 			logError(`Invalid course ID provided: ${courseID}`);
@@ -130,6 +137,28 @@ export const agilityTask: MinionTask = {
 			}
 		}
 
+		if (fletch) {
+			fletchable = zeroTimeFletchables.find(item => item.id === fletch.id);
+			if (!fletchable) {
+				throw new Error(`Fletchable id ${fletch.id} not found.`);
+			}
+
+			fletchQuantity = fletch.qty;
+
+			const quantityToGive = fletchable.outputMultiple
+				? fletchQuantity * fletchable.outputMultiple
+				: fletchQuantity;
+
+			fletchXpReceived = fletchQuantity * fletchable.xp;
+
+			fletchXpRes = await user.addXP({
+				skillName: SkillsEnum.Fletching,
+				amount: fletchXpReceived,
+				duration
+			});
+			fletchingLoot.add(fletchable.id, quantityToGive);
+		}
+
 		if (alch) {
 			const alchedItem = getOSItem(alch.itemID);
 			const alchGP = alchedItem.highalch! * alch.quantity;
@@ -142,11 +171,26 @@ export const agilityTask: MinionTask = {
 			updateClientGPTrackSetting('gp_alch', alchGP);
 		}
 
-		const str = `${user}, ${user.minionName} finished ${quantity} ${
+		let str = `${user}, ${user.minionName} finished ${quantity} ${
 			course.name
 		} laps and fell on ${lapsFailed} of them.\nYou received: ${loot}${
 			diaryBonus ? ' (25% bonus Marks for Ardougne Elite diary)' : ''
 		}.\n${xpRes}${monkeyStr}`;
+
+		if (fletchable && fletch) {
+			await transactItems({
+				userID: user.id,
+				collectionLog: true,
+				itemsToAdd: fletchingLoot
+			});
+
+			if (fletchable.outputMultiple) {
+				const fletchableName = `${fletchable.name}s`;
+				str += `\nYou also fletched ${fletchQuantity} sets of ${fletchableName} and received ${fletchingLoot}. ${fletchXpRes}.`;
+			} else {
+				str += `\nYou also fletched ${fletchQuantity} ${fletchable.name} and received ${fletchXpRes}.`;
+			}
+		}
 
 		// Roll for pet
 		const { petDropRate } = skillingPetDropRate(
