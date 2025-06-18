@@ -106,6 +106,42 @@ async function tameAutocomplete(value: string, user: User) {
 		.filter(t => (!value ? true : t.name.toLowerCase().includes(value.toLowerCase())));
 }
 
+async function killAutocomplete(value: string) {
+	return tameKillableMonsters
+		.filter(i =>
+			!value
+				? true
+				: i.name.toLowerCase().includes(value.toLowerCase()) ||
+					i.aliases.some(alias => stringMatches(alias, value))
+		)
+		.map(i => ({ name: i.name, value: i.name }));
+}
+
+async function collectAutocomplete(value: string) {
+	return collectables
+		.filter(i => (!value ? true : i.item.name.toLowerCase().includes(value.toLowerCase())))
+		.map(i => ({ name: i.item.name, value: i.item.name }));
+}
+
+async function activityAutocomplete(value: string) {
+	return arbitraryTameActivities
+		.filter(t => (!value ? true : t.name.toLowerCase().includes(value.toLowerCase())))
+		.map(t => ({ name: t.name, value: t.name }));
+}
+
+async function tanAutocomplete(input: string) {
+	return Tanning.filter(t => (!input ? true : t.name.toLowerCase().includes(input.toLowerCase()))).map(t => ({
+		name: t.name,
+		value: t.name
+	}));
+}
+
+async function equipAutocomplete(value: string) {
+	return tameEquippables
+		.filter(t => (!value ? true : t.item.name.toLowerCase().includes(value.toLowerCase())))
+		.map(i => ({ name: i.item.name, value: i.item.name }));
+}
+
 export const tameEquipSlots = ['equipped_primary', 'equipped_armor'] as const;
 
 export type TameEquipSlot = (typeof tameEquipSlots)[number];
@@ -115,74 +151,36 @@ interface TameEquippable {
 	slot: TameEquipSlot;
 }
 
-const igneClaws = [
-	{
-		item: getOSItem('Runite igne claws'),
-		boost: 5
-	},
-	{
-		item: getOSItem('Dragon igne claws'),
-		boost: 8
-	},
-	{
-		item: getOSItem('Barrows igne claws'),
-		boost: 14
-	},
-	{
-		item: getOSItem('Volcanic igne claws'),
-		boost: 17
-	},
-	{
-		item: getOSItem('Drygore igne claws'),
-		boost: 22
-	},
-	{
-		item: getOSItem('Dwarven igne claws'),
-		boost: 27
-	},
-	{
-		item: getOSItem('Gorajan igne claws'),
-		boost: 35
-	}
-].map(i => ({ ...i, tameSpecies: [TameSpeciesID.Igne], slot: 'equipped_primary' as const }));
-
-const eagleEquippables: TameEquippable[] = [
-	{
-		item: getOSItem('Demonic jibwings'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Abyssal jibwings'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('3rd age jibwings'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Demonic jibwings (e)'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Abyssal jibwings (e)'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('3rd age jibwings (e)'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Divine ring'),
-		slot: 'equipped_primary',
-		tameSpecies: [TameSpeciesID.Eagle]
-	}
+const igneClawData: [string, number][] = [
+	['Runite igne claws', 5],
+	['Dragon igne claws', 8],
+	['Barrows igne claws', 14],
+	['Volcanic igne claws', 17],
+	['Drygore igne claws', 22],
+	['Dwarven igne claws', 27],
+	['Gorajan igne claws', 35]
 ];
+const igneClaws = igneClawData.map(([name, boost]) => ({
+	item: getOSItem(name),
+	boost,
+	tameSpecies: [TameSpeciesID.Igne],
+	slot: 'equipped_primary' as const
+}));
+
+const eagleEquippablesData: [string, TameEquipSlot][] = [
+	['Demonic jibwings', 'equipped_armor'],
+	['Abyssal jibwings', 'equipped_armor'],
+	['3rd age jibwings', 'equipped_armor'],
+	['Demonic jibwings (e)', 'equipped_armor'],
+	['Abyssal jibwings (e)', 'equipped_armor'],
+	['3rd age jibwings (e)', 'equipped_armor'],
+	['Divine ring', 'equipped_primary']
+];
+const eagleEquippables: TameEquippable[] = eagleEquippablesData.map(([name, slot]) => ({
+	item: getOSItem(name),
+	slot,
+	tameSpecies: [TameSpeciesID.Eagle]
+}));
 
 export const tameEquippables: TameEquippable[] = [
 	...igneClaws,
@@ -195,74 +193,62 @@ export const tameEquippables: TameEquippable[] = [
 	...eagleEquippables
 ];
 
-const feedingEasterEggs: [Bank, number, tame_growth[], string][] = [
-	[new Bank().add('Vial of water'), 2, [tame_growth.baby], 'https://imgur.com/pYjshTg'],
-	[new Bank().add('Bread'), 2, [tame_growth.baby, tame_growth.juvenile], 'https://i.imgur.com/yldSKLZ.mp4'],
-	[new Bank().add('Banana', 2), 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/11Bads1.mp4'],
-	[new Bank().add('Strawberry'), 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/ZqN1BHZ.mp4'],
-	[new Bank().add('Lychee'), 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/e5TqK1S.mp4'],
-	[new Bank().add('Chocolate bar'), 2, [tame_growth.baby, tame_growth.juvenile], 'https://i.imgur.com/KRGURck.mp4'],
-	[new Bank().add('Watermelon'), 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/qDY6Skv.mp4'],
-	[new Bank().add('Coconut milk'), 2, [tame_growth.baby], 'https://i.imgur.com/OE7tXI8.mp4'],
+const feedingEasterEggData: [[string, number], number, tame_growth[], string][] = [
+	[['Vial of water', 1], 2, [tame_growth.baby], 'https://imgur.com/pYjshTg'],
+	[['Bread', 1], 2, [tame_growth.baby, tame_growth.juvenile], 'https://i.imgur.com/yldSKLZ.mp4'],
+	[['Banana', 2], 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/11Bads1.mp4'],
+	[['Strawberry', 1], 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/ZqN1BHZ.mp4'],
+	[['Lychee', 1], 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/e5TqK1S.mp4'],
+	[['Chocolate bar', 1], 2, [tame_growth.baby, tame_growth.juvenile], 'https://i.imgur.com/KRGURck.mp4'],
+	[['Watermelon', 1], 2, [tame_growth.juvenile, tame_growth.adult], 'https://i.imgur.com/qDY6Skv.mp4'],
+	[['Coconut milk', 1], 2, [tame_growth.baby], 'https://i.imgur.com/OE7tXI8.mp4'],
 	[
-		new Bank().add('Grapes'),
+		['Grapes', 1],
 		2,
 		[tame_growth.juvenile, tame_growth.adult],
 		'https://c.tenor.com/ZHBDNOEv_m4AAAAM/monkey-monke.gif'
 	]
 ];
+const feedingEasterEggs: [Bank, number, tame_growth[], string][] = feedingEasterEggData.map(
+	([[itemName, qty], num, stages, url]) => [new Bank().add(itemName, qty), num, stages, url]
+);
 
-const tameForegrounds = [
-	{
-		shouldActivate: (t: Tame) => t.nickname?.toLowerCase() === 'smaug' && t.species_id === TameSpeciesID.Igne,
-		image: readFileSync('./src/lib/resources/images/tames/foreground_1.png')
-	}
+const tameForegroundData: [string, TameSpeciesID, string][] = [
+	['smaug', TameSpeciesID.Igne, './src/lib/resources/images/tames/foreground_1.png']
 ];
 
-const tameImageReplacementChoices = [
-	{
-		name: 'Elvarg',
-		species: TameSpeciesID.Igne,
-		image: readFileSync('./src/lib/resources/images/tames/1_replace_1.png')
-	},
-	{
-		name: 'King Black Dragon',
-		species: TameSpeciesID.Igne,
-		image: readFileSync('./src/lib/resources/images/tames/1_replace_2.png')
-	},
-	{
-		name: 'Lava Dragon',
-		species: TameSpeciesID.Igne,
-		image: readFileSync('./src/lib/resources/images/tames/1_replace_3.png')
-	},
-	{
-		name: 'Revenant Dragon',
-		species: TameSpeciesID.Igne,
-		image: readFileSync('./src/lib/resources/images/tames/1_replace_4.png')
-	},
-	{
-		name: 'Rune Dragon',
-		species: TameSpeciesID.Igne,
-		image: readFileSync('./src/lib/resources/images/tames/1_replace_5.png')
-	}
+const tameForegrounds = tameForegroundData.map(([name, species, path]) => ({
+	shouldActivate: (t: Tame) => t.nickname?.toLowerCase() === name && t.species_id === species,
+	image: readFileSync(path)
+}));
+
+const tameImageReplacementChoicesData: [string, TameSpeciesID, string][] = [
+	['Elvarg', TameSpeciesID.Igne, './src/lib/resources/images/tames/1_replace_1.png'],
+	['King Black Dragon', TameSpeciesID.Igne, './src/lib/resources/images/tames/1_replace_2.png'],
+	['Lava Dragon', TameSpeciesID.Igne, './src/lib/resources/images/tames/1_replace_3.png'],
+	['Revenant Dragon', TameSpeciesID.Igne, './src/lib/resources/images/tames/1_replace_4.png'],
+	['Rune Dragon', TameSpeciesID.Igne, './src/lib/resources/images/tames/1_replace_5.png']
+];
+const tameImageReplacementChoices = tameImageReplacementChoicesData.map(([name, species, path]) => ({
+	name,
+	species,
+	image: readFileSync(path)
+}));
+
+const tameImageReplacementEasterEggData: [string | string[], TameSpeciesID, string][] = [
+	['robochimp', TameSpeciesID.Monkey, './src/lib/resources/images/tames/2_replace_1.png'],
+	['magnaboy', TameSpeciesID.Monkey, './src/lib/resources/images/tames/2_replace_2.png'],
+	[['meneldor', 'gwaihir', 'landroval'], TameSpeciesID.Eagle, './src/lib/resources/images/tames/3_replace_1.png']
 ];
 
 const tameImageReplacementEasterEggs = [
-	{
-		shouldActivate: (t: Tame) => t.nickname?.toLowerCase() === 'robochimp' && t.species_id === TameSpeciesID.Monkey,
-		image: readFileSync('./src/lib/resources/images/tames/2_replace_1.png')
-	},
-	{
-		shouldActivate: (t: Tame) => t.nickname?.toLowerCase() === 'magnaboy' && t.species_id === TameSpeciesID.Monkey,
-		image: readFileSync('./src/lib/resources/images/tames/2_replace_2.png')
-	},
-	{
-		shouldActivate: (t: Tame) =>
-			t.nickname !== null &&
-			['meneldor', 'gwaihir', 'landroval'].includes(t.nickname.toLowerCase()) &&
-			t.species_id === TameSpeciesID.Eagle,
-		image: readFileSync('./src/lib/resources/images/tames/3_replace_1.png')
-	},
+	...tameImageReplacementEasterEggData.map(([names, species, path]) => ({
+		shouldActivate: (t: Tame) => {
+			const validNames = Array.isArray(names) ? names : [names];
+			return t.nickname !== null && validNames.includes(t.nickname.toLowerCase()) && t.species_id === species;
+		},
+		image: readFileSync(path)
+	})),
 	...tameImageReplacementChoices.map(tameImage => ({
 		shouldActivate: (t: Tame, user: MUser) =>
 			t.custom_icon_id === tameImage.name && user.perkTier() >= PerkTier.Four,
@@ -1835,19 +1821,11 @@ export const tamesCommand: OSBMahojiCommand = {
 					name: 'name',
 					description: 'The thing you want to kill.',
 					required: true,
-					autocomplete: async (value: string) => {
-						return tameKillableMonsters
-							.filter(i =>
-								!value
-									? true
-									: i.name.toLowerCase().includes(value.toLowerCase()) ||
-										i.aliases.some(alias => stringMatches(alias, value))
-							)
-							.map(i => ({ name: i.name, value: i.name }));
-					}
+					autocomplete: killAutocomplete
 				}
 			]
 		},
+
 		{
 			type: ApplicationCommandOptionType.Subcommand,
 			name: 'collect',
@@ -1858,11 +1836,7 @@ export const tamesCommand: OSBMahojiCommand = {
 					name: 'name',
 					description: 'The thing you want to collect.',
 					required: true,
-					autocomplete: async (value: string) => {
-						return collectables
-							.filter(i => (!value ? true : i.item.name.toLowerCase().includes(value.toLowerCase())))
-							.map(i => ({ name: i.item.name, value: i.item.name }));
-					}
+					autocomplete: collectAutocomplete
 				}
 			]
 		},
@@ -1904,11 +1878,7 @@ export const tamesCommand: OSBMahojiCommand = {
 					name: 'item',
 					description: 'The item you want to equip.',
 					required: true,
-					autocomplete: async (value: string) => {
-						return tameEquippables
-							.filter(t => (!value ? true : t.item.name.toLowerCase().includes(value.toLowerCase())))
-							.map(i => ({ name: i.item.name, value: i.item.name }));
-					}
+					autocomplete: equipAutocomplete
 				}
 			]
 		},
@@ -1945,11 +1915,7 @@ export const tamesCommand: OSBMahojiCommand = {
 					name: 'tan',
 					description: 'The leather you want your monkey to tan.',
 					required: false,
-					autocomplete: async input => {
-						return Tanning.filter(t =>
-							!input ? true : t.name.toLowerCase().includes(input.toLowerCase())
-						).map(t => ({ name: t.name, value: t.name }));
-					}
+					autocomplete: tanAutocomplete
 				},
 				{
 					type: ApplicationCommandOptionType.String,
@@ -1984,11 +1950,7 @@ export const tamesCommand: OSBMahojiCommand = {
 					name: 'name',
 					description: 'The activity to do.',
 					required: true,
-					autocomplete: async input => {
-						return arbitraryTameActivities
-							.filter(t => (!input ? true : t.name.toLowerCase().includes(input.toLowerCase())))
-							.map(t => ({ name: t.name, value: t.name }));
-					}
+					autocomplete: activityAutocomplete
 				}
 			]
 		},
