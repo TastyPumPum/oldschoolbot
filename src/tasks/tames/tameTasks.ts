@@ -100,10 +100,10 @@ export async function handleFinish({
 }
 
 export const arbitraryTameActivities: ArbitraryTameActivity[] = [
-	{
-		name: 'Tempoross',
-		id: 'Tempoross',
-		allowedTames: [TameSpeciesID.Monkey],
+        {
+                name: 'Tempoross',
+                id: 'Tempoross',
+                allowedTames: [TameSpeciesID.Monkey, TameSpeciesID.IgneMonkey, TameSpeciesID.MonkeyEagle],
 		run: async ({ handleFinish, user, duration, tame, previousTameCL, activity }) => {
 			const quantity = Math.ceil(duration / (Time.Minute * 5));
 			const loot = getTemporossLoot(quantity, tame.maxGathererLevel + 15, previousTameCL);
@@ -116,10 +116,10 @@ export const arbitraryTameActivities: ArbitraryTameActivity[] = [
 			});
 		}
 	},
-	{
-		name: 'Wintertodt',
-		id: 'Wintertodt',
-		allowedTames: [TameSpeciesID.Igne],
+        {
+                name: 'Wintertodt',
+                id: 'Wintertodt',
+                allowedTames: [TameSpeciesID.Igne, TameSpeciesID.IgneMonkey, TameSpeciesID.IgneEagle],
 		run: async ({ handleFinish, user, duration, tame, activity }) => {
 			const quantity = Math.ceil(duration / (Time.Minute * 5));
 			const loot = new Bank();

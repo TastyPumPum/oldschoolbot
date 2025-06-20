@@ -758,6 +758,9 @@ model Tame {
   last_activity_date   DateTime? @db.Timestamp(6)
   levels_from_egg_feed Int?
 
+  breeding_cooldown_until DateTime? @db.Timestamp(6)
+  is_dead                 Boolean   @default(false)
+
   custom_icon_id String? @db.VarChar(19)
 
   tame_activity TameActivity[]
