@@ -40,10 +40,11 @@ import {
 	igneArmors,
 	seaMonkeySpells,
 	seaMonkeyStaves,
-	tameFeedableItems,
-	tameKillableMonsters,
-	tameSpecies
+        tameFeedableItems,
+        tameKillableMonsters,
+        tameSpecies
 } from '../../lib/tames';
+import { breedTames } from '../../lib/tames/breeding';
 import {
 	assert,
 	formatDuration,
@@ -87,11 +88,12 @@ import type { OSBMahojiCommand } from '../lib/util';
 const tameImageSize = 96;
 
 async function tameAutocomplete(value: string, user: User) {
-	const tames = await prisma.tame.findMany({
-		where: {
-			user_id: user.id
-		}
-	});
+        const tames = await prisma.tame.findMany({
+                where: {
+                        user_id: user.id,
+                        is_dead: false
+                }
+        });
 	return tames
 		.sort(sortTames)
 		.map(t => {
@@ -144,55 +146,59 @@ const igneClaws = [
 		item: getOSItem('Gorajan igne claws'),
 		boost: 35
 	}
-].map(i => ({ ...i, tameSpecies: [TameSpeciesID.Igne], slot: 'equipped_primary' as const }));
+].map(i => ({
+       ...i,
+       tameSpecies: [TameSpeciesID.Igne, TameSpeciesID.IgneMonkey, TameSpeciesID.IgneEagle],
+       slot: 'equipped_primary' as const
+}));
 
 const eagleEquippables: TameEquippable[] = [
-	{
-		item: getOSItem('Demonic jibwings'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Abyssal jibwings'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('3rd age jibwings'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Demonic jibwings (e)'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Abyssal jibwings (e)'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('3rd age jibwings (e)'),
-		slot: 'equipped_armor',
-		tameSpecies: [TameSpeciesID.Eagle]
-	},
-	{
-		item: getOSItem('Divine ring'),
-		slot: 'equipped_primary',
-		tameSpecies: [TameSpeciesID.Eagle]
-	}
+        {
+                item: getOSItem('Demonic jibwings'),
+                slot: 'equipped_armor',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        },
+        {
+                item: getOSItem('Abyssal jibwings'),
+                slot: 'equipped_armor',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        },
+        {
+                item: getOSItem('3rd age jibwings'),
+                slot: 'equipped_armor',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        },
+        {
+                item: getOSItem('Demonic jibwings (e)'),
+                slot: 'equipped_armor',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        },
+        {
+                item: getOSItem('Abyssal jibwings (e)'),
+                slot: 'equipped_armor',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        },
+        {
+                item: getOSItem('3rd age jibwings (e)'),
+                slot: 'equipped_armor',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        },
+        {
+                item: getOSItem('Divine ring'),
+                slot: 'equipped_primary',
+                tameSpecies: [TameSpeciesID.Eagle, TameSpeciesID.IgneEagle, TameSpeciesID.MonkeyEagle]
+        }
 ];
 
 export const tameEquippables: TameEquippable[] = [
-	...igneClaws,
-	...igneArmors,
-	...seaMonkeyStaves.map(i => ({
-		item: i.item,
-		tameSpecies: [TameSpeciesID.Monkey],
-		slot: 'equipped_primary' as const
-	})),
-	...eagleEquippables
+        ...igneClaws,
+        ...igneArmors,
+        ...seaMonkeyStaves.map(i => ({
+                item: i.item,
+                tameSpecies: [TameSpeciesID.Monkey, TameSpeciesID.IgneMonkey, TameSpeciesID.MonkeyEagle],
+                slot: 'equipped_primary' as const
+        })),
+        ...eagleEquippables
 ];
 
 const feedingEasterEggs: [Bank, number, tame_growth[], string][] = [
@@ -1504,11 +1510,22 @@ async function viewCommand(user: MUser, tameID: number): CommandResponse {
 }
 
 async function statusCommand(user: MUser) {
-	const { tame, activity } = await getUsersTame(user);
-	if (!tame) {
-		return 'You have no tame selected.';
-	}
-	return `${tameName(tame)} is currently: ${getTameStatus(activity).join('. ')}.`;
+        const { tame, activity } = await getUsersTame(user);
+        if (!tame) {
+                return 'You have no tame selected.';
+        }
+        return `${tameName(tame)} is currently: ${getTameStatus(activity).join('. ')}.`;
+}
+
+async function graveyardCommand(user: MUser) {
+       const tames = await prisma.tame.findMany({
+               where: { user_id: user.id, is_dead: true }
+       });
+       if (tames.length === 0) return 'You have no dead tames.';
+       return tames
+               .sort(sortTames)
+               .map(t => `${t.id}. ${tameName(t)} (${tameSpecies.find(s => s.id === t.species_id)!.name})`)
+               .join('\n');
 }
 
 async function tameEquipCommand(user: MUser, itemName: string) {
@@ -1736,10 +1753,12 @@ async function tameClueCommand(user: MUser, channelID: string, inputName: string
 export type TamesCommandOptions = CommandRunOptions<{
 	set_name?: { name: string };
 	cancel?: {};
-	list?: {};
-	merge?: { tame: string };
-	feed?: { items: string };
-	kill?: { name: string };
+        list?: {};
+        merge?: { tame: string };
+        breed?: { parent1: string; parent2: string };
+        feed?: { items: string };
+        graveyard?: {};
+        kill?: { name: string };
 	collect?: { name: string };
 	select?: { tame: string };
 	view?: { tame: string };
@@ -1775,15 +1794,20 @@ export const tamesCommand: OSBMahojiCommand = {
 			name: 'status',
 			description: 'Check the status of your selected tame.'
 		},
-		{
-			type: ApplicationCommandOptionType.Subcommand,
-			name: 'list',
-			description: 'List your tames.'
-		},
-		{
-			type: ApplicationCommandOptionType.Subcommand,
-			name: 'set_name',
-			description: 'Change your tames name.',
+                {
+                        type: ApplicationCommandOptionType.Subcommand,
+                        name: 'list',
+                        description: 'List your tames.'
+                },
+                {
+                        type: ApplicationCommandOptionType.Subcommand,
+                        name: 'graveyard',
+                        description: 'View your dead tames.'
+                },
+                {
+                        type: ApplicationCommandOptionType.Subcommand,
+                        name: 'set_name',
+                        description: 'Change your tames name.',
 			options: [
 				{
 					type: ApplicationCommandOptionType.String,
@@ -1798,24 +1822,45 @@ export const tamesCommand: OSBMahojiCommand = {
 			name: 'cancel',
 			description: 'Cancel your tames trip.'
 		},
-		{
-			type: ApplicationCommandOptionType.Subcommand,
-			name: 'merge',
-			description: 'Merge a tame into your selected tame.',
-			options: [
-				{
-					type: ApplicationCommandOptionType.String,
-					name: 'tame',
-					description: 'The tame you want to merge.',
-					required: true,
-					autocomplete: tameAutocomplete
-				}
-			]
-		},
-		{
-			type: ApplicationCommandOptionType.Subcommand,
-			name: 'feed',
-			description: 'Feed your selected tame items.',
+                {
+                        type: ApplicationCommandOptionType.Subcommand,
+                        name: 'merge',
+                        description: 'Merge a tame into your selected tame.',
+                        options: [
+                                {
+                                        type: ApplicationCommandOptionType.String,
+                                        name: 'tame',
+                                        description: 'The tame you want to merge.',
+                                        required: true,
+                                        autocomplete: tameAutocomplete
+                                }
+                        ]
+                },
+                {
+                        type: ApplicationCommandOptionType.Subcommand,
+                        name: 'breed',
+                        description: 'Breed two of your tames together.',
+                        options: [
+                                {
+                                        type: ApplicationCommandOptionType.String,
+                                        name: 'parent1',
+                                        description: 'First parent tame ID.',
+                                        required: true,
+                                        autocomplete: tameAutocomplete
+                                },
+                                {
+                                        type: ApplicationCommandOptionType.String,
+                                        name: 'parent2',
+                                        description: 'Second parent tame ID.',
+                                        required: true,
+                                        autocomplete: tameAutocomplete
+                                }
+                        ]
+                },
+                {
+                        type: ApplicationCommandOptionType.Subcommand,
+                        name: 'feed',
+                        description: 'Feed your selected tame items.',
 			options: [
 				{
 					type: ApplicationCommandOptionType.String,
@@ -2039,9 +2084,22 @@ export const tamesCommand: OSBMahojiCommand = {
 		const user = await mUserFetch(userID);
 		if (options.set_name) return setNameCommand(user, options.set_name.name);
 		if (options.cancel) return cancelCommand(user);
-		if (options.list) return tameImage(user);
-		if (options.merge) return mergeCommand(user, interaction, Number(options.merge.tame));
-		if (options.feed) return feedCommand(interaction, user, options.feed.items);
+                if (options.list) return tameImage(user);
+                if (options.graveyard) return graveyardCommand(user);
+                if (options.merge) return mergeCommand(user, interaction, Number(options.merge.tame));
+                if (options.breed) {
+                        const parent1 = await prisma.tame.findFirst({
+                                where: { id: Number(options.breed.parent1), user_id: user.id }
+                        });
+                        const parent2 = await prisma.tame.findFirst({
+                                where: { id: Number(options.breed.parent2), user_id: user.id }
+                        });
+                        if (!parent1 || !parent2) {
+                                return "Couldn't find one or both of those tames.";
+                        }
+                        return breedTames(user, parent1, parent2);
+                }
+                if (options.feed) return feedCommand(interaction, user, options.feed.items);
 		if (options.kill) return killCommand(user, channelID, options.kill.name);
 		if (options.collect) return collectCommand(user, channelID, options.collect.name);
 		if (options.select) return selectCommand(user, Number(options.select.tame));

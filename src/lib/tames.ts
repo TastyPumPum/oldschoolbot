@@ -19,9 +19,12 @@ import itemID from './util/itemID';
 import resolveItems from './util/resolveItems';
 
 export enum TameSpeciesID {
-	Igne = 1,
-	Monkey = 2,
-	Eagle = 3
+        Igne = 1,
+        Monkey = 2,
+        Eagle = 3,
+        IgneMonkey = 102,
+        IgneEagle = 103,
+        MonkeyEagle = 203
 }
 
 interface FeedableItem {
@@ -539,29 +542,83 @@ export const tameSpecies: Species[] = [
 			.add('Astral rune', 600)
 			.add('Coins', 10_000_000)
 	},
-	{
-		id: TameSpeciesID.Eagle,
-		type: TameType.Support,
-		name: 'Eagle',
-		variants: [1, 2, 3],
-		shinyVariant: 4,
-		shinyChance: 60,
-		combatLevelRange: [5, 25],
-		artisanLevelRange: [1, 10],
-		supportLevelRange: [50, 100],
-		gathererLevelRange: [20, 40],
-		relevantLevelCategory: 'support',
-		hatchTime: Time.Hour * 4.5,
-		egg: getOSItem('Eagle egg'),
-		emoji: '<:EagleEgg:1201712371371085894>',
-		emojiID: '1201712371371085894',
-		mergingCost: new Bank()
-			.add('Solite', 150)
-			.add('Soul rune', 2500)
-			.add('Elder rune', 100)
-			.add('Astral rune', 600)
-			.add('Coins', 10_000_000)
-	}
+        {
+                id: TameSpeciesID.Eagle,
+                type: TameType.Support,
+                name: 'Eagle',
+                variants: [1, 2, 3],
+                shinyVariant: 4,
+                shinyChance: 60,
+                combatLevelRange: [5, 25],
+                artisanLevelRange: [1, 10],
+                supportLevelRange: [50, 100],
+                gathererLevelRange: [20, 40],
+                relevantLevelCategory: 'support',
+                hatchTime: Time.Hour * 4.5,
+                egg: getOSItem('Eagle egg'),
+                emoji: '<:EagleEgg:1201712371371085894>',
+                emojiID: '1201712371371085894',
+                mergingCost: new Bank()
+                        .add('Solite', 150)
+                        .add('Soul rune', 2500)
+                        .add('Elder rune', 100)
+                        .add('Astral rune', 600)
+                        .add('Coins', 10_000_000)
+        },
+        {
+                id: TameSpeciesID.IgneMonkey,
+                type: TameType.Combat,
+                name: 'Igne-Monkey Hybrid',
+                variants: [1],
+                shinyVariant: 2,
+                shinyChance: 45,
+                combatLevelRange: [40, 60],
+                artisanLevelRange: [1, 10],
+                supportLevelRange: [1, 20],
+                gathererLevelRange: [40, 80],
+                relevantLevelCategory: 'combat',
+                hatchTime: Time.Hour * 18,
+                egg: getOSItem('Monkey egg'),
+                mergingCost: new Bank(),
+                emoji: '<:dragonEgg:858948148641660948>',
+                emojiID: '858948148641660948'
+        },
+        {
+                id: TameSpeciesID.IgneEagle,
+                type: TameType.Combat,
+                name: 'Igne-Eagle Hybrid',
+                variants: [1],
+                shinyVariant: 2,
+                shinyChance: 45,
+                combatLevelRange: [50, 70],
+                artisanLevelRange: [1, 10],
+                supportLevelRange: [40, 80],
+                gathererLevelRange: [10, 30],
+                relevantLevelCategory: 'combat',
+                hatchTime: Time.Hour * 18,
+                egg: getOSItem('Eagle egg'),
+                mergingCost: new Bank(),
+                emoji: '<:dragonEgg:858948148641660948>',
+                emojiID: '858948148641660948'
+        },
+        {
+                id: TameSpeciesID.MonkeyEagle,
+                type: TameType.Gatherer,
+                name: 'Monkey-Eagle Hybrid',
+                variants: [1],
+                shinyVariant: 2,
+                shinyChance: 60,
+                combatLevelRange: [10, 30],
+                artisanLevelRange: [1, 10],
+                supportLevelRange: [40, 80],
+                gathererLevelRange: [60, 100],
+                relevantLevelCategory: 'gatherer',
+                hatchTime: Time.Hour * 6,
+                egg: getOSItem('Monkey egg'),
+                mergingCost: new Bank(),
+                emoji: '<:monkey_egg:883326001445224488>',
+                emojiID: '883326001445224488'
+        }
 ];
 
 export interface Species {
