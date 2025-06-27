@@ -120,6 +120,10 @@ export interface AgilityActivityTaskOptions extends ActivityTaskOptions {
 		itemID: number;
 		quantity: number;
 	} | null;
+	fletch?: {
+		id: number;
+		qty: number;
+	};
 }
 
 export interface CookingActivityTaskOptions extends ActivityTaskOptions {

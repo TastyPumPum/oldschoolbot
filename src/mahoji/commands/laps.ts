@@ -13,6 +13,17 @@ import { calcMaxTripLength } from '../../lib/util/calcMaxTripLength';
 import { updateBankSetting } from '../../lib/util/updateBankSetting';
 import { timePerAlchAgility } from '../lib/abstracted_commands/alchCommand';
 import type { OSBMahojiCommand } from '../lib/util';
+import { zeroTimeFletchables } from '../../lib/skilling/skills/fletching/fletchables';
+import Arrows from '../../lib/skilling/skills/fletching/fletchables/arrows';
+import Bolts from '../../lib/skilling/skills/fletching/fletchables/bolts';
+import Darts from '../../lib/skilling/skills/fletching/fletchables/darts';
+import Javelins from '../../lib/skilling/skills/fletching/fletchables/javelins';
+import { AmethystBroadBolts, BroadArrows, BroadBolts } from '../../lib/skilling/skills/fletching/fletchables/slayer';
+import TippedBolts from '../../lib/skilling/skills/fletching/fletchables/tippedBolts';
+import TippedDragonBolts from '../../lib/skilling/skills/fletching/fletchables/tippedDragonBolts';
+import type { Fletchable } from '../../lib/skilling/types';
+import type { SlayerTaskUnlocksEnum } from '../../lib/slayer/slayerUnlocks';
+import { hasSlayerUnlock } from '../../lib/slayer/slayerUtil';
 
 const unlimitedFireRuneProviders = [
 	'Staff of fire',
@@ -105,14 +116,30 @@ export const lapsCommand: OSBMahojiCommand = {
 			name: 'alch',
 			description: 'Do you want to alch while doing agility? (optional).',
 			required: false
+		},
+		{
+			type: ApplicationCommandOptionType.Integer,
+			name: 'fletching',
+			description: 'The item you wish to fletch',
+			required: false,
+			autocomplete: async (value: number) => {
+				const search = value?.toString() ?? '';
+				return zeroTimeFletchables
+					.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+					.map(i => ({ name: i.name, value: i.id }));
+			}
 		}
 	],
-	run: async ({
-		options,
-		userID,
-		channelID
-	}: CommandRunOptions<{ name: string; quantity?: number; alch?: boolean }>) => {
-		const user = await mUserFetch(userID);
+        run: async ({
+                options,
+                userID,
+                channelID
+        }: CommandRunOptions<{ name: string; quantity?: number; alch?: boolean; fletching?: number }>) => {
+                const user = await mUserFetch(userID);
+
+               if (options.alch && options.fletching) {
+                       return "You can't alch and fletch at the same time.";
+               }
 
 		const course = courses.find(
 			course =>
@@ -160,6 +187,12 @@ export const lapsCommand: OSBMahojiCommand = {
 			)}.`;
 		}
 
+		let fletchable: Fletchable | undefined;
+		let fletchingQuantity = 0;
+		let sets = '';
+		let itemsNeeded: Bank | undefined;
+		let timeToFletchSingleItem = 0;
+
 		let response = `${user.minionName} is now doing ${quantity}x ${
 			course.name
 		} laps, it'll take around ${formatDuration(duration)} to finish.`;
@@ -175,6 +208,54 @@ export const lapsCommand: OSBMahojiCommand = {
 			updateBankSetting('magic_cost_bank', alchResult.bankToRemove);
 		}
 
+		if (options.fletching) {
+			fletchable = zeroTimeFletchables.find(item => item.id === Number(options.fletching));
+			if (!fletchable) return 'That is not a valid item to fletch during agility.';
+
+			if (user.skillLevel('fletching') < fletchable.level) {
+				return `${user.minionName} needs ${fletchable.level} Fletching to fletch ${fletchable.name}.`;
+			}
+
+			if (fletchable.requiredSlayerUnlocks) {
+				const { success, errors } = hasSlayerUnlock(
+					user.user.slayer_unlocks as SlayerTaskUnlocksEnum[],
+					fletchable.requiredSlayerUnlocks
+				);
+				if (!success) {
+					return `You don't have the required Slayer Unlocks to create this item.\n\nRequired: ${errors}`;
+				}
+			}
+
+			const fletchableTypes = [
+				{ types: [Darts, Bolts, BroadBolts], time: Time.Second * 0.2 },
+				{
+					types: [Arrows, BroadArrows, Javelins, TippedBolts, TippedDragonBolts, AmethystBroadBolts],
+					time: Time.Second * 0.36
+				}
+			];
+			for (const { types, time } of fletchableTypes) {
+				if (types.some(type => (Array.isArray(type) ? type.includes(fletchable!) : type === fletchable))) {
+					timeToFletchSingleItem = time;
+					break;
+				}
+			}
+			if (timeToFletchSingleItem === 0) return 'Error selecting fletchable.';
+
+			fletchingQuantity = Math.floor(duration / timeToFletchSingleItem);
+			if (fletchable.outputMultiple) sets = ' sets of';
+
+			const max = user.bank.fits(fletchable.inputItems);
+			if (max < fletchingQuantity && max !== 0) fletchingQuantity = max;
+
+			itemsNeeded = fletchable.inputItems.clone().multiply(fletchingQuantity);
+			if (!user.bankWithGP.has(itemsNeeded)) {
+				return `You don't have enough items. For ${fletchingQuantity}x ${fletchable.name}, you're missing **${itemsNeeded.clone().remove(user.bank)}**.`;
+			}
+
+			await user.removeItemsFromBank(itemsNeeded);
+			response += `\n\nYou will also fletch ${fletchingQuantity}${sets} ${fletchable.name} while training. Removed ${itemsNeeded} from your bank.`;
+		}
+
 		await addSubTaskToActivityTask<AgilityActivityTaskOptions>({
 			courseID: course.id,
 			userID: user.id,
@@ -188,7 +269,8 @@ export const lapsCommand: OSBMahojiCommand = {
 					: {
 							itemID: alchResult.itemToAlch.id,
 							quantity: alchResult.maxCasts
-						}
+						},
+			fletch: fletchable ? { id: fletchable.id, qty: fletchingQuantity } : undefined
 		});
 
 		return response;
