@@ -1,7 +1,7 @@
-import { formatDuration } from '@oldschoolgg/toolkit/util';
+import { channelIsSendable, formatDuration } from '@oldschoolgg/toolkit/util';
 import type { CommandRunOptions, MahojiUserOption } from '@oldschoolgg/toolkit/util';
-import { ApplicationCommandOptionType } from 'discord.js';
-import { Time, randArrItem } from 'e';
+import { ActionRowBuilder, ApplicationCommandOptionType, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { Time, noOp, randArrItem } from 'e';
 import { Bank } from 'oldschooljs';
 
 import { isSuperUntradeable } from '../../lib/bso/bsoUtil';
@@ -16,6 +16,7 @@ import { hotColdCommand } from '../lib/abstracted_commands/hotColdCommand';
 import { luckyPickCommand } from '../lib/abstracted_commands/luckyPickCommand';
 import { slotsCommand } from '../lib/abstracted_commands/slotsCommand';
 import type { OSBMahojiCommand } from '../lib/util';
+import { minionBuyButton } from '@/lib/sharedComponents';
 
 export const gambleCommand: OSBMahojiCommand = {
 	name: 'gamble',
@@ -211,6 +212,18 @@ export const gambleCommand: OSBMahojiCommand = {
 		give_random_item?: { user: MahojiUserOption };
 	}>) => {
 		const user = await mUserFetch(userID);
+		if (!user.user.minion_hasBought) {
+			return {
+						content:
+							"You haven't bought a minion yet! Click the button below to buy a minion and start playing the bot.",
+						components: [
+							{
+								components: [minionBuyButton],
+								type: ComponentType.ActionRow
+							}
+						]
+					};
+		}
 
 		if (options.item) {
 			if (options.item.item) {
@@ -234,6 +247,31 @@ export const gambleCommand: OSBMahojiCommand = {
 			const duration = parseDuration(options.commands.time);
 			if (!duration || duration <= 0) return 'Invalid time specified.';
 			if (duration > Time.Hour * 24) return 'The maximum time you can gamble for is 24 hours.';
+
+				const channel = globalClient.channels.cache.get(interaction.channelId);
+				if (!channelIsSendable(channel)) throw new Error('Channel for confirmation not found.');
+				const duelMessage = await channel.send({
+					content: `${target.toString}, do you accept the duel for ${duration} to be command locked?`,
+					components: [
+						new ActionRowBuilder<ButtonBuilder>().addComponents([
+							new ButtonBuilder({
+								label: 'Accept',
+								style: ButtonStyle.Primary,
+								customId: 'CONFIRM'
+							}),
+							new ButtonBuilder({
+								label: 'Decline',
+								style: ButtonStyle.Secondary,
+								customId: 'CANCEL'
+							})
+						])
+					]
+				});
+			
+				function cancel() {
+					duelMessage.delete().catch(noOp);
+					return "Duel cancelled, user didn't accept in time.";
+				}
 			const [winner, loser] = Math.random() > 0.5 ? [user, target] : [target, user];
 			await loser.update({ command_lockout_expiry: new Date(Date.now() + duration) });
 			return `${winner.badgedUsername} won the duel! ${loser.badgedUsername} is command locked for ${formatDuration(duration)}.`;
