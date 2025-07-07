@@ -6,7 +6,7 @@ export function parseDuration(str: string): number | null {
 	let duration = 0;
 	let match: RegExpExecArray | null;
 	while ((match = regex.exec(str))) {
-		const num = parseInt(match[1]);
+		const num = Number.parseInt(match[1]);
 		const unit = match[2].toLowerCase();
 		if (unit === 's') duration += num * Time.Second;
 		else if (unit === 'm') duration += num * Time.Minute;

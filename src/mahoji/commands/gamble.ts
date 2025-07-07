@@ -1,7 +1,7 @@
 import { formatDuration } from '@oldschoolgg/toolkit/util';
 import type { CommandRunOptions, MahojiUserOption } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType } from 'discord.js';
-import { randArrItem, Time } from 'e';
+import { Time, randArrItem } from 'e';
 import { Bank } from 'oldschooljs';
 
 import { isSuperUntradeable } from '../../lib/bso/bsoUtil';
