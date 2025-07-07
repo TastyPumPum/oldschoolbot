@@ -108,6 +108,7 @@ model ClientStorage {
   gp_daily                     BigInt   @default(0)
   gp_luckypick                 BigInt   @default(0)
   gp_slots                     BigInt   @default(0)
+  gp_blackjack                 BigInt   @default(0)
   gp_hotcold                   BigInt   @default(0)
   custom_prices                Json     @default("{}") @db.Json
   nightmare_cost               Json     @default("{}") @db.Json
@@ -739,6 +740,7 @@ model UserStats {
   gp_luckypick BigInt @default(0)
   gp_dice      BigInt @default(0)
   gp_slots     BigInt @default(0)
+  gp_blackjack BigInt @default(0)
   gp_hotcold   BigInt @default(0)
 
   total_gp_traded BigInt @default(0)
