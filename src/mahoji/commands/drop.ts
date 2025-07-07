@@ -2,9 +2,9 @@ import { type CommandRunOptions, ellipsize } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType } from 'discord.js';
 
 import { ClueTiers } from '../../lib/clues/clueTiers';
-import { itemNameFromID, returnStringOrFile } from '../../lib/util';
 import { handleMahojiConfirmation } from '../../lib/util/handleMahojiConfirmation';
 import { parseBank } from '../../lib/util/parseStringBank';
+import { itemNameFromID, returnStringOrFile } from '../../lib/util/smallUtils';
 import { updateBankSetting } from '../../lib/util/updateBankSetting';
 import { filterOption } from '../lib/mahojiCommandOptions';
 import type { OSBMahojiCommand } from '../lib/util';
@@ -48,6 +48,10 @@ export const dropCommand: OSBMahojiCommand = {
 			filters: [options.filter],
 			maxSize: 70
 		});
+
+		if (bank.items().some(i => i[0].customItemData?.cantBeDropped)) {
+			return 'You are trying to drop an item that cannot be dropped.';
+		}
 
 		if (!user.owns(bank)) {
 			return `You don't own ${bank}.`;

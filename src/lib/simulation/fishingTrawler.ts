@@ -1,9 +1,7 @@
-import { Bank } from 'oldschooljs';
-import { LootTable } from 'oldschooljs';
-import { itemID } from 'oldschooljs/dist/util';
+import { randomVariation } from '@oldschoolgg/toolkit';
+import { Bank, LootTable, itemID, resolveItems } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
-import { randomVariation, roll } from '../util';
+import { roll } from '../util/rng';
 
 export const trawlerFish = [
 	{
@@ -50,6 +48,11 @@ export const trawlerFish = [
 		id: itemID('Raw manta ray'),
 		level: 81,
 		xp: 46
+	},
+	{
+		id: itemID('Raw rocktail'),
+		level: 99,
+		xp: 90
 	}
 ];
 

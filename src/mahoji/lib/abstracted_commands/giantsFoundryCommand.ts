@@ -1,5 +1,6 @@
+import { formatDuration, stringMatches } from '@oldschoolgg/toolkit';
 import type { ChatInputCommandInteraction } from 'discord.js';
-import { Time, calcWhatPercent } from 'e';
+import { Time, calcWhatPercent, reduceNumByPercent } from 'e';
 import { Bank } from 'oldschooljs';
 
 import { TOTAL_GIANT_WEAPONS } from '../../../lib/giantsFoundry';
@@ -8,7 +9,6 @@ import { getMinigameEntity } from '../../../lib/settings/minigames';
 import Smithing from '../../../lib/skilling/skills/smithing';
 import { SkillsEnum } from '../../../lib/skilling/types';
 import type { GiantsFoundryActivityTaskOptions } from '../../../lib/types/minions';
-import { formatDuration, stringMatches } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { handleMahojiConfirmation } from '../../../lib/util/handleMahojiConfirmation';
@@ -178,16 +178,16 @@ export async function giantsFoundryStartCommand(
 	// If they have the entire Smiths' Uniform, give an extra 15% speed bonus
 	let setBonus = 0;
 	if (
-		user.gear.skilling.hasEquipped(
+		user.hasEquippedOrInBank(
 			Object.keys(Smithing.smithsUniformItems).map(i => Number.parseInt(i)),
-			true
+			'every'
 		)
 	) {
 		setBonus += 15;
 	} else {
 		// For each Smiths' Uniform item, check if they have it, give its' set boost and covert to 15% speed bonus later.
 		for (const [itemID] of Object.entries(Smithing.smithsUniformItems)) {
-			if (user.gear.skilling.hasEquipped([Number.parseInt(itemID)], false)) {
+			if (user.hasEquippedOrInBank(Number.parseInt(itemID))) {
 				setBonus += 3;
 			}
 		}
@@ -195,6 +195,16 @@ export async function giantsFoundryStartCommand(
 	const boosts = [];
 	timePerSection *= (100 - setBonus) / 100;
 	boosts.push(`${setBonus}% faster for Smiths' Uniform item/items`);
+
+	if (user.usingPet('Takon')) {
+		timePerSection = reduceNumByPercent(timePerSection, 15);
+		boosts.push('15% for Takon');
+	}
+	if (user.hasEquippedOrInBank('Smithing master cape')) {
+		timePerSection = reduceNumByPercent(timePerSection, 15);
+		boosts.push('15% for Smithing mastery');
+	}
+
 	const maxTripLength = calcMaxTripLength(user, 'GiantsFoundry');
 	if (!quantity) {
 		quantity = Math.floor(maxTripLength / (alloy.sections * timePerSection));

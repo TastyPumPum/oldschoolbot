@@ -1,34 +1,47 @@
 import type { GearPreset } from '@prisma/client';
 import { notEmpty, objectKeys, uniqueArr } from 'e';
-import { Bank } from 'oldschooljs';
+import { Bank, EquipmentSlot, type Item, itemID, resolveItems } from 'oldschooljs';
 import type { EGear } from 'oldschooljs/EGear';
-import { EquipmentSlot, type Item } from 'oldschooljs/dist/meta/types';
-import { resolveItems } from 'oldschooljs/dist/util/util';
+import {
+	type DefenceGearStat,
+	GearStat,
+	type GearStats,
+	type OffenceGearStat,
+	type OtherGearStat
+} from 'oldschooljs/gear';
 
 import { getSimilarItems, inverseSimilarItems } from '../data/similarItems';
-import type {
-	DefenceGearStat,
-	GearSetup,
-	GearSetupType,
-	GearSlotItem,
-	GearStats,
-	OffenceGearStat,
-	OtherGearStat
-} from '../gear/types';
-import { GearStat } from '../gear/types';
+import type { GearSetup, GearSetupType, GearSlotItem } from '../gear/types';
 import type { GearRequirement } from '../minions/types';
-import { assert } from '../util';
 import getOSItem from '../util/getOSItem';
-import itemID from '../util/itemID';
+import { assert } from '../util/logError';
 
 export type PartialGearSetup = Partial<{
 	[key in EquipmentSlot]: string;
 }>;
 
+export function addStatsOfItemsTogether(items: number[], statWhitelist = Object.values(GearStat)) {
+	const osItems = items.map(i => getOSItem(i));
+	const base: Required<GearRequirement> = {} as Required<GearRequirement>;
+	for (const item of osItems) {
+		for (const stat of Object.values(GearStat)) {
+			const thisStat = item.equipment?.[stat] ?? 0;
+			if (!base[stat]) base[stat] = 0;
+			if (statWhitelist.includes(stat)) {
+				base[stat] += thisStat;
+			}
+		}
+	}
+	return base;
+}
+
 export function hasGracefulEquipped(setup: Gear) {
-	return setup.hasEquipped(
-		['Graceful hood', 'Graceful top', 'Graceful legs', 'Graceful boots', 'Graceful gloves', 'Graceful cape'],
-		true
+	return (
+		setup.hasEquipped('Agility master cape') ||
+		setup.hasEquipped(
+			['Graceful hood', 'Graceful top', 'Graceful legs', 'Graceful boots', 'Graceful gloves', 'Graceful cape'],
+			true
+		)
 	);
 }
 
@@ -284,6 +297,27 @@ export const globalPresets: (GearPreset & { defaultSetup: GearSetupType })[] = [
 		pinned_setup: null
 	},
 	{
+		name: 'diviner',
+		user_id: '123',
+		head: itemID("Diviner's headwear"),
+		neck: null,
+		body: itemID("Diviner's robe"),
+		legs: itemID("Diviner's legwear"),
+		cape: null,
+		two_handed: null,
+		hands: itemID("Diviner's handwear"),
+		feet: itemID("Diviner's footwear"),
+		shield: null,
+		weapon: null,
+		ring: null,
+		ammo: null,
+		ammo_qty: null,
+		emoji_id: null,
+		times_equipped: 0,
+		defaultSetup: 'skilling',
+		pinned_setup: null
+	},
+	{
 		name: 'smithing',
 		user_id: '123',
 		head: null,
@@ -306,7 +340,7 @@ export const globalPresets: (GearPreset & { defaultSetup: GearSetupType })[] = [
 	}
 ];
 
-const baseStats: GearStats = {
+export const baseStats: GearStats = {
 	attack_stab: 0,
 	attack_slash: 0,
 	attack_crush: 0,

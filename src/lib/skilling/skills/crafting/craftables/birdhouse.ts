@@ -1,6 +1,5 @@
-import { Bank } from 'oldschooljs';
+import { Bank, itemID } from 'oldschooljs';
 
-import itemID from '../../../../util/itemID';
 import type { Craftable } from '../../../types';
 
 const Birdhouse: Craftable[] = [
@@ -74,6 +73,14 @@ const Birdhouse: Craftable[] = [
 		level: 90,
 		xp: 55,
 		inputItems: new Bank({ 'Redwood logs': 1, Clockwork: 1 }),
+		tickRate: 2
+	},
+	{
+		name: 'Elder bird house',
+		id: itemID('Elder bird house'),
+		level: 99,
+		xp: 95,
+		inputItems: new Bank({ 'Elder logs': 1, Clockwork: 1 }),
 		tickRate: 2
 	}
 ];

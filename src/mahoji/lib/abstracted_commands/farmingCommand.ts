@@ -1,18 +1,18 @@
+import { formatDuration, stringMatches } from '@oldschoolgg/toolkit/util';
 import type { CropUpgradeType } from '@prisma/client';
 import type { ChatInputCommandInteraction } from 'discord.js';
-import { Time } from 'e';
-import { Bank } from 'oldschooljs';
+import { Time, percentChance, reduceNumByPercent } from 'e';
+import { Bank, type Item } from 'oldschooljs';
 
+import { BitField } from '../../../lib/constants';
 import { superCompostables } from '../../../lib/data/filterables';
 import { ArdougneDiary, userhasDiaryTier } from '../../../lib/diaries';
-
 import { calcNumOfPatches } from '../../../lib/skilling/functions/calcsFarming';
 import { getFarmingInfo } from '../../../lib/skilling/functions/getFarmingInfo';
 import Farming from '../../../lib/skilling/skills/farming';
 import type { Plant } from '../../../lib/skilling/types';
 import { SkillsEnum } from '../../../lib/skilling/types';
 import type { FarmingActivityTaskOptions } from '../../../lib/types/minions';
-import { formatDuration, stringMatches } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { farmingPatchNames, findPlant, isPatchName } from '../../../lib/util/farmingHelpers';
@@ -82,6 +82,11 @@ export async function harvestCommand({
 	if (user.hasEquippedOrInBank(['Ring of endurance'])) {
 		boostStr.push('10% time for Ring of Endurance');
 		duration *= 0.9;
+	}
+
+	if (user.bitfield.includes(BitField.HasMoondashCharm)) {
+		boostStr.push('25% faster for Moondash charm');
+		duration = reduceNumByPercent(duration, 25);
 	}
 
 	const maxTripLength = calcMaxTripLength(user, 'Farming');
@@ -220,6 +225,11 @@ export async function farmingPlantCommand({
 		duration *= 0.9;
 	}
 
+	if (user.bitfield.includes(BitField.HasMoondashCharm)) {
+		boostStr.push('25% faster for Moondash charm');
+		duration = reduceNumByPercent(duration, 25);
+	}
+
 	for (const [diary, tier] of [[ArdougneDiary, ArdougneDiary.elite]] as const) {
 		const [has] = await userhasDiaryTier(user, tier);
 		if (has) {
@@ -242,6 +252,22 @@ export async function farmingPlantCommand({
 			}
 		}
 		cost.add(seed.id, qty * quantity);
+	}
+
+	const hasScroll = user.owns('Scroll of life');
+	const hasMasterFarmingCape = user.hasEquippedOrInBank('Farming master cape');
+	let seedSavingPercent = 0;
+	if (hasScroll && hasMasterFarmingCape) seedSavingPercent = 50;
+	else if (hasScroll || hasMasterFarmingCape) seedSavingPercent = 15;
+	if (seedSavingPercent > 0) {
+		boostStr.push(`${seedSavingPercent}% less seeds used`);
+		for (const [seed, amountCost] of plant.inputItems
+			.items()
+			.map((i): [Item, number] => [i[0], cost.amount(i[0].id)])) {
+			for (let i = 0; i < amountCost; i++) {
+				if (percentChance(seedSavingPercent)) cost.remove(seed.id, 1);
+			}
+		}
 	}
 
 	let didPay = false;

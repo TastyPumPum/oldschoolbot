@@ -1,17 +1,19 @@
 import type { GearSetupType } from '@prisma/client';
 import { Time, calcPercentOfNum, objectKeys, uniqueArr } from 'e';
 import { Bank } from 'oldschooljs';
-import { BitField, PeakTier } from '../../../../lib/constants';
+
+import { dwarvenBlessing } from '../../../../lib/bso/dwarvenBlessing';
+import { BitField } from '../../../../lib/constants';
 import { Eatables } from '../../../../lib/data/eatables';
 import { convertAttackStyleToGearSetup } from '../../../../lib/gear/functions/convertAttackStyleToGearSetup';
 import { calculateMonsterFoodRaw } from '../../../../lib/minions/functions/calculateMonsterFood';
 import reducedTimeFromKC from '../../../../lib/minions/functions/reducedTimeFromKC';
 import { removeFoodFromUserRaw } from '../../../../lib/minions/functions/removeFoodFromUser';
 import type { Peak } from '../../../../lib/tickers';
-import { calcWildyPKChance } from '../../../../lib/util/calcWildyPkChance';
+import { PeakTier, calcWildyPKChance } from '../../../../lib/util/calcWildyPkChance';
 import type { BoostArgs, BoostResult } from './speedBoosts';
 
-const noFoodBoost = Math.floor(Math.max(...Eatables.map(eatable => eatable.pvmBoost ?? 0)) + 1);
+const noFoodBoost = Math.floor(Math.max(...Eatables.map(eatable => eatable.pvmBoost ?? 0)));
 
 // Runs after we know the quantity/duration/etc
 type PostBoostEffectReturn = Pick<
@@ -25,7 +27,7 @@ export type PostBoostEffect = {
 			BoostArgs,
 			'addPostBoostEffect' | 'itemCost'
 		>
-	) => null | undefined | PostBoostEffectReturn | PostBoostEffectReturn[];
+	) => null | undefined | string | PostBoostEffectReturn | PostBoostEffectReturn[];
 };
 export const postBoostEffects: PostBoostEffect[] = [
 	{
@@ -168,6 +170,17 @@ export const postBoostEffects: PostBoostEffect[] = [
 					hasWildySupplies
 				}
 			};
+		}
+	},
+	{
+		description: 'Dwarven Blessing Cost',
+		run: ({ gearBank, bitfield, duration }) => {
+			const blessingResult = dwarvenBlessing({ gearBank, duration, bitfield });
+			if (blessingResult) {
+				return {
+					itemCost: blessingResult.itemCost
+				};
+			}
 		}
 	}
 ];

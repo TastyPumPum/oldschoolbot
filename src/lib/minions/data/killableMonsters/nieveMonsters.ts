@@ -1,9 +1,7 @@
 import { Time } from 'e';
-import { Monsters } from 'oldschooljs';
-import { itemID } from 'oldschooljs/dist/util';
+import { Monsters, deepResolveItems, itemID, resolveItems } from 'oldschooljs';
+import { GearStat } from 'oldschooljs/gear';
 
-import { deepResolveItems, resolveItems } from 'oldschooljs/dist/util/util';
-import { GearStat } from '../../../gear/types';
 import type { KillableMonster } from '../../types';
 
 export const nieveMonsters: KillableMonster[] = [
@@ -62,8 +60,8 @@ export const nieveMonsters: KillableMonster[] = [
 		itemsRequired: deepResolveItems([
 			['Anti-dragon shield', 'Dragonfire shield', 'Dragonfire ward'],
 			['Rune crossbow', "Karil's crossbow", 'Armadyl crossbow'],
-			['Armadyl chestplate', "Karil's leathertop"],
-			['Armadyl chainskirt', "Karil's leatherskirt"]
+			['Gorajan archer top', 'Pernix body', 'Armadyl chestplate', "Karil's leathertop"],
+			['Gorajan archer legs', 'Pernix chaps', 'Armadyl chainskirt', "Karil's leatherskirt"]
 		]),
 		notifyDrops: resolveItems(['Draconic visage']),
 		qpRequired: 0,

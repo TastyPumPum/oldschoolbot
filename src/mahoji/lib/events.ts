@@ -1,12 +1,15 @@
-import type { ItemBank } from 'oldschooljs/dist/meta/types';
+import type { ItemBank } from 'oldschooljs';
 
 import { startBlacklistSyncing } from '../../lib/blacklists';
 import { usernameWithBadgesCache } from '../../lib/cache';
 import { Channel, META_CONSTANTS, badges, globalConfig } from '../../lib/constants';
 import { initCrons } from '../../lib/crons';
+import { syncDoubleLoot } from '../../lib/doubleLoot';
+
 import { initTickers } from '../../lib/tickers';
 import { logWrapFn } from '../../lib/util';
 import { mahojiClientSettingsFetch } from '../../lib/util/clientSettings';
+import { syncSlayerMaskLeaderboardCache } from '../../lib/util/slayerMaskLeaderboard';
 import { sendToChannelID } from '../../lib/util/webhook';
 import { CUSTOM_PRICE_CACHE } from '../commands/sell';
 
@@ -51,8 +54,10 @@ async function populateUsernameCache() {
 }
 
 export const onStartup = logWrapFn('onStartup', async () => {
+	await syncDoubleLoot();
 	initCrons();
 	initTickers();
+	syncSlayerMaskLeaderboardCache();
 
 	if (globalConfig.isProduction) {
 		sendToChannelID(Channel.GeneralChannel, {

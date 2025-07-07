@@ -1,4 +1,4 @@
-import type { CommandOptions, CommandResponse } from '@oldschoolgg/toolkit/util';
+import { type CommandOptions, type CommandResponse, PerkTier, channelIsSendable } from '@oldschoolgg/toolkit/util';
 import type { Activity, NewUser, Prisma } from '@prisma/client';
 import type {
 	APIInteractionGuildMember,
@@ -7,13 +7,14 @@ import type {
 	GuildMember,
 	User
 } from 'discord.js';
+import { Time } from 'e';
 import { isEmpty } from 'remeda';
 
 import { postCommand } from '../../mahoji/lib/postCommand';
 import { preCommand } from '../../mahoji/lib/preCommand';
 import { convertMahojiCommandToAbstractCommand } from '../../mahoji/lib/util';
 import { minionActivityCache } from '../constants';
-import { channelIsSendable, isGroupActivity } from '../util';
+import { isGroupActivity } from '../util';
 import { deferInteraction, handleInteractionError, interactionReply } from '../util/interactionReply';
 import { logError } from '../util/logError';
 import { convertStoredActivityToFlatActivity } from './prisma';
@@ -79,8 +80,7 @@ async function runMahojiCommand({
 		user: globalClient.users.cache.get(user.id)!,
 		member: guildID ? globalClient.guilds.cache.get(guildID)?.members.cache.get(user.id) : undefined,
 		client: globalClient.mahojiClient,
-		interaction: interaction as ChatInputCommandInteraction,
-		djsClient: globalClient
+		interaction: interaction as ChatInputCommandInteraction
 	});
 }
 
@@ -201,4 +201,15 @@ export function activitySync(activity: Activity) {
 	for (const user of users) {
 		minionActivityCache.set(user.toString(), convertedActivity);
 	}
+}
+
+export async function isElligibleForPresent(user: MUser) {
+	if (user.isIronman) return true;
+	if (user.perkTier() >= PerkTier.Four) return true;
+	if (user.totalLevel >= 2000) return true;
+	const totalActivityDuration: [{ sum: number }] = await prisma.$queryRawUnsafe(`SELECT SUM(duration)
+FROM activity
+WHERE user_id = ${BigInt(user.id)};`);
+	if (totalActivityDuration[0].sum >= Time.Hour * 80) return true;
+	return false;
 }

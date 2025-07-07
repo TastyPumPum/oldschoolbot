@@ -1,22 +1,31 @@
+import { formatDuration, stringMatches } from '@oldschoolgg/toolkit/util';
 import type { ChatInputCommandInteraction, InteractionReplyOptions } from 'discord.js';
 
+import { Time } from 'e';
+import { handleDTD } from '../../../../lib/bso/handleDTD';
 import { colosseumCommand } from '../../../../lib/colosseum';
-import type { PvMMethod } from '../../../../lib/constants';
 import { getCurrentPeak } from '../../../../lib/getCurrentPeak';
 import { trackLoot } from '../../../../lib/lootTrack';
 import { revenantMonsters } from '../../../../lib/minions/data/killableMonsters/revs';
 import { getUsersCurrentSlayerInfo } from '../../../../lib/slayer/slayerUtil';
 import type { MonsterActivityTaskOptions } from '../../../../lib/types/minions';
-import { formatDuration, stringMatches } from '../../../../lib/util';
 import addSubTaskToActivityTask from '../../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../../lib/util/calcMaxTripLength';
 import findMonster from '../../../../lib/util/findMonster';
 import { updateBankSetting } from '../../../../lib/util/updateBankSetting';
+import { sendToChannelID } from '../../../../lib/util/webhook';
+import type { PvMMethod } from '../../../commands/k';
 import { hasMonsterRequirements } from '../../../mahojiSettings';
+import { igneCommand } from '../igneCommand';
+import { kgCommand } from '../kgCommand';
+import { kkCommand } from '../kkCommand';
+import { moktangCommand } from '../moktangCommand';
+import { naxxusCommand } from '../naxxusCommand';
 import { nexCommand } from '../nexCommand';
 import { nightmareCommand } from '../nightmareCommand';
 import { getPOH } from '../pohCommand';
 import { temporossCommand } from '../temporossCommand';
+import { vasaCommand } from '../vasaCommand';
 import { wintertodtCommand } from '../wintertodtCommand';
 import { zalcanoCommand } from '../zalcanoCommand';
 import { newMinionKillCommand } from './newMinionKill';
@@ -31,7 +40,7 @@ export async function minionKillCommand(
 	inputQuantity: number | undefined,
 	method: PvMMethod | undefined,
 	wilderness: boolean | undefined,
-	solo: boolean | undefined,
+	_solo: boolean | undefined,
 	onTask: boolean | undefined
 ): Promise<string | InteractionReplyOptions> {
 	if (user.minionIsBusy) {
@@ -41,12 +50,31 @@ export async function minionKillCommand(
 
 	if (!name) return invalidMonsterMsg;
 
-	if (stringMatches(name, 'colosseum')) return colosseumCommand(user, channelID);
-	if (stringMatches(name, 'nex')) return nexCommand(interaction, user, channelID, solo);
+	if (user.usingPet('Ishi')) {
+		sendToChannelID(channelID.toString(), {
+			content: `${user} Ishi Says: Let's kill some ogress warriors instead? 🥰 🐳`
+		});
+		name = 'Ogress Warrior';
+	}
+	if (stringMatches(name, 'colosseum')) return colosseumCommand(user, channelID, inputQuantity);
 	if (stringMatches(name, 'zalcano')) return zalcanoCommand(user, channelID, inputQuantity);
 	if (stringMatches(name, 'tempoross')) return temporossCommand(user, channelID, inputQuantity);
 	if (name.toLowerCase().includes('nightmare')) return nightmareCommand(user, channelID, name, inputQuantity);
-	if (name.toLowerCase().includes('wintertodt')) return wintertodtCommand(user, channelID, inputQuantity);
+	if (name.toLowerCase().includes('wintertodt')) return wintertodtCommand(user, channelID);
+	if (['igne ', 'ignecarus'].some(i => name.toLowerCase().includes(i))) {
+		return igneCommand(interaction, user, channelID, name, inputQuantity);
+	}
+	if (['kg', 'king goldemar'].some(i => name.toLowerCase().includes(i))) {
+		return kgCommand(interaction, user, channelID, name, inputQuantity);
+	}
+	if (['kk', 'kalphite king'].some(i => name.toLowerCase().includes(i)))
+		return kkCommand(interaction, user, channelID, name, inputQuantity);
+	if (name.toLowerCase().includes('nex')) return nexCommand(interaction, user, channelID, name, inputQuantity);
+	if (name.toLowerCase().includes('moktang')) return moktangCommand(user, channelID, inputQuantity);
+	if (name.toLowerCase().includes('naxxus')) return naxxusCommand(user, channelID, inputQuantity);
+	if (['vasa', 'vasa magus'].some(i => name.toLowerCase().includes(i))) {
+		return vasaCommand(user, channelID, inputQuantity);
+	}
 
 	let monster = findMonster(name);
 
@@ -86,7 +114,8 @@ export async function minionKillCommand(
 		slayerUnlocks: user.user.slayer_unlocks,
 		favoriteFood: user.user.favorite_food,
 		bitfield: user.bitfield,
-		currentPeak: getCurrentPeak()
+		currentPeak: getCurrentPeak(),
+		disabledInventions: user.user.disabled_inventions
 	});
 
 	if (typeof result === 'string') {
@@ -94,12 +123,17 @@ export async function minionKillCommand(
 	}
 
 	if (!user.allItemsOwned.has(result.updateBank.itemCostBank)) {
-		return `You don't have the items needed to kill this monster. You need: ${result.updateBank.itemCostBank}`;
+		return `You don't have the items needed to kill this monster. You're missing: ${result.updateBank.itemCostBank.clone().remove(user.allItemsOwned)}`;
 	}
 
-	const updateResult = await result.updateBank.transact(user);
+	const updateResult = await result.updateBank.transact(user, { isInWilderness: result.isInWilderness });
 	if (typeof updateResult === 'string') {
 		return updateResult;
+	}
+
+	const dtdResult = await handleDTD(monster, user);
+	if (typeof dtdResult === 'string') {
+		return dtdResult;
 	}
 
 	if (updateResult.message.length > 0) result.messages.push(updateResult.message);
@@ -131,7 +165,7 @@ export async function minionKillCommand(
 		channelID,
 		q: result.quantity,
 		iQty: inputQuantity,
-		duration: result.duration,
+		duration: dtdResult ? Time.Second * 5 : result.duration,
 		type: 'MonsterKilling',
 		usingCannon: !usingCannon ? undefined : usingCannon,
 		cannonMulti: !cannonMulti ? undefined : cannonMulti,
@@ -144,9 +178,8 @@ export async function minionKillCommand(
 		attackStyles: result.attackStyles,
 		onTask: slayerInfo.assignedTask !== null
 	});
-	let response = `${minionName} is now killing ${result.quantity}x ${monster.name}, it'll take around ${formatDuration(
-		result.duration
-	)} to finish. Attack styles used: ${result.attackStyles.join(', ')}.`;
+
+	let response = `${minionName} is now killing ${result.quantity}x ${monster.name}, ${dtdResult ? `using a <:deathtouched_dart:822674661967265843> **Deathtouched dart**, it'll take around ${formatDuration(Time.Second * 5)}` : `It'll take around ${formatDuration(result.duration)} to finish`}. Attack styles used: ${result.attackStyles.join(', ')}.`;
 
 	if (result.messages.length > 0) {
 		response += `\n\n${result.messages.join(', ')}`;

@@ -1,8 +1,6 @@
-import type { CommandResponse } from '@oldschoolgg/toolkit/util';
-import { formatDuration } from '@oldschoolgg/toolkit/util';
+import { type CommandResponse, formatDuration } from '@oldschoolgg/toolkit/util';
 import { Time, calcWhatPercent, percentChance, randInt, reduceNumByPercent } from 'e';
-import { Bank, Monsters } from 'oldschooljs';
-import { itemID } from 'oldschooljs/dist/util';
+import { Bank, Monsters, itemID } from 'oldschooljs';
 
 import { getMinigameScore } from '../../../lib/settings/minigames';
 import { getUsersCurrentSlayerInfo } from '../../../lib/slayer/slayerUtil';
@@ -52,7 +50,7 @@ function determineChanceOfDeathPreJad(user: MUser, attempts: number, hasInfernoK
 	if (hasInfernoKC) deathChance = 5;
 
 	// -4% Chance of dying before Jad if you have SGS.
-	if (user.hasEquipped(itemID('Saradomin godsword'))) {
+	if (user.hasEquippedOrInBank(itemID('Saradomin godsword'))) {
 		deathChance -= 4;
 	}
 
@@ -120,11 +118,17 @@ export async function fightCavesCommand(user: MUser, channelID: string): Command
 	const hasInfernoKC = zukKC > 0;
 
 	const jadDeathChance = determineChanceOfDeathInJad(attempts, hasInfernoKC);
-	const preJadDeathChance = determineChanceOfDeathPreJad(user, attempts, hasInfernoKC);
+	let preJadDeathChance = determineChanceOfDeathPreJad(user, attempts, hasInfernoKC);
 
 	const usersRangeStats = user.gear.range.stats;
 
 	duration += (randInt(1, 5) * duration) / 100;
+
+	const hasToad = user.usingPet('Wintertoad');
+	if (hasToad) {
+		duration /= 2;
+		preJadDeathChance = 0;
+	}
 
 	await user.removeItemsFromBank(fightCavesCost);
 
@@ -171,7 +175,12 @@ export async function fightCavesCommand(user: MUser, channelID: string): Command
 **Zuk KC:** ${zukKC}
 **Attempts:** ${attempts}
 
-**Removed from your bank:** ${fightCavesCost}`,
+**Removed from your bank:** ${fightCavesCost}
+${
+	hasToad
+		? '<:wintertoad:749945071230779493> The extreme cold of your Wintertoad counters the Fight Caves, allowing you to kill the creatures much faster!'
+		: ''
+}`,
 		files: [
 			{
 				attachment: await newChatHeadImage({

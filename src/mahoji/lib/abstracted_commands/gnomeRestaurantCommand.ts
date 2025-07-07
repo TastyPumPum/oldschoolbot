@@ -1,11 +1,11 @@
+import { formatDuration, randomVariation } from '@oldschoolgg/toolkit/util';
 import { Time, calcWhatPercent, randInt, reduceNumByPercent } from 'e';
-import { Bank } from 'oldschooljs';
-import { SkillsEnum } from 'oldschooljs/dist/constants';
+import { Bank, SkillsEnum } from 'oldschooljs';
 
+import { Emoji } from '@oldschoolgg/toolkit/constants';
 import { getPOHObject } from '../../../lib/poh';
 import { getMinigameScore } from '../../../lib/settings/minigames';
 import type { GnomeRestaurantActivityTaskOptions } from '../../../lib/types/minions';
-import { formatDuration, randomVariation } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { updateBankSetting } from '../../../lib/util/updateBankSetting';
@@ -39,6 +39,11 @@ export async function gnomeRestaurantCommand(user: MUser, channelID: string) {
 	if (user.skillLevel(SkillsEnum.Magic) >= 66) {
 		deliveryLength = reduceNumByPercent(deliveryLength, 25);
 		boosts.push('25% for 66 Magic (teleports)');
+	}
+
+	if (user.hasEquipped('Kuro')) {
+		deliveryLength = reduceNumByPercent(deliveryLength, 50);
+		boosts.push(`${Emoji.Kuro} 2x faster with Kuro's help`);
 	}
 
 	const poh = await getPOH(user.id);

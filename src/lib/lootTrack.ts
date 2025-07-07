@@ -1,9 +1,8 @@
 import { cleanString, formatDuration } from '@oldschoolgg/toolkit/util';
 import type { LootTrack, loot_track_type } from '@prisma/client';
 import { Time } from 'e';
-import { Bank } from 'oldschooljs';
+import { Bank, type ItemBank } from 'oldschooljs';
 
-import type { ItemBank } from './types';
 import { makeBankImage } from './util/makeBankImage';
 
 type TrackLootOptions =
@@ -19,6 +18,7 @@ type TrackLootOptions =
 				loot: Bank;
 				duration: number;
 			}[];
+			suffix?: 'tame';
 	  }
 	| {
 			id: string;
@@ -29,6 +29,7 @@ type TrackLootOptions =
 				id: string;
 				cost: Bank;
 			}[];
+			suffix?: 'tame';
 	  };
 
 async function trackIndividualsLoot({
@@ -93,7 +94,10 @@ async function trackIndividualsLoot({
 }
 
 export async function trackLoot(opts: TrackLootOptions) {
-	const key = cleanString(opts.id).toLowerCase().replace(/ /g, '_');
+	let key = cleanString(opts.id).toLowerCase().replace(/ /g, '_');
+	if (opts.suffix) {
+		key = `${key}-${opts.suffix}`;
+	}
 	const totalBank = opts.changeType === 'cost' ? opts.totalCost : opts.totalLoot;
 	if (totalBank.length === 0) return;
 

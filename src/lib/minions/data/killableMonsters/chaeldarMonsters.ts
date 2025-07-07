@@ -1,9 +1,7 @@
 import { Time } from 'e';
-import { Bank, Monsters } from 'oldschooljs';
-import { itemID } from 'oldschooljs/dist/util';
+import { Bank, Monsters, deepResolveItems, itemID, resolveItems } from 'oldschooljs';
+import { GearStat } from 'oldschooljs/gear';
 
-import { deepResolveItems, resolveItems } from 'oldschooljs/dist/util/util';
-import { GearStat } from '../../../gear/types';
 import { SkillsEnum } from '../../../skilling/types';
 import type { KillableMonster } from '../../types';
 import { QuestID } from '../quests';
@@ -85,8 +83,8 @@ export const chaeldarMonsters: KillableMonster[] = [
 
 		difficultyRating: 2,
 		itemsRequired: deepResolveItems([
-			["Karil's leathertop", 'Armadyl chestplate', "Black d'hide body"],
-			["Karil's leatherskirt", 'Armadyl chainskirt', "Black d'hide chaps"]
+			['Gorajan archer top', 'Pernix body', "Karil's leathertop", 'Armadyl chestplate'],
+			['Gorajan archer legs', 'Pernix chaps', "Karil's leatherskirt", 'Armadyl chainskirt']
 		]),
 		qpRequired: 20,
 		levelRequirements: {
@@ -276,6 +274,7 @@ export const chaeldarMonsters: KillableMonster[] = [
 		difficultyRating: 5,
 		itemsRequired: deepResolveItems([
 			[
+				'Virtus wand',
 				'Warped sceptre (uncharged)',
 				'Trident of the seas',
 				'Trident of the seas (full)',
@@ -360,7 +359,9 @@ export const chaeldarMonsters: KillableMonster[] = [
 		wildy: false,
 
 		difficultyRating: 6,
-		itemsRequired: deepResolveItems([["Karil's crossbow", 'Rune crossbow', 'Armadyl crossbow', 'Toxic blowpipe']]),
+		itemsRequired: deepResolveItems([
+			['Zaryte bow', "Karil's crossbow", 'Rune crossbow', 'Armadyl crossbow', 'Toxic blowpipe']
+		]),
 		notifyDrops: resolveItems(['Dragon warhammer']),
 		qpRequired: 30,
 		itemInBankBoosts: [

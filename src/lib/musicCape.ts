@@ -1,16 +1,14 @@
 import { activity_type_enum } from '@prisma/client';
 import { objectEntries, partition } from 'e';
-import { Bank, Monsters } from 'oldschooljs';
+import { Bank, EMonster, ItemGroups, Monsters, resolveItems } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
-import { MIMIC_MONSTER_ID, NEX_ID, ZALCANO_ID } from './constants';
-import { championScrolls } from './data/CollectionsExport';
+import { NexMonster } from './nex';
 import { RandomEvents } from './randomEvents';
 import type { MinigameName } from './settings/minigames';
 import { Minigames } from './settings/minigames';
 import type { RequirementFailure } from './structures/Requirements';
 import { Requirements } from './structures/Requirements';
-import { formatList, itemNameFromID } from './util';
+import { formatList, itemNameFromID } from './util/smallUtils';
 
 export const musicCapeRequirements = new Requirements()
 	.add({
@@ -56,7 +54,7 @@ export const musicCapeRequirements = new Requirements()
 	})
 	.add({
 		kcRequirement: {
-			[MIMIC_MONSTER_ID]: 1,
+			[EMonster.MIMIC]: 1,
 			[Monsters.Hespori.id]: 1,
 			[Monsters.Bryophyta.id]: 1,
 			[Monsters.TzTokJad.id]: 1,
@@ -65,7 +63,7 @@ export const musicCapeRequirements = new Requirements()
 			[Monsters.CommanderZilyana.id]: 1,
 			[Monsters.Kreearra.id]: 1,
 			[Monsters.KrilTsutsaroth.id]: 1,
-			[NEX_ID]: 1,
+			[NexMonster.id]: 1,
 			[Monsters.Cerberus.id]: 1,
 			[Monsters.GiantMole.id]: 1,
 			[Monsters.Jogre.id]: 1,
@@ -75,7 +73,7 @@ export const musicCapeRequirements = new Requirements()
 			[Monsters.CorporealBeast.id]: 1,
 			[Monsters.Vorkath.id]: 1,
 			[Monsters.Scorpia.id]: 1,
-			[ZALCANO_ID]: 1,
+			[EMonster.ZALCANO]: 1,
 			[Monsters.Kraken.id]: 1,
 			[Monsters.DagannothPrime.id]: 1,
 			[Monsters.BlackDemon.id]: 1,
@@ -85,9 +83,11 @@ export const musicCapeRequirements = new Requirements()
 		}
 	})
 	.add({
+		name: '200 QP',
 		qpRequirement: 200
 	})
 	.add({
+		name: 'Sacrifice Fire Cape',
 		sacrificedItemsRequirement: new Bank().add('Fire cape')
 	})
 	.add({
@@ -141,8 +141,14 @@ export const musicCapeRequirements = new Requirements()
 				activity_type_enum.BlastFurnace, // During the slash command migration this moved to under the smelting activity
 				activity_type_enum.ChampionsChallenge,
 				activity_type_enum.Nex,
+				activity_type_enum.BossEvent,
+				activity_type_enum.TrickOrTreat,
 				activity_type_enum.Revenants, // This is now under monsterActivity
-				activity_type_enum.KourendFavour // Kourend favor activity was removed
+				activity_type_enum.KourendFavour, // Kourend favor activity was removed
+				activity_type_enum.HalloweenMiniMinigame,
+				activity_type_enum.Mortimer,
+				activity_type_enum.BirthdayCollectIngredients,
+				activity_type_enum.SnoozeSpellActive
 			];
 			const notDoneActivities = Object.values(activity_type_enum).filter(
 				type => !typesNotRequiredForMusicCape.includes(type) && !uniqueActivitiesDone.includes(type)
@@ -219,7 +225,7 @@ export const musicCapeRequirements = new Requirements()
 	.add({
 		name: 'Champions Challenge',
 		has: ({ user }) => {
-			for (const scroll of championScrolls) {
+			for (const scroll of ItemGroups.championScrolls) {
 				if (user.cl.has(scroll)) return [];
 			}
 			return [{ reason: 'You need to have a Champion Scroll in your CL.' }];

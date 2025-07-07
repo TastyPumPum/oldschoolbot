@@ -1,19 +1,26 @@
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import { type CommandRunOptions, formatDuration, stringMatches } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType, type InteractionReplyOptions } from 'discord.js';
-
-import type { PvMMethod } from '../../lib/constants';
-import { NEX_ID, PVM_METHODS, ZALCANO_ID } from '../../lib/constants';
-import killableMonsters, { wikiMonsters } from '../../lib/minions/data/killableMonsters';
-
 import { Time, reduceNumByPercent } from 'e';
-import { Eatables } from '../../lib/data/eatables';
-import { calculateMonsterFood } from '../../lib/minions/functions';
-import reducedTimeFromKC from '../../lib/minions/functions/reducedTimeFromKC';
-import { formatDuration, returnStringOrFile, stringMatches } from '../../lib/util';
-import { calcMaxTripLength } from '../../lib/util/calcMaxTripLength';
-import findMonster from '../../lib/util/findMonster';
+import { EMonster } from 'oldschooljs/EMonster';
+
+import { Eatables } from '../../lib/data/eatables.js';
+import killableMonsters, { wikiMonsters } from '../../lib/minions/data/killableMonsters';
+import { Ignecarus } from '../../lib/minions/data/killableMonsters/custom/bosses/Ignecarus';
+import { KalphiteKingMonster } from '../../lib/minions/data/killableMonsters/custom/bosses/KalphiteKing';
+import KingGoldemar from '../../lib/minions/data/killableMonsters/custom/bosses/KingGoldemar';
+import { MOKTANG_ID } from '../../lib/minions/data/killableMonsters/custom/bosses/Moktang';
+import { Naxxus } from '../../lib/minions/data/killableMonsters/custom/bosses/Naxxus';
+import { VasaMagus } from '../../lib/minions/data/killableMonsters/custom/bosses/VasaMagus';
+import calculateMonsterFood from '../../lib/minions/functions/calculateMonsterFood.js';
+import reducedTimeFromKC from '../../lib/minions/functions/reducedTimeFromKC.js';
+import { NexMonster } from '../../lib/nex';
+import { calcMaxTripLength } from '../../lib/util/calcMaxTripLength.js';
+import findMonster from '../../lib/util/findMonster.js';
 import { minionKillCommand } from '../lib/abstracted_commands/minionKill/minionKill';
 import type { OSBMahojiCommand } from '../lib/util';
+
+export const PVM_METHODS = ['barrage', 'cannon', 'burst', 'chinning', 'none'] as const;
+export type PvMMethod = (typeof PVM_METHODS)[number];
 
 const otherMonsters = [
 	{
@@ -29,17 +36,60 @@ const otherMonsters = [
 		link: `/bosses/the-nightmare/${stringMatches(s.split(' ')[0], "Phosani's") ? '#phosanis-nightmare' : ''}`
 	})),
 	{
-		name: 'Nex',
-		aliases: ['nex'],
-		id: NEX_ID,
-		link: '/bosses/nex/'
-	},
-	{
 		name: 'Zalcano',
 		aliases: ['zalcano'],
-		id: ZALCANO_ID,
+		id: EMonster.ZALCANO,
 		emoji: '<:Smolcano:604670895113633802>',
-		link: '/miscelleanous/zalcano/'
+		link: '/miscellaneous/zalcano/'
+	},
+	{
+		...VasaMagus,
+		link: '/bso/monsters/bosses/vasa-magus/'
+	},
+	{
+		...Ignecarus,
+		name: 'Ignecarus (Solo)',
+		link: '/bso/monsters/bosses/ignecarus/'
+	},
+	{
+		...Ignecarus,
+		name: 'Ignecarus (Mass)',
+		link: '/bso/monsters/bosses/ignecarus/'
+	},
+	{
+		...KingGoldemar,
+		name: 'King Goldemar (Solo)',
+		link: '/bso/monsters/bosses/king-goldemar/'
+	},
+	{
+		...KingGoldemar,
+		name: 'King Goldemar (Mass)',
+		link: '/bso/monsters/bosses/king-goldemar/'
+	},
+	{
+		...NexMonster,
+		name: 'Nex (Solo)',
+		link: '/bso/monsters/bosses/nex/'
+	},
+	{
+		...NexMonster,
+		name: 'Nex (Mass)',
+		link: '/bso/monsters/bosses/nex/'
+	},
+	{
+		...KalphiteKingMonster,
+		name: 'Kalphite King (Solo)',
+		link: '/bso/monsters/bosses/kalphite-king/'
+	},
+	{
+		...KalphiteKingMonster,
+		name: 'Kalphite King (Mass)',
+		link: '/bso/monsters/bosses/kalphite-king/'
+	},
+	{
+		...Naxxus,
+		name: 'Naxxus',
+		link: '/bso/monsters/bosses/naxxus/'
 	},
 	{
 		name: 'Wintertodt',
@@ -47,6 +97,12 @@ const otherMonsters = [
 		id: -1,
 		emoji: '<:Phoenix:324127378223792129>',
 		link: '/activities/wintertodt/'
+	},
+	{
+		name: 'Moktang',
+		aliases: ['moktang'],
+		id: MOKTANG_ID,
+		link: '/bso/monsters/bosses/moktang/'
 	},
 	{
 		name: 'Colosseum',
@@ -128,12 +184,6 @@ export const minionKCommand: OSBMahojiCommand = {
 		},
 		{
 			type: ApplicationCommandOptionType.Boolean,
-			name: 'show_info',
-			description: 'Show information on this monster.',
-			required: false
-		},
-		{
-			type: ApplicationCommandOptionType.Boolean,
 			name: 'wilderness',
 			description: 'If you want to kill the monster in the wilderness.',
 			required: false
@@ -154,15 +204,12 @@ export const minionKCommand: OSBMahojiCommand = {
 		name: string;
 		quantity?: number;
 		method?: PvMMethod;
-		show_info?: boolean;
 		wilderness?: boolean;
 		solo?: boolean;
 		onTask?: boolean;
 	}>) => {
 		const user = await mUserFetch(userID);
-		if (options.show_info) {
-			return returnStringOrFile(await monsterInfo(user, options.name));
-		}
+
 		return minionKillCommand(
 			user,
 			interaction,

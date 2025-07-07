@@ -1,15 +1,16 @@
-import { type CommandResponse, deepMerge, miniID, stripEmojis, toTitleCase } from '@oldschoolgg/toolkit/util';
+import { type CommandResponse, deepMerge, md5sum, miniID, stripEmojis, toTitleCase } from '@oldschoolgg/toolkit/util';
 import type { Prisma } from '@prisma/client';
 import { ButtonBuilder, ButtonStyle, type InteractionReplyOptions } from 'discord.js';
-import { clamp, objectEntries } from 'e';
+import { Time, clamp, objectEntries, roll } from 'e';
 import { type ArrayItemsResolved, type Bank, type ItemBank, Items, getItemOrThrow } from 'oldschooljs';
 import { MersenneTwister19937, shuffle } from 'random-js';
 import z from 'zod';
 
 import { skillEmoji } from '../data/emojis';
+import type { Consumable } from '../minions/types';
 import type { SkillRequirements, Skills } from '../types';
 
-export function itemNameFromID(itemID: number | string) {
+export function itemNameFromID(itemID: number) {
 	return Items.get(itemID)?.name;
 }
 
@@ -60,6 +61,13 @@ export function pluraliseItemName(name: string): string {
 export function shuffleRandom<T>(input: number, arr: readonly T[]): T[] {
 	const engine = MersenneTwister19937.seed(input);
 	return shuffle(engine, [...arr]);
+}
+
+export function calcBabyYagaHouseDroprate(xpBeingReceived: number, cl: Bank) {
+	let rate = 1 / (((xpBeingReceived / 30) * 30) / 50_000_000);
+	const amountInCl = cl.amount('Baby yaga house');
+	if (amountInCl > 1) rate *= amountInCl;
+	return Math.floor(rate);
 }
 
 const shortItemNames = new Map([
@@ -145,24 +153,44 @@ export function calculateSimpleMonsterDeathChance({
 	return clamp(deathChance, lowestDeathChance, highestDeathChance);
 }
 
+export function perHourChance(
+	durationMilliseconds: number,
+	oneInXPerHourChance: number,
+	successFunction: () => unknown
+) {
+	const minutesPassed = Math.floor(durationMilliseconds / 60_000);
+	const perMinuteChance = oneInXPerHourChance * 60;
+
+	for (let i = 0; i < minutesPassed; i++) {
+		if (roll(perMinuteChance)) {
+			successFunction();
+		}
+	}
+}
+
 const TOO_LONG_STR = 'The result was too long (over 2000 characters), please read the attached file.';
 
-export function returnStringOrFile(string: string | InteractionReplyOptions): Awaited<CommandResponse> {
+export function returnStringOrFile(
+	string: string | InteractionReplyOptions,
+	forceFile = false
+): Awaited<CommandResponse> {
 	if (typeof string === 'string') {
-		if (string.length > 2000) {
+		const hash = md5sum(string).slice(0, 5);
+		if (string.length > 2000 || forceFile) {
 			return {
 				content: TOO_LONG_STR,
-				files: [{ attachment: Buffer.from(string), name: 'result.txt' }]
+				files: [{ attachment: Buffer.from(string), name: `result-${hash}.txt` }]
 			};
 		}
 		return string;
 	}
-	if (string.content && string.content.length > 2000) {
+	if (string.content && (string.content.length > 2000 || forceFile)) {
+		const hash = md5sum(string.content).slice(0, 5);
 		return deepMerge(
 			string,
 			{
 				content: TOO_LONG_STR,
-				files: [{ attachment: Buffer.from(string.content), name: 'result.txt' }]
+				files: [{ attachment: Buffer.from(string.content), name: `result-${hash}.txt` }]
 			},
 			{ clone: false }
 		);
@@ -229,4 +257,52 @@ export function isValidNickname(str?: string) {
 			['\n', '`', '@', '<', ':'].every(char => !str.includes(char)) &&
 			stripEmojis(str).length === str.length
 	);
+}
+
+export function formatList(_itemList: (string | undefined | null)[], end?: string) {
+	const itemList = _itemList.filter(i => i !== undefined && i !== null) as string[];
+	if (itemList.length < 2) return itemList.join(', ');
+	const lastItem = itemList.pop();
+	return `${itemList.join(', ')} ${end ? end : 'and'} ${lastItem}`;
+}
+
+export function formatItemCosts(consumable: Consumable, timeToFinish: number) {
+	const str = [];
+
+	const consumables = [consumable];
+
+	if (consumable.alternativeConsumables) {
+		for (const c of consumable.alternativeConsumables) {
+			consumables.push(c);
+		}
+	}
+
+	for (const c of consumables) {
+		const itemEntries = c.itemCost.items();
+		const multiple = itemEntries.length > 1;
+		const subStr = [];
+
+		let multiply = 1;
+		if (c.qtyPerKill) {
+			multiply = c.qtyPerKill;
+		} else if (c.qtyPerMinute) {
+			multiply = c.qtyPerMinute * (timeToFinish / Time.Minute);
+		}
+
+		for (const [item, quantity] of itemEntries) {
+			subStr.push(`${Number((quantity * multiply).toFixed(3))}x ${item.name}`);
+		}
+
+		if (multiple) {
+			str.push(formatList(subStr));
+		} else {
+			str.push(subStr.join(''));
+		}
+	}
+
+	if (consumables.length > 1) {
+		return str.join(' OR ');
+	}
+
+	return str.join('');
 }

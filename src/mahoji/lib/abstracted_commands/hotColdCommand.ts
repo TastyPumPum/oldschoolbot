@@ -1,10 +1,8 @@
 import type { CommandResponse } from '@oldschoolgg/toolkit/util';
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { EmbedBuilder } from 'discord.js';
-import { LootTable } from 'oldschooljs';
-import { toKMB } from 'oldschooljs/dist/util';
+import { LootTable, resolveItems, toKMB } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
 import { mahojiClientSettingsUpdate } from '../../../lib/util/clientSettings';
 import { handleMahojiConfirmation } from '../../../lib/util/handleMahojiConfirmation';
 import { mahojiParseNumber, userStatsUpdate } from '../../mahojiSettings';
@@ -65,7 +63,7 @@ ${explanation}`
 			text: `You received ${flowerLoot}`
 		});
 	const response: Awaited<CommandResponse> = {
-		embeds: [embed]
+		embeds: [embed.data]
 	};
 
 	// You get 5x if you roll a black/white flower

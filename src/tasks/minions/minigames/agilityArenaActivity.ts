@@ -1,13 +1,14 @@
-import { Time, calcWhatPercent, reduceNumByPercent } from 'e';
-import { Bank } from 'oldschooljs';
-
+import { Emoji, Events } from '@oldschoolgg/toolkit/constants';
 import { formatDuration } from '@oldschoolgg/toolkit/util';
-import { Emoji, Events } from '../../../lib/constants';
+import { Time, calcWhatPercent, reduceNumByPercent, roll } from 'e';
+import { Bank, randomVariation, toKMB } from 'oldschooljs';
+
+import { skillingPetDropRate } from '@/lib/util';
 import { KaramjaDiary, userhasDiaryTier } from '../../../lib/diaries';
+import { userHasFlappy } from '../../../lib/invention/inventions';
 import { incrementMinigameScore } from '../../../lib/settings/settings';
 import { SkillsEnum } from '../../../lib/skilling/types';
 import type { ActivityTaskOptionsWithQuantity } from '../../../lib/types/minions';
-import { randomVariation, roll, skillingPetDropRate, toKMB } from '../../../lib/util';
 import { handleTripFinish } from '../../../lib/util/handleTripFinish';
 
 export const agilityArenaTask: MinionTask = {
@@ -35,7 +36,14 @@ export const agilityArenaTask: MinionTask = {
 				if (roll(10)) bonusTickets++;
 			}
 		}
+
 		ticketsReceived += bonusTickets;
+
+		const flappyRes = await userHasFlappy({ user, duration });
+
+		if (flappyRes.shouldGiveBoost) {
+			ticketsReceived *= 2;
+		}
 
 		// Increment agility_arena minigame score
 		await incrementMinigameScore(user.id, 'agility_arena', ticketsReceived);
@@ -44,7 +52,7 @@ export const agilityArenaTask: MinionTask = {
 		const xpRes = await user.addXP({ skillName: SkillsEnum.Agility, amount: agilityXP, duration: data.duration });
 		let str = `${user}, ${user.minionName} finished doing the Brimhaven Agility Arena for ${formatDuration(
 			duration
-		)}, ${xpRes}.`;
+		)}, ${xpRes} and ${ticketsReceived} Agility arena tickets.${flappyRes.userMsg}`;
 
 		// Effective xp rate message
 		const xpFromTickets = ticketsReceived * xpPerTicket;

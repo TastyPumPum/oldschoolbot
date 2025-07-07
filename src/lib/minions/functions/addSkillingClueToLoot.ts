@@ -1,5 +1,5 @@
 import { percentChance, sumArr } from 'e';
-import type { Bank } from 'oldschooljs';
+import { type Bank, itemID } from 'oldschooljs';
 
 import {
 	birdsNestID,
@@ -11,18 +11,18 @@ import {
 } from '../../simulation/birdsNest';
 import { SkillsEnum } from '../../skilling/types';
 import { GearBank } from '../../structures/GearBank';
-import { randFloat, roll } from '../../util';
-import itemID from '../../util/itemID';
+import { randFloat, roll } from '../../util/rng';
 
 const clues = [
-	[itemID('Clue scroll(elite)'), 1 / 10],
-	[itemID('Clue scroll(hard)'), 2 / 10],
-	[itemID('Clue scroll(medium)'), 3 / 10],
-	[itemID('Clue scroll(easy)'), 4 / 10]
+	[itemID('Elder scroll piece'), 0.2 / 10],
+	[itemID('Clue scroll (grandmaster)'), 0.45 / 10],
+	[itemID('Clue scroll(elite)'), 2 / 10],
+	[itemID('Clue scroll(hard)'), 3 / 10],
+	[itemID('Clue scroll(medium)'), 5 / 10]
 ];
 
 export default function addSkillingClueToLoot(
-	user: MUser | GearBank,
+	user: MUser | GearBank | number,
 	skill: SkillsEnum,
 	quantity: number,
 	clueChance: number,
@@ -32,7 +32,12 @@ export default function addSkillingClueToLoot(
 	twitcherSetting?: string,
 	wcCapeNestBoost?: boolean
 ) {
-	const userLevel = user instanceof GearBank ? user.skillsAsLevels[skill] : user.skillLevel(skill);
+	const userLevel =
+		typeof user === 'number'
+			? user
+			: user instanceof GearBank
+				? user.skillsAsLevels[skill]
+				: user.skillLevel(skill);
 	const nestChance = wcCapeNestBoost ? Math.floor(256 * 0.9) : 256;
 	const cluesTotalWeight = sumArr(clues.map(c => c[1]));
 	let chance = Math.floor(clueChance / (100 + userLevel));
@@ -69,10 +74,11 @@ export default function addSkillingClueToLoot(
 		}
 
 		if (!roll(chance)) continue;
+		const nextTier = false;
 		let gotClue = false;
 		let clueRoll = randFloat(0, cluesTotalWeight);
 		for (const clue of clues) {
-			if (clueRoll < clue[1]) {
+			if (clueRoll < clue[1] || nextTier) {
 				nests++;
 				gotClue = true;
 				loot.add(clue[0]);

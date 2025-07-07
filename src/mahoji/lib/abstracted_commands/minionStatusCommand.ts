@@ -1,14 +1,13 @@
-import { toTitleCase } from '@oldschoolgg/toolkit/util';
-import type { BaseMessageOptions } from 'discord.js';
-import { ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { Emoji } from '@oldschoolgg/toolkit/constants';
+import { makeComponents, toTitleCase } from '@oldschoolgg/toolkit/util';
+import { type BaseMessageOptions, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import { roll, stripNonAlphanumeric } from 'e';
 
 import { ClueTiers } from '../../../lib/clues/clueTiers';
-import { BitField, Emoji } from '../../../lib/constants';
+import { BitField, PerkTier } from '../../../lib/constants';
+import { getUsersFishingContestDetails } from '../../../lib/fishingContest';
 import { roboChimpUserFetch } from '../../../lib/roboChimp';
-
 import { minionBuyButton } from '../../../lib/sharedComponents';
-import { makeComponents } from '../../../lib/util';
 import {
 	makeAutoContractButton,
 	makeAutoSlayButton,
@@ -16,6 +15,9 @@ import {
 } from '../../../lib/util/globalInteractions';
 import { minionStatus } from '../../../lib/util/minionStatus';
 import { makeRepeatTripButtons } from '../../../lib/util/repeatStoredTrip';
+import { getUsersTame, shortTameTripDesc, tameLastFinishedActivity } from '../../../lib/util/tameUtil';
+import { getItemContractDetails } from '../../commands/ic';
+import { spawnLampIsReady } from '../../commands/tools';
 import { calculateBirdhouseDetails } from './birdhousesCommand';
 import { isUsersDailyReady } from './dailyCommand';
 import { canRunAutoContract } from './farmingContractCommand';
@@ -55,13 +57,14 @@ async function fetchPinnedTrips(userID: string) {
 	);
 }
 
-export async function minionStatusCommand(user: MUser): Promise<BaseMessageOptions> {
+export async function minionStatusCommand(user: MUser, channelID: string): Promise<BaseMessageOptions> {
 	const { minionIsBusy } = user;
 	const birdhouseDetails = minionIsBusy ? { isReady: false } : calculateBirdhouseDetails(user);
-	const [roboChimpUser, gearPresetButtons, pinnedTripButtons, dailyIsReady] = await Promise.all([
+	const [roboChimpUser, gearPresetButtons, pinnedTripButtons, fishingResult, dailyIsReady] = await Promise.all([
 		roboChimpUserFetch(user.id),
 		minionIsBusy ? [] : fetchFavoriteGearPresets(user.id),
 		minionIsBusy ? [] : fetchPinnedTrips(user.id),
+		getUsersFishingContestDetails(user),
 		isUsersDailyReady(user)
 	]);
 
@@ -87,7 +90,22 @@ export async function minionStatusCommand(user: MUser): Promise<BaseMessageOptio
 	const status = minionStatus(user);
 	const buttons: ButtonBuilder[] = [];
 
-	if (dailyIsReady.isReady) {
+	if (
+		user.perkTier() >= PerkTier.Four &&
+		fishingResult.catchesFromToday.length === 0 &&
+		!user.minionIsBusy &&
+		['Contest rod', "Beginner's tackle box"].every(i => user.hasEquippedOrInBank(i))
+	) {
+		buttons.push(
+			new ButtonBuilder()
+				.setCustomId('DO_FISHING_CONTEST')
+				.setLabel('Fishing Contest')
+				.setEmoji('630911040091193356')
+				.setStyle(ButtonStyle.Secondary)
+		);
+	}
+
+	if (dailyIsReady.isReady && !user.bitfield.includes(BitField.DisableDailyButton)) {
 		buttons.push(
 			new ButtonBuilder()
 				.setCustomId('CLAIM_DAILY')
@@ -150,6 +168,45 @@ export async function minionStatusCommand(user: MUser): Promise<BaseMessageOptio
 					.setStyle(ButtonStyle.Secondary)
 			);
 		}
+	}
+
+	const perkTier = user.perkTier();
+	if (perkTier >= PerkTier.Two) {
+		const { tame, species, activity } = await getUsersTame(user);
+		if (tame && !activity) {
+			const lastTameAct = await tameLastFinishedActivity(user);
+			if (lastTameAct) {
+				buttons.push(
+					new ButtonBuilder()
+						.setCustomId('REPEAT_TAME_TRIP')
+						.setLabel(`Repeat ${shortTameTripDesc(lastTameAct)}`)
+						.setEmoji(species!.emojiID)
+						.setStyle(ButtonStyle.Secondary)
+				);
+			}
+		}
+	}
+
+	const [spawnLampReady] = spawnLampIsReady(user, channelID);
+	if (spawnLampReady) {
+		buttons.push(
+			new ButtonBuilder()
+				.setCustomId('SPAWN_LAMP')
+				.setLabel('Spawn Lamp')
+				.setEmoji('988325171498721290')
+				.setStyle(ButtonStyle.Secondary)
+		);
+	}
+
+	const icDetails = getItemContractDetails(user);
+	if (perkTier >= PerkTier.Two && icDetails.currentItem && icDetails.owns) {
+		buttons.push(
+			new ButtonBuilder()
+				.setCustomId('ITEM_CONTRACT_SEND')
+				.setLabel(`IC: ${icDetails.currentItem.name.slice(0, 20)}`)
+				.setEmoji('988422348434718812')
+				.setStyle(ButtonStyle.Secondary)
+		);
 	}
 
 	if (roboChimpUser.leagues_points_total === 0) {

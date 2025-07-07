@@ -1,16 +1,14 @@
 import { Time } from 'e';
-import { Monsters } from 'oldschooljs';
+import { Monsters, deepResolveItems, itemID, resolveItems } from 'oldschooljs';
+import { GearStat } from 'oldschooljs/gear';
 
-import { deepResolveItems, resolveItems } from 'oldschooljs/dist/util/util';
 import {
 	commanderZilyanaCL,
 	generalGraardorCL,
 	kreeArraCL,
 	krilTsutsarothCL
 } from '../../../../data/CollectionsExport';
-import { GearStat } from '../../../../gear/types';
 import { SkillsEnum } from '../../../../skilling/types';
-import itemID from '../../../../util/itemID';
 import type { KillableMonster } from '../../../types';
 
 const killableBosses: KillableMonster[] = [
@@ -24,7 +22,6 @@ const killableBosses: KillableMonster[] = [
 		wildy: false,
 
 		difficultyRating: 7,
-		notifyDrops: resolveItems(['Pet general graardor']),
 		qpRequired: 1,
 		itemInBankBoosts: [
 			{
@@ -67,7 +64,6 @@ const killableBosses: KillableMonster[] = [
 		wildy: false,
 
 		difficultyRating: 7,
-		notifyDrops: resolveItems(['Pet zilyana']),
 		qpRequired: 1,
 		itemInBankBoosts: [
 			{
@@ -98,8 +94,8 @@ const killableBosses: KillableMonster[] = [
 		},
 		uniques: commanderZilyanaCL,
 		itemsRequired: deepResolveItems([
-			["Karil's leathertop", 'Armadyl chestplate'],
-			["Karil's leatherskirt", 'Armadyl chainskirt']
+			['Pernix body', "Karil's leathertop", 'Armadyl chestplate'],
+			['Pernix chaps', "Karil's leatherskirt", 'Armadyl chainskirt']
 		]),
 		defaultAttackStyles: [SkillsEnum.Ranged],
 		customMonsterHP: 723,
@@ -123,7 +119,6 @@ const killableBosses: KillableMonster[] = [
 		wildy: false,
 
 		difficultyRating: 7,
-		notifyDrops: resolveItems(["Pet kree'arra"]),
 		qpRequired: 1,
 		itemInBankBoosts: [
 			{
@@ -150,8 +145,8 @@ const killableBosses: KillableMonster[] = [
 		},
 		uniques: kreeArraCL,
 		itemsRequired: deepResolveItems([
-			["Karil's leathertop", 'Armadyl chestplate'],
-			["Karil's leatherskirt", 'Armadyl chainskirt']
+			['Pernix body', "Karil's leathertop", 'Armadyl chestplate'],
+			['Pernix chaps', "Karil's leatherskirt", 'Armadyl chainskirt']
 		]),
 		defaultAttackStyles: [SkillsEnum.Ranged],
 		disallowedAttackStyles: [SkillsEnum.Attack, SkillsEnum.Strength, SkillsEnum.Magic],
@@ -176,7 +171,6 @@ const killableBosses: KillableMonster[] = [
 		wildy: false,
 
 		difficultyRating: 7,
-		notifyDrops: resolveItems(["Pet k'ril tsutsaroth"]),
 		qpRequired: 1,
 		itemInBankBoosts: [
 			{
@@ -199,8 +193,8 @@ const killableBosses: KillableMonster[] = [
 		},
 		uniques: krilTsutsarothCL,
 		itemsRequired: deepResolveItems([
-			["Karil's leathertop", 'Armadyl chestplate'],
-			["Karil's leatherskirt", 'Armadyl chainskirt']
+			['Pernix body', "Karil's leathertop", 'Armadyl chestplate'],
+			['Pernix chaps', "Karil's leatherskirt", 'Armadyl chainskirt']
 		]),
 		defaultAttackStyles: [SkillsEnum.Attack],
 		customMonsterHP: 708,

@@ -1,13 +1,12 @@
+import { formatDuration, randomVariation } from '@oldschoolgg/toolkit/util';
 import { Time, increaseNumByPercent, reduceNumByPercent } from 'e';
-import { Bank } from 'oldschooljs';
-import { SkillsEnum } from 'oldschooljs/dist/constants';
+import { Bank, Items, SkillsEnum } from 'oldschooljs';
 
 import { determineMiningTime } from '../../../lib/skilling/functions/determineMiningTime';
 import { pickaxes } from '../../../lib/skilling/functions/miningBoosts';
 import Fishing from '../../../lib/skilling/skills/fishing';
 import Mining from '../../../lib/skilling/skills/mining';
 import type { ActivityTaskOptionsWithQuantity } from '../../../lib/types/minions';
-import { formatDuration, itemNameFromID, randomVariation } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { minionName } from '../../../lib/util/minionUtils';
@@ -26,18 +25,20 @@ async function miningCommand(user: MUser, channelID: string, quantity: number | 
 	}
 	// Default bronze pickaxe, last in the array
 	let currentPickaxe = pickaxes[pickaxes.length - 1];
-	boosts.push(`**${currentPickaxe.ticksBetweenRolls}** ticks between rolls for ${itemNameFromID(currentPickaxe.id)}`);
+	boosts.push(
+		`**${currentPickaxe.ticksBetweenRolls}** ticks between rolls for ${Items.itemNameFromId(currentPickaxe.id)}`
+	);
 
 	// For each pickaxe, if they have it, give them its' bonus and break.
 	for (const pickaxe of pickaxes) {
 		if (!user.hasEquippedOrInBank([pickaxe.id]) || user.skillsAsLevels.mining < pickaxe.miningLvl) continue;
 		currentPickaxe = pickaxe;
 		boosts.pop();
-		boosts.push(`**${pickaxe.ticksBetweenRolls}** ticks between rolls for ${itemNameFromID(pickaxe.id)}`);
+		boosts.push(`**${pickaxe.ticksBetweenRolls}** ticks between rolls for ${Items.itemNameFromId(pickaxe.id)}`);
 		break;
 	}
 
-	const glovesEffect = 0;
+	const glovesRate = 0;
 	const armourEffect = 0;
 	const miningCapeEffect = 0;
 	const goldSilverBoost = false;
@@ -47,16 +48,16 @@ async function miningCommand(user: MUser, channelID: string, quantity: number | 
 	// Calculate the time it takes to mine specific quantity or as many as possible
 	const [duration, newQuantity] = determineMiningTime({
 		quantity,
-		gearBank: user.gearBank,
 		ore: barroniteRocks,
 		ticksBetweenRolls: currentPickaxe.ticksBetweenRolls,
-		glovesEffect,
+		glovesRate,
 		armourEffect,
 		miningCapeEffect,
 		powermining: powermine,
 		goldSilverBoost,
 		miningLvl: miningLevel,
 		maxTripLength: calcMaxTripLength(user, 'CamdozaalMining'),
+		hasGlory: user.hasEquipped('Amulet of glory'),
 		hasKaramjaMedium: false
 	});
 

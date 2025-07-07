@@ -1,6 +1,6 @@
+import { stringMatches } from '@oldschoolgg/toolkit/util';
 import { Bank } from 'oldschooljs';
 
-import { stringMatches } from '../../util';
 import Potions from '../data/potions';
 
 export default function decantPotionFromBank(
@@ -24,6 +24,7 @@ export default function decantPotionFromBank(
 		return { error: "That's not a valid potion that you can decant." };
 	}
 	if (potionToDecant.items.length === 2 && dose > 2) return { error: 'You can only decant mixes into 1 or 2 doses.' };
+	if (potionToDecant.items.length === 1) return { error: `You can't decant ${potionToDecant.name}.` };
 	const potionsToRemove = new Bank();
 	const potionsToAdd = new Bank();
 	let sumOfPots = 0;

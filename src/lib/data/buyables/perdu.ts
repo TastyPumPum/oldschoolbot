@@ -1,14 +1,14 @@
-import { Bank } from 'oldschooljs';
+import { Bank, resolveItems } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
+import { itemNameFromID } from '../../util';
 import { diariesCL } from '../CollectionsExport';
 import type { Buyable } from './buyables';
 
 export const perduBuyables: Buyable[] = diariesCL.map(itemName => ({
-	name: itemName,
+	name: itemNameFromID(itemName)!,
 	gpCost: 1000,
 	ironmanPrice: 200,
-	collectionLogReqs: resolveItems(itemName)
+	collectionLogReqs: [itemName]
 }));
 
 export const prayerBooks: Buyable[] = [

@@ -1,8 +1,8 @@
+import { Events } from '@oldschoolgg/toolkit/constants';
+import { roll } from 'e';
 import { Bank } from 'oldschooljs';
 
-import { Events } from '../../lib/constants';
 import type { ActivityTaskOptionsWithQuantity } from '../../lib/types/minions';
-import { roll } from '../../lib/util';
 import { handleTripFinish } from '../../lib/util/handleTripFinish';
 import { gloriesInventorySize } from '../../mahoji/lib/abstracted_commands/chargeGloriesCommand';
 

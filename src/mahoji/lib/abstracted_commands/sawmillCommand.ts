@@ -1,9 +1,9 @@
+import { formatDuration, stringMatches } from '@oldschoolgg/toolkit';
 import { Time, clamp } from 'e';
-import { Bank } from 'oldschooljs';
+import { Bank, Items, toKMB } from 'oldschooljs';
 
 import { Planks } from '../../../lib/minions/data/planks';
 import type { SawmillActivityTaskOptions } from '../../../lib/types/minions';
-import { formatDuration, itemNameFromID, stringMatches, toKMB } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { updateBankSetting } from '../../../lib/util/updateBankSetting';
@@ -11,9 +11,10 @@ import { userHasGracefulEquipped } from '../../mahojiSettings';
 
 export async function sawmillCommand(
 	user: MUser,
-	plankName: string | number,
+	plankName: string,
 	quantity: number | undefined,
-	channelID: string
+	channelID: string,
+	speed: number | undefined
 ) {
 	const plank = Planks.find(
 		plank =>
@@ -52,17 +53,22 @@ export async function sawmillCommand(
 	}
 
 	if (quantity === 0) {
-		return `You don't have any ${itemNameFromID(plank.inputItem)}.`;
+		return `You don't have any ${Items.itemNameFromId(plank.inputItem)}.`;
 	}
+	let duration = quantity * timePerPlank;
 
 	const { GP } = user;
-	const cost = plank?.gpCost * quantity;
+
+	let cost = plank!.gpCost * 2 * quantity;
+
+	if (speed && speed > 1 && speed < 6) {
+		cost += Math.ceil(cost * (speed * ((speed + 0.2) / 6)));
+		duration /= speed;
+	}
 
 	if (GP < cost) {
 		return `You need ${toKMB(cost)} GP to create ${quantity} planks.`;
 	}
-
-	const duration = quantity * timePerPlank;
 
 	if (duration > maxTripLength) {
 		return `${user.minionName} can't go on trips longer than ${formatDuration(
@@ -72,10 +78,10 @@ export async function sawmillCommand(
 		)}.`;
 	}
 
-	const costBank = new Bank().add('Coins', plank?.gpCost * quantity).add(plank?.inputItem, quantity);
-	await transactItems({ userID: user.id, itemsToRemove: costBank });
+	const costBank = new Bank().add('Coins', cost).add(plank!.inputItem, quantity);
+	await user.removeItemsFromBank(costBank);
 
-	await updateBankSetting('construction_cost_bank', new Bank().add('Coins', plank?.gpCost * quantity));
+	await updateBankSetting('construction_cost_bank', new Bank().add('Coins', cost));
 
 	await addSubTaskToActivityTask<SawmillActivityTaskOptions>({
 		type: 'Sawmill',
@@ -83,10 +89,10 @@ export async function sawmillCommand(
 		plankID: plank?.outputItem,
 		plankQuantity: quantity,
 		userID: user.id,
-		channelID: channelID.toString()
+		channelID
 	});
 
-	let response = `${user.minionName} is now creating ${quantity} ${itemNameFromID(plank.outputItem)}${
+	let response = `${user.minionName} is now creating ${quantity} ${Items.itemNameFromId(plank.outputItem)}${
 		quantity > 1 ? 's' : ''
 	}. The Sawmill has charged you ${toKMB(cost)} GP. They'll come back in around ${formatDuration(duration)}.`;
 

@@ -1,7 +1,5 @@
 import type { Activity } from '@prisma/client';
 import { activity_type_enum } from '@prisma/client';
-import type { ZodSchema } from 'zod';
-import { z } from 'zod';
 
 import { aerialFishingTask } from '../tasks/minions/HunterActivity/aerialFishingActivity';
 import { birdHouseTask } from '../tasks/minions/HunterActivity/birdhouseActivity';
@@ -12,6 +10,30 @@ import { offeringTask } from '../tasks/minions/PrayerActivity/offeringActivity';
 import { scatteringTask } from '../tasks/minions/PrayerActivity/scatteringActivity';
 import { agilityTask } from '../tasks/minions/agilityActivity';
 import { alchingTask } from '../tasks/minions/alchingActivity';
+import { bossEventTask } from '../tasks/minions/bossEventActivity';
+import { bathhouseTask } from '../tasks/minions/bso/bathhousesActivity';
+import { bonanzaTask } from '../tasks/minions/bso/bonanzaActivity';
+import { disassemblingTask } from '../tasks/minions/bso/disassemblingActivity';
+import { doaTask } from '../tasks/minions/bso/doaActivity';
+import { dungeoneeringTask } from '../tasks/minions/bso/dungeoneeringActivity';
+import { fishingContestTask } from '../tasks/minions/bso/fishingContestActivity';
+import { fogTask } from '../tasks/minions/bso/fogActivity';
+import { guthixianCacheTask } from '../tasks/minions/bso/guthixianCacheActivity';
+import { ignecarusTask } from '../tasks/minions/bso/ignecarusActivity';
+import { kalphiteKingTask } from '../tasks/minions/bso/kalphiteKingActivity';
+import { kibbleTask } from '../tasks/minions/bso/kibbleActivity';
+import { kingGoldemarTask } from '../tasks/minions/bso/kingGoldemarActivity';
+import { memoryHarvestTask } from '../tasks/minions/bso/memoryHarvestActivity';
+import { moktangTask } from '../tasks/minions/bso/moktangActivity';
+import { mrTask } from '../tasks/minions/bso/monkeyRumbleActivity';
+import { naxxusTask } from '../tasks/minions/bso/naxxusActivity';
+import { nexTask } from '../tasks/minions/bso/nexActivity';
+import { odsTask } from '../tasks/minions/bso/ouraniaDeliveryServiceActivity';
+import { researchActivityTask } from '../tasks/minions/bso/researchActivity';
+import { scTask } from '../tasks/minions/bso/stealingCreationActivity';
+import { twTask } from '../tasks/minions/bso/tinkeringWorkshopActivity';
+import { turaelsTrialsTask } from '../tasks/minions/bso/turaelsTrialsActivity';
+import { vasaTask } from '../tasks/minions/bso/vasaMagusActivity';
 import { butlerTask } from '../tasks/minions/butlerActivity';
 import { camdozaalFishingTask } from '../tasks/minions/camdozaalActivity/camdozaalFishingActivity';
 import { camdozaalMiningTask } from '../tasks/minions/camdozaalActivity/camdozaalMiningActivity';
@@ -74,7 +96,6 @@ import { miningTask } from '../tasks/minions/miningActivity';
 import { monsterTask } from '../tasks/minions/monsterActivity';
 import { motherlodeMiningTask } from '../tasks/minions/motherlodeMineActivity';
 import { myNotesTask } from '../tasks/minions/myNotesActivity';
-import { nexTask } from '../tasks/minions/nexActivity';
 import ouraniaAltarTask from '../tasks/minions/ouraniaAltarActivity';
 import { pickpocketTask } from '../tasks/minions/pickpocketActivity';
 import { questingTask } from '../tasks/minions/questingActivity';
@@ -164,7 +185,6 @@ const tasks: MinionTask[] = [
 	wealthChargeTask,
 	tokkulShopTask,
 	smeltingTask,
-	nexTask,
 	pickpocketTask,
 	questingTask,
 	monsterTask,
@@ -182,15 +202,39 @@ const tasks: MinionTask[] = [
 	tiaraRunecraftTask,
 	nightmareZoneTask,
 	shadesOfMortonTask,
+	nexTask,
+	bathhouseTask,
+	disassemblingTask,
+	fishingContestTask,
+	ignecarusTask,
+	kalphiteKingTask,
+	kibbleTask,
+	kingGoldemarTask,
+	moktangTask,
+	mrTask,
+	naxxusTask,
+	odsTask,
+	researchActivityTask,
+	vasaTask,
+	dungeoneeringTask,
+	fogTask,
+	scTask,
+	bossEventTask,
+	twTask,
 	cutLeapingFishTask,
 	toaTask,
+	bonanzaTask,
 	underwaterAgilityThievingTask,
+	doaTask,
 	strongholdTask,
 	combatRingTask,
 	specificQuestTask,
 	camdozaalMiningTask,
 	camdozaalSmithingTask,
 	camdozaalFishingTask,
+	memoryHarvestTask,
+	guthixianCacheTask,
+	turaelsTrialsTask,
 	myNotesTask,
 	colosseumTask,
 	CreateForestersRationsTask
@@ -224,14 +268,6 @@ export const syncActivityCache = async () => {
 	}
 };
 
-const ActivityTaskOptionsSchema = z.object({
-	userID: z.string(),
-	duration: z.number(),
-	id: z.number(),
-	finishDate: z.number(),
-	channelID: z.string()
-});
-
 export async function completeActivity(_activity: Activity) {
 	const activity = convertStoredActivityToFlatActivity(_activity);
 
@@ -248,13 +284,6 @@ export async function completeActivity(_activity: Activity) {
 
 	modifyBusyCounter(activity.userID, 1);
 	try {
-		if ('dataSchema' in task && task.dataSchema) {
-			const schema = ActivityTaskOptionsSchema.and(task.dataSchema);
-			const { success } = schema.safeParse(activity);
-			if (!success) {
-				logError(new Error(`Invalid activity data for ${activity.type} task: ${JSON.stringify(activity)}`));
-			}
-		}
 		await task.run(activity);
 	} catch (err) {
 		logError(err);
@@ -266,7 +295,6 @@ export async function completeActivity(_activity: Activity) {
 
 interface IMinionTask {
 	type: activity_type_enum;
-	dataSchema?: ZodSchema;
 	run: Function;
 }
 declare global {
@@ -277,9 +305,16 @@ const ignored: activity_type_enum[] = [
 	activity_type_enum.BirthdayEvent,
 	activity_type_enum.BlastFurnace,
 	activity_type_enum.Easter,
+	activity_type_enum.HalloweenMiniMinigame,
+	activity_type_enum.TrickOrTreat,
+	activity_type_enum.BossEvent,
 	activity_type_enum.HalloweenEvent,
+	activity_type_enum.BirthdayCollectIngredients,
+	activity_type_enum.HalloweenEvent,
+	activity_type_enum.Mortimer,
 	activity_type_enum.Revenants,
-	activity_type_enum.KourendFavour
+	activity_type_enum.KourendFavour,
+	activity_type_enum.SnoozeSpellActive
 ];
 for (const a of Object.values(activity_type_enum)) {
 	if (ignored.includes(a)) {
@@ -287,6 +322,6 @@ for (const a of Object.values(activity_type_enum)) {
 	}
 	const t = tasks.find(i => i.type === a);
 	if (!t) {
-		throw new Error(`Missing ${a} task`);
+		console.log(`Missing ${a} task`);
 	}
 }

@@ -1,16 +1,17 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { UserError } from '@oldschoolgg/toolkit/structures';
 import { cleanString, formatItemStackQuantity, generateHexColorForCashStack } from '@oldschoolgg/toolkit/util';
 import { AttachmentBuilder } from 'discord.js';
 import { chunk, randInt, sumArr } from 'e';
 import fetch from 'node-fetch';
-import { Bank, type Item, resolveItems, toKMB } from 'oldschooljs';
+import { Bank, type Item, ItemGroups, itemID, resolveItems, toKMB } from 'oldschooljs';
 
-import { UserError } from '@oldschoolgg/toolkit/structures';
-import { BOT_TYPE, BitField, ItemIconPacks, PerkTier, toaPurpleItems } from '../lib/constants';
+import { BOT_TYPE, BitField, ItemIconPacks, PerkTier } from '../lib/constants';
 import { allCLItems } from '../lib/data/Collections';
 import { filterableTypes } from '../lib/data/filterables';
+import { calcWholeDisXP, findDisassemblyGroup } from '../lib/invention/disassemble';
 import backgroundImages from '../lib/minions/data/bankBackgrounds';
 import type { BankBackground, FlagMap, Flags } from '../lib/minions/types';
 import type { BankSortMethod } from '../lib/sorts';
@@ -24,15 +25,20 @@ import {
 	createCanvas,
 	drawImageWithOutline,
 	fillTextXTimesInCtx,
-	getClippedRegionImage,
+	getClippedRegion,
 	loadImage,
 	registerFont
 } from '../lib/util/canvasUtil';
-import itemID from '../lib/util/itemID';
 import { logError } from '../lib/util/logError';
 import { XPLamps } from '../mahoji/lib/abstracted_commands/lampCommand';
+import { doaPurples } from './bso/bsoConstants';
+import { divinationEnergies } from './bso/divination';
+import { customItems } from './customItems/util';
 import { TOBUniques } from './data/tob';
 import { marketPriceOfBank, marketPriceOrBotPrice } from './marketPrices';
+import { SkillsEnum } from './skilling/types';
+import { applyCustomItemEffects } from './util/customItemEffects';
+import { allSlayerMaskHelmsAndMasks, slayerMaskLeaderboardCache } from './util/slayerMaskLeaderboard';
 
 const fonts = {
 	OSRSFont: './src/lib/resources/osrs-font.ttf',
@@ -68,12 +74,12 @@ const { floor, ceil } = Math;
 type BGSpriteName = 'dark' | 'default' | 'transparent';
 export interface IBgSprite {
 	name: BGSpriteName;
-	border: CanvasImage;
-	borderCorner: CanvasImage;
-	borderTitle: CanvasImage;
-	repeatableBg: CanvasImage;
-	tabBorderInactive: CanvasImage;
-	tabBorderActive: CanvasImage;
+	border: Canvas;
+	borderCorner: Canvas;
+	borderTitle: Canvas;
+	repeatableBg: Canvas;
+	tabBorderInactive: Canvas;
+	tabBorderActive: Canvas;
 	oddListColor: string;
 }
 
@@ -130,6 +136,8 @@ const forcedShortNameMap = new Map<number, string>([
 	[i('Papaya tree seed'), 'papaya'],
 	[i('Palm tree seed'), 'palm'],
 	[i('Dragonfruit tree seed'), 'dragon'],
+	[i('Korulsi seed'), 'korulsi'],
+	[i('Grand crystal acorn'), 'grand'],
 	[i('Potato seed'), 'potato'],
 	[i('Onion seed'), 'onion'],
 	[i('Cabbage seed'), 'cabbage'],
@@ -192,19 +200,14 @@ const forcedShortNameMap = new Map<number, string>([
 	// Clues & Caskets
 	[i('Clue scroll (beginner)'), 'beginner'],
 	[i('Reward casket (beginner)'), 'beginner'],
-
 	[i('Clue scroll (easy)'), 'easy'],
 	[i('Reward casket (easy)'), 'easy'],
-
 	[i('Clue scroll (medium)'), 'medium'],
 	[i('Reward casket (medium)'), 'medium'],
-
 	[i('Clue scroll (hard)'), 'hard'],
 	[i('Reward casket (hard)'), 'hard'],
-
 	[i('Clue scroll (elite)'), 'elite'],
 	[i('Reward casket (elite)'), 'elite'],
-
 	[i('Clue scroll (master)'), 'master'],
 	[i('Reward casket (master)'), 'master'],
 
@@ -249,8 +252,40 @@ const forcedShortNameMap = new Map<number, string>([
 
 	// Ore Packs
 	[27_019, 'GF Pack'],
-	[27_693, 'VM Pack']
+	[27_693, 'VM Pack'],
+
+	// BSO exclusive misc
+	[i('Athelas'), 'athelas'],
+	[i('Korulsi'), 'korulsi'],
+	[i('Grimy korulsi'), 'korulsi'],
+	[i('Athelas seed'), 'athelas'],
+	[i('Mysterious seed'), 'mysterious'],
+	[i('Mango seed'), 'mango'],
+	[i('Avocado seed'), 'avocado'],
+	[i('Lychee seed'), 'lychee'],
+	[i('Blood orange seed'), 'b.orange'],
+	[i('Spirit weed seed'), 'spirit.w'],
+	[i('Spirit weed'), 'spirit.w'],
+	[i('Advax berry seed'), 'advax'],
+	[i('Advax berry'), 'advax'],
+	[i('Divination Potion'), 'div'],
+	[i('Elder logs'), 'elder'],
+	[i('Clue scroll (grandmaster)'), 'grandmaster'],
+	[i('Reward casket (grandmaster)'), 'grandmaster'],
+	[i('Atomic energy'), 'atomic'],
+	[i('Fruity zygomite spores'), 'fruity'],
+	[i('Barky zygomite spores'), 'barky'],
+	[i('Herbal zygomite spores'), 'herbal'],
+	[i('Clue scroll (elder)'), 'elder'],
+	[i('Reward casket (elder)'), 'elder']
 ]);
+
+for (const energy of divinationEnergies) {
+	forcedShortNameMap.set(energy.item.id, energy.item.name.slice(0, 4));
+	if (energy.boon) {
+		forcedShortNameMap.set(energy.boon.id, energy.item.name.slice(0, 4));
+	}
+}
 
 function drawTitle(ctx: CanvasContext, title: string, canvas: Canvas) {
 	// Draw Bank Title
@@ -273,7 +308,8 @@ export const bankFlags = [
 	'show_names',
 	'show_weights',
 	'show_all',
-	'wide'
+	'wide',
+	'invention_xp'
 ] as const;
 export type BankFlag = (typeof bankFlags)[number];
 
@@ -285,10 +321,16 @@ export class BankImageTask {
 
 	public _bgSpriteData: CanvasImage = new CanvasImage();
 	public bgSpriteList: Record<string, IBgSprite> = {};
+	public imageHamstare: CanvasImage | null = null;
+	public redGlow: CanvasImage | null = null;
+	public bananaGlow: CanvasImage | null = null;
+	public glows: Map<number, CanvasImage>;
 	public treeImage!: CanvasImage;
 	public ready!: Promise<void>;
 	public spriteSheetImage!: CanvasImage;
 	public spriteSheetData!: Record<string, [number, number, number, number]>;
+	public bsoSpriteSheetImage!: CanvasImage;
+	public bsoSpriteSheetData!: Record<string, [number, number, number, number]>;
 
 	public constructor() {
 		// This tells us simply whether the file exists or not on disk.
@@ -297,10 +339,17 @@ export class BankImageTask {
 		// If this file does exist, it might be cached in this, or need to be read from fs.
 		this.itemIconImagesCache = new Map();
 
+		this.glows = new Map([
+			[itemID('Dragon egg'), this.redGlow!],
+			[itemID('Monkey egg'), this.bananaGlow!]
+		]);
+
 		this.ready = this.init();
 	}
 
 	async init() {
+		this.redGlow = await loadImage(await fs.readFile('./src/lib/resources/images/red-glow.png'));
+		this.bananaGlow = await loadImage(await fs.readFile('./src/lib/resources/images/banana-glow.png'));
 		const colors: Record<BGSpriteName, string> = {
 			default: '#655741',
 			dark: '#393939',
@@ -315,12 +364,12 @@ export class BankImageTask {
 			this._bgSpriteData = d;
 			this.bgSpriteList[bgName] = {
 				name: bgName,
-				border: await getClippedRegionImage(d, 0, 0, 18, 6),
-				borderCorner: await getClippedRegionImage(d, 19, 0, 6, 6),
-				borderTitle: await getClippedRegionImage(d, 26, 0, 18, 6),
-				tabBorderInactive: await getClippedRegionImage(d, 0, 7, 75, 20),
-				tabBorderActive: await getClippedRegionImage(d, 0, 45, 75, 20),
-				repeatableBg: await getClippedRegionImage(d, 93, 0, 96, 65),
+				border: getClippedRegion(d, 0, 0, 18, 6),
+				borderCorner: getClippedRegion(d, 19, 0, 6, 6),
+				borderTitle: getClippedRegion(d, 26, 0, 18, 6),
+				tabBorderInactive: getClippedRegion(d, 0, 7, 75, 20),
+				tabBorderActive: getClippedRegion(d, 0, 45, 75, 20),
+				repeatableBg: getClippedRegion(d, 93, 0, 96, 65),
 				oddListColor: colors[bgName]
 			};
 		}
@@ -328,6 +377,11 @@ export class BankImageTask {
 		this.spriteSheetImage = await loadImage(await fs.readFile('./src/lib/resources/images/spritesheet.png'));
 		this.spriteSheetData = JSON.parse(
 			await fs.readFile('./src/lib/resources/images/spritesheet.json', { encoding: 'utf-8' })
+		);
+
+		this.bsoSpriteSheetImage = await loadImage(await fs.readFile('./src/lib/resources/images/bso_spritesheet.png'));
+		this.bsoSpriteSheetData = JSON.parse(
+			await fs.readFile('./src/lib/resources/images/bso_spritesheet.json', { encoding: 'utf-8' })
 		);
 		await this.run();
 	}
@@ -399,7 +453,7 @@ export class BankImageTask {
 		}
 	}
 
-	async getItemImage(itemID: number, user?: MUser): Promise<CanvasImage> {
+	async getItemImage(itemID: number, user?: MUser): Promise<Canvas | CanvasImage> {
 		if (user && user.user.icon_pack_id !== null) {
 			for (const pack of ItemIconPacks) {
 				if (pack.id === user.user.icon_pack_id) {
@@ -408,10 +462,16 @@ export class BankImageTask {
 			}
 		}
 
-		const data = this.spriteSheetData[itemID];
+		const data = this.bsoSpriteSheetData[itemID] ?? this.spriteSheetData[itemID];
 		if (data) {
 			const [sX, sY, width, height] = data;
-			const image = await getClippedRegionImage(this.spriteSheetImage, sX, sY, width, height);
+			const image = getClippedRegion(
+				this.bsoSpriteSheetData[itemID] ? this.bsoSpriteSheetImage : this.spriteSheetImage,
+				sX,
+				sY,
+				width,
+				height
+			);
 			return image;
 		}
 
@@ -430,7 +490,7 @@ export class BankImageTask {
 			this.itemIconImagesCache.set(itemID, image);
 			return image;
 		} catch (err) {
-			logError(`Failed to load item icon with id: ${itemID}`);
+			logError(`Failed to load item icon with id: ${itemID} ${err}`);
 			return this.getItemImage(1);
 		}
 	}
@@ -440,17 +500,29 @@ export class BankImageTask {
 		ctx,
 		x,
 		y,
-		outline
+		outline,
+		user
 	}: {
 		itemID: number;
 		ctx: CanvasContext;
 		x: number;
 		y: number;
 		outline?: { outlineColor: string; alpha: number };
+		user?: MUser;
 	}) {
-		const data = this.spriteSheetData[itemID];
-		const drawOptions = {
-			image: this.spriteSheetImage,
+		const isCustom = customItems.includes(itemID);
+		const data = isCustom ? this.bsoSpriteSheetData[itemID] : this.spriteSheetData[itemID];
+		const image = isCustom ? this.bsoSpriteSheetImage : this.spriteSheetImage;
+		const drawOptions: {
+			image: CanvasImage | Canvas;
+			sourceX: number;
+			sourceY: number;
+			sourceWidth: number;
+			sourceHeight: number;
+			destX: number;
+			destY: number;
+		} = {
+			image,
 			sourceX: -1,
 			sourceY: -1,
 			sourceWidth: -1,
@@ -477,6 +549,27 @@ export class BankImageTask {
 		drawOptions.destX = Math.floor(x + (itemSize - drawOptions.sourceWidth) / 2) + 2;
 		drawOptions.destY = Math.floor(y + (itemSize - drawOptions.sourceHeight) / 2);
 
+		// GLOW
+		let glow = this.glows.get(itemID);
+		if (allSlayerMaskHelmsAndMasks.has(itemID)) {
+			if (slayerMaskLeaderboardCache.get(itemID) === user?.id) {
+				glow = this.redGlow!;
+			}
+		}
+		if (glow) {
+			const centerX = drawOptions.destX + drawOptions.sourceWidth / 2;
+			const centerY = drawOptions.destY + drawOptions.sourceHeight / 2;
+			const glowX = centerX - glow.width / 2;
+			const glowY = centerY - glow.width / 2;
+			ctx.save();
+			ctx.strokeStyle = 'red';
+			ctx.drawImage(glow, glowX, glowY, glow.width, glow.height);
+			ctx.restore();
+		}
+		// END GLOW
+
+		const customImage = await applyCustomItemEffects(user ?? null, itemID);
+
 		const args = [
 			drawOptions.image,
 			drawOptions.sourceX,
@@ -489,16 +582,21 @@ export class BankImageTask {
 			drawOptions.sourceHeight
 		] as const;
 
-		if (outline) {
+		if (customImage) {
+			ctx.drawImage(customImage, drawOptions.destX, drawOptions.destY);
+		} else if (outline) {
 			drawImageWithOutline(ctx, ...args);
 		} else {
 			ctx.drawImage(...args);
 		}
+		return {
+			drawOptions
+		};
 	}
 
 	async fetchAndCacheImage(itemID: number) {
-		const imageBuffer = await fetch(`https://chisel.weirdgloop.org/static/img/osrs-sprite/${itemID}.png`).then(
-			result => result.buffer()
+		const imageBuffer = await fetch(`https://static.runelite.net/cache/item/icon/${itemID}.png`).then(result =>
+			result.buffer()
 		);
 
 		await fs.writeFile(path.join(CACHE_DIR, `${itemID}.png`), imageBuffer);
@@ -639,8 +737,11 @@ export class BankImageTask {
 				ctx,
 				x: xLoc,
 				y: yLoc,
-				outline: isNewCLItem ? { outlineColor: '#ac7fff', alpha: 1 } : undefined
+				outline: isNewCLItem ? { outlineColor: '#ac7fff', alpha: 1 } : undefined,
+				user: _user
 			});
+
+			ctx.restore();
 
 			// Do not draw the item qty if there is 0 of that item in the bank
 			if (quantity !== 0) {
@@ -666,6 +767,15 @@ export class BankImageTask {
 				bottomItemText = item.id.toString();
 			} else if (flags.has('names') || mahojiFlags?.includes('show_names')) {
 				bottomItemText = item.name;
+			} else if (mahojiFlags?.includes('invention_xp') && _user) {
+				const group = findDisassemblyGroup(item);
+				const inventionLevel = _user.skillLevel(SkillsEnum.Invention);
+				const xp = group && inventionLevel >= group.data.lvl && calcWholeDisXP(_user, item, quantity);
+				if (xp) {
+					bottomItemText = `${toKMB(xp)}XP`;
+				} else {
+					bottomItemText = 0;
+				}
 			} else if (mahojiFlags?.includes('show_weights') && weightings && weightings[item.id]) {
 				bottomItemText = weightings[item.id];
 			} else if (mahojiFlags?.includes('show_market_price')) {
@@ -708,6 +818,14 @@ export class BankImageTask {
 		const bankBackgroundID = Number(user?.user.bankBackground ?? flags.get('background') ?? 1);
 		const rawCL = user?.cl;
 		const currentCL: Bank | undefined = collectionLog ?? (rawCL === undefined ? undefined : new Bank(rawCL));
+
+		if (flags.has('alch')) {
+			for (const [item] of bank.items()) {
+				if (!item.price || !(item.price > 1000 && item.price < (item.highalch ?? 0) * 3)) {
+					bank.clear(item);
+				}
+			}
+		}
 
 		// Filtering
 		const searchQuery = flags.get('search') as string | undefined;
@@ -814,7 +932,9 @@ export class BankImageTask {
 
 		const hexColor = user?.user.bank_bg_hex;
 
-		const useSmallBank = user ? (hasBgSprite ? true : user.bitfield.includes(BitField.AlwaysSmallBank)) : true;
+		const useSmallBank =
+			bgImage.id !== 100 &&
+			(user ? (hasBgSprite ? true : user.bitfield.includes(BitField.AlwaysSmallBank)) : true);
 
 		const canvas = createCanvas(width, useSmallBank ? canvasHeight : Math.max(331, canvasHeight));
 
@@ -891,7 +1011,7 @@ const chestLootTypes = [
 		chestImagePurple: loadImage('./src/lib/resources/images/toaChestPurple.png'),
 		width: 240,
 		height: 220,
-		purpleItems: toaPurpleItems,
+		purpleItems: ItemGroups.toaPurpleItems,
 		position: (canvas: Canvas, image: CanvasImage) => [
 			canvas.width - image.width + 25,
 			44 + canvas.height / 4 - image.height / 2
@@ -939,6 +1059,16 @@ const chestLootTypes = [
 			'Dragon hunter crossbow',
 			'Twisted buckler'
 		]),
+		position: () => [12, 44],
+		itemRect: [135, 45, 120, 120]
+	},
+	{
+		title: 'Depths of Atlantis',
+		chestImage: loadImage('./src/lib/resources/images/doa.png'),
+		chestImagePurple: loadImage('./src/lib/resources/images/doa.png'),
+		width: 260,
+		height: 180,
+		purpleItems: doaPurples,
 		position: () => [12, 44],
 		itemRect: [135, 45, 120, 120]
 	}
@@ -1008,7 +1138,7 @@ export async function drawChestLootImage(options: {
 		canvases.push(canvas);
 	}
 
-	const fileName = `${anyoneGotPurple ? 'SPOILER_' : ''}toaloot-${randInt(1, 1000)}.png`;
+	const fileName = `${anyoneGotPurple ? 'SPOILER_' : ''}chestloot-${randInt(1, 1000)}.png`;
 
 	if (canvases.length === 1) {
 		return new AttachmentBuilder(await canvasToBuffer(canvases[0]), {

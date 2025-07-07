@@ -1,6 +1,6 @@
 import { isFunction, notEmpty } from 'e';
-import { Bank, Monsters } from 'oldschooljs';
-import { Implings } from 'oldschooljs/dist/simulation/openables/Implings';
+import { Bank, Implings, Monsters } from 'oldschooljs';
+
 import { flowerTable } from '../mahoji/lib/abstracted_commands/hotColdCommand';
 import { tipTable } from '../tasks/minions/minigames/gnomeRestaurantActivity';
 import { ClueTiers } from './clues/clueTiers';
@@ -53,8 +53,14 @@ for (const item of Buyables) {
 	if (buyable) totalBankToAdd.add(buyable);
 }
 for (const item of allFarmingItems) ALL_OBTAINABLE_ITEMS.add(item);
-for (const item of Createables) totalBankToAdd.add(item.outputItems);
-for (const item of armorAndItemPacks) totalBankToAdd.add(item.outputItems);
+for (const item of Createables) {
+	if (isFunction(item.outputItems)) continue;
+	totalBankToAdd.add(item.outputItems);
+}
+for (const item of armorAndItemPacks) {
+	if (isFunction(item.outputItems)) continue;
+	totalBankToAdd.add(item.outputItems);
+}
 for (const item of Hunter.Creatures) {
 	for (const i of item.table.allItems) ALL_OBTAINABLE_ITEMS.add(i);
 }

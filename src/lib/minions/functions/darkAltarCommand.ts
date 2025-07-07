@@ -1,13 +1,15 @@
+import { formatDuration, stringMatches } from '@oldschoolgg/toolkit';
 import { Time, increaseNumByPercent, reduceNumByPercent } from 'e';
-import { SkillsEnum } from 'oldschooljs/dist/constants';
+import { SkillsEnum } from 'oldschooljs';
 
 import { userHasGracefulEquipped } from '../../../mahoji/mahojiSettings';
 import { KourendKebosDiary, userhasDiaryTier } from '../../diaries';
+import { InventionID, inventionBoosts, inventionItemBoost } from '../../invention/inventions';
 import type { DarkAltarOptions } from '../../types/minions';
-import { formatDuration, hasSkillReqs } from '../../util';
 import addSubTaskToActivityTask from '../../util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../util/calcMaxTripLength';
 import getOSItem from '../../util/getOSItem';
+import { hasSkillReqs } from '../../util/smallUtils';
 
 export const darkAltarRunes = {
 	soul: {
@@ -73,6 +75,24 @@ export async function darkAltarCommand({ user, channelID, name }: { user: MUser;
 	}
 
 	const maxTripLength = calcMaxTripLength(user, 'DarkAltar');
+
+	// Calculate Abyssal amulet boost:
+	if (user.hasEquippedOrInBank(['Abyssal amulet'])) {
+		const abyssalAmuletBoost = inventionBoosts.abyssalAmulet.boosts.find(b =>
+			b.runes.some(r => stringMatches(r, `${rune} rune (zeah)`))
+		);
+		if (abyssalAmuletBoost) {
+			const res = await inventionItemBoost({
+				user,
+				inventionID: InventionID.AbyssalAmulet,
+				duration: maxTripLength
+			});
+			if (res.success) {
+				timePerRune = reduceNumByPercent(timePerRune, abyssalAmuletBoost.boost);
+				boosts.push(`${abyssalAmuletBoost.boost}% boost for Abyssal amulet (Removed ${res.materialCost})`);
+			}
+		}
+	}
 	const quantity = Math.floor(maxTripLength / timePerRune);
 
 	await addSubTaskToActivityTask<DarkAltarOptions>({

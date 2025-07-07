@@ -1,12 +1,13 @@
 import type { activity_type_enum } from '@prisma/client';
 import { deepClone, notEmpty, roll, sumArr, uniqueArr } from 'e';
-
 import type { Item } from 'oldschooljs';
+
 import type { Requirements } from '../structures/Requirements';
 import type { ActivityTaskData, TOAOptions } from '../types/minions';
-import { assert, formatList } from '../util';
 import getOSItem from '../util/getOSItem';
 import type { TripFinishEffect } from '../util/handleTripFinish';
+import { assert } from '../util/logError';
+import { formatList } from '../util/smallUtils';
 import { easyCombatAchievements } from './easy';
 import { eliteCombatAchievements } from './elite';
 import { grandmasterCombatAchievements } from './grandmaster';
@@ -47,7 +48,7 @@ export type CombatAchievement = {
 	| {
 			rng: {
 				chancePerKill: number;
-				hasChance: activity_type_enum | ((data: ActivityTaskData, user: MUser) => boolean);
+				hasChance: activity_type_enum | ((data: ActivityTaskData, user: MUser, index: number) => boolean);
 			};
 	  }
 	| {
@@ -194,12 +195,12 @@ export const combatAchievementTripEffect = async ({ data, messages, user }: Para
 			if (qty === 0) break;
 			if (user.user.completed_ca_task_ids.includes(task.id)) continue;
 			if (!('rng' in task)) continue;
-			const hasChance =
-				typeof task.rng.hasChance === 'string'
-					? dataCopy.type === task.rng.hasChance
-					: task.rng.hasChance(dataCopy, user);
-			if (!hasChance) continue;
 			for (let i = 0; i < qty; i++) {
+				const hasChance =
+					typeof task.rng.hasChance === 'string'
+						? dataCopy.type === task.rng.hasChance
+						: task.rng.hasChance(dataCopy, user, i);
+				if (!hasChance) continue;
 				if (roll(task.rng.chancePerKill)) {
 					completedTasks.push(task);
 					qty--;

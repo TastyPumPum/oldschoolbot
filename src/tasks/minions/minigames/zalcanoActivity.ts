@@ -1,7 +1,6 @@
 import { randInt } from 'e';
-import { Bank, Misc } from 'oldschooljs';
+import { Bank, EMonster, Misc } from 'oldschooljs';
 
-import { Events, ZALCANO_ID } from '../../../lib/constants';
 import { KourendKebosDiary, userhasDiaryTier } from '../../../lib/diaries';
 import { SkillsEnum } from '../../../lib/skilling/types';
 import { UpdateBank } from '../../../lib/structures/UpdateBank';
@@ -15,7 +14,7 @@ export const zalcanoTask: MinionTask = {
 	async run(data: ZalcanoActivityTaskOptions) {
 		const { channelID, quantity, duration, userID, performance, isMVP } = data;
 		const user = await mUserFetch(userID);
-		const { newKC } = await user.incrementKC(ZALCANO_ID, quantity);
+		const { newKC } = await user.incrementKC(EMonster.ZALCANO, quantity);
 		const [hasKourendHard] = await userhasDiaryTier(user, KourendKebosDiary.hard);
 		const [hasKourendElite] = await userhasDiaryTier(user, KourendKebosDiary.elite);
 		const loot = new Bank();
@@ -71,15 +70,6 @@ export const zalcanoTask: MinionTask = {
 			if (result) {
 				str += result.message;
 			}
-		}
-
-		if (loot.amount('Smolcano') > 0) {
-			globalClient.emit(
-				Events.ServerNotification,
-				`**${user.badgedUsername}'s** minion, ${
-					user.minionName
-				}, just received **Smolcano**, their Zalcano KC is ${randInt(newKC - quantity, newKC)}!`
-			);
 		}
 
 		const { previousCL, itemsAdded } = await transactItems({

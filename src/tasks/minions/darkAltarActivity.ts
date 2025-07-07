@@ -1,7 +1,6 @@
 import { increaseNumByPercent, roll } from 'e';
 import { Bank } from 'oldschooljs';
 
-import { Events } from '../../lib/constants';
 import { darkAltarRunes } from '../../lib/minions/functions/darkAltarCommand';
 import { bloodEssence, raimentBonus } from '../../lib/skilling/functions/calcsRunecrafting';
 import { SkillsEnum } from '../../lib/skilling/types';
@@ -70,17 +69,6 @@ export const darkAltarTask: MinionTask = {
 
 		if (bonusBlood > 0) {
 			str += ` **Blood essence Quantity:** ${bonusBlood.toLocaleString()}`;
-		}
-
-		if (loot.amount('Rift guardian') > 0) {
-			globalClient.emit(
-				Events.ServerNotification,
-				`**${user.badgedUsername}'s** minion, ${
-					user.minionName
-				}, just received a Rift guardian while crafting ${runeData.item.name}s at level ${user.skillLevel(
-					SkillsEnum.Runecraft
-				)} Runecrafting!`
-			);
 		}
 
 		await transactItems({

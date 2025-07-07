@@ -1,19 +1,22 @@
-import { mentionCommand } from '@oldschoolgg/toolkit/util';
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
-import type { Prisma } from '@prisma/client';
-import { xp_gains_skill_enum } from '@prisma/client';
-import type { User } from 'discord.js';
-import { ApplicationCommandOptionType } from 'discord.js';
-import { Time, noOp } from 'e';
-import { Bank, Items, calcDropRatesFromBankWithoutUniques } from 'oldschooljs';
-import { convertLVLtoXP, itemID, toKMB } from 'oldschooljs/dist/util';
+import { type CommandRunOptions, mentionCommand, stringMatches } from '@oldschoolgg/toolkit/util';
+import { type Prisma, tame_growth, xp_gains_skill_enum } from '@prisma/client';
+import { ApplicationCommandOptionType, type User } from 'discord.js';
+import { Time, noOp, uniqueArr } from 'e';
+import {
+	Bank,
+	Items,
+	MAX_INT_JAVA,
+	calcDropRatesFromBankWithoutUniques,
+	getItem,
+	itemID,
+	resolveItems,
+	toKMB
+} from 'oldschooljs';
 
-import { getItem, resolveItems } from 'oldschooljs/dist/util/util';
+import { BitFieldData, MAX_XP, globalConfig } from '@/lib/constants';
 import { mahojiUserSettingsUpdate } from '../../lib/MUser';
 import { allStashUnitTiers, allStashUnitsFlat } from '../../lib/clues/stashUnits';
 import { CombatAchievements } from '../../lib/combat_achievements/combatAchievements';
-import { MAX_INT_JAVA, globalConfig } from '../../lib/constants';
-import { leaguesCreatables } from '../../lib/data/creatables/leagueCreatables';
 import { Eatables } from '../../lib/data/eatables';
 import { TOBMaxMageGear, TOBMaxMeleeGear, TOBMaxRangeGear } from '../../lib/data/tob';
 import killableMonsters, { effectiveMonsters } from '../../lib/minions/data/killableMonsters';
@@ -21,8 +24,6 @@ import potions from '../../lib/minions/data/potions';
 import { MAX_QP, quests } from '../../lib/minions/data/quests';
 import { allOpenables } from '../../lib/openables';
 import { Minigames } from '../../lib/settings/minigames';
-
-import { COXMaxMageGear, COXMaxMeleeGear, COXMaxRangeGear } from '../../lib/data/cox';
 import { getFarmingInfo } from '../../lib/skilling/functions/getFarmingInfo';
 import Skills from '../../lib/skilling/skills';
 import Farming from '../../lib/skilling/skills/farming';
@@ -31,7 +32,7 @@ import { slayerMasters } from '../../lib/slayer/slayerMasters';
 import { getUsersCurrentSlayerInfo } from '../../lib/slayer/slayerUtil';
 import { allSlayerMonsters } from '../../lib/slayer/tasks';
 import { Gear } from '../../lib/structures/Gear';
-import { stringMatches } from '../../lib/util';
+import { TameSpeciesID, tameFeedableItems } from '../../lib/tames';
 import type { FarmingPatchName } from '../../lib/util/farmingHelpers';
 import { farmingPatchNames, getFarmingKeyFromName, userGrowingProgressStr } from '../../lib/util/farmingHelpers';
 import getOSItem from '../../lib/util/getOSItem';
@@ -45,11 +46,12 @@ import { BingoManager } from '../lib/bingo/BingoManager';
 import type { OSBMahojiCommand } from '../lib/util';
 import { userStatsUpdate } from '../mahojiSettings';
 import { fetchBingosThatUserIsInvolvedIn } from './bingo';
+import { tameEquippables } from './tames';
 
 export async function giveMaxStats(user: MUser) {
 	const updates: Prisma.UserUpdateArgs['data'] = {};
 	for (const skill of Object.values(xp_gains_skill_enum)) {
-		updates[`skills_${skill}`] = convertLVLtoXP(99);
+		updates[`skills_${skill}`] = MAX_XP - 50_000_000;
 	}
 	await user.update({
 		QP: MAX_QP,
@@ -93,12 +95,6 @@ for (const gear of resolveItems([
 }
 
 const gearPresets = [
-	{
-		name: 'Cox',
-		melee: COXMaxMeleeGear,
-		mage: COXMaxMageGear,
-		range: COXMaxRangeGear
-	},
 	{
 		name: 'ToB',
 		melee: TOBMaxMeleeGear,
@@ -182,9 +178,6 @@ farmingPreset.add('Ultracompost', 10_000);
 const usables = new Bank();
 for (const usable of allUsableItems) usables.add(usable, 100);
 
-const leaguesPreset = new Bank();
-for (const a of leaguesCreatables) leaguesPreset.add(a.outputItems);
-
 const allStashUnitItems = new Bank();
 for (const unit of allStashUnitsFlat) {
 	for (const i of [unit.items].flat(2)) {
@@ -235,7 +228,6 @@ const spawnPresets = [
 	['equippables', equippablesBank],
 	['farming', farmingPreset],
 	['usables', usables],
-	['leagues', leaguesPreset],
 	['stashunits', allStashUnitItems],
 	['potions', potionsPreset],
 	['food', foodPreset],
@@ -312,7 +304,9 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							name: 'skill',
 							description: 'The skill.',
 							required: true,
-							choices: Object.values(Skills).map(s => ({ name: s.name, value: s.id }))
+							choices: Object.values(Skills)
+								.map(s => ({ name: s.name, value: s.id }))
+								.slice(0, 25)
 						},
 						{
 							type: ApplicationCommandOptionType.Integer,
@@ -389,40 +383,34 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 				},
 				{
 					type: ApplicationCommandOptionType.Subcommand,
-					name: 'patron',
-					description: 'Set your patron perk level.',
+					name: 'bitfield',
+					description: 'Manage your bitfields',
 					options: [
 						{
 							type: ApplicationCommandOptionType.String,
-							name: 'tier',
-							description: 'The patron tier to give yourself.',
-							required: true,
-							choices: [
-								{
-									name: 'Non-patron',
-									value: '0'
-								},
-								{
-									name: 'Tier 1',
-									value: '1'
-								},
-								{
-									name: 'Tier 2',
-									value: '2'
-								},
-								{
-									name: 'Tier 3',
-									value: '3'
-								},
-								{
-									name: 'Tier 4',
-									value: '4'
-								},
-								{
-									name: 'Tier 5',
-									value: '5'
-								}
-							]
+							name: 'add',
+							description: 'The bitfield to add',
+							required: false,
+							autocomplete: async value => {
+								return Object.entries(BitFieldData)
+									.filter(bf =>
+										!value ? true : bf[1].name.toLowerCase().includes(value.toLowerCase())
+									)
+									.map(i => ({ name: i[1].name, value: i[0] }));
+							}
+						},
+						{
+							type: ApplicationCommandOptionType.String,
+							name: 'remove',
+							description: 'The bitfield to remove',
+							required: false,
+							autocomplete: async value => {
+								return Object.entries(BitFieldData)
+									.filter(bf =>
+										!value ? true : bf[1].name.toLowerCase().includes(value.toLowerCase())
+									)
+									.map(i => ({ name: i[1].name, value: i[0] }));
+							}
 						}
 					]
 				},
@@ -594,7 +582,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 				userID
 			}: CommandRunOptions<{
 				max?: {};
-				patron?: { tier: string };
+				bitfield?: { add?: string; remove?: string };
 				gear?: { thing: string };
 				reset?: { thing: string };
 				setminigamekc?: { minigame: string; kc: number };
@@ -625,6 +613,46 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 						}
 					});
 					return events.map(userEventToStr).join('\n');
+				}
+				if (options.bitfield) {
+					const bitInput = options.bitfield.add ?? options.bitfield.remove;
+					const bitEntry = Object.entries(BitFieldData).find(i => i[0] === bitInput);
+					const action: 'add' | 'remove' = options.bitfield.add ? 'add' : 'remove';
+					if (!bitEntry) {
+						return Object.entries(BitFieldData)
+							.map(entry => `**${entry[0]}:** ${entry[1]?.name}`)
+							.join('\n');
+					}
+					const bit = Number.parseInt(bitEntry[0]);
+
+					if (
+						!bit ||
+						!(BitFieldData as any)[bit] ||
+						[7, 8].includes(bit) ||
+						(action !== 'add' && action !== 'remove')
+					) {
+						return 'Invalid bitfield.';
+					}
+
+					let newBits = [...user.bitfield];
+
+					if (action === 'add') {
+						if (newBits.includes(bit)) {
+							return "Already has this bit, so can't add.";
+						}
+						newBits.push(bit);
+					} else {
+						if (!newBits.includes(bit)) {
+							return "Doesn't have this bit, so can't remove.";
+						}
+						newBits = newBits.filter(i => i !== bit);
+					}
+
+					await user.update({
+						bitfield: uniqueArr(newBits)
+					});
+
+					return `${action === 'add' ? 'Added' : 'Removed'} '${(BitFieldData as any)[bit].name}' bit.`;
 				}
 				if (options.bingo_tools) {
 					if (options.bingo_tools.start_bingo) {
@@ -777,6 +805,70 @@ ${droprates.join('\n')}`),
 							}
 						}
 					});
+					// Tames at each growth stage without items
+					await Promise.all(
+						Object.entries(TameSpeciesID)
+							.filter(([, value]) => typeof value === 'number')
+							.flatMap(([speciesName, speciesID]) =>
+								(Object.keys(tame_growth) as Array<keyof typeof tame_growth>).map(async stageKey => {
+									const stage = tame_growth[stageKey];
+									const prefix = stageKey;
+									const nickname = `${prefix}_${speciesName.toLowerCase()}`;
+
+									await prisma.tame.create({
+										data: {
+											user_id: user.id,
+											species_id: speciesID as number,
+											max_artisan_level: 100,
+											max_combat_level: 100,
+											max_gatherer_level: 100,
+											max_support_level: 100,
+											growth_stage: stage,
+											nickname
+										}
+									});
+								})
+							)
+					);
+					// Max tames with max items
+					await Promise.all(
+						Object.entries(TameSpeciesID)
+							.filter(([, value]) => typeof value === 'number')
+							.map(async ([speciesName, speciesID]) => {
+								const nickname = `Max_adult_${speciesName.toLowerCase()}`;
+								const feedItems = tameFeedableItems
+									.filter(feedItem =>
+										feedItem.tameSpeciesCanBeFedThis.includes(speciesID as TameSpeciesID)
+									)
+									.reduce(
+										(acc, feedItem) => {
+											acc[feedItem.item.id] = 1;
+											return acc;
+										},
+										{} as Record<number, number>
+									);
+
+								await prisma.tame.create({
+									data: {
+										user_id: user.id,
+										species_id: speciesID as number,
+										max_artisan_level: 100,
+										max_combat_level: 100,
+										max_gatherer_level: 100,
+										max_support_level: 100,
+										growth_stage: tame_growth.adult,
+										nickname,
+										fed_items: feedItems
+									}
+								});
+							})
+					);
+					// Add all tame gear to users bank
+					for (const tameGear of tameEquippables) {
+						await user.addItemsToBank({
+							items: new Bank().add(tameGear.item, 1)
+						});
+					}
 					await user.addItemsToBank({
 						items: new Bank()
 							.add('Rune pouch')
@@ -828,7 +920,7 @@ ${droprates.join('\n')}`),
 						finished_quest_ids: quests.map(q => q.id)
 					});
 					await giveMaxStats(user);
-					return 'Fully maxed your account, stocked your bank, charged all chargeable items.';
+					return 'Fully maxed your account, stocked your bank, charged all chargeable items, spawned tames & gear.';
 				}
 				if (options.gear) {
 					const gear = gearPresets.find(i => stringMatches(i.name, options.gear?.thing))!;

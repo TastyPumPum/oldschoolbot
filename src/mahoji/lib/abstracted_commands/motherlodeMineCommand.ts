@@ -1,11 +1,11 @@
+import { formatDuration, randomVariation } from '@oldschoolgg/toolkit';
 import { increaseNumByPercent, reduceNumByPercent } from 'e';
-import { randomVariation } from 'oldschooljs/dist/util';
+import { Items } from 'oldschooljs';
 
 import { determineMiningTime } from '../../../lib/skilling/functions/determineMiningTime';
 import { pickaxes } from '../../../lib/skilling/functions/miningBoosts';
 import Mining from '../../../lib/skilling/skills/mining';
 import type { MotherlodeMiningActivityTaskOptions } from '../../../lib/types/minions';
-import { formatDuration, itemNameFromID } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { minionName } from '../../../lib/util/minionUtils';
@@ -34,14 +34,16 @@ export async function motherlodeMineCommand({
 	}
 	// Default bronze pickaxe, last in the array
 	let currentPickaxe = pickaxes[pickaxes.length - 1];
-	boosts.push(`**${currentPickaxe.ticksBetweenRolls}** ticks between rolls for ${itemNameFromID(currentPickaxe.id)}`);
+	boosts.push(
+		`**${currentPickaxe.ticksBetweenRolls}** ticks between rolls for ${Items.itemNameFromId(currentPickaxe.id)}`
+	);
 
 	// For each pickaxe, if they have it, give them its' bonus and break.
 	for (const pickaxe of pickaxes) {
 		if (!user.hasEquippedOrInBank([pickaxe.id]) || user.skillsAsLevels.mining < pickaxe.miningLvl) continue;
 		currentPickaxe = pickaxe;
 		boosts.pop();
-		boosts.push(`**${pickaxe.ticksBetweenRolls}** ticks between rolls for ${itemNameFromID(pickaxe.id)}`);
+		boosts.push(`**${pickaxe.ticksBetweenRolls}** ticks between rolls for ${Items.itemNameFromId(pickaxe.id)}`);
 		break;
 	}
 
@@ -55,7 +57,7 @@ export async function motherlodeMineCommand({
 		);
 	}
 
-	const glovesEffect = 0;
+	const glovesRate = 0;
 	const armourEffect = 0;
 	const miningCapeEffect = 0;
 	const goldSilverBoost = false;
@@ -64,16 +66,16 @@ export async function motherlodeMineCommand({
 	// Calculate the time it takes to mine specific quantity or as many as possible
 	const [duration, newQuantity] = determineMiningTime({
 		quantity,
-		gearBank: user.gearBank,
 		ore: motherlode,
 		ticksBetweenRolls: currentPickaxe.ticksBetweenRolls,
-		glovesEffect,
+		glovesRate,
 		armourEffect,
 		miningCapeEffect,
 		powermining: powermine,
 		goldSilverBoost,
 		miningLvl: miningLevel,
 		maxTripLength: calcMaxTripLength(user, 'MotherlodeMining'),
+		hasGlory: user.hasEquippedOrInBank('Amulet of glory'),
 		hasKaramjaMedium: false
 	});
 
@@ -97,6 +99,10 @@ export async function motherlodeMineCommand({
 			? `between ${formatDuration(fakeDurationMin)} **and** ${formatDuration(fakeDurationMax)}`
 			: formatDuration(duration)
 	} to finish.`;
+
+	if (user.usingPet('Doug')) {
+		response += '\n<:doug:748892864813203591> Doug joins you on your mining trip!';
+	}
 
 	if (boosts.length > 0) {
 		response += `\n\n**Boosts:** ${boosts.join(', ')}.`;

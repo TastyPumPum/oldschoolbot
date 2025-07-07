@@ -1,5 +1,4 @@
-import { toTitleCase } from '@oldschoolgg/toolkit/util';
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import { type CommandRunOptions, toTitleCase } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { Bank, Monsters } from 'oldschooljs';
 
@@ -53,10 +52,10 @@ export const killCommand: OSBMahojiCommand = {
 			required: true,
 			autocomplete: async (value: string) => {
 				return [
-					...Monsters.map(i => ({ name: i.name, aliases: i.aliases })),
-					...simulatedKillables.map(i => ({ name: i.name, aliases: [i.name] })),
-					{ name: 'nex', aliases: ['nex'] },
-					{ name: 'nightmare', aliases: ['nightmare'] }
+					...Array.from(Monsters.values()).map(i => ({ name: i.name, aliases: i.aliases })),
+					...simulatedKillables
+						.filter(i => !Array.from(Monsters.values()).some(monster => monster.name === i.name))
+						.map(i => ({ name: i.name, aliases: [i.name] }))
 				]
 					.filter(i =>
 						!value ? true : i.aliases.some(alias => alias.toLowerCase().includes(value.toLowerCase()))
@@ -86,13 +85,19 @@ export const killCommand: OSBMahojiCommand = {
 			description: 'On slayer task from a master?',
 			required: false,
 			choices: slayerMasterChoices
+		},
+		{
+			type: ApplicationCommandOptionType.Boolean,
+			name: 'ori',
+			description: 'Apply Ori pet bonus to loot?',
+			required: false
 		}
 	],
 	run: async ({
 		options,
 		userID,
 		interaction
-	}: CommandRunOptions<{ name: string; quantity: number; catacombs: boolean; master: string }>) => {
+	}: CommandRunOptions<{ name: string; quantity: number; catacombs: boolean; master: string; ori?: boolean }>) => {
 		const user = await mUserFetch(userID);
 		await deferInteraction(interaction);
 		const result = await Workers.kill({
@@ -102,6 +107,7 @@ export const killCommand: OSBMahojiCommand = {
 			catacombs: options.catacombs,
 			onTask: options.master !== undefined,
 			slayerMaster: slayerMasters.find(sMaster => sMaster.name === options.master)?.osjsEnum,
+			ori: options.ori ?? false,
 			lootTableTertiaryChanges: Array.from(
 				user
 					.buildTertiaryItemChanges(false, options.master === 'Krystilia', options.master !== undefined)
@@ -118,6 +124,7 @@ export const killCommand: OSBMahojiCommand = {
 			title: result.title ?? `Loot from ${options.quantity.toLocaleString()} ${toTitleCase(options.name)}`,
 			user
 		});
+
 		return {
 			files: [image.file],
 			content: result.content

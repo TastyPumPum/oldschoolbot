@@ -1,16 +1,12 @@
-import type { CommandResponse } from '@oldschoolgg/toolkit/util';
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import { type CommandResponse, type CommandRunOptions, PerkTier, formatDuration } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { randInt, roll } from 'e';
-import { Bank, averageBank } from 'oldschooljs';
-import { ChambersOfXeric } from 'oldschooljs/dist/simulation/misc';
-import { toKMB } from 'oldschooljs/dist/util';
+import { Bank, ChambersOfXeric, averageBank, toKMB } from 'oldschooljs';
 
-import { PerkTier } from '@oldschoolgg/toolkit/util';
 import { ColosseumWaveBank, startColosseumRun } from '../../lib/colosseum';
 import pets from '../../lib/data/pets';
-import { assert, formatDuration } from '../../lib/util';
 import { deferInteraction } from '../../lib/util/interactionReply';
+import { assert } from '../../lib/util/logError';
 import { makeBankImage } from '../../lib/util/makeBankImage';
 import type { OSBMahojiCommand } from '../lib/util';
 
@@ -51,16 +47,23 @@ function simulateColosseumRuns(samples = 100) {
 			attempts++;
 			const result = startColosseumRun({
 				kcBank,
-				hasScythe: true,
-				hasTBow: true,
+				hasScythe: false,
+				hasTBow: false,
 				hasVenBow: true,
 				hasBF: false,
 				hasClaws: true,
 				hasSGS: true,
-				hasTorture: true,
+				hasTorture: false,
 				scytheCharges: 300,
 				venatorBowCharges: 50,
-				bloodFuryCharges: 0
+				bloodFuryCharges: 0,
+				voidCharges: 35,
+				hasVoidStaff: true,
+				hasHFB: true,
+				hasSungodAxe: true,
+				hasGora: true,
+				hasBHook: true,
+				hasBulwark: true
 			});
 			totalDuration += result.realDuration;
 			kcBank.add(result.addedWaveKCBank);

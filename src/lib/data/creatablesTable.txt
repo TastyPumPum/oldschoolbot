@@ -5,6 +5,7 @@
 | Bandos godsword | 1x Bandos hilt, 1x Godsword blade | 1x Bandos godsword | 0 |
 | Saradomin godsword | 1x Godsword blade, 1x Saradomin hilt | 1x Saradomin godsword | 0 |
 | Zamorak godsword | 1x Godsword blade, 1x Zamorak hilt | 1x Zamorak godsword | 0 |
+| Ancient godsword | 1x Ancient hilt, 1x Godsword blade | 1x Ancient godsword | 0 |
 | Infernal pickaxe | 1x Dragon pickaxe, 1x Smouldering stone | 1x Infernal pickaxe | 0 |
 | Malediction ward | 1x Malediction shard 1, 1x Malediction shard 2, 1x Malediction shard 3 | 1x Malediction ward | 0 |
 | Odium ward | 1x Odium shard 1, 1x Odium shard 2, 1x Odium shard 3 | 1x Odium ward | 0 |
@@ -64,7 +65,6 @@
 | Pegasian boots | 1x Pegasian crystal, 1x Ranger boots | 1x Pegasian boots | 0 |
 | Primordial boots | 1x Dragon boots, 1x Primordial crystal | 1x Primordial boots | 0 |
 | Eternal boots | 1x Eternal crystal, 1x Infinity boots | 1x Eternal boots | 0 |
-| Kodai wand | 1x Kodai insignia, 1x Master wand | 1x Kodai wand | 0 |
 | Partyhat & specs | 1x Blue partyhat, 1x Sagacious spectacles | 1x Partyhat & specs | 0 |
 | Ivandis Flail | 1x Emerald, 1x Silver sickle | 1x Ivandis flail | 0 |
 | Blisterwood Flail | 1x Ivandis flail, 1x Ruby | 1x Blisterwood flail | 0 |
@@ -75,6 +75,7 @@
 | Bottled dragonbreath | 10x Dragonfruit, 1x Vial | 1x Bottled dragonbreath | 0 |
 | Ring of endurance | 1x Ring of endurance (uncharged), 125x Stamina potion(4) | 1x Ring of endurance | 0 |
 | Fish sack barrel | 1x Fish barrel, 1x Fish sack | 1x Fish sack barrel | 0 |
+| Kodai wand | 1x Kodai insignia, 1x Master wand | 1x Kodai wand | 0 |
 | Salve amulet (e) | 1x Salve amulet | 1x Salve amulet (e) | 0 |
 | Salve amulet(ei) | 1x Salve amulet(i) | 1x Salve amulet(ei) | 0 |
 | Ring of wealth (i) | 1x Ring of wealth, 1x Ring of wealth scroll | 1x Ring of wealth (i) | 50000 |
@@ -86,6 +87,7 @@
 | Eternal teleport crystal | 100x Crystal shard, 1x Enhanced crystal teleport seed | 1x Eternal teleport crystal | 0 |
 | Saturated heart | 150k Ancient essence, 1x Imbued heart | 1x Saturated heart | 0 |
 | Trident of the swamp | 1x Magic fang, 1x Trident of the seas (full) | 1x Trident of the swamp | 0 |
+| Golden cape | 7x Golden cape shard | 1x Golden cape | 0 |
 | Voidwaker | 500k Coins, 1x Voidwaker blade, 1x Voidwaker gem, 1x Voidwaker hilt | 1x Voidwaker | 0 |
 | Accursed sceptre (u) | 500k Coins, 1x Skull of vet'ion, 1x Thammaron's sceptre (u) | 1x Accursed sceptre (u) | 0 |
 | Ursine chainmace (u) | 1x Claws of callisto, 500k Coins, 1x Viggora's chainmace (u) | 1x Ursine chainmace (u) | 0 |
@@ -357,12 +359,12 @@
 | Scorching bow | 1x Magic longbow (u), 1x Tormented synapse | 1x Scorching bow | 0 |
 | Purging staff | 1x Battlestaff, 1x Iron bar, 1x Tormented synapse | 1x Purging staff | 0 |
 | Burning claws | 2x Burning claw | 1x Burning claws | 0 |
-| Ardougne max cape | 1x Ardougne cloak 4, 1x Max cape, 1x Max hood | 1x Ardougne max cape, 1x Ardougne max hood | 0 |
-| Infernal max cape | 1x Infernal cape, 1x Max cape, 1x Max hood | 1x Infernal max cape, 1x Infernal max hood | 0 |
-| Assembler max cape | 1x Ava's assembler, 1x Max cape, 1x Max hood | 1x Assembler max cape, 1x Assembler max hood | 0 |
-| Imbued guthix max cape | 1x Imbued guthix cape, 1x Max cape, 1x Max hood | 1x Imbued guthix max cape, 1x Imbued guthix max hood | 0 |
-| Imbued saradomin max cape | 1x Imbued saradomin cape, 1x Max cape, 1x Max hood | 1x Imbued saradomin max cape, 1x Imbued saradomin max hood | 0 |
-| Imbued zamorak max cape | 1x Imbued zamorak cape, 1x Max cape, 1x Max hood | 1x Imbued zamorak max cape, 1x Imbued zamorak max hood | 0 |
+| Ardougne max cape | 1x Max cape, 1x Max hood | 1x Ardougne max cape, 1x Ardougne max hood | 0 |
+| Infernal max cape | 1x Max cape, 1x Max hood | 1x Infernal max cape, 1x Infernal max hood | 0 |
+| Assembler max cape | 1x Max cape, 1x Max hood | 1x Assembler max cape, 1x Assembler max hood | 0 |
+| Imbued guthix max cape | 1x Max cape, 1x Max hood | 1x Imbued guthix max cape, 1x Imbued guthix max hood | 0 |
+| Imbued saradomin max cape | 1x Max cape, 1x Max hood | 1x Imbued saradomin max cape, 1x Imbued saradomin max hood | 0 |
+| Imbued zamorak max cape | 1x Max cape, 1x Max hood | 1x Imbued zamorak max cape, 1x Imbued zamorak max hood | 0 |
 | Mythical max cape | 1x Max cape, 1x Max hood, 1x Mythical cape | 1x Mythical max cape, 1x Mythical max hood | 0 |
 | Fire max cape | 1x Fire cape, 1x Max cape, 1x Max hood | 1x Fire max cape, 1x Fire max hood | 0 |
 | Masori assembler max cape | 1x Masori assembler, 1x Max cape, 1x Max hood | 1x Masori assembler max cape, 1x Masori assembler max hood | 0 |
@@ -589,8 +591,441 @@
 | Unpack Dagon'hai robes set | 1x Dagon'hai robes set | 1x Dagon'hai hat, 1x Dagon'hai robe bottom, 1x Dagon'hai robe top | 0 |
 | Masori armour set (f) | 1x Masori body (f), 1x Masori chaps (f), 1x Masori mask (f) | 1x Masori armour set (f) | 0 |
 | Unpack Masori armour set (f) | 1x Masori armour set (f) | 1x Masori body (f), 1x Masori chaps (f), 1x Masori mask (f) | 0 |
+| Clown set | 1x Clown feet, 1x Clown hat, 1x Clown leggings, 1x Clown shirt | 1x Clown set | 0 |
+| Unpack Clown set | 1x Clown set | 1x Clown feet, 1x Clown hat, 1x Clown leggings, 1x Clown shirt | 0 |
+| Acrobat set | 1x Acrobat hood, 1x Acrobat pants, 1x Acrobat shirt, 1x Acrobat shoes | 1x Acrobat set | 0 |
+| Unpack Acrobat set | 1x Acrobat set | 1x Acrobat hood, 1x Acrobat pants, 1x Acrobat shirt, 1x Acrobat shoes | 0 |
+| Ringmaster set | 1x Ringmaster boots, 1x Ringmaster hat, 1x Ringmaster pants, 1x Ringmaster shirt | 1x Ringmaster set | 0 |
+| Unpack Ringmaster set | 1x Ringmaster set | 1x Ringmaster boots, 1x Ringmaster hat, 1x Ringmaster pants, 1x Ringmaster shirt | 0 |
+| Acrylic set | 1x Acrylic boots, 1x Acrylic bottom, 1x Acrylic hood, 1x Acrylic top | 1x Acrylic set | 0 |
+| Unpack Acrylic set | 1x Acrylic set | 1x Acrylic boots, 1x Acrylic bottom, 1x Acrylic hood, 1x Acrylic top | 0 |
+| Warpriest of Zamorak set | 1x Warpriest of Zamorak boots, 1x Warpriest of Zamorak cape, 1x Warpriest of Zamorak cuirass, 1x Warpriest of Zamorak gauntlets, 1x Warpriest of Zamorak greaves, 1x Warpriest of Zamorak helm | 1x Warpriest of Zamorak set | 0 |
+| Unpack Warpriest of Zamorak set | 1x Warpriest of Zamorak set | 1x Warpriest of Zamorak boots, 1x Warpriest of Zamorak cape, 1x Warpriest of Zamorak cuirass, 1x Warpriest of Zamorak gauntlets, 1x Warpriest of Zamorak greaves, 1x Warpriest of Zamorak helm | 0 |
+| Warpriest of Saradomin set | 1x Warpriest of Saradomin boots, 1x Warpriest of Saradomin cape, 1x Warpriest of Saradomin cuirass, 1x Warpriest of Saradomin gauntlets, 1x Warpriest of Saradomin greaves, 1x Warpriest of Saradomin helm | 1x Warpriest of Saradomin set | 0 |
+| Unpack Warpriest of Saradomin set | 1x Warpriest of Saradomin set | 1x Warpriest of Saradomin boots, 1x Warpriest of Saradomin cape, 1x Warpriest of Saradomin cuirass, 1x Warpriest of Saradomin gauntlets, 1x Warpriest of Saradomin greaves, 1x Warpriest of Saradomin helm | 0 |
+| Warpriest of Armadyl set | 1x Warpriest of Armadyl boots, 1x Warpriest of Armadyl cape, 1x Warpriest of Armadyl cuirass, 1x Warpriest of Armadyl gauntlets, 1x Warpriest of Armadyl greaves, 1x Warpriest of Armadyl helm | 1x Warpriest of Armadyl set | 0 |
+| Unpack Warpriest of Armadyl set | 1x Warpriest of Armadyl set | 1x Warpriest of Armadyl boots, 1x Warpriest of Armadyl cape, 1x Warpriest of Armadyl cuirass, 1x Warpriest of Armadyl gauntlets, 1x Warpriest of Armadyl greaves, 1x Warpriest of Armadyl helm | 0 |
+| Warpriest of Bandos set | 1x Warpriest of Bandos boots, 1x Warpriest of Bandos cape, 1x Warpriest of Bandos cuirass, 1x Warpriest of Bandos gauntlets, 1x Warpriest of Bandos greaves, 1x Warpriest of Bandos helm | 1x Warpriest of Bandos set | 0 |
+| Unpack Warpriest of Bandos set | 1x Warpriest of Bandos set | 1x Warpriest of Bandos boots, 1x Warpriest of Bandos cape, 1x Warpriest of Bandos cuirass, 1x Warpriest of Bandos gauntlets, 1x Warpriest of Bandos greaves, 1x Warpriest of Bandos helm | 0 |
+| Dwarven armour set | 1x Dwarven boots, 1x Dwarven full helm, 1x Dwarven gloves, 1x Dwarven platebody, 1x Dwarven platelegs | 1x Dwarven armour set | 0 |
+| Unpack Dwarven armour set | 1x Dwarven armour set | 1x Dwarven boots, 1x Dwarven full helm, 1x Dwarven gloves, 1x Dwarven platebody, 1x Dwarven platelegs | 0 |
+| Drygore longsword set | 1x Drygore longsword, 1x Offhand drygore longsword | 1x Drygore longsword set | 0 |
+| Unpack Drygore longsword set | 1x Drygore longsword set | 1x Drygore longsword, 1x Offhand drygore longsword | 0 |
+| Drygore rapier set | 1x Drygore rapier, 1x Offhand drygore rapier | 1x Drygore rapier set | 0 |
+| Unpack Drygore rapier set | 1x Drygore rapier set | 1x Drygore rapier, 1x Offhand drygore rapier | 0 |
+| Drygore mace set | 1x Drygore mace, 1x Offhand drygore mace | 1x Drygore mace set | 0 |
+| Unpack Drygore mace set | 1x Drygore mace set | 1x Drygore mace, 1x Offhand drygore mace | 0 |
+| Torva armour set | 1x Torva boots, 1x Torva full helm, 1x Torva gloves, 1x Torva platebody, 1x Torva platelegs | 1x Torva armour set | 0 |
+| Unpack Torva armour set | 1x Torva armour set | 1x Torva boots, 1x Torva full helm, 1x Torva gloves, 1x Torva platebody, 1x Torva platelegs | 0 |
+| Pernix armour set | 1x Pernix body, 1x Pernix boots, 1x Pernix chaps, 1x Pernix cowl, 1x Pernix gloves | 1x Pernix armour set | 0 |
+| Unpack Pernix armour set | 1x Pernix armour set | 1x Pernix body, 1x Pernix boots, 1x Pernix chaps, 1x Pernix cowl, 1x Pernix gloves | 0 |
+| Virtus armour set | 1x Virtus boots, 1x Virtus gloves, 1x Virtus mask, 1x Virtus robe legs, 1x Virtus robe top | 1x Virtus armour set | 0 |
+| Unpack Virtus armour set | 1x Virtus armour set | 1x Virtus boots, 1x Virtus gloves, 1x Virtus mask, 1x Virtus robe legs, 1x Virtus robe top | 0 |
 | Sunfire fanatic armour set | 1x Sunfire fanatic chausses, 1x Sunfire fanatic cuirass, 1x Sunfire fanatic helm | 1x Sunfire fanatic armour set | 0 |
 | Unpack Sunfire fanatic armour set | 1x Sunfire fanatic armour set | 1x Sunfire fanatic chausses, 1x Sunfire fanatic cuirass, 1x Sunfire fanatic helm | 0 |
+| Divine spirit shield | 1x Blessed spirit shield, 1x Divine sigil | 1x Divine spirit shield | 0 |
+| Heart crystal | 1x Chunk of crystal, 1x Hunk of crystal, 1x Lump of crystal | 1x Heart crystal | 0 |
+| Bryophyta's staff(i) | 1x Bryophyta's staff, 1x Magus scroll | 1x Bryophyta's staff(i) | 0 |
+| Ignis ring(i) | 1x Ignis ring, 1x Magus scroll | 1x Ignis ring(i) | 0 |
+| Abyssal pouch | 1x Abyssal thread, 1x Giant pouch | 1x Abyssal pouch | 0 |
+| Elder pouch | 1x Abyssal pouch, 1x Elder thread | 1x Elder pouch | 0 |
+| Bucket of sand | 1x Bucket, 1x Sand | 1x Bucket of sand | 0 |
+| Breadcrumbs | 1x Bread | 4x Breadcrumbs | 0 |
+| Infernal bulwark | 1x Dinh's bulwark, 1x Infernal core, 5x Onyx | 1x Infernal bulwark | 0 |
+| TzKal cape | 1x Abyssal cape, 1x Infernal cape, 20x Onyx, 1x TzKal-Zuk's skin | 1x TzKal cape | 0 |
+| Infernal slayer helmet | 1x Black mask, 1x Head of TzKal Zuk, 30x Onyx | 1x Infernal slayer helmet | 0 |
+| Infernal slayer helmet(i) | 3x Gorajan shards, 1x Infernal slayer helmet, 1x Magus scroll, 10x Onyx, 1x Pernix cowl, 1x Torva full helm, 1x Virtus mask | 1x Infernal slayer helmet(i) | 0 |
+| Royal crossbow | 1x Chaotic crossbow, 1x Royal bolt stabiliser, 1x Royal frame, 1x Royal sight, 1x Royal torsion spring | 1x Royal crossbow | 0 |
+| Polypore staff | 7k Polypore spore, 1x Polypore stick | 1x Polypore staff | 0 |
+| Golden partyhat | 7x Golden shard | 1x Golden partyhat | 0 |
+| Crystal fishing rod | 1x Contest rod, 1x Crystal tool seed | 1x Crystal fishing rod | 0 |
+| Void staff (u) | 750x Dark animica, 1x Dark crystal, 1x Virtus wand | 1x Void staff (u) | 0 |
+| Void staff | 1x Void staff (u) | 1x Void staff | 0 |
+| Revert void staff | 1x Void staff | 1x Void staff (u) | 0 |
+| Abyssal tome | 1x Tattered tome, 1x Virtus book | 1x Abyssal tome | 0 |
+| Spellbound ring(i) | 1x Magus scroll, 1x Spellbound ring | 1x Spellbound ring(i) | 0 |
+| Black swan | 1x Seer, 1x Squid dye | 1x Black swan | 0 |
+| Nexterminator | 1x Bloodsoaked feather | 1x Nexterminator | 0 |
+| Seamonkey staff (t1) | 1x Polypore staff | 1x Seamonkey staff (t1) | 0 |
+| Seamonkey staff (t2) | 1x Oceanic relic, 1x Seamonkey staff (t1) | 1x Seamonkey staff (t2) | 0 |
+| Seamonkey staff (t3) | 1x Aquifer aegis, 1x Seamonkey staff (t2) | 1x Seamonkey staff (t3) | 0 |
+| Arcane blast necklace | 1x Chaotic remnant, 1x Occult necklace | 1x Arcane blast necklace | 0 |
+| Farsight snapshot necklace | 1x Chaotic remnant, 1x Necklace of anguish | 1x Farsight snapshot necklace | 0 |
+| Brawler's hook necklace | 1x Amulet of torture, 1x Chaotic remnant | 1x Brawler's hook necklace | 0 |
+| Gorajan bonecrusher | 1x Gorajan bonecrusher (u), 3x Gorajan shards | 1x Gorajan bonecrusher | 0 |
+| Revert gorajan bonecrusher | 1x Gorajan bonecrusher (u) | 1x Gorajan shards | 0 |
+| Fix fire cape | 1x Fire cape (broken) | 1x Fire cape | 0 |
+| Fix fire max cape | 1x Fire max cape (broken) | 1x Fire max cape | 100000000 |
+| Fix infernal cape | 1x Infernal cape (broken) | 1x Infernal cape | 100000000 |
+| Fix infernal max cape | 1x Infernal max cape (broken) | 1x Infernal max cape | 100000000 |
+| Fix assembler max cape | 1x Assembler max cape (broken) | 1x Assembler max cape | 100000000 |
+| Fix imbued saradomin cape | 1x Imbued saradomin cape (broken) | 1x Imbued saradomin cape | 100000000 |
+| Fix imbued saradomin max cape | 1x Imbued saradomin max cape (broken) | 1x Imbued saradomin max cape | 100000000 |
+| Fix imbued guthix cape | 1x Imbued guthix cape (broken) | 1x Imbued guthix cape | 100000000 |
+| Fix imbued guthix max cape | 1x Imbued guthix max cape (broken) | 1x Imbued guthix max cape | 100000000 |
+| Fix imbued zamorak cape | 1x Imbued zamorak cape (broken) | 1x Imbued zamorak cape | 100000000 |
+| Fix imbued zamorak max cape | 1x Imbued zamorak max cape (broken) | 1x Imbued zamorak max cape | 100000000 |
+| Fix dragon defender | 1x Dragon defender (broken) | 1x Dragon defender | 100000000 |
+| Fix avernic defender | 1x Avernic defender (broken) | 1x Avernic defender | 100000000 |
+| Fix void knight top | 1x Void knight top (broken) | 1x Void knight top | 100000000 |
+| Fix void knight robe | 1x Void knight robe (broken) | 1x Void knight robe | 100000000 |
+| Fix elite void top | 1x Elite void top (broken) | 1x Elite void top | 100000000 |
+| Fix elite void robe | 1x Elite void robe (broken) | 1x Elite void robe | 100000000 |
+| Fix void knight gloves | 1x Void knight gloves (broken) | 1x Void knight gloves | 100000000 |
+| Fix void mage helm | 1x Void mage helm (broken) | 1x Void mage helm | 100000000 |
+| Fix void ranger helm | 1x Void ranger helm (broken) | 1x Void ranger helm | 100000000 |
+| Fix void melee helm | 1x Void melee helm (broken) | 1x Void melee helm | 100000000 |
+| Fix hellfire bow | 1x Dragon's fury, 1x Hellfire bow (broken), 1x Ignecarus dragonclaw, 1x Smouldering stone | 1x Hellfire bow | 200000000 |
+| Fix hellfire bownana | 1x Dragon's fury, 1x Hellfire bownana (broken), 1x Ignecarus dragonclaw, 1x Smouldering stone | 1x Hellfire bownana | 200000000 |
+| Unlock dragon defender | 1x Dragon defender (l) | 1x Dragon defender | 0 |
+| Unpack twisted relichunter (t1) armour set | 1x Twisted relic hunter (t1) armour set | 1x Twisted boots (t1), 1x Twisted coat (t1), 1x Twisted hat (t1), 1x Twisted trousers (t1) | 0 |
+| Twisted relichunter (t1) armour set | 1x Twisted boots (t1), 1x Twisted coat (t1), 1x Twisted hat (t1), 1x Twisted trousers (t1) | 1x Twisted relic hunter (t1) armour set | 0 |
+| Unpack twisted relichunter (t2) armour set | 1x Twisted relic hunter (t2) armour set | 1x Twisted boots (t2), 1x Twisted coat (t2), 1x Twisted hat (t2), 1x Twisted trousers (t2) | 0 |
+| Twisted relichunter (t2) armour set | 1x Twisted boots (t2), 1x Twisted coat (t2), 1x Twisted hat (t2), 1x Twisted trousers (t2) | 1x Twisted relic hunter (t2) armour set | 0 |
+| Unpack twisted relichunter (t3) armour set | 1x Twisted relic hunter (t3) armour set | 1x Twisted boots (t3), 1x Twisted coat (t3), 1x Twisted hat (t3), 1x Twisted trousers (t3) | 0 |
+| Twisted relichunter (t3) armour set | 1x Twisted boots (t3), 1x Twisted coat (t3), 1x Twisted hat (t3), 1x Twisted trousers (t3) | 1x Twisted relic hunter (t3) armour set | 0 |
+| Unpack trailblazer relichunter (t1) armour set | 1x Trailblazer relic hunter (t1) armour set | 1x Trailblazer boots (t1), 1x Trailblazer hood (t1), 1x Trailblazer top (t1), 1x Trailblazer trousers (t1) | 0 |
+| Trailblazer relichunter (t1) armour set | 1x Trailblazer boots (t1), 1x Trailblazer hood (t1), 1x Trailblazer top (t1), 1x Trailblazer trousers (t1) | 1x Trailblazer relic hunter (t1) armour set | 0 |
+| Unpack trailblazer relichunter (t2) armour set | 1x Trailblazer relic hunter (t2) armour set | 1x Trailblazer boots (t2), 1x Trailblazer hood (t2), 1x Trailblazer top (t2), 1x Trailblazer trousers (t2) | 0 |
+| Trailblazer relichunter (t2) armour set | 1x Trailblazer boots (t2), 1x Trailblazer hood (t2), 1x Trailblazer top (t2), 1x Trailblazer trousers (t2) | 1x Trailblazer relic hunter (t2) armour set | 0 |
+| Unpack trailblazer relichunter (t3) armour set | 1x Trailblazer relic hunter (t3) armour set | 1x Trailblazer boots (t3), 1x Trailblazer hood (t3), 1x Trailblazer top (t3), 1x Trailblazer trousers (t3) | 0 |
+| Trailblazer relichunter (t3) armour set | 1x Trailblazer boots (t3), 1x Trailblazer hood (t3), 1x Trailblazer top (t3), 1x Trailblazer trousers (t3) | 1x Trailblazer relic hunter (t3) armour set | 0 |
+| Unpack dagon'hai robes set | 1x Dagon'hai robes set | 1x Dagon'hai hat, 1x Dagon'hai robe bottom, 1x Dagon'hai robe top | 0 |
+| Dagon'hai robes set | 1x Dagon'hai hat, 1x Dagon'hai robe bottom, 1x Dagon'hai robe top | 1x Dagon'hai robes set | 0 |
+| Drygore rapier (blood) | 1x Blood dye, 1x Drygore rapier | 1x Drygore rapier (blood) | 0 |
+| Drygore rapier (ice) | 1x Drygore rapier, 1x Ice dye | 1x Drygore rapier (ice) | 0 |
+| Drygore rapier (shadow) | 1x Drygore rapier, 1x Shadow dye | 1x Drygore rapier (shadow) | 0 |
+| Drygore rapier (3a) | 1x Drygore rapier, 1x Third age dye | 1x Drygore rapier (3a) | 0 |
+| Drygore rapier (xmas) | 1x Christmas dye, 1x Drygore rapier | 1x Drygore rapier (xmas) | 0 |
+| Offhand drygore rapier (blood) | 1x Blood dye, 1x Offhand drygore rapier | 1x Offhand drygore rapier (blood) | 0 |
+| Offhand drygore rapier (ice) | 1x Ice dye, 1x Offhand drygore rapier | 1x Offhand drygore rapier (ice) | 0 |
+| Offhand drygore rapier (shadow) | 1x Offhand drygore rapier, 1x Shadow dye | 1x Offhand drygore rapier (shadow) | 0 |
+| Offhand drygore rapier (3a) | 1x Offhand drygore rapier, 1x Third age dye | 1x Offhand drygore rapier (3a) | 0 |
+| Offhand drygore rapier (xmas) | 1x Christmas dye, 1x Offhand drygore rapier | 1x Offhand drygore rapier (xmas) | 0 |
+| Drygore mace (blood) | 1x Blood dye, 1x Drygore mace | 1x Drygore mace (blood) | 0 |
+| Drygore mace (ice) | 1x Drygore mace, 1x Ice dye | 1x Drygore mace (ice) | 0 |
+| Drygore mace (shadow) | 1x Drygore mace, 1x Shadow dye | 1x Drygore mace (shadow) | 0 |
+| Drygore mace (3a) | 1x Drygore mace, 1x Third age dye | 1x Drygore mace (3a) | 0 |
+| Drygore mace (xmas) | 1x Christmas dye, 1x Drygore mace | 1x Drygore mace (xmas) | 0 |
+| Offhand drygore mace (blood) | 1x Blood dye, 1x Offhand drygore mace | 1x Offhand drygore mace (blood) | 0 |
+| Offhand drygore mace (ice) | 1x Ice dye, 1x Offhand drygore mace | 1x Offhand drygore mace (ice) | 0 |
+| Offhand drygore mace (shadow) | 1x Offhand drygore mace, 1x Shadow dye | 1x Offhand drygore mace (shadow) | 0 |
+| Offhand drygore mace (3a) | 1x Offhand drygore mace, 1x Third age dye | 1x Offhand drygore mace (3a) | 0 |
+| Offhand drygore mace (xmas) | 1x Christmas dye, 1x Offhand drygore mace | 1x Offhand drygore mace (xmas) | 0 |
+| Drygore longsword (blood) | 1x Blood dye, 1x Drygore longsword | 1x Drygore longsword (blood) | 0 |
+| Drygore longsword (ice) | 1x Drygore longsword, 1x Ice dye | 1x Drygore longsword (ice) | 0 |
+| Drygore longsword (shadow) | 1x Drygore longsword, 1x Shadow dye | 1x Drygore longsword (shadow) | 0 |
+| Drygore longsword (3a) | 1x Drygore longsword, 1x Third age dye | 1x Drygore longsword (3a) | 0 |
+| Drygore longsword (xmas) | 1x Christmas dye, 1x Drygore longsword | 1x Drygore longsword (xmas) | 0 |
+| Offhand drygore longsword (blood) | 1x Blood dye, 1x Offhand drygore longsword | 1x Offhand drygore longsword (blood) | 0 |
+| Offhand drygore longsword (ice) | 1x Ice dye, 1x Offhand drygore longsword | 1x Offhand drygore longsword (ice) | 0 |
+| Offhand drygore longsword (shadow) | 1x Offhand drygore longsword, 1x Shadow dye | 1x Offhand drygore longsword (shadow) | 0 |
+| Offhand drygore longsword (3a) | 1x Offhand drygore longsword, 1x Third age dye | 1x Offhand drygore longsword (3a) | 0 |
+| Offhand drygore longsword (xmas) | 1x Christmas dye, 1x Offhand drygore longsword | 1x Offhand drygore longsword (xmas) | 0 |
+| Dwarven warhammer (blood) | 1x Blood dye, 1x Dwarven warhammer | 1x Dwarven warhammer (blood) | 0 |
+| Dwarven warhammer (ice) | 1x Dwarven warhammer, 1x Ice dye | 1x Dwarven warhammer (ice) | 0 |
+| Dwarven warhammer (shadow) | 1x Dwarven warhammer, 1x Shadow dye | 1x Dwarven warhammer (shadow) | 0 |
+| Dwarven warhammer (3a) | 1x Dwarven warhammer, 1x Third age dye | 1x Dwarven warhammer (3a) | 0 |
+| Dwarven warnana | 1x Dwarven warhammer, 1x Monkey dye | 1x Dwarven warnana | 0 |
+| Dwarven warhammer (volcanic) | 1x Dwarven warhammer, 1x Volcanic dye | 1x Dwarven warhammer (volcanic) | 0 |
+| Ho-ho hammer | 1x Christmas dye, 1x Dwarven warhammer | 1x Ho-ho hammer | 0 |
+| Dwarven pumpkinsmasher | 1x Dwarven warhammer, 1x Spooky dye | 1x Dwarven pumpkinsmasher | 0 |
+| Twisted bow (ice) | 1x Ice dye, 1x Twisted bow | 1x Twisted bow (ice) | 0 |
+| Twisted bow (shadow) | 1x Shadow dye, 1x Twisted bow | 1x Twisted bow (shadow) | 0 |
+| Twisted bow (blood) | 1x Blood dye, 1x Twisted bow | 1x Twisted bow (blood) | 0 |
+| Twisted bow (3a) | 1x Third age dye, 1x Twisted bow | 1x Twisted bow (3a) | 0 |
+| Twisted bownana | 1x Monkey dye, 1x Twisted bow | 1x Twisted bownana | 0 |
+| Zaryte bow (ice) | 1x Ice dye, 1x Zaryte bow | 1x Zaryte bow (ice) | 0 |
+| Zaryte bow (shadow) | 1x Shadow dye, 1x Zaryte bow | 1x Zaryte bow (shadow) | 0 |
+| Zaryte bow (blood) | 1x Blood dye, 1x Zaryte bow | 1x Zaryte bow (blood) | 0 |
+| Zaryte bow (3a) | 1x Third age dye, 1x Zaryte bow | 1x Zaryte bow (3a) | 0 |
+| Zaryte bownana | 1x Monkey dye, 1x Zaryte bow | 1x Zaryte bownana | 0 |
+| Hellfire bownana | 1x Hellfire bow, 1x Monkey dye | 1x Hellfire bownana | 0 |
+| Mistleboe | 1x Christmas dye, 1x Hellfire bow | 1x Mistleboe | 0 |
+| Hellfire bow (ice) | 1x Hellfire bow, 1x Ice dye | 1x Hellfire bow (ice) | 0 |
+| Hellfire bow (Oceanic) | 1x Hellfire bow, 1x Oceanic dye | 1x Hellfire bow (Oceanic) | 0 |
+| Demonic piercer | 1x Hellfire bow, 1x Spooky dye | 1x Demonic piercer | 0 |
+| Zaryte crossbow (xmas) | 1x Christmas dye, 1x Zaryte crossbow | 1x Zaryte crossbow (xmas) | 0 |
+| Vasa cloak (xmas) | 1x Christmas dye, 1x Vasa cloak | 1x Vasa cloak (xmas) | 0 |
+| Vasa cloak (zamorak) | 1x Vasa cloak, 1x Zamorak egg | 1x Vasa cloak (zamorak) | 0 |
+| Vasa cloak (saradomin) | 1x Saradomin egg, 1x Vasa cloak | 1x Vasa cloak (saradomin) | 0 |
+| Santa claws | 1x Christmas dye, 1x Dragon claws | 1x Santa claws | 0 |
+| TzKal cape (Oceanic) | 1x Oceanic dye, 1x TzKal cape | 1x TzKal cape (Oceanic) | 0 |
+| TzKal cape (Volcanic) | 1x TzKal cape, 1x Volcanic dye | 1x TzKal cape (Volcanic) | 0 |
+| TzKal cape (spooky) | 1x Spooky dye, 1x TzKal cape | 1x TzKal cape (spooky) | 0 |
+| Gorajan warrior helmet (Primal) | 1x Dungeoneering dye, 1x Gorajan warrior helmet | 1x Gorajan warrior helmet (Primal) | 0 |
+| Gorajan warrior helmet (Oceanic) | 1x Gorajan warrior helmet, 1x Oceanic dye | 1x Gorajan warrior helmet (Oceanic) | 0 |
+| Gorajan warrior top (Primal) | 1x Dungeoneering dye, 1x Gorajan warrior top | 1x Gorajan warrior top (Primal) | 0 |
+| Gorajan warrior top (Oceanic) | 1x Gorajan warrior top, 1x Oceanic dye | 1x Gorajan warrior top (Oceanic) | 0 |
+| Gorajan warrior legs (Primal) | 1x Dungeoneering dye, 1x Gorajan warrior legs | 1x Gorajan warrior legs (Primal) | 0 |
+| Gorajan warrior legs (Oceanic) | 1x Gorajan warrior legs, 1x Oceanic dye | 1x Gorajan warrior legs (Oceanic) | 0 |
+| Gorajan warrior gloves (Primal) | 1x Dungeoneering dye, 1x Gorajan warrior gloves | 1x Gorajan warrior gloves (Primal) | 0 |
+| Gorajan warrior gloves (Oceanic) | 1x Gorajan warrior gloves, 1x Oceanic dye | 1x Gorajan warrior gloves (Oceanic) | 0 |
+| Gorajan warrior boots (Primal) | 1x Dungeoneering dye, 1x Gorajan warrior boots | 1x Gorajan warrior boots (Primal) | 0 |
+| Gorajan warrior boots (Oceanic) | 1x Gorajan warrior boots, 1x Oceanic dye | 1x Gorajan warrior boots (Oceanic) | 0 |
+| Gorajan occult helmet (Celestial) | 1x Dungeoneering dye, 1x Gorajan occult helmet | 1x Gorajan occult helmet (Celestial) | 0 |
+| Gorajan occult helmet (Oceanic) | 1x Gorajan occult helmet, 1x Oceanic dye | 1x Gorajan occult helmet (Oceanic) | 0 |
+| Gorajan occult top (Celestial) | 1x Dungeoneering dye, 1x Gorajan occult top | 1x Gorajan occult top (Celestial) | 0 |
+| Gorajan occult top (Oceanic) | 1x Gorajan occult top, 1x Oceanic dye | 1x Gorajan occult top (Oceanic) | 0 |
+| Gorajan occult legs (Celestial) | 1x Dungeoneering dye, 1x Gorajan occult legs | 1x Gorajan occult legs (Celestial) | 0 |
+| Gorajan occult legs (Oceanic) | 1x Gorajan occult legs, 1x Oceanic dye | 1x Gorajan occult legs (Oceanic) | 0 |
+| Gorajan occult gloves (Celestial) | 1x Dungeoneering dye, 1x Gorajan occult gloves | 1x Gorajan occult gloves (Celestial) | 0 |
+| Gorajan occult gloves (Oceanic) | 1x Gorajan occult gloves, 1x Oceanic dye | 1x Gorajan occult gloves (Oceanic) | 0 |
+| Gorajan occult boots (Celestial) | 1x Dungeoneering dye, 1x Gorajan occult boots | 1x Gorajan occult boots (Celestial) | 0 |
+| Gorajan occult boots (Oceanic) | 1x Gorajan occult boots, 1x Oceanic dye | 1x Gorajan occult boots (Oceanic) | 0 |
+| Gorajan archer helmet (Sagittarian) | 1x Dungeoneering dye, 1x Gorajan archer helmet | 1x Gorajan archer helmet (Sagittarian) | 0 |
+| Gorajan archer helmet (Oceanic) | 1x Gorajan archer helmet, 1x Oceanic dye | 1x Gorajan archer helmet (Oceanic) | 0 |
+| Gorajan archer top (Sagittarian) | 1x Dungeoneering dye, 1x Gorajan archer top | 1x Gorajan archer top (Sagittarian) | 0 |
+| Gorajan archer top (Oceanic) | 1x Gorajan archer top, 1x Oceanic dye | 1x Gorajan archer top (Oceanic) | 0 |
+| Gorajan archer legs (Sagittarian) | 1x Dungeoneering dye, 1x Gorajan archer legs | 1x Gorajan archer legs (Sagittarian) | 0 |
+| Gorajan archer legs (Oceanic) | 1x Gorajan archer legs, 1x Oceanic dye | 1x Gorajan archer legs (Oceanic) | 0 |
+| Gorajan archer gloves (Sagittarian) | 1x Dungeoneering dye, 1x Gorajan archer gloves | 1x Gorajan archer gloves (Sagittarian) | 0 |
+| Gorajan archer gloves (Oceanic) | 1x Gorajan archer gloves, 1x Oceanic dye | 1x Gorajan archer gloves (Oceanic) | 0 |
+| Gorajan archer boots (Sagittarian) | 1x Dungeoneering dye, 1x Gorajan archer boots | 1x Gorajan archer boots (Sagittarian) | 0 |
+| Gorajan archer boots (Oceanic) | 1x Gorajan archer boots, 1x Oceanic dye | 1x Gorajan archer boots (Oceanic) | 0 |
+| Dwarven full helm (Volcanic) | 1x Dwarven full helm, 1x Volcanic dye | 1x Dwarven full helm (Volcanic) | 0 |
+| Dwarven platebody (Volcanic) | 1x Dwarven platebody, 1x Volcanic dye | 1x Dwarven platebody (Volcanic) | 0 |
+| Dwarven platelegs (Volcanic) | 1x Dwarven platelegs, 1x Volcanic dye | 1x Dwarven platelegs (Volcanic) | 0 |
+| Dwarven gloves (Volcanic) | 1x Dwarven gloves, 1x Volcanic dye | 1x Dwarven gloves (Volcanic) | 0 |
+| Dwarven boots (Volcanic) | 1x Dwarven boots, 1x Volcanic dye | 1x Dwarven boots (Volcanic) | 0 |
+| Dwarven pickaxe (xmas) | 1x Christmas dye, 1x Dwarven pickaxe | 1x Dwarven pickaxe (xmas) | 0 |
+| Infernal slayer helmet(i) (ice) | 1x Ice dye, 1x Infernal slayer helmet(i) | 1x Infernal slayer helmet(i) (ice) | 0 |
+| Infernal slayer helmet(i) (xmas) | 1x Christmas dye, 1x Infernal slayer helmet(i) | 1x Infernal slayer helmet(i) (xmas) | 0 |
+| The Grim Reaper | 1x Scythe of vitur, 1x Spooky dye | 1x The Grim Reaper | 0 |
+| Deathly collector | 1x Spooky dye, 1x Tidal collector | 1x Deathly collector | 0 |
+| Ganodermic visor | 500x Ganodermic flake, 1x Mycelium visor web | 1x Ganodermic visor | 0 |
+| Ganodermic poncho | 5k Ganodermic flake, 1x Mycelium poncho web | 1x Ganodermic poncho | 0 |
+| Ganodermic leggings | 1.5k Ganodermic flake, 1x Mycelium leggings web | 1x Ganodermic leggings | 0 |
+| Grifolic visor | 500x Grifolic flake, 1x Mycelium visor web | 1x Grifolic visor | 0 |
+| Grifolic poncho | 5k Grifolic flake, 1x Mycelium poncho web | 1x Grifolic poncho | 0 |
+| Grifolic leggings | 1.5k Grifolic flake, 1x Mycelium leggings web | 1x Grifolic leggings | 0 |
+| Dragonbone boots | 1x Dragon boots, 1x Dragonbone upgrade kit | 1x Dragonbone boots | 0 |
+| Dragonbone full helm | 1x Dragon full helm, 1x Dragonbone upgrade kit | 1x Dragonbone full helm | 0 |
+| Dragonbone platebody | 1x Dragon platebody, 1x Dragonbone upgrade kit | 1x Dragonbone platebody | 0 |
+| Dragonbone platelegs | 1x Dragon platelegs, 1x Dragonbone upgrade kit | 1x Dragonbone platelegs | 0 |
+| Dragonbone gloves | 1x Dragon gloves, 1x Dragonbone upgrade kit | 1x Dragonbone gloves | 0 |
+| Dragonbone mage boots | 1x Dragonbone upgrade kit, 1x Infinity boots | 1x Dragonbone mage boots | 0 |
+| Dragonbone mage gloves | 1x Dragonbone upgrade kit, 1x Infinity gloves | 1x Dragonbone mage gloves | 0 |
+| Dragonbone mage bottoms | 1x Dragonbone upgrade kit, 1x Infinity bottoms | 1x Dragonbone mage bottoms | 0 |
+| Dragonbone mage hat | 1x Dragonbone upgrade kit, 1x Infinity hat | 1x Dragonbone mage hat | 0 |
+| Dragonbone mage top | 1x Dragonbone upgrade kit, 1x Infinity top | 1x Dragonbone mage top | 0 |
+| Royal dragon platebody | 1x Ruined dragon armour lump, 1x Ruined dragon armour shard, 1x Ruined dragon armour slice | 1x Royal dragon platebody | 0 |
+| Frosty | 1x Festive scarf, 50x Snowball, 1x Snowman top hat | 1x Frosty | 0 |
+| Virtus wand | 1x Kodai wand, 1x Virtus crystal | 1x Virtus wand | 0 |
+| Virtus book | 1x Mage's book, 1x Virtus crystal | 1x Virtus book | 0 |
+| Pernix cowl | 1x Armadylean components, 1x Pernix cowl (broken) | 1x Pernix cowl | 0 |
+| Pernix body | 1x Armadylean components, 1x Pernix body (broken) | 1x Pernix body | 0 |
+| Pernix chaps | 1x Armadylean components, 1x Pernix chaps (broken) | 1x Pernix chaps | 0 |
+| Pernix boots | 1x Armadylean components, 1x Pernix boots (broken) | 1x Pernix boots | 0 |
+| Pernix gloves | 1x Armadylean components, 1x Pernix gloves (broken) | 1x Pernix gloves | 0 |
+| Torva full helm | 1x Bandosian components, 1x Torva full helm (broken) | 1x Torva full helm | 0 |
+| Torva platebody | 1x Bandosian components, 1x Torva platebody (broken) | 1x Torva platebody | 0 |
+| Torva platelegs | 1x Bandosian components, 1x Torva platelegs (broken) | 1x Torva platelegs | 0 |
+| Torva boots | 1x Bandosian components, 1x Torva boots (broken) | 1x Torva boots | 0 |
+| Torva gloves | 1x Bandosian components, 1x Torva gloves (broken) | 1x Torva gloves | 0 |
+| Virtus mask | 1x Ancestral components, 1x Virtus mask (broken) | 1x Virtus mask | 0 |
+| Virtus robe top | 1x Ancestral components, 1x Virtus robe top (broken) | 1x Virtus robe top | 0 |
+| Virtus robe legs | 1x Ancestral components, 1x Virtus robe legs (broken) | 1x Virtus robe legs | 0 |
+| Virtus boots | 1x Ancestral components, 1x Virtus boots (broken) | 1x Virtus boots | 0 |
+| Virtus gloves | 1x Ancestral components, 1x Virtus gloves (broken) | 1x Virtus gloves | 0 |
+| Revert Pernix cowl (broken) | 1x Pernix cowl (broken) | 1x Pernix components | 0 |
+| Revert Pernix body (broken) | 1x Pernix body (broken) | 1x Pernix components | 0 |
+| Revert Pernix chaps (broken) | 1x Pernix chaps (broken) | 1x Pernix components | 0 |
+| Revert Pernix boots (broken) | 1x Pernix boots (broken) | 1x Pernix components | 0 |
+| Revert Pernix gloves (broken) | 1x Pernix gloves (broken) | 1x Pernix components | 0 |
+| Revert Torva full helm (broken) | 1x Torva full helm (broken) | 1x Bandosian components | 0 |
+| Revert Torva platebody (broken) | 1x Torva platebody (broken) | 1x Bandosian components | 0 |
+| Revert Torva platelegs (broken) | 1x Torva platelegs (broken) | 1x Bandosian components | 0 |
+| Revert Torva boots (broken) | 1x Torva boots (broken) | 1x Bandosian components | 0 |
+| Revert Torva gloves (broken) | 1x Torva gloves (broken) | 1x Bandosian components | 0 |
+| Revert Virtus mask (broken) | 1x Virtus mask (broken) | 1x Ancestral components | 0 |
+| Revert Virtus robe top (broken) | 1x Virtus robe top (broken) | 1x Ancestral components | 0 |
+| Revert Virtus robe legs (broken) | 1x Virtus robe legs (broken) | 1x Ancestral components | 0 |
+| Revert Virtus boots (broken) | 1x Virtus boots (broken) | 1x Ancestral components | 0 |
+| Revert Virtus gloves (broken) | 1x Virtus gloves (broken) | 1x Ancestral components | 0 |
+| Revert bandos chestplate | 1x Bandos chestplate | 3x Bandosian components | 0 |
+| Revert bandos tassets | 1x Bandos tassets | 2x Bandosian components | 0 |
+| Revert armadyl helmet (components) | 1x Armadyl helmet | 1x Armadylean components | 0 |
+| Revert armadyl chestplate (components) | 1x Armadyl chestplate | 3x Armadylean components | 0 |
+| Revert armadyl chainskirt (components) | 1x Armadyl chainskirt | 2x Armadylean components | 0 |
+| Revert ancestral hat | 1x Ancestral hat | 2x Ancestral components | 0 |
+| Revert ancestral robe top | 1x Ancestral robe top | 3x Ancestral components | 0 |
+| Revert ancestral robe bottom | 1x Ancestral robe bottom | 3x Ancestral components | 0 |
+| Revert masori mask | 1x Masori mask | 2x Masori components | 0 |
+| Revert masori body | 1x Masori body | 4x Masori components | 0 |
+| Revert masori chaps | 1x Masori chaps | 3x Masori components | 0 |
+| Crystal dust | 1x Crystal shard | 10x Crystal dust | 0 |
+| Dagannoth slayer helm | 1x Dagannoth mask, 1x Slayer helmet | 1x Dagannoth slayer helm | 0 |
+| Jelly slayer helm | 1x Jelly mask, 1x Slayer helmet | 1x Jelly slayer helm | 0 |
+| Abyssal slayer helm | 1x Abyssal mask, 1x Slayer helmet | 1x Abyssal slayer helm | 0 |
+| Black demonical slayer helm | 1x Black demonical mask, 1x Slayer helmet | 1x Black demonical slayer helm | 0 |
+| Troll slayer helm | 1x Slayer helmet, 1x Troll mask | 1x Troll slayer helm | 0 |
+| Ganodermic slayer helm | 1x Ganodermic mask, 1x Slayer helmet | 1x Ganodermic slayer helm | 0 |
+| Gargoyle slayer helm | 1x Gargoyle mask, 1x Slayer helmet | 1x Gargoyle slayer helm | 0 |
+| Dark beast slayer helm | 1x Dark beast mask, 1x Slayer helmet | 1x Dark beast slayer helm | 0 |
+| Dust devil slayer helm | 1x Dust devil mask, 1x Slayer helmet | 1x Dust devil slayer helm | 0 |
+| Crawling hand slayer helm | 1x Crawling hand mask, 1x Slayer helmet | 1x Crawling hand slayer helm | 0 |
+| Basilisk slayer helm | 1x Basilisk mask, 1x Slayer helmet | 1x Basilisk slayer helm | 0 |
+| Bloodveld slayer helm | 1x Bloodveld mask, 1x Slayer helmet | 1x Bloodveld slayer helm | 0 |
+| Banshee slayer helm | 1x Banshee's mask, 1x Slayer helmet | 1x Banshee slayer helm | 0 |
+| Cockatrice slayer helm | 1x Cockatrice mask, 1x Slayer helmet | 1x Cockatrice slayer helm | 0 |
+| Aberrant slayer helm | 1x Aberrant mask, 1x Slayer helmet | 1x Aberrant slayer helm | 0 |
+| Kurask slayer helm | 1x Kurask mask, 1x Slayer helmet | 1x Kurask slayer helm | 0 |
+| Titan ballista | 1x Heavy ballista, 3x Monkey tail | 1x Titan ballista | 0 |
+| Piercing trident | 3x Ignecarus dragonclaw, 2x Merfolk trident | 1x Piercing trident | 0 |
+| Atlantean trident | 1x Oceanic relic, 1x Piercing trident | 1x Atlantean trident | 0 |
+| Shark tooth necklace | 5x Shark tooth | 1x Shark tooth necklace | 0 |
+| Ring of piercing | 1x Aquifer aegis, 10x Archers ring, 3x Armadylean components, 6x Masori components | 1x Ring of piercing | 0 |
+| Ring of piercing (i) | 1x Magus scroll, 1x Ring of piercing | 1x Ring of piercing (i) | 0 |
+| Tidal collector | 1x Abyssal cape, 10x Armadylean components, 1x Masori assembler, 10x Masori components, 1x Shark jaw | 1x Tidal collector | 0 |
+| Revert completionist cape (t) | 1x Completionist cape (t), 1x Completionist hood (t) | 1x Completionist cape, 1x Completionist hood | 0 |
+| Ghostly zombie gloves | 100x Ghostweave | 1x Ghostly zombie gloves | 0 |
+| Revert Ghostly zombie gloves | 1x Ghostly zombie gloves | 90x Ghostweave | 0 |
+| Ghostly zombie trousers | 100x Ghostweave | 1x Ghostly zombie trousers | 0 |
+| Revert Ghostly zombie trousers | 1x Ghostly zombie trousers | 90x Ghostweave | 0 |
+| Ghostly zombie shirt | 100x Ghostweave | 1x Ghostly zombie shirt | 0 |
+| Revert Ghostly zombie shirt | 1x Ghostly zombie shirt | 90x Ghostweave | 0 |
+| Ghostly zombie boots | 100x Ghostweave | 1x Ghostly zombie boots | 0 |
+| Revert Ghostly zombie boots | 1x Ghostly zombie boots | 90x Ghostweave | 0 |
+| Ghostly zombie mask | 100x Ghostweave | 1x Ghostly zombie mask | 0 |
+| Revert Ghostly zombie mask | 1x Ghostly zombie mask | 90x Ghostweave | 0 |
+| Ghostly lederhosen hat | 100x Ghostweave | 1x Ghostly lederhosen hat | 0 |
+| Revert Ghostly lederhosen hat | 1x Ghostly lederhosen hat | 90x Ghostweave | 0 |
+| Ghostly lederhosen shorts | 100x Ghostweave | 1x Ghostly lederhosen shorts | 0 |
+| Revert Ghostly lederhosen shorts | 1x Ghostly lederhosen shorts | 90x Ghostweave | 0 |
+| Ghostly lederhosen gloves | 100x Ghostweave | 1x Ghostly lederhosen gloves | 0 |
+| Revert Ghostly lederhosen gloves | 1x Ghostly lederhosen gloves | 90x Ghostweave | 0 |
+| Ghostly lederhosen top | 100x Ghostweave | 1x Ghostly lederhosen top | 0 |
+| Revert Ghostly lederhosen top | 1x Ghostly lederhosen top | 90x Ghostweave | 0 |
+| Ghostly lederhosen boots | 100x Ghostweave | 1x Ghostly lederhosen boots | 0 |
+| Revert Ghostly lederhosen boots | 1x Ghostly lederhosen boots | 90x Ghostweave | 0 |
+| Ghostly jester hat | 100x Ghostweave | 1x Ghostly jester hat | 0 |
+| Revert Ghostly jester hat | 1x Ghostly jester hat | 90x Ghostweave | 0 |
+| Ghostly jester gloves | 100x Ghostweave | 1x Ghostly jester gloves | 0 |
+| Revert Ghostly jester gloves | 1x Ghostly jester gloves | 90x Ghostweave | 0 |
+| Ghostly jester boots | 100x Ghostweave | 1x Ghostly jester boots | 0 |
+| Revert Ghostly jester boots | 1x Ghostly jester boots | 90x Ghostweave | 0 |
+| Ghostly jester top | 100x Ghostweave | 1x Ghostly jester top | 0 |
+| Revert Ghostly jester top | 1x Ghostly jester top | 90x Ghostweave | 0 |
+| Ghostly jester tights | 100x Ghostweave | 1x Ghostly jester tights | 0 |
+| Revert Ghostly jester tights | 1x Ghostly jester tights | 90x Ghostweave | 0 |
+| Ghostly ringmaster hat | 100x Ghostweave | 1x Ghostly ringmaster hat | 0 |
+| Revert Ghostly ringmaster hat | 1x Ghostly ringmaster hat | 90x Ghostweave | 0 |
+| Ghostly ringmaster pants | 100x Ghostweave | 1x Ghostly ringmaster pants | 0 |
+| Revert Ghostly ringmaster pants | 1x Ghostly ringmaster pants | 90x Ghostweave | 0 |
+| Ghostly ringmaster boots | 100x Ghostweave | 1x Ghostly ringmaster boots | 0 |
+| Revert Ghostly ringmaster boots | 1x Ghostly ringmaster boots | 90x Ghostweave | 0 |
+| Ghostly ringmaster shirt | 100x Ghostweave | 1x Ghostly ringmaster shirt | 0 |
+| Revert Ghostly ringmaster shirt | 1x Ghostly ringmaster shirt | 90x Ghostweave | 0 |
+| Ghostly ringmaster gloves | 100x Ghostweave | 1x Ghostly ringmaster gloves | 0 |
+| Revert Ghostly ringmaster gloves | 1x Ghostly ringmaster gloves | 90x Ghostweave | 0 |
+| Ghostly chicken feet | 100x Ghostweave | 1x Ghostly chicken feet | 0 |
+| Revert Ghostly chicken feet | 1x Ghostly chicken feet | 90x Ghostweave | 0 |
+| Ghostly chicken wings | 100x Ghostweave | 1x Ghostly chicken wings | 0 |
+| Revert Ghostly chicken wings | 1x Ghostly chicken wings | 90x Ghostweave | 0 |
+| Ghostly chicken gloves | 100x Ghostweave | 1x Ghostly chicken gloves | 0 |
+| Revert Ghostly chicken gloves | 1x Ghostly chicken gloves | 90x Ghostweave | 0 |
+| Ghostly chicken legs | 100x Ghostweave | 1x Ghostly chicken legs | 0 |
+| Revert Ghostly chicken legs | 1x Ghostly chicken legs | 90x Ghostweave | 0 |
+| Ghostly chicken head | 100x Ghostweave | 1x Ghostly chicken head | 0 |
+| Revert Ghostly chicken head | 1x Ghostly chicken head | 90x Ghostweave | 0 |
+| Revert Pale energy | 1x Pale energy | 2x Atomic energy | 0 |
+| Revert Flickering energy | 1x Flickering energy | 3x Atomic energy | 0 |
+| Boon of flickering energy | 500x Pale energy | 1x Boon of flickering energy | 0 |
+| Revert Bright energy | 1x Bright energy | 6x Atomic energy | 0 |
+| Boon of bright energy | 1k Flickering energy | 1x Boon of bright energy | 0 |
+| Revert Glowing energy | 1x Glowing energy | 11x Atomic energy | 0 |
+| Boon of glowing energy | 1.5k Bright energy | 1x Boon of glowing energy | 0 |
+| Revert Sparkling energy | 1x Sparkling energy | 18x Atomic energy | 0 |
+| Boon of sparkling energy | 2k Glowing energy | 1x Boon of sparkling energy | 0 |
+| Revert Gleaming energy | 1x Gleaming energy | 28x Atomic energy | 0 |
+| Boon of gleaming energy | 2.5k Sparkling energy | 1x Boon of gleaming energy | 0 |
+| Revert Vibrant energy | 1x Vibrant energy | 42x Atomic energy | 0 |
+| Boon of vibrant energy | 3k Gleaming energy | 1x Boon of vibrant energy | 0 |
+| Revert Lustrous energy | 1x Lustrous energy | 61x Atomic energy | 0 |
+| Boon of lustrous energy | 3.5k Vibrant energy | 1x Boon of lustrous energy | 0 |
+| Revert Elder energy | 1x Elder energy | 72x Atomic energy | 0 |
+| Boon of elder energy | 3.8k Lustrous energy | 1x Boon of elder energy | 0 |
+| Revert Brilliant energy | 1x Brilliant energy | 85x Atomic energy | 0 |
+| Boon of brilliant energy | 4k Elder energy | 1x Boon of brilliant energy | 0 |
+| Revert Radiant energy | 1x Radiant energy | 99x Atomic energy | 0 |
+| Boon of radiant energy | 4.3k Brilliant energy | 1x Boon of radiant energy | 0 |
+| Revert Luminous energy | 1x Luminous energy | 115x Atomic energy | 0 |
+| Boon of luminous energy | 4.5k Radiant energy | 1x Boon of luminous energy | 0 |
+| Revert Incandescent energy | 1x Incandescent energy | 133x Atomic energy | 0 |
+| Boon of incandescent energy | 4.8k Luminous energy | 1x Boon of incandescent energy | 0 |
+| Revert Ancient energy | 1x Ancient energy | 394x Atomic energy | 0 |
+| Boon of ancient energy | 5.5k Incandescent energy | 1x Boon of ancient energy | 0 |
+| Cache portent | 20x Elder rune, 50x Molten glass, 500x Radiant energy | 1x Cache portent | 0 |
+| Graceful portent | 20x Elder rune, 500x Luminous energy, 30x Super energy(4) | 1x Graceful portent | 0 |
+| Rogues portent | 200x Ancient energy, 520x Elder rune | 1x Rogues portent | 0 |
+| Dungeon portent | 512x Ancient energy, 20x Elder rune | 1x Dungeon portent | 0 |
+| Lucky portent | 20x Elder rune, 256x Incandescent energy | 1x Lucky portent | 0 |
+| Rebirth portent | 512x Ancient energy, 20x Elder rune | 1x Rebirth portent | 0 |
+| Spiritual mining portent | 20x Elder rune, 1.2k Incandescent energy | 1x Spiritual mining portent | 0 |
+| Pacifist hunting portent | 20x Elder rune, 1k Incandescent energy, 30x Rocktail | 1x Pacifist hunting portent | 0 |
+| Sundial scimitar | 30k Atomic energy, 1x Dragon scimitar, 7.5k Solite | 1x Sundial scimitar | 0 |
+| Offhand spidergore rapier | 1x Offhand drygore rapier, 1x Spiders leg bottom | 1x Offhand spidergore rapier | 0 |
+| Lumina (Materials) | 30x Elder rune | 1x Lumina | 0 |
+| Clue scroll (elder) | 3x Elder scroll piece | 1x Clue scroll (elder) | 0 |
+| Tidal collector (i) | 10x Armadylean components, 5x Blessed dizana's quiver, 4x Masori components, 3x Pernix components, 1x Tidal collector | 1x Tidal collector (i) | 0 |
+| Deathly collector (i) | 10x Armadylean components, 5x Blessed dizana's quiver, 1x Deathly collector, 4x Masori components, 3x Pernix components | 1x Deathly collector (i) | 0 |
+| Lumina (Elder logs) | 5x Elder logs, 30x Elder rune | 1x Lumina | 0 |
+| Lumina (Redwood logs) | 30x Elder rune, 10x Redwood logs | 1x Lumina | 0 |
+| Lumina (Magic logs) | 30x Elder rune, 30x Magic logs | 1x Lumina | 0 |
+| Lumina (Yew logs) | 30x Elder rune, 50x Yew logs | 1x Lumina | 0 |
+| Mining master cape (inverted) | 100m Coins, 1x Mining master cape | 1x Mining master cape (inverted) | 0 |
+| Revert Mining master cape (inverted) | 1x Mining master cape (inverted) | 1x Mining master cape | 0 |
+| Smithing master cape (inverted) | 100m Coins, 1x Smithing master cape | 1x Smithing master cape (inverted) | 0 |
+| Revert Smithing master cape (inverted) | 1x Smithing master cape (inverted) | 1x Smithing master cape | 0 |
+| Woodcutting master cape (inverted) | 100m Coins, 1x Woodcutting master cape | 1x Woodcutting master cape (inverted) | 0 |
+| Revert Woodcutting master cape (inverted) | 1x Woodcutting master cape (inverted) | 1x Woodcutting master cape | 0 |
+| Firemaking master cape (inverted) | 100m Coins, 1x Firemaking master cape | 1x Firemaking master cape (inverted) | 0 |
+| Revert Firemaking master cape (inverted) | 1x Firemaking master cape (inverted) | 1x Firemaking master cape | 0 |
+| Agility master cape (inverted) | 1x Agility master cape, 100m Coins | 1x Agility master cape (inverted) | 0 |
+| Revert Agility master cape (inverted) | 1x Agility master cape (inverted) | 1x Agility master cape | 0 |
+| Fishing master cape (inverted) | 100m Coins, 1x Fishing master cape | 1x Fishing master cape (inverted) | 0 |
+| Revert Fishing master cape (inverted) | 1x Fishing master cape (inverted) | 1x Fishing master cape | 0 |
+| Runecraft master cape (inverted) | 100m Coins, 1x Runecraft master cape | 1x Runecraft master cape (inverted) | 0 |
+| Revert Runecraft master cape (inverted) | 1x Runecraft master cape (inverted) | 1x Runecraft master cape | 0 |
+| Cooking master cape (inverted) | 100m Coins, 1x Cooking master cape | 1x Cooking master cape (inverted) | 0 |
+| Revert Cooking master cape (inverted) | 1x Cooking master cape (inverted) | 1x Cooking master cape | 0 |
+| Crafting master cape (inverted) | 100m Coins, 1x Crafting master cape | 1x Crafting master cape (inverted) | 0 |
+| Revert Crafting master cape (inverted) | 1x Crafting master cape (inverted) | 1x Crafting master cape | 0 |
+| Prayer master cape (inverted) | 100m Coins, 1x Prayer master cape | 1x Prayer master cape (inverted) | 0 |
+| Revert Prayer master cape (inverted) | 1x Prayer master cape (inverted) | 1x Prayer master cape | 0 |
+| Fletching master cape (inverted) | 100m Coins, 1x Fletching master cape | 1x Fletching master cape (inverted) | 0 |
+| Revert Fletching master cape (inverted) | 1x Fletching master cape (inverted) | 1x Fletching master cape | 0 |
+| Thieving master cape (inverted) | 100m Coins, 1x Thieving master cape | 1x Thieving master cape (inverted) | 0 |
+| Revert Thieving master cape (inverted) | 1x Thieving master cape (inverted) | 1x Thieving master cape | 0 |
+| Farming master cape (inverted) | 100m Coins, 1x Farming master cape | 1x Farming master cape (inverted) | 0 |
+| Revert Farming master cape (inverted) | 1x Farming master cape (inverted) | 1x Farming master cape | 0 |
+| Herblore master cape (inverted) | 100m Coins, 1x Herblore master cape | 1x Herblore master cape (inverted) | 0 |
+| Revert Herblore master cape (inverted) | 1x Herblore master cape (inverted) | 1x Herblore master cape | 0 |
+| Hunter master cape (inverted) | 100m Coins, 1x Hunter master cape | 1x Hunter master cape (inverted) | 0 |
+| Revert Hunter master cape (inverted) | 1x Hunter master cape (inverted) | 1x Hunter master cape | 0 |
+| Construction master cape (inverted) | 100m Coins, 1x Construction master cape | 1x Construction master cape (inverted) | 0 |
+| Revert Construction master cape (inverted) | 1x Construction master cape (inverted) | 1x Construction master cape | 0 |
+| Magic master cape (inverted) | 100m Coins, 1x Magic master cape | 1x Magic master cape (inverted) | 0 |
+| Revert Magic master cape (inverted) | 1x Magic master cape (inverted) | 1x Magic master cape | 0 |
+| Attack master cape (inverted) | 1x Attack master cape, 100m Coins | 1x Attack master cape (inverted) | 0 |
+| Revert Attack master cape (inverted) | 1x Attack master cape (inverted) | 1x Attack master cape | 0 |
+| Strength master cape (inverted) | 100m Coins, 1x Strength master cape | 1x Strength master cape (inverted) | 0 |
+| Revert Strength master cape (inverted) | 1x Strength master cape (inverted) | 1x Strength master cape | 0 |
+| Defence master cape (inverted) | 100m Coins, 1x Defence master cape | 1x Defence master cape (inverted) | 0 |
+| Revert Defence master cape (inverted) | 1x Defence master cape (inverted) | 1x Defence master cape | 0 |
+| Ranging master cape (inverted) | 100m Coins, 1x Ranged master cape | 1x Ranging master cape (inverted) | 0 |
+| Revert Ranging master cape (inverted) | 1x Ranging master cape (inverted) | 1x Ranged master cape | 0 |
+| Hitpoints master cape (inverted) | 100m Coins, 1x Hitpoints master cape | 1x Hitpoints master cape (inverted) | 0 |
+| Revert Hitpoints master cape (inverted) | 1x Hitpoints master cape (inverted) | 1x Hitpoints master cape | 0 |
+| Slayer master cape (inverted) | 100m Coins, 1x Slayer master cape | 1x Slayer master cape (inverted) | 0 |
+| Revert Slayer master cape (inverted) | 1x Slayer master cape (inverted) | 1x Slayer master cape | 0 |
+| Dungeoneering master cape (inverted) | 100m Coins, 1x Dungeoneering master cape | 1x Dungeoneering master cape (inverted) | 0 |
+| Revert Dungeoneering master cape (inverted) | 1x Dungeoneering master cape (inverted) | 1x Dungeoneering master cape | 0 |
+| Invention master cape (inverted) | 100m Coins, 1x Invention master cape | 1x Invention master cape (inverted) | 0 |
+| Revert Invention master cape (inverted) | 1x Invention master cape (inverted) | 1x Invention master cape | 0 |
+| Divination master cape (inverted) | 100m Coins, 1x Divination master cape | 1x Divination master cape (inverted) | 0 |
+| Revert Divination master cape (inverted) | 1x Divination master cape (inverted) | 1x Divination master cape | 0 |
 | Graceful | 260x Mark of grace | 1x Graceful boots, 1x Graceful cape, 1x Graceful gloves, 1x Graceful hood, 1x Graceful legs, 1x Graceful top | 0 |
 | Graceful hood | 35x Mark of grace | 1x Graceful hood | 0 |
 | Graceful top | 55x Mark of grace | 1x Graceful top | 0 |
@@ -784,11 +1219,6 @@
 | Mystic smoke staff | 1x Smoke battlestaff | 1x Mystic smoke staff | 40000 |
 | Mystic steam staff | 1x Steam battlestaff | 1x Mystic steam staff | 40000 |
 | Mystic steam staff (or) | 1x Steam battlestaff (or) | 1x Mystic steam staff (or) | 40000 |
-| Revert bandos chestplate | 1x Bandos chestplate | 3x Bandosian components | 0 |
-| Revert bandos tassets | 1x Bandos tassets | 2x Bandosian components | 0 |
-| Torva full helm | 1x Bandosian components, 1x Torva full helm (damaged) | 1x Torva full helm | 0 |
-| Torva platebody | 2x Bandosian components, 1x Torva platebody (damaged) | 1x Torva platebody | 0 |
-| Torva platelegs | 2x Bandosian components, 1x Torva platelegs (damaged) | 1x Torva platelegs | 0 |
 | Ancient godsword | 1x Ancient hilt, 1x Godsword blade | 1x Ancient godsword | 0 |
 | Zaryte crossbow | 1x Armadyl crossbow, 1x Nihil horn, 250x Nihil shard | 1x Zaryte crossbow | 0 |
 | Revert crystal weapon seed | 1x Crystal weapon seed | 10x Crystal shard | 0 |
@@ -909,11 +1339,84 @@
 | Abyssal blue dye (using Abyssal red dye) | 1x Abyssal red dye | 1x Abyssal blue dye | 0 |
 | Abyssal red dye (using Abyssal green dye) | 1x Abyssal green dye | 1x Abyssal red dye | 0 |
 | Abyssal red dye (using Abyssal blue dye) | 1x Abyssal blue dye | 1x Abyssal red dye | 0 |
+| Runite igne claws | 1x Igne gear frame, 10x Leather, 30x Runite bar | 1x Runite igne claws | 0 |
+| Dragon igne claws | 1x Dragon claws, 10x Leather, 1x Runite igne claws | 1x Dragon igne claws | 0 |
+| Barrows igne claws | 1x Dragon igne claws, 10x Leather | 1x Barrows igne claws | 0 |
+| Volcanic igne claws | 1x Barrows igne claws, 10x Leather, 250x Obsidian shards, 2x Volcanic shards | 1x Volcanic igne claws | 0 |
+| Drygore igne claws | 10x Leather, 1x Volcanic igne claws | 1x Drygore igne claws | 0 |
+| Dwarven igne claws | 1x Drygore igne claws, 10x Leather | 1x Dwarven igne claws | 0 |
+| Gorajan igne claws | 1x Dwarven igne claws, 2x Gorajan shards, 10x Leather | 1x Gorajan igne claws | 0 |
+| Dragon igne armor | 1x Igne gear frame, 10x Leather | 1x Dragon igne armor | 0 |
+| Barrows igne armor | 1x Dragon igne armor, 10x Leather | 1x Barrows igne armor | 0 |
+| Volcanic igne armor | 1x Barrows igne armor, 10x Leather, 250x Obsidian shards, 2x Volcanic shards | 1x Volcanic igne armor | 0 |
+| Justiciar igne armor | 10x Leather, 1x Volcanic igne armor | 1x Justiciar igne armor | 0 |
+| Drygore igne armor | 1x Justiciar igne armor, 10x Leather | 1x Drygore igne armor | 0 |
+| Dwarven igne armor | 1x Drygore igne armor, 10x Leather | 1x Dwarven igne armor | 0 |
+| Gorajan igne armor | 1x Dwarven igne armor, 2x Gorajan shards, 10x Leather | 1x Gorajan igne armor | 0 |
+| Demonic jibwings | 10x Dark totem | 1x Demonic jibwings | 0 |
+| Abyssal jibwings | 10x Ancient shard, 1x Magical artifact | 1x Abyssal jibwings | 0 |
+| 3rd age jibwings | 1k Gold bar | 1x 3rd age jibwings | 0 |
+| 3rd age jibwings (e) | 1x 3rd age jibwings, 1k Ignecarus scales | 1x 3rd age jibwings (e) | 0 |
+| Demonic jibwings (e) | 1x Demonic jibwings, 1k Ignecarus scales | 1x Demonic jibwings (e) | 0 |
+| Abyssal jibwings (e) | 1x Abyssal jibwings, 1k Ignecarus scales | 1x Abyssal jibwings (e) | 0 |
+| Divine ring | 1m Atomic energy | 1x Divine ring | 0 |
+| Impling locator | 200k Atomic energy, 1k Elder rune | 1x Impling locator | 0 |
+| Revert Runite igne claws | 1x Runite igne claws | 1x Igne gear frame | 0 |
+| Revert Dragon igne claws | 1x Dragon igne claws | 1x Igne gear frame | 0 |
+| Revert Barrows igne claws | 1x Barrows igne claws | 1x Igne gear frame | 0 |
+| Revert Volcanic igne claws | 1x Volcanic igne claws | 1x Igne gear frame | 0 |
+| Revert Drygore igne claws | 1x Drygore igne claws | 1x Igne gear frame | 0 |
+| Revert Dwarven igne claws | 1x Dwarven igne claws | 1x Igne gear frame | 0 |
+| Revert Gorajan igne claws | 1x Gorajan igne claws | 1x Igne gear frame | 0 |
+| Revert Dragon igne armor | 1x Dragon igne armor | 1x Igne gear frame | 0 |
+| Revert Barrows igne armor | 1x Barrows igne armor | 1x Igne gear frame | 0 |
+| Revert Volcanic igne armor | 1x Volcanic igne armor | 1x Igne gear frame | 0 |
+| Revert Justiciar igne armor | 1x Justiciar igne armor | 1x Igne gear frame | 0 |
+| Revert Drygore igne armor | 1x Drygore igne armor | 1x Igne gear frame | 0 |
+| Revert Dwarven igne armor | 1x Dwarven igne armor | 1x Igne gear frame | 0 |
+| Revert Gorajan igne armor | 1x Gorajan igne armor | 1x Igne gear frame | 0 |
+| Volcanic pickaxe | 1x Dwarven pickaxe, 250x Obsidian shards, 2x Volcanic shards | 1x Volcanic pickaxe | 0 |
+| Offhand volcanic pickaxe | 1x Dwarven pickaxe, 150x Obsidian shards, 1x Volcanic shards | 1x Offhand volcanic pickaxe | 0 |
+| Moktang totem | 20x Elder rune | 1x Moktang totem | 0 |
+| Dragonstone full helm(u) | 1x Dragonstone full helm, 1x Dragonstone upgrade kit | 1x Dragonstone full helm(u) | 0 |
+| Dragonstone platebody(u) | 1x Dragonstone platebody, 1x Dragonstone upgrade kit | 1x Dragonstone platebody(u) | 0 |
+| Dragonstone platelegs(u) | 1x Dragonstone platelegs, 1x Dragonstone upgrade kit | 1x Dragonstone platelegs(u) | 0 |
+| Dragonstone boots(u) | 1x Dragonstone boots, 1x Dragonstone upgrade kit | 1x Dragonstone boots(u) | 0 |
+| Dragonstone gauntlets(u) | 1x Dragonstone gauntlets, 1x Dragonstone upgrade kit | 1x Dragonstone gauntlets(u) | 0 |
 | Bronze coffin | 1x Broken coffin, 1x Bronze locks | 1x Bronze coffin | 0 |
 | Steel coffin | 1x Broken coffin, 1x Steel locks | 1x Steel coffin | 0 |
 | Black coffin | 1x Black locks, 1x Broken coffin | 1x Black coffin | 0 |
 | Silver coffin | 1x Broken coffin, 1x Silver locks | 1x Silver coffin | 0 |
 | Gold coffin | 1x Broken coffin, 1x Gold locks | 1x Gold coffin | 0 |
+| Necromancer outfit | 1x Dagon'hai robes set, 50x Fine cloth, 3x Necromancer kit | 1x Necromancer hood, 1x Necromancer robe bottom, 1x Necromancer robe top | 0 |
+| Necromancer's air staff | 1x Mystic air staff, 1x Shade skull | 1x Necromancer's air staff | 0 |
+| Revert Necromancer's air staff | 1x Necromancer's air staff | 1x Mystic air staff, 1x Shade skull | 0 |
+| Necromancer's earth staff | 1x Mystic earth staff, 1x Shade skull | 1x Necromancer's earth staff | 0 |
+| Revert Necromancer's earth staff | 1x Necromancer's earth staff | 1x Mystic earth staff, 1x Shade skull | 0 |
+| Necromancer's fire staff | 1x Mystic fire staff, 1x Shade skull | 1x Necromancer's fire staff | 0 |
+| Revert Necromancer's fire staff | 1x Necromancer's fire staff | 1x Mystic fire staff, 1x Shade skull | 0 |
+| Necromancer's lava staff | 1x Mystic lava staff, 1x Shade skull | 1x Necromancer's lava staff | 0 |
+| Revert Necromancer's lava staff | 1x Necromancer's lava staff | 1x Mystic lava staff, 1x Shade skull | 0 |
+| Necromancer's mud staff | 1x Mystic mud staff, 1x Shade skull | 1x Necromancer's mud staff | 0 |
+| Revert Necromancer's mud staff | 1x Necromancer's mud staff | 1x Mystic mud staff, 1x Shade skull | 0 |
+| Necromancer's steam staff | 1x Mystic steam staff, 1x Shade skull | 1x Necromancer's steam staff | 0 |
+| Revert Necromancer's steam staff | 1x Necromancer's steam staff | 1x Mystic steam staff, 1x Shade skull | 0 |
+| Necromancer's water staff | 1x Mystic water staff, 1x Shade skull | 1x Necromancer's water staff | 0 |
+| Revert Necromancer's water staff | 1x Necromancer's water staff | 1x Mystic water staff, 1x Shade skull | 0 |
+| Skeletal battlestaff of air | 1x Air battlestaff, 1x Shade skull | 1x Skeletal battlestaff of air | 0 |
+| Revert Skeletal battlestaff of air | 1x Skeletal battlestaff of air | 1x Air battlestaff, 1x Shade skull | 0 |
+| Skeletal battlestaff of earth | 1x Earth battlestaff, 1x Shade skull | 1x Skeletal battlestaff of earth | 0 |
+| Revert Skeletal battlestaff of earth | 1x Skeletal battlestaff of earth | 1x Earth battlestaff, 1x Shade skull | 0 |
+| Skeletal battlestaff of fire | 1x Fire battlestaff, 1x Shade skull | 1x Skeletal battlestaff of fire | 0 |
+| Revert Skeletal battlestaff of fire | 1x Skeletal battlestaff of fire | 1x Fire battlestaff, 1x Shade skull | 0 |
+| Skeletal battlestaff of water | 1x Shade skull, 1x Water battlestaff | 1x Skeletal battlestaff of water | 0 |
+| Revert Skeletal battlestaff of water | 1x Skeletal battlestaff of water | 1x Shade skull, 1x Water battlestaff | 0 |
+| Skeletal lava battlestaff | 1x Lava battlestaff, 1x Shade skull | 1x Skeletal lava battlestaff | 0 |
+| Revert Skeletal lava battlestaff | 1x Skeletal lava battlestaff | 1x Lava battlestaff, 1x Shade skull | 0 |
+| Skeletal mud battlestaff | 1x Mud battlestaff, 1x Shade skull | 1x Skeletal mud battlestaff | 0 |
+| Revert Skeletal mud battlestaff | 1x Skeletal mud battlestaff | 1x Mud battlestaff, 1x Shade skull | 0 |
+| Skeletal steam battlestaff | 1x Shade skull, 1x Steam battlestaff | 1x Skeletal steam battlestaff | 0 |
+| Revert Skeletal steam battlestaff | 1x Skeletal steam battlestaff | 1x Shade skull, 1x Steam battlestaff | 0 |
 | Masori assembler | 1x Ava's assembler, 1x Masori crafting kit | 1x Masori assembler | 0 |
 | Osmumten's fang (or) | 1x Cursed phalanx, 1x Osmumten's fang | 1x Osmumten's fang (or) | 0 |
 | Elidinis' ward (f) | 1x Arcane sigil, 1x Elidinis' ward, 10k Soul rune | 1x Elidinis' ward (f) | 0 |
@@ -924,9 +1427,9 @@
 | Masori mask (f) | 1x Armadylean plate, 1x Masori mask | 1x Masori mask (f) | 0 |
 | Masori body (f) | 4x Armadylean plate, 1x Masori body | 1x Masori body (f) | 0 |
 | Masori chaps (f) | 3x Armadylean plate, 1x Masori chaps | 1x Masori chaps (f) | 0 |
-| Revert Armadyl helmet | 1x Armadyl helmet | 1x Armadylean plate | 0 |
-| Revert Armadyl chestplate | 1x Armadyl chestplate | 4x Armadylean plate | 0 |
-| Revert Armadyl chainskirt | 1x Armadyl chainskirt | 3x Armadylean plate | 0 |
+| Revert Armadyl helmet (to plates) | 1x Armadyl helmet | 1x Armadylean plate | 0 |
+| Revert Armadyl chestplate (to plates) | 1x Armadyl chestplate | 4x Armadylean plate | 0 |
+| Revert Armadyl chainskirt (to plates) | 1x Armadyl chainskirt | 3x Armadylean plate | 0 |
 | Keris partisan of breaching | 1x Breach of the scarab, 1x Keris partisan | 1x Keris partisan of breaching | 0 |
 | Keris partisan of corruption | 1x Eye of the corruptor, 1x Keris partisan | 1x Keris partisan of corruption | 0 |
 | Keris partisan of the sun | 1x Jewel of the sun, 1x Keris partisan | 1x Keris partisan of the sun | 0 |
@@ -1015,3 +1518,7 @@
 | Revert Fox | 1x Fox | 1x Beaver, 1x Fox whistle | 0 |
 | Barronite mace | 1x Barronite guard, 1x Barronite handle, 1x Barronite head, 1.5k Barronite shards | 1x Barronite mace | 0 |
 | Imcando hammer | 1.5k Barronite shards, 1x Imcando hammer (broken) | 1x Imcando hammer | 0 |
+| Axe handle base | 1x Dwarven bar, 1x Volcanic shards | 1x Axe handle base | 0 |
+| Axe handle | 30x Athelas paste, 1x Axe handle base, 10x Ent hide, 1x Perfect chitin | 1x Axe handle | 0 |
+| Axe of the high sungod (u) | 1x Axe handle, 1x Sun-god axe head | 1x Axe of the high sungod (u) | 0 |
+| Axe of the high sungod | 2m Atomic energy, 1x Axe of the high sungod (u) | 1x Axe of the high sungod | 0 |

@@ -1,17 +1,19 @@
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import { Events } from '@oldschoolgg/toolkit/constants';
+import { type CommandRunOptions, formatOrdinal, stringMatches } from '@oldschoolgg/toolkit/util';
 import { bold } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import { Bank } from 'oldschooljs';
-import type { ItemBank } from 'oldschooljs/dist/meta/types';
+import { Bank, type ItemBank, itemID } from 'oldschooljs';
 
 import Buyables from '../../lib/data/buyables/buyables';
 import { quests } from '../../lib/minions/data/quests';
 import { Minigames, getMinigameScore } from '../../lib/settings/minigames';
-
+import { countUsersWithItemInCl } from '../../lib/settings/prisma';
+import { isElligibleForPresent } from '../../lib/settings/settings';
 import { MUserStats } from '../../lib/structures/MUserStats';
-import { formatSkillRequirements, itemNameFromID, stringMatches } from '../../lib/util';
+import getOSItem from '../../lib/util/getOSItem';
 import { handleMahojiConfirmation } from '../../lib/util/handleMahojiConfirmation';
 import { deferInteraction } from '../../lib/util/interactionReply';
+import { formatSkillRequirements, itemNameFromID } from '../../lib/util/smallUtils';
 import { updateBankSetting } from '../../lib/util/updateBankSetting';
 import { buyFossilIslandNotes } from '../lib/abstracted_commands/buyFossilIslandNotes';
 import { buyKitten } from '../lib/abstracted_commands/buyKitten';
@@ -114,7 +116,24 @@ export const buyCommand: OSBMahojiCommand = {
 			}
 		}
 
-		const gpCost = user.isIronman && buyable.ironmanPrice !== undefined ? buyable.ironmanPrice : buyable.gpCost;
+		let gpCost = user.isIronman && buyable.ironmanPrice !== undefined ? buyable.ironmanPrice : buyable.gpCost;
+
+		if (buyable.name === getOSItem('Festive present').name) {
+			if (!(await isElligibleForPresent(user))) {
+				return "Santa doesn't want to sell you a Festive present!";
+			}
+			quantity = 1;
+			const previouslyBought = user.cl.amount('Festive present');
+			if (user.isIronman) {
+				gpCost = Math.floor(10_000_000 * (previouslyBought + 1) * ((previouslyBought + 1) / 6));
+			} else {
+				gpCost = Math.floor(100_000_000 * (previouslyBought + 1) * ((previouslyBought + 1) / 3));
+			}
+		}
+
+		if (buyable.name === 'Golden cape shard') {
+			quantity = 1;
+		}
 
 		// If itemCost is undefined, it creates a new empty Bank, like we want:
 		const singleCost: Bank = new Bank(buyable.itemCost);
@@ -138,6 +157,27 @@ export const buyCommand: OSBMahojiCommand = {
 			interaction,
 			`${user}, please confirm that you want to buy **${outItems}** for: ${totalCost}.`
 		);
+
+		if (
+			'globalAnnouncementOnFirstBuy' in buyable &&
+			buyable.globalAnnouncementOnFirstBuy &&
+			!user.cl.has(buyable.name)
+		) {
+			const [count, ironCount] = await Promise.all([
+				countUsersWithItemInCl(itemID(buyable.name), false),
+				countUsersWithItemInCl(itemID(buyable.name), true)
+			]);
+
+			let announcement = `**${user.badgedUsername}'s** minion, ${user.minionName}, just purchased their first ${
+				buyable.name
+			}! They are the ${formatOrdinal(count + 1)} player to buy one.`;
+
+			if (user.isIronman) {
+				announcement += `\n\nThey are the ${formatOrdinal(ironCount + 1)} Ironman to buy one.`;
+			}
+
+			globalClient.emit(Events.ServerNotification, announcement);
+		}
 
 		await transactItems({
 			userID: user.id,

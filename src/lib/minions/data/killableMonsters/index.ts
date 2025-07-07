@@ -1,17 +1,21 @@
 import { Time } from 'e';
-import { Bank, Monsters } from 'oldschooljs';
+import { Bank, EMonster, Monsters, NIGHTMARES_HP, deepResolveItems, itemID, resolveItems } from 'oldschooljs';
+import { GearStat } from 'oldschooljs/gear';
 
-import { deepResolveItems, resolveItems } from 'oldschooljs/dist/util/util';
-import { NEX_ID, PHOSANI_NIGHTMARE_ID, ZALCANO_ID } from '../../../constants';
-import { GearStat } from '../../../gear/types';
+import { PUMPKINHEAD_ID } from '../../../simulation/pumpkinHead';
 import { SkillsEnum } from '../../../skilling/types';
-import itemID from '../../../util/itemID';
 import type { KillableMonster } from '../../types';
-import { NIGHTMARES_HP } from './../../../constants';
-import bosses from './bosses';
+import { bossKillables } from './bosses';
 import { camdozaalMonsters } from './camdozaalMonsters';
 import { chaeldarMonsters } from './chaeldarMonsters';
 import { creatureCreationCreatures } from './creatureCreation';
+import { Ignecarus } from './custom/bosses/Ignecarus';
+import { KalphiteKingMonster } from './custom/bosses/KalphiteKing';
+import KingGoldemar from './custom/bosses/KingGoldemar';
+import { MOKTANG_ID } from './custom/bosses/Moktang';
+import { Naxxus } from './custom/bosses/Naxxus';
+import { VasaMagus } from './custom/bosses/VasaMagus';
+import { customKillableMonsters } from './custom/customMonsters';
 import { konarMonsters } from './konarMonsters';
 import { krystiliaMonsters } from './krystiliaMonsters';
 import low from './low';
@@ -23,7 +27,7 @@ import { turaelMonsters } from './turaelMonsters';
 import { vannakaMonsters } from './vannakaMonsters';
 
 const killableMonsters: KillableMonster[] = [
-	...bosses,
+	...bossKillables,
 	...chaeldarMonsters,
 	...konarMonsters,
 	...krystiliaMonsters,
@@ -36,6 +40,7 @@ const killableMonsters: KillableMonster[] = [
 	...revenantMonsters,
 	...creatureCreationCreatures,
 	...reanimatedMonsters,
+	...customKillableMonsters,
 	{
 		id: Monsters.Barrows.id,
 		name: Monsters.Barrows.name,
@@ -44,10 +49,8 @@ const killableMonsters: KillableMonster[] = [
 		table: Monsters.Barrows,
 		emoji: '<:Dharoks_helm:403038864199122947>',
 		wildy: false,
-
 		difficultyRating: 4,
 		itemsRequired: resolveItems([]),
-		notifyDrops: resolveItems([]),
 		qpRequired: 0,
 		itemInBankBoosts: [
 			{ [itemID('Barrows gloves')]: 2 },
@@ -66,7 +69,8 @@ const killableMonsters: KillableMonster[] = [
 			pool: {
 				'Rejuvenation pool': 10,
 				'Fancy rejuvenation pool': 10,
-				'Ornate rejuvenation pool': 10
+				'Ornate rejuvenation pool': 10,
+				'Ancient rejuvenation pool': 20
 			}
 		},
 		defaultAttackStyles: [SkillsEnum.Attack, SkillsEnum.Magic, SkillsEnum.Ranged],
@@ -88,10 +92,10 @@ const killableMonsters: KillableMonster[] = [
 			"Guthan's chainskirt",
 			"Guthan's helm",
 			"Guthan's warspear",
-			['Armadyl chestplate', "Karil's leathertop"],
-			['Armadyl chainskirt', "Karil's leatherskirt"]
+			['Gorajan archer top', 'Pernix body', 'Armadyl chestplate', "Karil's leathertop"],
+			['Gorajan archer legs', 'Pernix chaps', 'Armadyl chainskirt', "Karil's leatherskirt"]
 		]),
-		notifyDrops: resolveItems(['Pet dagannoth prime']),
+
 		qpRequired: 0,
 		itemInBankBoosts: [
 			{
@@ -129,10 +133,9 @@ const killableMonsters: KillableMonster[] = [
 			"Guthan's chainskirt",
 			"Guthan's helm",
 			"Guthan's warspear",
-			['Torva platebody', 'Bandos chestplate', "Torag's platebody"],
-			['Torva platelegs', 'Bandos tassets', "Torag's platelegs"]
+			['Gorajan warrior top', 'Torva platebody', 'Bandos chestplate', "Torag's platebody"],
+			['Gorajan warrior legs', 'Torva platelegs', 'Bandos tassets', "Torag's platelegs"]
 		]),
-		notifyDrops: resolveItems(['Pet dagannoth rex']),
 		qpRequired: 0,
 		itemInBankBoosts: [
 			{
@@ -167,10 +170,10 @@ const killableMonsters: KillableMonster[] = [
 			"Guthan's chainskirt",
 			"Guthan's helm",
 			"Guthan's warspear",
-			['Bandos chestplate', "Torag's platebody", 'Torva platebody'],
-			['Bandos tassets', "Torag's platelegs", 'Torva platelegs']
+			['Gorajan warrior top', 'Torva platebody', 'Bandos chestplate', "Torag's platebody"],
+			['Gorajan warrior legs', 'Torva platelegs', 'Bandos tassets', "Torag's platelegs"]
 		]),
-		notifyDrops: resolveItems(['Pet dagannoth supreme']),
+
 		qpRequired: 0,
 		itemInBankBoosts: [
 			{
@@ -203,7 +206,8 @@ const killableMonsters: KillableMonster[] = [
 		wildy: false,
 		difficultyRating: 0,
 		qpRequired: 0,
-		defaultAttackStyles: [SkillsEnum.Attack]
+		defaultAttackStyles: [SkillsEnum.Attack],
+		attackStyleToUse: GearStat.AttackSlash
 	},
 	{
 		id: Monsters.Guard.id,
@@ -276,6 +280,7 @@ const killableMonsters: KillableMonster[] = [
 			}
 		}
 	},
+
 	{
 		id: Monsters.PriffRabbit.id,
 		name: Monsters.PriffRabbit.name,
@@ -284,7 +289,6 @@ const killableMonsters: KillableMonster[] = [
 		table: Monsters.PriffRabbit,
 		emoji: '',
 		wildy: false,
-
 		difficultyRating: 10,
 		qpRequired: 205,
 		levelRequirements: {
@@ -380,21 +384,56 @@ export const effectiveMonsters = [
 	{
 		name: 'Zalcano',
 		aliases: ['zalcano'],
-		id: ZALCANO_ID,
+		id: EMonster.ZALCANO,
 		emoji: '<:Smolcano:604670895113633802>'
+	},
+	{
+		id: 46_274,
+		name: 'Nex',
+		aliases: ['nex']
+	},
+	{
+		id: KalphiteKingMonster.id,
+		name: 'Kalphite King',
+		aliases: ['kalphite king', 'kk']
 	},
 	{ name: 'TzTok-Jad', aliases: ['jad'], id: 3127, emoji: '<:Tzrekjad:324127379188613121>' },
 	{ name: 'Mimic', aliases: ['mimic'], id: 23_184, emoji: '<:Tangleroot:324127378978635778>' },
 	{ name: 'Hespori', aliases: ['hespori'], id: 8583, emoji: '<:Casket:365003978678730772>' },
 	{
-		name: "Phosani's Nightmare",
-		aliases: ['phosani', 'phosanis nightmare'],
-		id: PHOSANI_NIGHTMARE_ID
+		id: KingGoldemar.id,
+		name: 'King Goldemar',
+		aliases: ['king goldemar', 'kg']
 	},
 	{
-		name: 'Nex',
-		aliases: ['nex'],
-		id: NEX_ID
+		id: VasaMagus.id,
+		name: 'Vasa Magus',
+		aliases: ['vasa', 'vasa magus', 'vm']
+	},
+	{
+		id: Naxxus.id,
+		name: 'Naxxus',
+		aliases: ['naxx', 'nax', 'naxxus']
+	},
+	{
+		id: Ignecarus.id,
+		name: 'Ignecarus',
+		aliases: ['igne', 'ignecarus']
+	},
+	{
+		id: PUMPKINHEAD_ID,
+		name: 'Pumpkinhead',
+		aliases: ['pumpkinhead', 'ph']
+	},
+	{
+		name: "Phosani's Nightmare",
+		aliases: ['phosani', 'phosanis nightmare'],
+		id: EMonster.PHOSANI_NIGHTMARE
+	},
+	{
+		name: 'Moktang',
+		aliases: ['moktang'],
+		id: MOKTANG_ID
 	}
 ];
 

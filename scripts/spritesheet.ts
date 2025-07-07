@@ -43,7 +43,7 @@ const trades = Items.filter(i => Boolean(i.tradeable_on_ge)).map(i => i.id);
 const itemsMustBeInSpritesheet: number[] = uniqueArr([
 	...allCLItems,
 	...trades,
-	...Createables.map(c => new Bank(c.outputItems).items().flatMap(i => i[0].id)).flat(2),
+	...Createables.map(c => new Bank(c.outputItems as any).items().flatMap(i => i[0].id)).flat(2),
 	...Buyables.flatMap(b => {
 		if (!b.outputItems) return [];
 		if (isFunction(b.outputItems)) {

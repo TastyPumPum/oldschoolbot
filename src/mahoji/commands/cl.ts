@@ -1,11 +1,11 @@
-import { toTitleCase } from '@oldschoolgg/toolkit/util';
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import { type CommandRunOptions, toTitleCase } from '@oldschoolgg/toolkit/util';
 import { ApplicationCommandOptionType } from 'discord.js';
 
 import type { CollectionLogType } from '../../lib/collectionLogTask';
 import { CollectionLogFlags, clImageGenerator, collectionLogTypes } from '../../lib/collectionLogTask';
 import { allCollectionLogs } from '../../lib/data/Collections';
 import { MUserStats } from '../../lib/structures/MUserStats';
+import { deferInteraction } from '../../lib/util/interactionReply';
 import type { OSBMahojiCommand } from '../lib/util';
 
 export const collectionLogCommand: OSBMahojiCommand = {
@@ -78,7 +78,8 @@ export const collectionLogCommand: OSBMahojiCommand = {
 	],
 	run: async ({
 		options,
-		userID
+		userID,
+		interaction
 	}: CommandRunOptions<{
 		name: string;
 		type?: CollectionLogType;
@@ -86,6 +87,7 @@ export const collectionLogCommand: OSBMahojiCommand = {
 		flag_extra?: string;
 		all?: boolean;
 	}>) => {
+		await deferInteraction(interaction);
 		const user = await mUserFetch(userID);
 		const flags: Record<string, string> = {};
 		if (options.flag) flags[options.flag] = options.flag;

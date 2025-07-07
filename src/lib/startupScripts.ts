@@ -1,4 +1,5 @@
 import { Items } from 'oldschooljs';
+
 import { globalConfig } from './constants';
 import { sql } from './postgres';
 import { adminPingLog } from './util.js';
@@ -145,6 +146,9 @@ END$$;`
 
 startupScripts.push({
 	sql: 'CREATE UNIQUE INDEX IF NOT EXISTS activity_only_one_task ON activity (user_id, completed) WHERE NOT completed;'
+});
+startupScripts.push({
+	sql: 'CREATE UNIQUE INDEX IF NOT EXISTS tame_only_one_task ON tame_activity (user_id, completed) WHERE NOT completed;'
 });
 
 startupScripts.push({

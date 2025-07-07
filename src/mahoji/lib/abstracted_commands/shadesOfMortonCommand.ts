@@ -1,8 +1,8 @@
+import { formatDuration } from '@oldschoolgg/toolkit';
 import { Time } from 'e';
-import { Bank, type Item } from 'oldschooljs';
+import { Bank, type Item, resolveItems } from 'oldschooljs';
 
 import type { ShadesOfMortonOptions } from '../../../lib/types/minions';
-import { formatDuration, itemNameFromID, resolveItems } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import getOSItem, { getItem } from '../../../lib/util/getOSItem';
@@ -49,7 +49,7 @@ export const shades: Shade[] = [
 		gpRange: [600, 700],
 		lowMetalKeys: {
 			fraction: 0.125,
-			items: resolveItems(['Bronze key black', 'Bronze key purple'])
+			items: resolveItems(['Bronze key black'])
 		},
 		highMetalKeys: {
 			fraction: 0.665,
@@ -88,7 +88,7 @@ export const shades: Shade[] = [
 		gpRange: [1500, 5000],
 		lowMetalKeys: {
 			fraction: 0.634,
-			items: resolveItems(['Silver key brown', 'Silver key crimson', 'Silver key black', 'Silver key purple'])
+			items: resolveItems(['Silver key brown', 'Silver key crimson', 'Silver key black'])
 		},
 		highMetalKeys: {
 			fraction: 0.156,
@@ -261,7 +261,7 @@ export async function shadesOfMortonStartCommand(user: MUser, channelID: string,
 			const bonusTime = i * Time.Minute;
 			if (bonusTime) {
 				totalTime += bonusTime;
-				messages.push(`${formatDuration(bonusTime)} bonus max trip length for ${itemNameFromID(coffin)}`);
+				messages.push(`${formatDuration(bonusTime)} bonus max trip length for ${coffin}.`);
 				break;
 			}
 		}

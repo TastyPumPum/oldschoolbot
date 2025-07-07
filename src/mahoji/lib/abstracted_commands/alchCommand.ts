@@ -1,11 +1,9 @@
+import { formatDuration } from '@oldschoolgg/toolkit/util';
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { Time, clamp } from 'e';
-import { Bank, type Item } from 'oldschooljs';
-import { SkillsEnum } from 'oldschooljs/dist/constants';
+import { Bank, type Item, SkillsEnum, resolveItems, toKMB } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
 import type { AlchingActivityTaskOptions } from '../../../lib/types/minions';
-import { formatDuration, toKMB } from '../../../lib/util';
 import addSubTaskToActivityTask from '../../../lib/util/addSubTaskToActivityTask';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength';
 import { getItem } from '../../../lib/util/getOSItem';
@@ -34,7 +32,8 @@ export async function alchCommand(
 	channelID: string,
 	user: MUser,
 	item: string,
-	quantity: number | undefined
+	quantity: number | undefined,
+	speedInput: number | undefined
 ) {
 	const userBank = user.bank;
 	let osItem = getItem(item);
@@ -62,7 +61,7 @@ export async function alchCommand(
 		return `The max number of alchs you can do is ${maxCasts}!`;
 	}
 
-	const duration = quantity * timePerAlch;
+	let duration = quantity * timePerAlch;
 	let fireRuneCost = quantity * 5;
 
 	for (const runeProvider of unlimitedFireRuneProviders) {
@@ -77,6 +76,12 @@ export async function alchCommand(
 		...(fireRuneCost > 0 ? { 'Fire rune': fireRuneCost } : {}),
 		'Nature rune': quantity
 	});
+	const speed = speedInput ? clamp(speedInput, 1, 5) : null;
+	if (speed && speed > 1 && speed < 6) {
+		consumedItems.multiply(speed);
+		consumedItems.add('Nature rune', Math.floor(consumedItems.amount('Nature rune') * 0.5));
+		duration /= speed;
+	}
 	consumedItems.add(osItem.id, quantity);
 
 	if (!user.owns(consumedItems)) {
@@ -87,12 +92,9 @@ export async function alchCommand(
 			interaction,
 			`${user}, please confirm you want to alch ${quantity} ${osItem.name} (${toKMB(
 				alchValue
-			)}). This will take approximately ${formatDuration(duration)}, and consume ${
-				fireRuneCost > 0 ? `${fireRuneCost}x Fire rune` : ''
-			} ${quantity}x Nature runes.`
+			)}). This will take approximately ${formatDuration(duration)}, and consume ${consumedItems}`
 		);
 	}
-
 	await user.removeItemsFromBank(consumedItems);
 	await updateBankSetting('magic_cost_bank', consumedItems);
 

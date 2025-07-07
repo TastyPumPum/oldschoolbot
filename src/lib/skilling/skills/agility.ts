@@ -1,4 +1,5 @@
-import { Emoji } from '../../constants';
+import { Emoji } from '@oldschoolgg/toolkit/constants';
+
 import { QuestID } from '../../minions/data/quests';
 import type { Course } from '../types';
 import { SkillsEnum } from '../types';
@@ -184,6 +185,16 @@ export const courses: Course[] = [
 		cantFail: true,
 		petChance: agilLevel => (agilLevel >= 62 ? 25_406 : 28_503),
 		requiredQuests: [QuestID.ChildrenOfTheSun]
+	},
+	{
+		id: 30,
+		name: 'Daemonheim Rooftop Course',
+		aliases: ['daemonheim', 'dh', 'daemonheim rooftop course'],
+		level: 101,
+		xp: 10_140.6,
+		marksPer60: 35,
+		lapTime: 140.2,
+		petChance: 25_146
 	}
 ];
 
@@ -231,13 +242,17 @@ const MonkeyBackpacks = [
 	}
 ];
 
+const underwaterAgilityThievingTrainingSkill = ['agility', 'thieving', 'agility+thieving'] as const;
+export type UnderwaterAgilityThievingTrainingSkill = (typeof underwaterAgilityThievingTrainingSkill)[number];
+
 const Agility = {
 	aliases: ['agility'],
 	Courses: courses,
 	MonkeyBackpacks,
 	id: SkillsEnum.Agility,
 	emoji: Emoji.Agility,
-	name: 'Agility'
+	name: 'Agility',
+	underwaterAgilityThievingTrainingSkill
 };
 
 export default Agility;

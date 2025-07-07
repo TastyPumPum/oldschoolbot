@@ -1,6 +1,6 @@
 import { percentChance, randInt } from 'e';
+import { ItemGroups } from 'oldschooljs';
 
-import { zealOutfit } from '../../../lib/shadesKeys';
 import Prayer from '../../../lib/skilling/skills/prayer';
 import { SkillsEnum } from '../../../lib/skilling/types';
 import type { OfferingActivityTaskOptions } from '../../../lib/types/minions';
@@ -9,8 +9,8 @@ import { handleTripFinish } from '../../../lib/util/handleTripFinish';
 
 export function zealOutfitBoost(user: MUser) {
 	let zealOutfitAmount = 0;
-	for (const piece of zealOutfit) {
-		if (user.gear.skilling.hasEquipped([piece])) {
+	for (const piece of ItemGroups.zealOutfit) {
+		if (user.hasEquippedOrInBank(piece)) {
 			zealOutfitAmount++;
 		}
 	}
@@ -64,7 +64,11 @@ export const offeringTask: MinionTask = {
 
 		const newQuantity = quantity - bonesLost + bonesSaved + zealBonesSaved;
 
-		const xpReceived = newQuantity * bone.xp * XPMod;
+		let xpReceived = newQuantity * bone.xp * XPMod;
+		const bonusXP = xpReceived * randInt(2, 4) - xpReceived;
+		if (user.usingPet('Lil Lamb')) {
+			xpReceived += bonusXP;
+		}
 
 		const xpRes = await user.addXP({
 			skillName: SkillsEnum.Prayer,
@@ -73,7 +77,13 @@ export const offeringTask: MinionTask = {
 			source: 'OfferingBones'
 		});
 
-		let str = `${user}, ${user.minionName} finished offering ${newQuantity} ${bone.name}, you managed to offer ${bonesSaved} extra bones because of the effects the Chaos altar and you lost ${bonesLost} to pkers, ${xpRes}.`;
+		let str = `${user}, ${user.minionName} finished offering ${newQuantity} ${
+			bone.name
+		}, you managed to offer ${bonesSaved} extra bones because of the effects the Chaos altar and you lost ${bonesLost} to pkers, ${xpRes}.${
+			user.usingPet('Lil Lamb')
+				? `The RuneScape gods blessed you with ${bonusXP.toLocaleString()} extra XP for you raising the young lamb.`
+				: ''
+		}`;
 
 		if (zealOutfitAmount > 0) {
 			str += `\nYour ${zealOutfitAmount} pieces of Zealot's robes helped you offer an extra ${zealBonesSaved} bones.`;

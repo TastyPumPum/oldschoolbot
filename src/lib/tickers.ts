@@ -1,13 +1,13 @@
+import { awaitMessageComponentInteraction, cleanUsername, stringMatches } from '@oldschoolgg/toolkit';
+import { TimerManager } from '@sapphire/timer-manager';
 import type { TextChannel } from 'discord.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { Time, noOp, randInt, removeFromArr, shuffleArr } from 'e';
 
-import { cleanUsername } from '@oldschoolgg/toolkit';
-import { TimerManager } from '@sapphire/timer-manager';
-import { userStatsUpdate } from '../mahoji/mahojiSettings';
+import { runTameTask } from '../tasks/tames/tameTasks';
 import { mahojiUserSettingsUpdate } from './MUser';
 import { processPendingActivities } from './Task';
-import { BitField, Channel, PeakTier, globalConfig } from './constants';
+import { BitField, Channel, globalConfig } from './constants';
 import { GrandExchange } from './grandExchange';
 import { collectMetrics } from './metrics';
 import { populateRoboChimpCache } from './perkTier';
@@ -16,7 +16,9 @@ import { runCommand } from './settings/settings';
 import { informationalButtons } from './sharedComponents';
 import { getFarmingInfo } from './skilling/functions/getFarmingInfo';
 import Farming from './skilling/skills/farming';
-import { awaitMessageComponentInteraction, getSupportGuild, makeComponents, stringMatches } from './util';
+import { MTame } from './structures/MTame';
+import { getSupportGuild } from './util';
+import { PeakTier } from './util/calcWildyPkChance';
 import { farmingPatchNames, getFarmingKeyFromName } from './util/farmingHelpers';
 import { handleGiveawayCompletion } from './util/giveaway';
 import { logError } from './util/logError';
@@ -24,7 +26,6 @@ import { makeBadgeString } from './util/makeBadgeString';
 import { minionIsBusy } from './util/minionIsBusy';
 
 let lastMessageID: string | null = null;
-let lastMessageGEID: string | null = null;
 const supportEmbed = new EmbedBuilder()
 	.setAuthor({ name: '⚠️ ⚠️ ⚠️ ⚠️ READ THIS ⚠️ ⚠️ ⚠️ ⚠️' })
 	.addFields({
@@ -42,25 +43,6 @@ const supportEmbed = new EmbedBuilder()
 	.addFields({
 		name: '⚠️ Dont ping anyone',
 		value: 'Do not ping mods, or any roles/people in here. You will be muted. Ask your question, and wait.'
-	});
-
-const geEmbed = new EmbedBuilder()
-	.setAuthor({ name: '⚠️ ⚠️ ⚠️ ⚠️ READ THIS ⚠️ ⚠️ ⚠️ ⚠️' })
-	.addFields({
-		name: "⚠️ Don't get scammed",
-		value: 'Beware of people "buying out banks" or buying lots of skilling supplies, which can be worth a lot more in the bot than they pay you. Skilling supplies are often worth a lot more than they are ingame. Don\'t just trust that they\'re giving you a fair price.'
-	})
-	.addFields({
-		name: '🔎 Search',
-		value: 'Search this channel first, someone might already be selling/buying what you want.'
-	})
-	.addFields({
-		name: '💬 Read the rules/Pins',
-		value: 'Read the pinned rules/instructions before using the channel.'
-	})
-	.addFields({
-		name: 'Keep Ads Short',
-		value: 'Keep your ad less than 10 lines long, as short as possible.'
 	});
 
 export interface Peak {
@@ -121,44 +103,6 @@ export const tickers: {
 		interval: globalConfig.isProduction ? Time.Second * 5 : 500,
 		cb: async () => {
 			await processPendingActivities();
-		}
-	},
-	{
-		name: 'daily_reminders',
-		interval: Time.Minute * 3,
-		startupWait: Time.Minute,
-		timer: null,
-		cb: async () => {
-			const result = await prisma.$queryRawUnsafe<{ id: string; last_daily_timestamp: bigint }[]>(
-				`
-SELECT users.id, user_stats.last_daily_timestamp
-FROM users
-JOIN user_stats ON users.id::bigint = user_stats.user_id
-WHERE bitfield && '{2,3,4,5,6,7,8,12,21,24}'::int[] AND user_stats."last_daily_timestamp" != -1 AND to_timestamp(user_stats."last_daily_timestamp" / 1000) < now() - INTERVAL '12 hours';
-`
-			);
-			const dailyDMButton = new ButtonBuilder()
-				.setCustomId('CLAIM_DAILY')
-				.setLabel('Claim Daily')
-				.setEmoji('493286312854683654')
-				.setStyle(ButtonStyle.Secondary);
-			const components = [dailyDMButton];
-			const str = 'Your daily is ready!';
-
-			for (const row of result.values()) {
-				if (!globalConfig.isProduction) continue;
-				if (Number(row.last_daily_timestamp) === -1) continue;
-
-				await userStatsUpdate(
-					row.id,
-					{
-						last_daily_timestamp: -1
-					},
-					{}
-				);
-				const user = await globalClient.fetchUser(row.id);
-				await user.send({ content: str, components: makeComponents(components) }).catch(noOp);
-			}
 		}
 	},
 	{
@@ -349,25 +293,40 @@ WHERE bitfield && '{2,3,4,5,6,7,8,12,21,24}'::int[] AND user_stats."last_daily_t
 		}
 	},
 	{
-		name: 'ge_channel_messages',
-		startupWait: Time.Second * 19,
+		name: 'tame_activities',
+		startupWait: Time.Second * 15,
 		timer: null,
-		interval: Time.Minute * 20,
+		interval: Time.Second * 5,
 		cb: async () => {
-			if (!globalConfig.isProduction) return;
-			const guild = getSupportGuild();
-			const channel = guild?.channels.cache.get(Channel.GrandExchange) as TextChannel | undefined;
-			if (!channel) return;
-			const messages = await channel.messages.fetch({ limit: 5 });
-			if (messages.some(m => m.author.id === globalClient.user?.id)) return;
-			if (lastMessageGEID) {
-				const message = await channel.messages.fetch(lastMessageGEID).catch(noOp);
-				if (message) {
-					await message.delete();
+			const tameTasks = await prisma.tameActivity.findMany({
+				where: {
+					finish_date: globalConfig.isProduction
+						? {
+								lt: new Date()
+							}
+						: undefined,
+					completed: false
+				},
+				include: {
+					tame: true
+				},
+				take: 5
+			});
+
+			await prisma.tameActivity.updateMany({
+				where: {
+					id: {
+						in: tameTasks.map(i => i.id)
+					}
+				},
+				data: {
+					completed: true
 				}
+			});
+
+			for (const task of tameTasks) {
+				await runTameTask(task, new MTame(task.tame));
 			}
-			const res = await channel.send({ embeds: [geEmbed] });
-			lastMessageGEID = res.id;
 		}
 	},
 	{
@@ -396,6 +355,7 @@ WHERE bitfield && '{2,3,4,5,6,7,8,12,21,24}'::int[] AND user_stats."last_daily_t
 		interval: Time.Minute * 7.33,
 		cb: async () => {
 			const users = await fetchUsersWithoutUsernames();
+			if (process.env.TEST) return;
 			debugLog(`username_filling: Found ${users.length} users without usernames.`);
 			for (const { id } of users) {
 				const djsUser = await globalClient.users.fetch(id).catch(() => null);

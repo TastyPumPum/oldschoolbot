@@ -1,6 +1,5 @@
-import { Bank } from 'oldschooljs';
+import { Bank, itemID } from 'oldschooljs';
 
-import itemID from '../../../../util/itemID';
 import type { Craftable } from '../../../types';
 
 const Gold: Craftable[] = [
@@ -315,7 +314,8 @@ const Gold: Craftable[] = [
 		level: 89,
 		xp: 150,
 		inputItems: new Bank({ Zenyte: 1, 'Gold bar': 1 }),
-		tickRate: 3
+		tickRate: 3,
+		cantBeDoubled: true
 	},
 	{
 		name: 'Zenyte necklace',
@@ -323,7 +323,8 @@ const Gold: Craftable[] = [
 		level: 92,
 		xp: 165,
 		inputItems: new Bank({ Zenyte: 1, 'Gold bar': 1 }),
-		tickRate: 3
+		tickRate: 3,
+		cantBeDoubled: true
 	},
 	{
 		name: 'Zenyte bracelet',
@@ -331,7 +332,8 @@ const Gold: Craftable[] = [
 		level: 95,
 		xp: 180,
 		inputItems: new Bank({ Zenyte: 1, 'Gold bar': 1 }),
-		tickRate: 3
+		tickRate: 3,
+		cantBeDoubled: true
 	},
 	{
 		name: 'Zenyte amulet (u)',
@@ -339,7 +341,8 @@ const Gold: Craftable[] = [
 		level: 98,
 		xp: 200,
 		inputItems: new Bank({ Zenyte: 1, 'Gold bar': 1 }),
-		tickRate: 3
+		tickRate: 3,
+		cantBeDoubled: true
 	},
 	{
 		name: 'Zenyte amulet',
@@ -347,7 +350,8 @@ const Gold: Craftable[] = [
 		level: 1,
 		xp: 4,
 		inputItems: new Bank({ 'Zenyte amulet (u)': 1, 'Ball of wool': 1 }),
-		tickRate: 2
+		tickRate: 2,
+		cantBeDoubled: true
 	}
 ];
 

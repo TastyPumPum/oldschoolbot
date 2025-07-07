@@ -1,12 +1,12 @@
-import { Bank } from 'oldschooljs';
-import type { EquipmentSlot, Item } from 'oldschooljs/dist/meta/types';
+import { Bank, type EquipmentSlot, type Item } from 'oldschooljs';
 
+import { GearStat } from 'oldschooljs/gear';
 import type { GearSetupType } from '../../gear/types';
-import { GearStat } from '../../gear/types';
 import type { Gear } from '../../structures/Gear';
 import type { Skills } from '../../types';
-import { assert, skillsMeetRequirements } from '../../util';
+import { skillsMeetRequirements } from '../../util';
 import getOSItem from '../../util/getOSItem';
+import { assert } from '../../util/logError';
 
 function getItemScore(item: Item) {
 	return Object.values(item.equipment!).reduce(
@@ -95,6 +95,7 @@ export default function getUserBestGearFromBank(
 			? skillsMeetRequirements(skills, item.equipment.requirements)
 			: true;
 		if (item.equipable_by_player && item.equipment && item.equipment[gearStat] >= 0 && quantity > 0 && hasStats) {
+			// Ignore wilderness only items if non wildy gear type
 			equipables[item.equipment.slot].push(item.id);
 		}
 	}

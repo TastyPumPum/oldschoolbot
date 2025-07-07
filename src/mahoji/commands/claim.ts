@@ -3,7 +3,8 @@ import { type CommandRunOptions, dateFm, stringMatches } from '@oldschoolgg/tool
 import { ApplicationCommandOptionType } from 'discord.js';
 import { Bank } from 'oldschooljs';
 
-import { BSO_MAX_TOTAL_LEVEL, BitField, Channel } from '../../lib/constants';
+import { BSO_MAX_TOTAL_LEVEL } from '../../lib/bso/bsoConstants';
+import { BitField, Channel } from '../../lib/constants';
 import { calcCLDetails } from '../../lib/data/Collections';
 import { getReclaimableItemsOfUser } from '../../lib/reclaimableItems';
 import { roboChimpUserFetch } from '../../lib/roboChimp';
@@ -33,7 +34,7 @@ const claimables = [
 					push: BitField.BothBotsMaxedFreeTierOnePerks
 				}
 			});
-			return 'You claimed free T1 patron perks in OSB for being maxed in both bots. You can claim this on BSO too for free patron perks on BSO.';
+			return 'You claimed free T1 patron perks in BSO for being maxed in both bots. You can claim this on OSB too for free patron perks on OSB.';
 		}
 	},
 	...CollectionLog.ranks.map(rank => ({

@@ -1,8 +1,6 @@
-import { formatItemStackQuantity, generateHexColorForCashStack } from '@oldschoolgg/toolkit/util';
-import type { CommandResponse } from '@oldschoolgg/toolkit/util';
+import { type CommandResponse, formatItemStackQuantity, generateHexColorForCashStack } from '@oldschoolgg/toolkit/util';
 import { calcWhatPercent, objectEntries } from 'e';
-import type { Bank } from 'oldschooljs';
-import { Util } from 'oldschooljs';
+import { type Bank, Util } from 'oldschooljs';
 
 import { allCollectionLogs, getCollection, getTotalCl } from '../lib/data/Collections';
 import type { IToReturnCollection } from '../lib/data/CollectionsExport';
@@ -22,7 +20,9 @@ export const collectionLogTypes = [
 	{ name: 'collection', description: 'Normal Collection Log' },
 	{ name: 'sacrifice', description: 'Sacrificed Items Log' },
 	{ name: 'bank', description: 'Owned Items Log' },
-	{ name: 'temp', description: 'Temporary Log' }
+	{ name: 'temp', description: 'Temporary Log' },
+	{ name: 'tame', description: 'Tames Collection Log' },
+	{ name: 'disassembly', description: 'Disassembly Collection Log' }
 ] as const;
 export type CollectionLogType = (typeof collectionLogTypes)[number]['name'];
 export const CollectionLogFlags = [
@@ -90,7 +90,7 @@ class CollectionLogTask {
 				ctxl.fillStyle = index % 2 === 0 ? colors.odd : 'transparent';
 			}
 			ctxl.fillRect(1, index * 15, canvasList.width, 15);
-			ctxl.fillStyle = colors[status];
+			ctxl.fillStyle = collectionLog.category === 'Discontinued' ? colors.not_started : colors[status];
 			const measuredName = ctxl.measureText(name).width;
 			if (measuredName > widestName) widestName = measuredName;
 			this.drawText(ctxl, name, 4, index * 15 + 13);
@@ -113,6 +113,10 @@ class CollectionLogTask {
 		if (options.flags.temp) {
 			options.type = 'temp';
 		}
+		if (options.flags.tame) {
+			options.type = 'tame';
+		}
+
 		const { collection, type, user, flags } = options;
 
 		let collectionLog: IToReturnCollection | undefined | false = undefined;
@@ -167,7 +171,7 @@ class CollectionLogTask {
 
 		const fullSize = flags.nl || !collectionLog.leftList;
 
-		const userTotalCl = getTotalCl(user, type, options.stats);
+		const userTotalCl = await getTotalCl(user, type, options.stats);
 		const leftListCanvas = this.drawLeftList(collectionLog, sprite);
 
 		let leftDivisor = 214;
@@ -230,7 +234,13 @@ class CollectionLogTask {
 		ctx.font = '16px RuneScape Bold 12';
 		ctx.fillStyle = '#FF981F';
 		const title = `${user.rawUsername}'s ${
-			type === 'sacrifice' ? 'Sacrifice' : type === 'collection' ? 'Collection' : 'Bank'
+			type === 'sacrifice'
+				? 'Sacrifice'
+				: type === 'collection'
+					? 'Collection'
+					: type === 'tame'
+						? 'Tame Collection'
+						: 'Bank'
 		} Log - ${userTotalCl[1].toLocaleString()}/${userTotalCl[0].toLocaleString()} / ${calcWhatPercent(
 			userTotalCl[1],
 			userTotalCl[0]
@@ -269,8 +279,17 @@ class CollectionLogTask {
 				i = 0;
 				y += 1;
 			}
-			const itemImage = await bankImageGenerator.getItemImage(item, user);
 
+			if (!userCollectionBank.has(item)) {
+				ctx.globalAlpha = 0.3;
+			}
+			const { drawOptions } = await bankImageGenerator.drawItemIDSprite({
+				itemID: item,
+				ctx,
+				x: i * (itemSize + itemSpacer),
+				y: y * (itemSize + itemSpacer),
+				user
+			});
 			let qtyText = 0;
 			if (!userCollectionBank.has(item)) {
 				ctx.globalAlpha = 0.3;
@@ -280,29 +299,20 @@ class CollectionLogTask {
 
 			totalPrice += (getOSItem(item).price ?? 0) * qtyText;
 
-			if (flags.debug) {
-				ctx.fillStyle = '#FF0000';
-				ctx.fillRect(
-					Math.floor(i * (itemSize + itemSpacer) + (itemSize - itemImage.width) / 2) + 2,
-					Math.floor(y * (itemSize + itemSpacer) + (itemSize - itemImage.height) / 2),
-					itemImage.width,
-					itemImage.height
-				);
-			}
-			ctx.drawImage(
-				itemImage,
-				Math.floor(i * (itemSize + itemSpacer) + (itemSize - itemImage.width) / 2) + 4,
-				Math.floor(y * (itemSize + itemSpacer) + (itemSize - itemImage.height) / 2),
-				itemImage.width,
-				itemImage.height
-			);
+			// ctx.drawImage(
+			// 	itemImage,
+			// 	Math.floor(i * (itemSize + itemSpacer) + (itemSize - itemImage.width) / 2) + 4,
+			// 	Math.floor(y * (itemSize + itemSpacer) + (itemSize - itemImage.height) / 2),
+			// 	itemImage.width,
+			// 	itemImage.height
+			// );
 
 			if (qtyText > 0) {
 				ctx.fillStyle = generateHexColorForCashStack(qtyText);
 				this.drawText(
 					ctx,
 					formatItemStackQuantity(qtyText),
-					Math.floor(i * (itemSize + itemSpacer) + (itemSize - itemImage.width) / 2) + 1,
+					Math.floor(i * (itemSize + itemSpacer) + (itemSize - drawOptions.sourceWidth) / 2) + 1,
 					Math.floor(y * (itemSize + itemSpacer)) + 11
 				);
 			}
@@ -333,7 +343,9 @@ class CollectionLogTask {
 		const toDraw = flags.missing ? 'Missing: ' : type === 'sacrifice' ? 'Sacrificed: ' : 'Obtained: ';
 		const obtainableMeasure = ctx.measureText(toDraw);
 		this.drawText(ctx, toDraw, 0, 13);
-		if (collectionLog.collectionTotal === collectionLog.collectionObtained) {
+		if (collectionLog.category === 'Discontinued') {
+			ctx.fillStyle = '#FF981F';
+		} else if (collectionLog.collectionTotal === collectionLog.collectionObtained) {
 			ctx.fillStyle = '#00FF00';
 		} else if (collectionLog.collectionObtained === 0) {
 			ctx.fillStyle = '#FF0000';
@@ -351,7 +363,7 @@ class CollectionLogTask {
 			13
 		);
 
-		if (collectionLog.completions && ['collection', 'bank'].includes(type)) {
+		if (collectionLog.completions && ['collection', 'bank', 'tame'].includes(type)) {
 			let drawnSoFar = '';
 			// Times done/killed
 			ctx.font = '16px OSRSFontCompact';

@@ -3,6 +3,8 @@ import { ActivityGroup, globalConfig } from '../lib/constants';
 import type { GroupMonsterActivityTaskOptions } from '../lib/types/minions';
 import { taskGroupFromActivity } from '../lib/util/taskGroupFromActivity';
 import { sql } from './postgres.js';
+import type { ItemBank } from './util.js';
+import { getItem } from './util/getOSItem';
 
 async function calculateMinionTaskCounts() {
 	const minionTaskCounts: Record<ActivityGroup, number> = {
@@ -48,6 +50,27 @@ SELECT
 FROM users;
 `;
 
+	const artifact = getItem('Magical artifact')!;
+	const statuette = getItem('Demon statuette')!;
+
+	const economyBank = (
+		(await sql`
+			SELECT
+				json_object_agg(itemID, itemQTY)::jsonb as banks
+			FROM (
+				SELECT key AS itemID, SUM(value::bigint) AS itemQTY
+				FROM users
+				CROSS JOIN json_each_text(bank)
+				GROUP BY key
+			 ) s;`) as { banks: ItemBank }[]
+	)[0].banks;
+
+	const coinsInGrandExchange: { quantity: bigint }[] = await sql`SELECT quantity FROM ge_bank WHERE item_id = 995;`;
+
+	const totalDemonStatuetteGp =
+		(economyBank[statuette.id] ?? 1) ? economyBank[statuette.id] * statuette.highalch! : 0;
+	const totalArtifactGp = (economyBank[artifact.id] ?? 1) ? economyBank[artifact.id] * artifact.highalch! : 0;
+
 	const taskCounts = await calculateMinionTaskCounts();
 	const currentClientSettings = await prisma.clientStorage.upsert({
 		where: {
@@ -67,7 +90,8 @@ FROM users;
 			gp_sell: true,
 			gp_slots: true,
 			gp_tax_balance: true,
-			economyStats_dailiesAmount: true
+			economyStats_dailiesAmount: true,
+			gp_ic: true
 		},
 		create: {
 			id: globalConfig.clientID
@@ -83,6 +107,8 @@ FROM users;
 			minigameTasksCount: taskCounts.Minigame,
 			monsterTasksCount: taskCounts.Monster,
 			skillingTasksCount: taskCounts.Skilling,
+			totalGeGp: coinsInGrandExchange[0]?.quantity ?? 0,
+			totalBigAlchGp: totalDemonStatuetteGp + totalArtifactGp,
 			ironMinionsCount: Number(ironman_count),
 			minionsCount: Number(has_bought_count),
 			totalSacrificed: total_sacrificed_value,
@@ -97,9 +123,10 @@ FROM users;
 			gpOpen: currentClientSettings.gp_open,
 			gpDice: currentClientSettings.gp_dice,
 			gpDaily: currentClientSettings.gp_daily,
-			gpLuckypick: currentClientSettings.gp_luckypick,
+			gpLuckyPick: currentClientSettings.gp_luckypick,
 			gpSlots: currentClientSettings.gp_slots,
-			gpHotCold: currentClientSettings.gp_hotcold
+			gpHotCold: currentClientSettings.gp_hotcold,
+			gpItemContracts: currentClientSettings.gp_ic
 		}
 	});
 }

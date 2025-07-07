@@ -1,8 +1,7 @@
 import { Time } from 'e';
-import { Bank, type Item } from 'oldschooljs';
+import { Bank, type Item, Items } from 'oldschooljs';
 
 import type { Skills } from '../../lib/types';
-import getOSItem from '../../lib/util/getOSItem';
 
 interface Collectable {
 	item: Item;
@@ -11,11 +10,12 @@ interface Collectable {
 	quantity: number;
 	duration: number;
 	qpRequired?: number;
+	onlyTamesCan?: boolean;
 }
 
 export const collectables: Collectable[] = [
 	{
-		item: getOSItem('Blue dragon scale'),
+		item: Items.getOrThrow('Blue dragon scale'),
 		quantity: 26,
 		itemCost: new Bank({
 			'Water rune': 1,
@@ -29,7 +29,7 @@ export const collectables: Collectable[] = [
 		duration: Time.Minute * 2
 	},
 	{
-		item: getOSItem('Mort myre fungus'),
+		item: Items.getOrThrow('Mort myre fungus'),
 		quantity: 100,
 		itemCost: new Bank({
 			'Prayer potion(4)': 1,
@@ -42,17 +42,17 @@ export const collectables: Collectable[] = [
 		qpRequired: 32
 	},
 	{
-		item: getOSItem('Flax'),
+		item: Items.getOrThrow('Flax'),
 		quantity: 28,
 		duration: Time.Minute * 1.68
 	},
 	{
-		item: getOSItem('Swamp toad'),
+		item: Items.getOrThrow('Swamp toad'),
 		quantity: 28,
 		duration: Time.Minute * 1.68
 	},
 	{
-		item: getOSItem("Red spiders' eggs"),
+		item: Items.getOrThrow("Red spiders' eggs"),
 		quantity: 80,
 		itemCost: new Bank({
 			'Stamina potion(4)': 1
@@ -60,7 +60,7 @@ export const collectables: Collectable[] = [
 		duration: Time.Minute * 8.5
 	},
 	{
-		item: getOSItem('Wine of zamorak'),
+		item: Items.getOrThrow('Wine of zamorak'),
 		quantity: 27,
 		itemCost: new Bank({
 			'Law rune': 27,
@@ -72,7 +72,7 @@ export const collectables: Collectable[] = [
 		duration: Time.Minute * 3.12
 	},
 	{
-		item: getOSItem('White berries'),
+		item: Items.getOrThrow('White berries'),
 		quantity: 27,
 		qpRequired: 22,
 		skillReqs: {
@@ -86,7 +86,7 @@ export const collectables: Collectable[] = [
 		duration: Time.Minute * 4.05
 	},
 	{
-		item: getOSItem('Snape grass'),
+		item: Items.getOrThrow('Snape grass'),
 		quantity: 120,
 		itemCost: new Bank({
 			'Law rune': 12,
@@ -96,7 +96,7 @@ export const collectables: Collectable[] = [
 		qpRequired: 72
 	},
 	{
-		item: getOSItem('Snake weed'),
+		item: Items.getOrThrow('Snake weed'),
 		quantity: 150,
 		itemCost: new Bank({
 			'Ring of dueling(8)': 1
@@ -105,7 +105,7 @@ export const collectables: Collectable[] = [
 		qpRequired: 3
 	},
 	{
-		item: getOSItem('Bucket of sand'),
+		item: Items.getOrThrow('Bucket of sand'),
 		quantity: 30,
 		itemCost: new Bank({
 			'Law rune': 1,
@@ -115,7 +115,7 @@ export const collectables: Collectable[] = [
 		qpRequired: 30
 	},
 	{
-		item: getOSItem('Jangerberries'),
+		item: Items.getOrThrow('Jangerberries'),
 		quantity: 224,
 		itemCost: new Bank({
 			'Ring of dueling(8)': 1
@@ -127,7 +127,7 @@ export const collectables: Collectable[] = [
 	},
 	// Miniquest to get Tarn's diary for Salve amulet (e)/(ei)
 	{
-		item: getOSItem("Tarn's diary"),
+		item: Items.getOrThrow("Tarn's diary"),
 		quantity: 1,
 		itemCost: new Bank({
 			'Prayer potion(4)': 2
@@ -142,5 +142,31 @@ export const collectables: Collectable[] = [
 		},
 		duration: 10 * Time.Minute,
 		qpRequired: 100
+	},
+	{
+		item: Items.getOrThrow('Neem drupe'),
+		quantity: 5,
+		itemCost: new Bank({
+			'Astral rune': 26,
+			'Cosmic rune': 12
+		}),
+		skillReqs: {
+			magic: 82,
+			herblore: 82,
+			agility: 92
+		},
+		duration: 5 * Time.Minute,
+		qpRequired: 82
+	},
+	{
+		item: Items.getOrThrow('Orange'),
+		quantity: 1,
+		duration: 2 * Time.Minute,
+		onlyTamesCan: true
+	},
+	{
+		item: Items.getOrThrow('Cabbage'),
+		quantity: 28,
+		duration: 1.2 * Time.Minute
 	}
 ];

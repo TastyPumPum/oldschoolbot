@@ -1,7 +1,8 @@
+import { stringMatches } from '@oldschoolgg/toolkit/util';
 import { objectValues, randInt } from 'e';
-import { Bank } from 'oldschooljs';
+import { Bank, ItemGroups } from 'oldschooljs';
 
-import { templeTrekkingOutfit } from '../../../lib/data/CollectionsExport';
+import { userHasFlappy } from '../../../lib/invention/inventions';
 import {
 	EasyEncounterLoot,
 	HardEncounterLoot,
@@ -10,16 +11,16 @@ import {
 } from '../../../lib/minions/data/templeTrekking';
 import { incrementMinigameScore } from '../../../lib/settings/settings';
 import type { TempleTrekkingActivityTaskOptions } from '../../../lib/types/minions';
-import { percentChance, stringMatches } from '../../../lib/util';
 import getOSItem from '../../../lib/util/getOSItem';
 import { handleTripFinish } from '../../../lib/util/handleTripFinish';
 import { makeBankImage } from '../../../lib/util/makeBankImage';
+import { percentChance } from '../../../lib/util/rng';
 
 function getLowestCountOutfitPiece(bank: Bank, user: MUser): number {
 	let lowestCountPiece = 0;
 	let lowestCountAmount = -1;
 
-	for (const piece of templeTrekkingOutfit) {
+	for (const piece of ItemGroups.templeTrekkingOutfit) {
 		let amount = bank.amount(piece);
 
 		for (const setup of objectValues(user.gear)) {
@@ -40,7 +41,7 @@ export const templeTrekkingTask: MinionTask = {
 	type: 'Trekking',
 
 	async run(data: TempleTrekkingActivityTaskOptions) {
-		const { channelID, quantity, userID, difficulty } = data;
+		const { channelID, quantity, userID, difficulty, duration } = data;
 		const user = await mUserFetch(userID);
 		await incrementMinigameScore(user.id, 'temple_trekking', quantity);
 		const userBank = user.bank.clone();
@@ -83,13 +84,18 @@ export const templeTrekkingTask: MinionTask = {
 			loot.add(rewardToken.id);
 		}
 
+		const flappyRes = await userHasFlappy({ user, duration });
+		if (flappyRes.shouldGiveBoost) {
+			loot.multiply(2);
+		}
+
 		const { previousCL, itemsAdded } = await transactItems({
 			userID: user.id,
 			collectionLog: true,
 			itemsToAdd: loot
 		});
 
-		const str = `${user}, ${user.minionName} finished Temple Trekking ${quantity}x times. ${totalEncounters}x encounters were defeated.`;
+		const str = `${user}, ${user.minionName} finished Temple Trekking ${quantity}x times. ${totalEncounters}x encounters were defeated. ${flappyRes.userMsg}`;
 
 		const image = await makeBankImage({
 			bank: itemsAdded,

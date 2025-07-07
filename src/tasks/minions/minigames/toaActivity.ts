@@ -1,13 +1,10 @@
+import { Emoji, Events } from '@oldschoolgg/toolkit/constants';
 import { formatOrdinal } from '@oldschoolgg/toolkit/util';
 import { bold } from 'discord.js';
 import { Time, isObject, uniqueArr } from 'e';
-import { Bank } from 'oldschooljs';
-import type { ItemBank } from 'oldschooljs/dist/meta/types';
+import { Bank, type ItemBank, ItemGroups, resolveItems } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
 import { drawChestLootImage } from '../../../lib/bankImage';
-import { Emoji, Events, toaPurpleItems } from '../../../lib/constants';
-import { toaCL } from '../../../lib/data/CollectionsExport';
 import { trackLoot } from '../../../lib/lootTrack';
 import { getMinigameScore, incrementMinigameScore } from '../../../lib/settings/settings';
 import { TeamLoot } from '../../../lib/simulation/TeamLoot';
@@ -43,7 +40,7 @@ interface RaidResultUser {
 export const toaTask: MinionTask = {
 	type: 'TombsOfAmascut',
 	async run(data: TOAOptions) {
-		const { channelID, raidLevel, duration, leader, quantity, wipedRoom: _wipedRoom } = data;
+		const { channelID, raidLevel, duration, leader, quantity, wipedRoom: _wipedRoom, cc: chincannonUser } = data;
 		const detailedUsers = normalizeTOAUsers(data);
 		const wipedRooms = Array.isArray(_wipedRoom) ? _wipedRoom : [_wipedRoom];
 		assert(Array.isArray(detailedUsers[0]) && isObject(detailedUsers[0][0]), `${detailedUsers}`);
@@ -79,7 +76,7 @@ export const toaTask: MinionTask = {
 			);
 		}
 
-		const totalLoot = new TeamLoot(toaCL);
+		const totalLoot = new TeamLoot(ItemGroups.toaCL);
 
 		const raidResults: Map<string, RaidResultUser> = new Map();
 		for (const user of allUsers) {
@@ -137,15 +134,17 @@ export const toaTask: MinionTask = {
 
 		for (const [userID, userData] of raidResults.entries()) {
 			const { points, deaths, mUser: user } = userData;
-			await userStatsUpdate(
-				user.id,
-				{
-					total_toa_points: {
-						increment: points
-					}
-				},
-				{}
-			);
+			if (!chincannonUser) {
+				await userStatsUpdate(
+					user.id,
+					{
+						total_toa_points: {
+							increment: points
+						}
+					},
+					{}
+				);
+			}
 
 			// If the user already has these in their bank they cannot get another
 			for (const itemID of [...toaPetTransmogItems, ...toaOrnamentKits.map(i => i[0].id)]) {
@@ -156,16 +155,38 @@ export const toaTask: MinionTask = {
 				}
 			}
 
-			const { itemsAdded } = await transactItems({
-				userID,
-				itemsToAdd: totalLoot.get(userID),
-				collectionLog: true
-			});
+			let str = 'Nothing';
+			if (!chincannonUser) {
+				const { itemsAdded } = await transactItems({
+					userID,
+					itemsToAdd: totalLoot.get(userID),
+					collectionLog: true
+				});
+				itemsAddedTeamLoot.add(userID, itemsAdded);
+				const items = itemsAdded.items();
 
-			itemsAddedTeamLoot.add(userID, itemsAdded);
+				const isPurple = items.some(([item]) => ItemGroups.toaPurpleItems.includes(item.id));
+				if (
+					items.some(
+						([item]) =>
+							ItemGroups.toaPurpleItems.includes(item.id) && !purpleButNotAnnounced.includes(item.id)
+					)
+				) {
+					const itemsToAnnounce = itemsAdded.filter(item => ItemGroups.toaPurpleItems.includes(item.id));
+					globalClient.emit(
+						Events.ServerNotification,
+						`${Emoji.Purple} ${
+							user.badgedUsername
+						} just received **${itemsToAnnounce}** on their ${formatOrdinal(
+							minigameIncrementResult[0].newScore
+						)} raid.`
+					);
+				}
+				str = isPurple ? `${Emoji.Purple} ||${itemsAdded}||` : itemsAdded.toString();
+			}
 
 			const currentStats = await user.fetchStats({ toa_raid_levels_bank: true, toa_loot: true });
-			await userStatsUpdate(user.id, {
+			userStatsUpdate(user.id, {
 				toa_raid_levels_bank: new Bank()
 					.add(currentStats.toa_raid_levels_bank as ItemBank)
 					.add(raidLevel, quantity)
@@ -173,30 +194,20 @@ export const toaTask: MinionTask = {
 				total_toa_duration_minutes: {
 					increment: Math.floor(duration / Time.Minute)
 				},
-				toa_loot: new Bank(currentStats.toa_loot as ItemBank).add(totalLoot.get(userID)).toJSON()
+				toa_loot: !chincannonUser
+					? new Bank(currentStats.toa_loot as ItemBank).add(totalLoot.get(userID)).toJSON()
+					: undefined
 			});
 
-			const items = itemsAdded.items();
-
-			const isPurple = items.some(([item]) => toaPurpleItems.includes(item.id));
-			if (items.some(([item]) => toaPurpleItems.includes(item.id) && !purpleButNotAnnounced.includes(item.id))) {
-				const itemsToAnnounce = itemsAdded.filter(item => toaPurpleItems.includes(item.id));
-				globalClient.emit(
-					Events.ServerNotification,
-					`${Emoji.Purple} ${
-						user.badgedUsername
-					} just received **${itemsToAnnounce}** on their ${formatOrdinal(
-						minigameIncrementResult[0].newScore
-					)} raid.`
-				);
-			}
-			const str = isPurple ? `${Emoji.Purple} ||${itemsAdded}||` : itemsAdded.toString();
 			const deathStr = deaths === 0 ? '' : new Array(deaths).fill(Emoji.Skull).join(' ');
-
-			if (shouldShowImage) {
-				resultMessage += `\n${deathStr} **${user}** ${bold(points.toLocaleString())} points`;
-			} else {
-				resultMessage += `\n${deathStr} **${user}** received: ${str} (${bold(points.toLocaleString())} points)`;
+			if (!chincannonUser) {
+				if (shouldShowImage) {
+					resultMessage += `\n${deathStr} **${user}** ${bold(points.toLocaleString())} points`;
+				} else {
+					resultMessage += `\n${deathStr} **${user}** received: ${str} (${bold(
+						points.toLocaleString()
+					)} points)`;
+				}
 			}
 
 			const xpPromises = calculateXPFromRaid({
@@ -215,7 +226,9 @@ export const toaTask: MinionTask = {
 			resultMessage += `\n\n${messages.join('\n')}`;
 		}
 
-		updateBankSetting('toa_loot', totalLoot.totalLoot());
+		if (!chincannonUser) {
+			updateBankSetting('toa_loot', totalLoot.totalLoot());
+		}
 		await trackLoot({
 			totalLoot: totalLoot.totalLoot(),
 			id: 'tombs_of_amascut',

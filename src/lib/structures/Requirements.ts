@@ -14,7 +14,8 @@ import type { RobochimpUser } from '../roboChimp';
 import { type MinigameName, minigameColumnToNameMap } from '../settings/minigames';
 import Agility from '../skilling/skills/agility';
 import type { Skills } from '../types';
-import { formatList, itemNameFromID } from '../util';
+import { formatList, itemNameFromID } from '../util/smallUtils';
+import type { MTame } from './MTame';
 import { MUserStats } from './MUserStats';
 
 export interface RequirementFailure {
@@ -31,6 +32,7 @@ interface RequirementUserArgs {
 	poh: PlayerOwnedHouse;
 	uniqueRunesCrafted: number[];
 	uniqueActivitiesDone: activity_type_enum[];
+	tames: MTame[];
 }
 
 type ManualHasFunction = (args: RequirementUserArgs) => RequirementFailure[] | undefined | string | boolean;
@@ -344,6 +346,9 @@ GROUP BY type;`,
 			prisma.playerOwnedHouse.upsert({ where: { user_id: user.id }, update: {}, create: { user_id: user.id } })
 		]);
 		const uniqueRunesCrafted = _uniqueRunesCrafted.map(i => Number(i.rune_id));
+
+		const tames = await user.fetchTames();
+
 		return {
 			user,
 			minigames,
@@ -353,7 +358,8 @@ GROUP BY type;`,
 			clueCounts,
 			poh,
 			uniqueRunesCrafted,
-			uniqueActivitiesDone: uniqueActivitiesDone.map(i => i.type)
+			uniqueActivitiesDone: uniqueActivitiesDone.map(i => i.type),
+			tames
 		};
 	}
 

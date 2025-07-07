@@ -1,22 +1,24 @@
-import { getInterval } from '@oldschoolgg/toolkit/util';
-import type { GEListing, GETransaction } from '@prisma/client';
-import { GEListingType } from '@prisma/client';
+import { getInterval, makeComponents } from '@oldschoolgg/toolkit/util';
+import { type GEListing, GEListingType, type GETransaction } from '@prisma/client';
 import { ButtonBuilder, ButtonStyle, bold, userMention } from 'discord.js';
 import { Time, calcPercentOfNum, clamp, noOp, sumArr, uniqueArr } from 'e';
 import { LRUCache } from 'lru-cache';
-import { Bank, type Item, type ItemBank } from 'oldschooljs';
+import { Bank, type Item, type ItemBank, toKMB } from 'oldschooljs';
 import PQueue from 'p-queue';
 
 import { BLACKLISTED_USERS } from './blacklists';
-import { BitField, ONE_TRILLION, PerkTier, globalConfig } from './constants';
+import { BitField, PerkTier, globalConfig } from './constants';
 import { marketPricemap } from './marketPrices';
 import type { RobochimpUser } from './roboChimp';
 import { roboChimpUserFetch } from './roboChimp';
+
+import { isGEUntradeable } from './bso/bsoUtil';
+import { isCustomItem } from './customItems/util';
 import { fetchTableBank, makeTransactFromTableBankQueries } from './tableBank';
-import { assert, generateGrandExchangeID, itemNameFromID, makeComponents, toKMB } from './util';
 import { mahojiClientSettingsFetch, mahojiClientSettingsUpdate } from './util/clientSettings';
 import getOSItem, { getItem } from './util/getOSItem';
-import { logError } from './util/logError';
+import { assert, logError } from './util/logError';
+import { generateGrandExchangeID, itemNameFromID } from './util/smallUtils';
 import { sendToChannelID } from './util/webhook';
 
 interface CreateListingArgs {
@@ -117,8 +119,8 @@ class GrandExchangeSingleton {
 	}
 
 	public config = {
-		maxPricePerItem: ONE_TRILLION,
-		maxTotalPrice: ONE_TRILLION,
+		maxPricePerItem: 1_000_000_000_000,
+		maxTotalPrice: 1_000_000_000_000,
 		buyLimit: {
 			interval: Time.Hour * 4,
 			fallbackBuyLimit: (item: Item) => ((item.price ?? 0) > 1_000_000 ? 1 : 1000)
@@ -140,14 +142,14 @@ class GrandExchangeSingleton {
 					name: 'Base',
 					amount: 3
 				},
-				...[100, 250, 1000, 2000].map(num => ({
+				...[100, 250, 1000, 2000, 2500].map(num => ({
 					has: (user: MUser) => user.totalLevel >= num,
 					name: `${num} Total Level`,
 					amount: 1
 				})),
 				...[30, 60, 90, 95].map(num => ({
 					has: (_: MUser, robochimpUser: RobochimpUser) =>
-						robochimpUser.osb_cl_percent && robochimpUser.osb_cl_percent >= num,
+						robochimpUser.bso_cl_percent && robochimpUser.bso_cl_percent >= num,
 					name: `${num}% CL Completion`,
 					amount: 1
 				})),
@@ -266,7 +268,11 @@ class GrandExchangeSingleton {
 		});
 
 		const item = getOSItem(geListing.item_id);
-		const buyLimit = this.getItemBuyLimit(item);
+		let buyLimit = item.buy_limit ?? this.config.buyLimit.fallbackBuyLimit(item);
+		if (!isCustomItem(item.id)) {
+			buyLimit *= 5;
+		}
+
 		const totalSold = sumArr(allActiveListingsInTimePeriod.map(listing => listing.quantity_bought));
 		const remainingItemsCanBuy = Math.max(0, buyLimit - totalSold);
 
@@ -296,7 +302,11 @@ class GrandExchangeSingleton {
 		}
 		if (user.isIronman) return { error: "You're an ironman." };
 		const item = getItem(itemName);
-		if (!item || !item.tradeable_on_ge || ['Coins'].includes(item.name)) {
+		if (!item || ['Coins'].includes(item.name)) {
+			return { error: 'Invalid item.' };
+		}
+
+		if (isGEUntradeable(item.id)) {
 			return { error: 'Invalid item.' };
 		}
 
@@ -541,7 +551,7 @@ ${type} ${toKMB(quantity)} ${item.name} for ${toKMB(price)} each, for a total of
 			buyerListing.asking_price_per_item
 		}] SellerPrice[${
 			sellerListing.asking_price_per_item
-		}] TotalPriceBeforeTax[${totalPriceBeforeTax}] QuantityToBuy[${quantityToBuy}] TotalTaxPaid[${totalTaxPaid}] BuyerRefund[${buyerRefund}] BuyerLoot[${buyerLoot}] SellerLoot[${sellerLoot}] CurrentGEBank[${geBank}] BankToRemoveFromGeBank[${JSON.stringify(bankToRemoveFromGeBank.toJSON())}] ExpectedAfterBank[${geBank
+		}] TotalPriceBeforeTax[${totalPriceBeforeTax}] QuantityToBuy[${quantityToBuy}] TotalTaxPaid[${totalTaxPaid}] BuyerRefund[${buyerRefund}] BuyerLoot[${JSON.stringify(buyerLoot)}] SellerLoot[${sellerLoot}] CurrentGEBank[${JSON.stringify(geBank)}] BankToRemoveFromGeBank[${JSON.stringify(bankToRemoveFromGeBank.toJSON())}] ExpectedAfterBank[${geBank
 			.clone()
 			.remove(bankToRemoveFromGeBank)
 			.toJSON()}]`;

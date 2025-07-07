@@ -1,10 +1,9 @@
 import { generateCommandInputs } from '@oldschoolgg/toolkit/util';
 import { Time, shuffleArr } from 'e';
-import { generateRandomBank } from 'oldschooljs/dist/meta/types';
+import { generateRandomBank } from 'oldschooljs';
 import { expect, test, vi } from 'vitest';
 
 import { BitField, minionActivityCache } from '../../src/lib/constants';
-
 import { mahojiClientSettingsFetch } from '../../src/lib/util/clientSettings';
 import { handleMahojiConfirmation } from '../../src/lib/util/handleMahojiConfirmation';
 import { allCommands } from '../../src/mahoji/commands/allCommands';
@@ -71,7 +70,6 @@ test(
 
 		for (const command of cmds) {
 			if (ignoredCommands.includes(command.name)) continue;
-
 			const options = shuffleArr(await generateCommandInputs(command.options!)).slice(0, 5);
 			outer: for (const option of options) {
 				for (const [parent, sub, subCommand] of ignoredSubCommands) {

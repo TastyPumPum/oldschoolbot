@@ -1,8 +1,7 @@
+import { Emoji } from '@oldschoolgg/toolkit/constants';
 import { Time } from 'e';
-import { Bank, LootTable } from 'oldschooljs';
+import { Bank, LootTable, itemID } from 'oldschooljs';
 
-import { Emoji } from '../../constants';
-import itemID from '../../util/itemID';
 import { SkillsEnum } from '../types';
 
 export interface Rune {
@@ -263,10 +262,30 @@ const Runes: Rune[] = [
 		levels: [[95, 1]],
 		qpRequired: 200,
 		tripLength: Time.Minute * 0.917
+	},
+	{
+		xp: 285,
+		id: itemID('Elder rune'),
+		name: 'Elder rune',
+		levels: [
+			[99, 1],
+			[120, 2]
+		],
+		tripLength: Time.Minute * 30
 	}
 ];
 
 const RCPouches = [
+	{
+		id: itemID('Elder pouch'),
+		level: 105,
+		capacity: 128
+	},
+	{
+		id: itemID('Abyssal pouch'),
+		level: 90,
+		capacity: 64
+	},
 	{
 		id: itemID('Colossal pouch'),
 		level: 85,

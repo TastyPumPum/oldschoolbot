@@ -1,6 +1,6 @@
 import { Bank } from 'oldschooljs';
 
-import { Events } from '../../../lib/constants';
+import { userHasFlappy } from '../../../lib/invention/inventions';
 import { lootRoom, plunderRooms } from '../../../lib/minions/data/plunder';
 import { incrementMinigameScore } from '../../../lib/settings/settings';
 import { SkillsEnum } from '../../../lib/skilling/types';
@@ -11,7 +11,7 @@ import type { PlunderActivityTaskOptions } from './../../../lib/types/minions';
 export const plunderTask: MinionTask = {
 	type: 'Plunder',
 	async run(data: PlunderActivityTaskOptions) {
-		const { channelID, quantity, rooms, userID } = data;
+		const { channelID, quantity, rooms, userID, duration } = data;
 		const user = await mUserFetch(userID);
 		await incrementMinigameScore(userID, 'pyramid_plunder', quantity);
 		const allRooms = plunderRooms.filter(room => rooms.includes(room.number));
@@ -32,6 +32,11 @@ export const plunderTask: MinionTask = {
 			}
 		}
 
+		const flappyRes = await userHasFlappy({ user, duration });
+		if (flappyRes.shouldGiveBoost) {
+			loot.multiply(2);
+		}
+
 		const { itemsAdded, previousCL } = await transactItems({
 			userID: user.id,
 			collectionLog: true,
@@ -39,18 +44,7 @@ export const plunderTask: MinionTask = {
 		});
 		const xpRes = await user.addXP({ skillName: SkillsEnum.Thieving, amount: thievingXP, duration: data.duration });
 
-		const str = `${user}, ${user.minionName} finished doing the Pyramid Plunder ${quantity}x times. ${totalAmountUrns}x urns opened. ${xpRes}`;
-
-		if (loot.amount('Rocky') > 0) {
-			globalClient.emit(
-				Events.ServerNotification,
-				`**${user.badgedUsername}'s** minion, ${
-					user.minionName
-				}, just received a **Rocky** <:Rocky:324127378647285771> while doing the Pyramid Plunder, their Thieving level is ${user.skillLevel(
-					SkillsEnum.Thieving
-				)}!`
-			);
-		}
+		const str = `${user}, ${user.minionName} finished doing the Pyramid Plunder ${quantity}x times. ${totalAmountUrns}x urns opened. ${xpRes}  ${flappyRes.userMsg}`;
 
 		const image = await makeBankImage({
 			bank: itemsAdded,

@@ -1,7 +1,6 @@
 import { roll } from 'e';
-import { Bank, type Item, LootTable } from 'oldschooljs';
+import { Bank, type Item, ItemGroups, LootTable, resolveItems } from 'oldschooljs';
 
-import { resolveItems } from 'oldschooljs/dist/util/util';
 import type { UnifiedOpenable } from './openables';
 import getOSItem from './util/getOSItem';
 
@@ -159,6 +158,8 @@ const GoldChest = new LootTable({ limit: 143 })
 	.every('Swamp paste', [40, 70])
 	.tertiary(61, 'Gold locks')
 	.tertiary(54, SplitBarkScrollsTable)
+	.oneIn(75 * 5, 'Necromancer kit')
+	.oneIn(80 * 5, 'Shade skull')
 
 	.add('Battlestaff', 3, 11)
 	.add('Adamant spear', 1, 7)
@@ -200,13 +201,7 @@ const chests = [
 	{
 		name: 'Bronze chest',
 		table: BronzeChest,
-		items: resolveItems([
-			'Bronze key red',
-			'Bronze key brown',
-			'Bronze key crimson',
-			'Bronze key black',
-			'Bronze key purple'
-		])
+		items: resolveItems(['Bronze key red', 'Bronze key brown', 'Bronze key crimson', 'Bronze key black'])
 	},
 	{
 		name: 'Steel chest',
@@ -233,13 +228,7 @@ const chests = [
 	{
 		name: 'Silver chest',
 		table: SilverChest,
-		items: resolveItems([
-			'Silver key red',
-			'Silver key brown',
-			'Silver key crimson',
-			'Silver key black',
-			'Silver key purple'
-		])
+		items: resolveItems(['Silver key red', 'Silver key brown', 'Silver key crimson', 'Silver key black'])
 	},
 	{
 		name: 'Gold chest',
@@ -247,13 +236,6 @@ const chests = [
 		items: resolveItems(['Gold key red', 'Gold key brown', 'Gold key crimson', 'Gold key black', 'Gold key purple'])
 	}
 ] as const;
-
-export const zealOutfit = resolveItems([
-	"Zealot's boots",
-	"Zealot's helm",
-	"Zealot's robe bottom",
-	"Zealot's robe top"
-]);
 
 export function openShadeChest({ item, qty, allItemsOwned }: { allItemsOwned: Bank; item: Item; qty: number }) {
 	const chest = chests.find(i => i.items.includes(item.id));
@@ -268,7 +250,7 @@ export function openShadeChest({ item, qty, allItemsOwned }: { allItemsOwned: Ba
 		}
 
 		if (chest.name === 'Gold chest') {
-			const unownedPieces = zealOutfit.filter(i => !effectiveOwnedItems.has(i));
+			const unownedPieces = ItemGroups.zealOutfit.filter(i => !effectiveOwnedItems.has(i));
 			if (unownedPieces.length > 0 && roll(128)) {
 				thisLoot.add(unownedPieces[0]);
 			}

@@ -1,25 +1,27 @@
-import type { CommandOption } from '@oldschoolgg/toolkit/util';
-import { evalMathExpression } from '@oldschoolgg/toolkit/util';
-import type { CommandRunOptions } from '@oldschoolgg/toolkit/util';
+import {
+	type CommandOption,
+	type CommandRunOptions,
+	evalMathExpression,
+	formatDuration,
+	makeComponents
+} from '@oldschoolgg/toolkit/util';
 import type { GEListing, GETransaction } from '@prisma/client';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { sumArr, uniqueArr } from 'e';
-import { getItem } from 'oldschooljs/dist/util/util';
+import { Bank, type ItemBank, toKMB } from 'oldschooljs';
 
+import { isGEUntradeable } from '../../lib/bso/bsoUtil';
 import { PerkTier } from '../../lib/constants';
 import { GrandExchange, createGECancelButton } from '../../lib/grandExchange';
 import { marketPricemap } from '../../lib/marketPrices';
-
-import { Bank } from 'oldschooljs';
-import type { ItemBank } from 'oldschooljs/dist/meta/types';
-import { formatDuration, itemNameFromID, makeComponents, returnStringOrFile, toKMB } from '../../lib/util';
+import { itemNameFromID, returnStringOrFile } from '../../lib/util';
 import { createChart } from '../../lib/util/chart';
-import getOSItem from '../../lib/util/getOSItem';
+import getOSItem, { getItem } from '../../lib/util/getOSItem';
 import { handleMahojiConfirmation } from '../../lib/util/handleMahojiConfirmation';
 import { deferInteraction } from '../../lib/util/interactionReply';
 import itemIsTradeable from '../../lib/util/itemIsTradeable';
 import { cancelGEListingCommand } from '../lib/abstracted_commands/cancelGEListingCommand';
-import { itemOption, tradeableItemArr } from '../lib/mahojiCommandOptions';
+import { itemArr, itemOption } from '../lib/mahojiCommandOptions';
 import type { OSBMahojiCommand } from '../lib/util';
 import { mahojiUsersSettingsFetch } from '../mahojiSettings';
 
@@ -119,7 +121,7 @@ export const geCommand: OSBMahojiCommand = {
 								value: itemID.toString()
 							}));
 						}
-						const res = tradeableItemArr.filter(i => i.key.includes(value.toLowerCase()));
+						const res = itemArr.filter(i => i.key.includes(value.toLowerCase()));
 						return res.map(i => ({ name: `${i.name}`, value: i.id.toString() }));
 					}
 				},
@@ -143,7 +145,7 @@ export const geCommand: OSBMahojiCommand = {
 
 						return bank
 							.items()
-							.filter(i => i[0].tradeable_on_ge)
+							.filter(i => !isGEUntradeable(i[0].id))
 							.filter(i => (!value ? true : i[0].name.toLowerCase().includes(value.toLowerCase())))
 							.map(i => ({ name: `${i[0].name} (${i[1]}x Owned)`, value: i[0].name }));
 					}

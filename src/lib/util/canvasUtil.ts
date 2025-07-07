@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { formatItemStackQuantity, generateHexColorForCashStack } from '@oldschoolgg/toolkit/util';
 import { CanvasRenderingContext2D as CanvasContext, FontLibrary, Image, Canvas as RawCanvas } from 'skia-canvas';
 
-import { assert } from '../util';
+import { assert } from '../util/logError';
 
 export function registerFont(fontFamily: string, fontPath: string) {
 	FontLibrary.use(fontFamily, fontPath);
@@ -84,6 +84,12 @@ export function drawImageWithOutline(
 	ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
 }
 
+export function calcAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: number, maxHeight: number) {
+	const ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+
+	return { width: srcWidth * ratio, height: srcHeight * ratio };
+}
+
 function printMultilineText(ctx: CanvasContext, text: string, x: number, y: number) {
 	const lines = text.split(/\r?\n/);
 
@@ -146,21 +152,15 @@ export function getClippedRegion(image: Image | Canvas, x: number, y: number, wi
 	return canvas;
 }
 
-export async function canvasToBuffer(canvas: Canvas): Promise<Buffer> {
-	return canvas.png;
+export function drawCircle(ctx: CanvasContext, x: number, y: number, radius: number, fill = 'rgba(255,0,0,0.5)') {
+	ctx.beginPath();
+	ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+	ctx.fillStyle = fill;
+	ctx.fill();
 }
 
-export async function getClippedRegionImage(
-	image: Image | Canvas,
-	x: number,
-	y: number,
-	width: number,
-	height: number
-) {
-	const canvas = createCanvas(width, height);
-	const ctx = canvas.getContext('2d');
-	ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
-	return loadImage(await canvasToBuffer(canvas));
+export async function canvasToBuffer(canvas: Canvas): Promise<Buffer> {
+	return canvas.png;
 }
 
 export function measureTextWidth(ctx: CanvasContext, text: string) {

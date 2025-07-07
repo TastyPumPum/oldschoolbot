@@ -1,6 +1,4 @@
-import { Bank } from 'oldschooljs';
-
-import itemID from '../../../../util/itemID';
+import { Bank, itemID } from 'oldschooljs';
 import type { Fletchable } from '../../../types';
 
 const Shafts: Fletchable[] = [
@@ -84,6 +82,15 @@ const Shafts: Fletchable[] = [
 		inputItems: new Bank({ 'Redwood logs': 1 }),
 		tickRate: 2,
 		outputMultiple: 105
+	},
+	{
+		name: 'Elder arrow shaft',
+		id: itemID('Arrow shaft'),
+		level: 105,
+		xp: 100,
+		inputItems: new Bank({ 'Elder logs': 1 }),
+		tickRate: 2,
+		outputMultiple: 300
 	},
 	{
 		name: 'Battlestaff',
