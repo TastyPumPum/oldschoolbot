@@ -147,6 +147,7 @@ export async function updateClientGPTrackSetting(
 		| 'gp_pickpocket'
 		| 'gp_alch'
 		| 'gp_slots'
+		| 'gp_blackjack'
 		| 'gp_dice'
 		| 'gp_open'
 		| 'gp_daily'
@@ -170,7 +171,7 @@ export async function updateClientGPTrackSetting(
 	});
 }
 export async function updateGPTrackSetting(
-	setting: 'gp_dice' | 'gp_luckypick' | 'gp_slots',
+	setting: 'gp_dice' | 'gp_luckypick' | 'gp_slots' | 'gp_blackjack',
 	amount: number,
 	user: MUser
 ) {
