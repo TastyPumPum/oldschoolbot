@@ -66,7 +66,6 @@ FROM users;
 			gp_pvm: true,
 			gp_sell: true,
 			gp_slots: true,
-			gp_blackjack: true,
 			gp_tax_balance: true,
 			economyStats_dailiesAmount: true
 		},
@@ -100,8 +99,7 @@ FROM users;
 			gpDaily: currentClientSettings.gp_daily,
 			gpLuckypick: currentClientSettings.gp_luckypick,
 			gpSlots: currentClientSettings.gp_slots,
-			gpHotCold: currentClientSettings.gp_hotcold,
-			gpBlackjack: currentClientSettings.gp_blackjack
+			gpHotCold: currentClientSettings.gp_hotcold
 		}
 	});
 }

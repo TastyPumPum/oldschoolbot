@@ -1,19 +1,93 @@
 import { awaitMessageComponentInteraction, channelIsSendable } from '@oldschoolgg/toolkit/util';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type ChatInputCommandInteraction } from 'discord.js';
+import {
+	ActionRowBuilder,
+	AttachmentBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	type ChatInputCommandInteraction
+} from 'discord.js';
 import { noOp, shuffleArr } from 'e';
 import { Bank, Util } from 'oldschooljs';
 
+import { canvasToBuffer, createCanvas, loadAndCacheLocalImage } from '../../../lib/util/canvasUtil';
 import { deferInteraction } from '../../../lib/util/interactionReply';
 import { mahojiParseNumber, updateClientGPTrackSetting, updateGPTrackSetting } from '../../mahojiSettings';
 
-const suits = ['♠', '♥', '♦', '♣'];
+const cardCache = new Map<string, Promise<import('../../../lib/util/canvasUtil').CanvasImage>>();
+const suits = ['spades', 'hearts', 'diamonds', 'clubs'] as const;
+const suitSymbols: Record<(typeof suits)[number], string> = {
+	spades: '♠',
+	hearts: '♥',
+	diamonds: '♦',
+	clubs: '♣'
+};
+
+async function getCardImage(card: string) {
+	let name: string;
+	if (card === 'BACK') {
+		name = 'card_back.png';
+	} else {
+		const [rank, suit] = card.split('_');
+		name = `card_${suit}_${rank}.png`;
+	}
+	let img = cardCache.get(name);
+	if (!img) {
+		img = loadAndCacheLocalImage(`./src/lib/resources/images/cards/${name}`);
+		cardCache.set(name, img);
+	}
+	return img;
+}
+
+async function generateBlackjackImage(
+	user: MUser,
+	hands: string[][],
+	dealer: string[],
+	hideDealer: boolean,
+	active = 0
+) {
+	const CARD = 64;
+	const PAD = 5;
+	const TEXT = 18;
+	const rows = hands.length + 1;
+	const maxCards = Math.max(dealer.length, ...hands.map(h => h.length));
+	const width = PAD + maxCards * (CARD + PAD);
+	const height = PAD + rows * (CARD + TEXT + PAD);
+	const canvas = createCanvas(width, height);
+	const ctx = canvas.getContext('2d');
+	ctx.imageSmoothingEnabled = false;
+	ctx.font = '16px sans-serif';
+	ctx.fillStyle = '#ffffff';
+
+	async function drawRow(label: string, cards: string[], y: number, hide = false) {
+		ctx.fillStyle = '#ffffff';
+		ctx.fillText(label, PAD, y + TEXT - 4);
+		let x = PAD;
+		for (let i = 0; i < cards.length; i++) {
+			const c = hide && i === 1 ? 'BACK' : cards[i];
+			const img = await getCardImage(c);
+			ctx.drawImage(img, x, y + TEXT, CARD, CARD);
+			x += CARD + PAD;
+		}
+	}
+
+	await drawRow('Dealer', dealer, PAD, hideDealer);
+	for (let i = 0; i < hands.length; i++) {
+		const label = hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`;
+		const y = PAD + (i + 1) * (CARD + TEXT + PAD);
+		await drawRow(label, hands[i], y, false);
+	}
+
+	const buffer = await canvasToBuffer(canvas);
+	return new AttachmentBuilder(buffer, { name: 'blackjack.png' });
+}
+
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 function createDeck() {
 	const deck: string[] = [];
 	for (let i = 0; i < 6; i++) {
 		for (const r of ranks) {
-			for (const s of suits) deck.push(`${r}${s}`);
+			for (const s of suits) deck.push(`${r}_${s}`);
 		}
 	}
 	return shuffleArr(deck);
@@ -27,7 +101,7 @@ function handValue(hand: string[]) {
 	let value = 0;
 	let aces = 0;
 	for (const c of hand) {
-		const rank = c.slice(0, -1);
+		const [rank] = c.split('_');
 		if (rank === 'A') {
 			value += 11;
 			aces++;
@@ -44,17 +118,22 @@ function handValue(hand: string[]) {
 	return value;
 }
 
+function displayCard(card: string) {
+	const [rank, suit] = card.split('_');
+	return `${rank}${suitSymbols[suit as keyof typeof suitSymbols]}`;
+}
+
 function formatHands(user: MUser, hands: string[][], dealer: string[], hideDealer: boolean, active = 0) {
-	const dealerDisplay = hideDealer ? `${dealer[0]}, ?` : dealer.join(', ');
+	const dealerDisplay = hideDealer ? `${displayCard(dealer[0])}, ?` : dealer.map(displayCard).join(', ');
 	const dealerValue = hideDealer ? handValue([dealer[0]]) : handValue(dealer);
 	let res = `Dealer: ${dealerDisplay} (${dealerValue})`;
 	if (hands.length === 1) {
 		const [hand] = hands;
-		res += `\n${user.badgedUsername}: ${hand.join(', ')} (${handValue(hand)})`;
+		res += `\n${user.badgedUsername}: ${hand.map(displayCard).join(', ')} (${handValue(hand)})`;
 	} else {
 		for (let i = 0; i < hands.length; i++) {
 			const mark = i === active ? '*' : '';
-			res += `\nHand ${i + 1}${mark}: ${hands[i].join(', ')} (${handValue(hands[i])})`;
+			res += `\nHand ${i + 1}${mark}: ${hands[i].map(displayCard).join(', ')} (${handValue(hands[i])})`;
 		}
 	}
 	return res;
@@ -90,7 +169,7 @@ export async function blackjackCommand(
 	const doubled: boolean[] = [false];
 	let activeHand = 0;
 
-	let canSplit = player[0].slice(0, -1) === player[1].slice(0, -1) && user.GP >= amount;
+	let canSplit = player[0].split('_')[0] === player[1].split('_')[0] && user.GP >= amount;
 
 	const componentsRow = (handIndex: number, allowSplit: boolean) => [
 		new ActionRowBuilder<ButtonBuilder>().addComponents([
@@ -107,6 +186,7 @@ export async function blackjackCommand(
 
 	const message = await channel.send({
 		content: formatHands(user, hands, dealer, true, activeHand),
+		files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
 		components: componentsRow(activeHand, canSplit)
 	});
 
@@ -119,7 +199,12 @@ export async function blackjackCommand(
 				time: 15000
 			}).catch(() => null);
 			if (!selection) {
-				await message.edit({ components: [] }).catch(noOp);
+				await message
+					.edit({
+						files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
+						components: []
+					})
+					.catch(noOp);
 				await user.addItemsToBank({ items: new Bank().add('Coins', totalBet), collectionLog: false });
 				return 'Blackjack timed out, bet refunded.';
 			}
@@ -130,6 +215,7 @@ export async function blackjackCommand(
 				await selection.deferUpdate().catch(noOp);
 				await message.edit({
 					content: formatHands(user, hands, dealer, true, activeHand),
+					files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
 					components: playerValue >= 21 ? [] : componentsRow(activeHand, false)
 				});
 				if (playerValue >= 21) break;
@@ -150,7 +236,11 @@ export async function blackjackCommand(
 				doubled[activeHand] = true;
 				hands[activeHand].push(draw(deck));
 				playerValue = handValue(hands[activeHand]);
-				await message.edit({ content: formatHands(user, hands, dealer, true, activeHand), components: [] });
+				await message.edit({
+					content: formatHands(user, hands, dealer, true, activeHand),
+					files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
+					components: []
+				});
 				break;
 			}
 
@@ -171,6 +261,7 @@ export async function blackjackCommand(
 				canSplit = false;
 				await message.edit({
 					content: formatHands(user, hands, dealer, true, activeHand),
+					files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
 					components: componentsRow(activeHand, false)
 				});
 				playerValue = handValue(hands[activeHand]);
@@ -187,6 +278,7 @@ export async function blackjackCommand(
 		if (activeHand < hands.length) {
 			await message.edit({
 				content: formatHands(user, hands, dealer, true, activeHand),
+				files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
 				components: componentsRow(activeHand, false)
 			});
 		}
@@ -198,7 +290,13 @@ export async function blackjackCommand(
 		dealerValue = handValue(dealer);
 	}
 
-	await message.edit({ content: formatHands(user, hands, dealer, false), components: [] }).catch(noOp);
+	await message
+		.edit({
+			content: formatHands(user, hands, dealer, false),
+			files: [await generateBlackjackImage(user, hands, dealer, false)],
+			components: []
+		})
+		.catch(noOp);
 
 	let payout = 0;
 	const resultParts: string[] = [];
@@ -221,7 +319,7 @@ export async function blackjackCommand(
 	}
 
 	let sideBetPayout = 0;
-	if (sideBet && player[0].slice(0, -1) === player[1].slice(0, -1)) {
+	if (sideBet && player[0].split('_')[0] === player[1].split('_')[0]) {
 		sideBetPayout = sideBet * 10;
 	}
 

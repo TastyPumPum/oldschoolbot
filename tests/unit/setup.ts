@@ -95,6 +95,7 @@ MUserStats.fromID = async (id: string) => {
 		gp_dice: -500000000n,
 		gp_slots: 3900000000n,
 		gp_hotcold: 0n,
+		gp_blackjack: 0n,
 		total_gp_traded: 69n,
 		last_daily_timestamp: 1720196666639n,
 		last_tears_of_guthix_timestamp: 0n,
