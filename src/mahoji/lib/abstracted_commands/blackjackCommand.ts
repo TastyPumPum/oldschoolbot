@@ -23,19 +23,10 @@ const suitSymbols: Record<(typeof suits)[number], string> = {
 };
 
 async function getCardImage(card: string) {
-	let name: string;
-	if (card === 'BACK') {
-		name = 'card_back.png';
-	} else {
-		const [rank, suit] = card.split('_');
-		name = `card_${suit}_${rank}.png`;
-	}
-	let img = cardCache.get(name);
-	if (!img) {
-		img = loadAndCacheLocalImage(`./src/lib/resources/images/cards/${name}`);
-		cardCache.set(name, img);
-	}
-	return img;
+	const [rank, suit] = card === 'BACK' ? ['back', ''] : card.split('_');
+	const name = card === 'BACK' ? 'card_back.png' : `card_${suit}_${rank}.png`;
+	if (!cardCache.has(name)) cardCache.set(name, loadAndCacheLocalImage(`./src/lib/resources/images/cards/${name}`));
+	return cardCache.get(name)!;
 }
 
 async function generateBlackjackImage(
@@ -50,46 +41,37 @@ async function generateBlackjackImage(
 	const TEXT = 18;
 	const rows = hands.length + 1;
 	const maxCards = Math.max(dealer.length, ...hands.map(h => h.length));
-	const width = PAD + maxCards * (CARD + PAD);
-	const height = PAD + rows * (CARD + TEXT + PAD);
-	const canvas = createCanvas(width, height);
+	const canvas = createCanvas(PAD + maxCards * (CARD + PAD), PAD + rows * (CARD + TEXT + PAD));
 	const ctx = canvas.getContext('2d');
 	ctx.imageSmoothingEnabled = false;
 	ctx.font = '16px sans-serif';
 	ctx.fillStyle = '#ffffff';
 
 	async function drawRow(label: string, cards: string[], y: number, hide = false) {
-		ctx.fillStyle = '#ffffff';
 		ctx.fillText(label, PAD, y + TEXT - 4);
 		let x = PAD;
 		for (let i = 0; i < cards.length; i++) {
-			const c = hide && i === 1 ? 'BACK' : cards[i];
-			const img = await getCardImage(c);
-			ctx.drawImage(img, x, y + TEXT, CARD, CARD);
+			ctx.drawImage(await getCardImage(hide && i === 1 ? 'BACK' : cards[i]), x, y + TEXT, CARD, CARD);
 			x += CARD + PAD;
 		}
 	}
 
 	await drawRow('Dealer', dealer, PAD, hideDealer);
-	for (let i = 0; i < hands.length; i++) {
-		const label = hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`;
-		const y = PAD + (i + 1) * (CARD + TEXT + PAD);
-		await drawRow(label, hands[i], y, false);
-	}
+	for (let i = 0; i < hands.length; i++)
+		await drawRow(
+			hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`,
+			hands[i],
+			PAD + (i + 1) * (CARD + TEXT + PAD)
+		);
 
-	const buffer = await canvasToBuffer(canvas);
-	return new AttachmentBuilder(buffer, { name: 'blackjack.png' });
+	return new AttachmentBuilder(await canvasToBuffer(canvas), { name: 'blackjack.png' });
 }
 
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 function createDeck() {
 	const deck: string[] = [];
-	for (let i = 0; i < 6; i++) {
-		for (const r of ranks) {
-			for (const s of suits) deck.push(`${r}_${s}`);
-		}
-	}
+	for (let i = 0; i < 6; i++) for (const r of ranks) for (const s of suits) deck.push(`${r}_${s}`);
 	return shuffleArr(deck);
 }
 
@@ -100,21 +82,17 @@ function draw(deck: string[]) {
 function handValue(hand: string[]) {
 	let value = 0;
 	let aces = 0;
-	for (const c of hand) {
-		const [rank] = c.split('_');
+	for (const [rank] of hand.map(card => card.split('_'))) {
 		if (rank === 'A') {
-			value += 11;
 			aces++;
+			value += 11;
 		} else if (['J', 'Q', 'K'].includes(rank)) {
 			value += 10;
 		} else {
 			value += Number(rank);
 		}
 	}
-	while (value > 21 && aces > 0) {
-		value -= 10;
-		aces--;
-	}
+	while (value > 21 && aces-- > 0) value -= 10;
 	return value;
 }
 
@@ -124,19 +102,18 @@ function displayCard(card: string) {
 }
 
 function formatHands(user: MUser, hands: string[][], dealer: string[], hideDealer: boolean, active = 0) {
+	const dealerVal = hideDealer ? handValue([dealer[0]]) : handValue(dealer);
 	const dealerDisplay = hideDealer ? `${displayCard(dealer[0])}, ?` : dealer.map(displayCard).join(', ');
-	const dealerValue = hideDealer ? handValue([dealer[0]]) : handValue(dealer);
-	let res = `Dealer: ${dealerDisplay} (${dealerValue})`;
-	if (hands.length === 1) {
-		const [hand] = hands;
-		res += `\n${user.badgedUsername}: ${hand.map(displayCard).join(', ')} (${handValue(hand)})`;
-	} else {
-		for (let i = 0; i < hands.length; i++) {
-			const mark = i === active ? '*' : '';
-			res += `\nHand ${i + 1}${mark}: ${hands[i].map(displayCard).join(', ')} (${handValue(hands[i])})`;
-		}
+	let res = `Dealer: ${dealerDisplay} (${dealerVal})`;
+	for (let i = 0; i < hands.length; i++) {
+		const mark = i === active ? '*' : '';
+		res += `\n${hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${mark}`}: ${hands[i].map(displayCard).join(', ')} (${handValue(hands[i])})`;
 	}
 	return res;
+}
+
+function isPair(hand: string[]) {
+	return hand.length === 2 && hand[0].split('_')[0] === hand[1].split('_')[0];
 }
 
 export async function blackjackCommand(
@@ -147,192 +124,182 @@ export async function blackjackCommand(
 ) {
 	await deferInteraction(interaction);
 	if (interaction.user.bot) return 'Bots cannot gamble.';
-	const amount = mahojiParseNumber({ input: _amount, min: 1, max: 500_000_000 });
-	if (!amount) return 'You must specify an amount between 1 and 500m.';
-	const sideBet = _sidebet ? mahojiParseNumber({ input: _sidebet, min: 1, max: amount }) : null;
-	if (_sidebet && !sideBet) return 'Invalid sidebet amount.';
-	if (user.isIronman) return "Ironmen can't gamble.";
-	if (amount < 100_000) return 'Minimum bet is 100k.';
-	let totalBet = amount + (sideBet ?? 0);
-	if (user.GP < totalBet) return "You don't have enough GP.";
+	const amountRaw = mahojiParseNumber({ input: _amount, min: 100_000, max: 500_000_000 });
+	if (amountRaw === null) return 'Specify a bet between 100k and 500m.';
+	const amount = amountRaw;
+	const sideBet = _sidebet ? mahojiParseNumber({ input: _sidebet, min: 1, max: amount }) : undefined;
 
-	const channel = globalClient.channels.cache.get(interaction.channelId);
-	if (!channelIsSendable(channel)) return 'Invalid channel.';
+	if (user.isIronman) return "Ironmen can't gamble.";
+	const totalBet = amount + (sideBet || 0);
+	if (user.GP < totalBet) return "You don't have enough GP.";
 
 	await user.removeItemsFromBank(new Bank().add('Coins', totalBet));
 	const deck = createDeck();
-	const player = [draw(deck), draw(deck)];
+	const hands: string[][] = [[draw(deck), draw(deck)]];
+	const bets = [amount];
+	const doubled = [false];
 	const dealer = [draw(deck), draw(deck)];
 
-	const hands: string[][] = [player];
-	const bets: number[] = [amount];
-	const doubled: boolean[] = [false];
-	let activeHand = 0;
+	const isBlackjack = (hand: string[]) => {
+		const ranks = hand.map(c => c.split('_')[0]);
+		return hand.length === 2 && ranks.includes('A') && ranks.some(r => ['10', 'J', 'Q', 'K'].includes(r));
+	};
 
-	let canSplit = player[0].split('_')[0] === player[1].split('_')[0] && user.GP >= amount;
+	const playerBlackjack = isBlackjack(hands[0]);
+	const dealerBlackjack = isBlackjack(dealer);
 
-	const componentsRow = (handIndex: number, allowSplit: boolean) => [
+	if (playerBlackjack || dealerBlackjack) {
+		let payout = 0;
+		const resultParts: string[] = [];
+		if (playerBlackjack && dealerBlackjack) {
+			resultParts.push('Both you and the dealer have blackjack: push.');
+			payout = amount;
+		} else if (playerBlackjack) {
+			payout = amount + Math.floor(amount * 1.5);
+			resultParts.push(`Blackjack! You win ${Util.toKMB(payout)}.`);
+		} else {
+			resultParts.push('Dealer has blackjack, you lose.');
+		}
+
+		if (sideBet) {
+			const sideBetWin = isPair(hands[0]) ? sideBet * 10 : 0;
+			if (sideBetWin) resultParts.push(`Side bet won ${Util.toKMB(sideBetWin)}.`);
+			else resultParts.push('Side bet lost.');
+			payout += sideBetWin;
+		}
+
+		if (payout > 0) await user.addItemsToBank({ items: new Bank().add('Coins', payout), collectionLog: false });
+		await updateClientGPTrackSetting('gp_blackjack', payout - totalBet);
+		await updateGPTrackSetting('gp_blackjack', payout - totalBet, user);
+
+		const channel = interaction.channel;
+		if (channelIsSendable(channel)) {
+			await channel.send({
+				content: formatHands(user, hands, dealer, false),
+				files: [await generateBlackjackImage(user, hands, dealer, false)]
+			});
+		}
+
+		return { content: resultParts.join('\n') };
+	}
+
+	const buildButtons = (canSplit: boolean, canDouble: boolean) =>
 		new ActionRowBuilder<ButtonBuilder>().addComponents([
 			new ButtonBuilder().setCustomId('HIT').setLabel('Hit').setStyle(ButtonStyle.Primary),
 			new ButtonBuilder().setCustomId('STAND').setLabel('Stand').setStyle(ButtonStyle.Secondary),
-			...(!doubled[handIndex]
-				? [new ButtonBuilder().setCustomId('DOUBLE').setLabel('Double Down').setStyle(ButtonStyle.Success)]
+			...(canDouble
+				? [new ButtonBuilder().setCustomId('DOUBLE').setLabel('Double').setStyle(ButtonStyle.Success)]
 				: []),
-			...(allowSplit
+			...(canSplit
 				? [new ButtonBuilder().setCustomId('SPLIT').setLabel('Split').setStyle(ButtonStyle.Danger)]
 				: [])
-		])
-	];
+		]);
+
+	let activeHand = 0;
+	const channel = interaction.channel;
+	if (!channelIsSendable(channel)) {
+		return 'This channel does not support sending messages.';
+	}
 
 	const message = await channel.send({
-		content: formatHands(user, hands, dealer, true, activeHand),
-		files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
-		components: componentsRow(activeHand, canSplit)
+		content: formatHands(user, hands, dealer, true),
+		files: [await generateBlackjackImage(user, hands, dealer, true)],
+		components: [buildButtons(isPair(hands[0]) && user.GP >= amount, true)]
 	});
 
 	while (activeHand < hands.length) {
-		let playerValue = handValue(hands[activeHand]);
-		while (playerValue < 21) {
+		const hand = hands[activeHand];
+		while (handValue(hand) < 21) {
 			const selection = await awaitMessageComponentInteraction({
 				message,
 				filter: i => i.user.id === user.id,
 				time: 15000
 			}).catch(() => null);
 			if (!selection) {
-				await message
-					.edit({
-						files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
-						components: []
-					})
-					.catch(noOp);
-				await user.addItemsToBank({ items: new Bank().add('Coins', totalBet), collectionLog: false });
-				return 'Blackjack timed out, bet refunded.';
-			}
-
-			if (selection.customId === 'HIT') {
-				hands[activeHand].push(draw(deck));
-				playerValue = handValue(hands[activeHand]);
-				await selection.deferUpdate().catch(noOp);
+				await message.reply('⏱️ Timed out, auto-standing.');
 				await message.edit({
 					content: formatHands(user, hands, dealer, true, activeHand),
-					files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
-					components: playerValue >= 21 ? [] : componentsRow(activeHand, false)
-				});
-				if (playerValue >= 21) break;
-				continue;
-			}
-
-			if (selection.customId === 'DOUBLE') {
-				if (user.GP < amount) {
-					await selection
-						.reply({ ephemeral: true, content: "You don't have enough GP to double down." })
-						.catch(noOp);
-					continue;
-				}
-				await selection.deferUpdate().catch(noOp);
-				await user.removeItemsFromBank(new Bank().add('Coins', amount));
-				totalBet += amount;
-				bets[activeHand] += amount;
-				doubled[activeHand] = true;
-				hands[activeHand].push(draw(deck));
-				playerValue = handValue(hands[activeHand]);
-				await message.edit({
-					content: formatHands(user, hands, dealer, true, activeHand),
-					files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
+					files: [await generateBlackjackImage(user, hands, dealer, true)],
 					components: []
 				});
-				break;
+				break; // Auto-stand on timeout
 			}
 
-			if (selection.customId === 'SPLIT' && canSplit && activeHand === 0) {
-				if (user.GP < amount) {
-					await selection
-						.reply({ ephemeral: true, content: "You don't have enough GP to split." })
-						.catch(noOp);
-					continue;
-				}
-				await selection.deferUpdate().catch(noOp);
-				await user.removeItemsFromBank(new Bank().add('Coins', amount));
-				totalBet += amount;
-				hands[0] = [player[0], draw(deck)];
-				hands.push([player[1], draw(deck)]);
-				bets.push(amount);
+			await selection.deferUpdate().catch(noOp);
+
+			if (selection.customId === 'HIT') {
+				hand.push(draw(deck));
+			} else if (selection.customId === 'DOUBLE' && !doubled[activeHand]) {
+				if (user.GP < bets[activeHand]) break;
+				await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
+				bets[activeHand] *= 2;
+				hand.push(draw(deck));
+				doubled[activeHand] = true;
+				break;
+			} else if (
+				selection.customId === 'SPLIT' &&
+				hand.length === 2 &&
+				isPair(hand) &&
+				user.GP >= bets[activeHand]
+			) {
+				await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
+				hands[activeHand] = [hand[0], draw(deck)];
+				hands.push([hand[1], draw(deck)]);
+				bets.push(bets[activeHand]);
 				doubled.push(false);
-				canSplit = false;
-				await message.edit({
-					content: formatHands(user, hands, dealer, true, activeHand),
-					files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
-					components: componentsRow(activeHand, false)
-				});
-				playerValue = handValue(hands[activeHand]);
-				continue;
-			}
-
-			if (selection.customId === 'STAND') {
-				await selection.deferUpdate().catch(noOp);
+				break;
+			} else if (selection.customId === 'STAND') {
 				break;
 			}
-		}
 
-		activeHand++;
-		if (activeHand < hands.length) {
 			await message.edit({
 				content: formatHands(user, hands, dealer, true, activeHand),
-				files: [await generateBlackjackImage(user, hands, dealer, true, activeHand)],
-				components: componentsRow(activeHand, false)
+				files: [await generateBlackjackImage(user, hands, dealer, true)],
+				components: [buildButtons(false, !doubled[activeHand])]
 			});
 		}
+		activeHand++;
 	}
 
-	let dealerValue = handValue(dealer);
-	while (dealerValue < 17) {
-		dealer.push(draw(deck));
-		dealerValue = handValue(dealer);
-	}
-
-	await message
-		.edit({
-			content: formatHands(user, hands, dealer, false),
-			files: [await generateBlackjackImage(user, hands, dealer, false)],
-			components: []
-		})
-		.catch(noOp);
+	while (handValue(dealer) < 17) dealer.push(draw(deck));
+	await message.edit({
+		content: formatHands(user, hands, dealer, false),
+		files: [await generateBlackjackImage(user, hands, dealer, false)],
+		components: []
+	});
 
 	let payout = 0;
-	const resultParts: string[] = [];
-	for (let i = 0; i < hands.length; i++) {
-		const value = handValue(hands[i]);
-		if (value > 21) {
-			resultParts.push(`Hand ${i + 1}: bust.`);
-			continue;
+	const resultParts = hands.map((hand, i) => {
+		const playerVal = handValue(hand);
+		const dealerVal = handValue(dealer);
+
+		if (playerVal > 21) {
+			return `Hand ${i + 1}: bust.`;
 		}
-		if (dealerValue > 21 || value > dealerValue) {
-			const won = bets[i] * 2;
-			payout += won;
-			resultParts.push(`Hand ${i + 1}: won ${Util.toKMB(won)}.`);
-		} else if (value === dealerValue) {
+
+		if (dealerVal > 21 || playerVal > dealerVal) {
+			payout += bets[i] * 2;
+			return `Hand ${i + 1}: won ${Util.toKMB(bets[i] * 2)}.`;
+		}
+
+		if (playerVal === dealerVal) {
 			payout += bets[i];
-			resultParts.push(`Hand ${i + 1}: push.`);
-		} else {
-			resultParts.push(`Hand ${i + 1}: lost.`);
+			return `Hand ${i + 1}: push.`;
 		}
-	}
 
-	let sideBetPayout = 0;
-	if (sideBet && player[0].split('_')[0] === player[1].split('_')[0]) {
-		sideBetPayout = sideBet * 10;
-	}
-
-	const totalPayout = payout + sideBetPayout;
-	if (totalPayout > 0) {
-		await user.addItemsToBank({ items: new Bank().add('Coins', totalPayout), collectionLog: false });
-	}
-	await updateClientGPTrackSetting('gp_blackjack', totalPayout - totalBet);
-	await updateGPTrackSetting('gp_blackjack', totalPayout - totalBet, user);
+		return `Hand ${i + 1}: lost.`;
+	});
 
 	if (sideBet) {
-		resultParts.push(sideBetPayout > 0 ? `Side bet won ${Util.toKMB(sideBetPayout)}.` : 'Side bet lost.');
+		const sideBetWin = isPair(hands[0]) ? sideBet * 10 : 0;
+		if (sideBetWin) resultParts.push(`Side bet won ${Util.toKMB(sideBetWin)}.`);
+		else resultParts.push('Side bet lost.');
+		payout += sideBetWin;
 	}
+
+	if (payout > 0) await user.addItemsToBank({ items: new Bank().add('Coins', payout), collectionLog: false });
+	await updateClientGPTrackSetting('gp_blackjack', payout - totalBet);
+	await updateGPTrackSetting('gp_blackjack', payout - totalBet, user);
 
 	return { content: resultParts.join('\n') };
 }
