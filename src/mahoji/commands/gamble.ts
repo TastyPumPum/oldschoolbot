@@ -6,13 +6,13 @@ import { Bank } from 'oldschooljs';
 import { BitField } from '../../lib/constants';
 import { handleMahojiConfirmation } from '../../lib/util/handleMahojiConfirmation';
 import itemIsTradeable from '../../lib/util/itemIsTradeable';
+import { blackjackCommand } from '../lib/abstracted_commands/blackjackCommand';
 import { capeGambleCommand, capeGambleStatsCommand } from '../lib/abstracted_commands/capegamble';
 import { diceCommand } from '../lib/abstracted_commands/diceCommand';
 import { duelCommand } from '../lib/abstracted_commands/duelCommand';
 import { hotColdCommand } from '../lib/abstracted_commands/hotColdCommand';
 import { luckyPickCommand } from '../lib/abstracted_commands/luckyPickCommand';
 import { slotsCommand } from '../lib/abstracted_commands/slotsCommand';
-import { blackjackCommand } from '../lib/abstracted_commands/blackjackCommand';
 import type { OSBMahojiCommand } from '../lib/util';
 
 export const gambleCommand: OSBMahojiCommand = {
@@ -113,43 +113,43 @@ export const gambleCommand: OSBMahojiCommand = {
 		 * Slots
 		 *
 		 */
-                {
-                        type: ApplicationCommandOptionType.Subcommand,
-                        name: 'slots',
-                        description: 'Allows you play slots and risk your GP to win big.',
-                        options: [
+		{
+			type: ApplicationCommandOptionType.Subcommand,
+			name: 'slots',
+			description: 'Allows you play slots and risk your GP to win big.',
+			options: [
 				{
 					type: ApplicationCommandOptionType.String,
 					name: 'amount',
 					description: 'Amount you wish to gamble.',
 					required: false
 				}
-                        ]
-                },
-               {
-                       type: ApplicationCommandOptionType.Subcommand,
-                       name: 'blackjack',
-                       description: 'Play blackjack with 6 decks.',
-                       options: [
-                               {
-                                       type: ApplicationCommandOptionType.String,
-                                       name: 'amount',
-                                       description: 'Amount you wish to gamble.',
-                                       required: true
-                               },
-                               {
-                                       type: ApplicationCommandOptionType.String,
-                                       name: 'sidebet',
-                                       description: 'Optional side bet amount (pair, pays 10:1).',
-                                       required: false
-                               }
-                       ]
-               },
-               /**
-                *
-                * Hot Cold
-                *
-                */
+			]
+		},
+		{
+			type: ApplicationCommandOptionType.Subcommand,
+			name: 'blackjack',
+			description: 'Play blackjack with 6 decks.',
+			options: [
+				{
+					type: ApplicationCommandOptionType.String,
+					name: 'amount',
+					description: 'Amount you wish to gamble.',
+					required: true
+				},
+				{
+					type: ApplicationCommandOptionType.String,
+					name: 'sidebet',
+					description: 'Optional side bet amount (pair, pays 10:1).',
+					required: false
+				}
+			]
+		},
+		/**
+		 *
+		 * Hot Cold
+		 *
+		 */
 		{
 			type: ApplicationCommandOptionType.Subcommand,
 			name: 'hot_cold',
@@ -198,11 +198,11 @@ export const gambleCommand: OSBMahojiCommand = {
 		item?: { item?: string; autoconfirm?: boolean };
 		dice?: { amount?: string };
 		duel?: { user: MahojiUserOption; amount?: string };
-               lucky_pick?: { amount: string };
-               slots?: { amount?: string };
-               blackjack?: { amount: string; sidebet?: string };
-               hot_cold?: { choice?: 'hot' | 'cold'; amount?: string };
-               give_random_item?: { user: MahojiUserOption };
+		lucky_pick?: { amount: string };
+		slots?: { amount?: string };
+		blackjack?: { amount: string; sidebet?: string };
+		hot_cold?: { choice?: 'hot' | 'cold'; amount?: string };
+		give_random_item?: { user: MahojiUserOption };
 	}>) => {
 		const user = await mUserFetch(userID);
 
@@ -238,17 +238,17 @@ export const gambleCommand: OSBMahojiCommand = {
 			return luckyPickCommand(user, options.lucky_pick.amount, interaction);
 		}
 
-               if (options.slots) {
-                       return slotsCommand(interaction, user, options.slots.amount);
-               }
+		if (options.slots) {
+			return slotsCommand(interaction, user, options.slots.amount);
+		}
 
-               if (options.blackjack) {
-                       return blackjackCommand(interaction, user, options.blackjack.amount, options.blackjack.sidebet);
-               }
+		if (options.blackjack) {
+			return blackjackCommand(interaction, user, options.blackjack.amount, options.blackjack.sidebet);
+		}
 
-               if (options.hot_cold) {
-                       return hotColdCommand(interaction, user, options.hot_cold.choice, options.hot_cold.amount);
-               }
+		if (options.hot_cold) {
+			return hotColdCommand(interaction, user, options.hot_cold.choice, options.hot_cold.amount);
+		}
 
 		if (options.give_random_item) {
 			const senderUser = user;
