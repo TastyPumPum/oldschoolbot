@@ -16,11 +16,14 @@ import { mahojiParseNumber, updateClientGPTrackSetting, updateGPTrackSetting } f
 const cardCache = new Map<string, Promise<import('../../../lib/util/canvasUtil').CanvasImage>>();
 const suits = ['spades', 'hearts', 'diamonds', 'clubs'] as const;
 const suitSymbols: Record<(typeof suits)[number], string> = {
-	spades: '♠',
-	hearts: '♥',
-	diamonds: '♦',
-	clubs: '♣'
+        spades: '♠',
+        hearts: '♥',
+        diamonds: '♦',
+        clubs: '♣'
 };
+
+const MIN_BET = 100_000;
+const MAX_BET = 500_000_000;
 
 async function getCardImage(card: string) {
 	const [rank, suit] = card === 'BACK' ? ['back', ''] : card.split('_');
@@ -56,13 +59,14 @@ async function generateBlackjackImage(
 		}
 	}
 
-	await drawRow('Dealer', dealer, PAD, hideDealer);
-	for (let i = 0; i < hands.length; i++)
-		await drawRow(
-			hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`,
-			hands[i],
-			PAD + (i + 1) * (CARD + TEXT + PAD)
-		);
+       await drawRow('Dealer', dealer, PAD, hideDealer);
+       for (let i = 0; i < hands.length; i++) {
+               await drawRow(
+                       hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`,
+                       hands[i],
+                       PAD + (i + 1) * (CARD + TEXT + PAD)
+               );
+       }
 
 	return new AttachmentBuilder(await canvasToBuffer(canvas), { name: 'blackjack.png' });
 }
@@ -70,9 +74,15 @@ async function generateBlackjackImage(
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 function createDeck() {
-	const deck: string[] = [];
-	for (let i = 0; i < 6; i++) for (const r of ranks) for (const s of suits) deck.push(`${r}_${s}`);
-	return shuffleArr(deck);
+       const deck: string[] = [];
+       for (let i = 0; i < 6; i++) {
+               for (const r of ranks) {
+                       for (const s of suits) {
+                               deck.push(`${r}_${s}`);
+                       }
+               }
+       }
+       return shuffleArr(deck);
 }
 
 function draw(deck: string[]) {
@@ -124,10 +134,10 @@ export async function blackjackCommand(
 ) {
 	await deferInteraction(interaction);
 	if (interaction.user.bot) return 'Bots cannot gamble.';
-	const amountRaw = mahojiParseNumber({ input: _amount, min: 100_000, max: 500_000_000 });
-	if (amountRaw === null) return 'Specify a bet between 100k and 500m.';
-	const amount = amountRaw;
-	const sideBet = _sidebet ? mahojiParseNumber({ input: _sidebet, min: 1, max: amount }) : undefined;
+       const amountRaw = mahojiParseNumber({ input: _amount, min: MIN_BET, max: MAX_BET });
+       if (amountRaw === null) return 'Specify a bet between 100k and 500m.';
+       const amount = amountRaw;
+       const sideBet = _sidebet ? mahojiParseNumber({ input: _sidebet, min: 1, max: amount }) : undefined;
 
 	if (user.isIronman) return "Ironmen can't gamble.";
 	const totalBet = amount + (sideBet || 0);
@@ -242,12 +252,22 @@ export async function blackjackCommand(
 				isPair(hand) &&
 				user.GP >= bets[activeHand]
 			) {
-				await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
-				hands[activeHand] = [hand[0], draw(deck)];
-				hands.push([hand[1], draw(deck)]);
-				bets.push(bets[activeHand]);
-				doubled.push(false);
-				break;
+                               await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
+                               hands[activeHand] = [hand[0], draw(deck)];
+                               hands.push([hand[1], draw(deck)]);
+                               bets.push(bets[activeHand]);
+                               doubled.push(false);
+                               await message.edit({
+                                       content: formatHands(user, hands, dealer, true, activeHand),
+                                       files: [await generateBlackjackImage(user, hands, dealer, true)],
+                                       components: [
+                                               buildButtons(
+                                                       isPair(hands[activeHand]) && user.GP >= bets[activeHand],
+                                                       true
+                                               )
+                                       ]
+                               });
+                               continue;
 			} else if (selection.customId === 'STAND') {
 				break;
 			}

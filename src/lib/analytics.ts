@@ -65,9 +65,10 @@ FROM users;
 			gp_pickpocket: true,
 			gp_pvm: true,
 			gp_sell: true,
-			gp_slots: true,
-			gp_tax_balance: true,
-			economyStats_dailiesAmount: true
+                        gp_slots: true,
+                        gp_blackjack: true,
+                        gp_tax_balance: true,
+                        economyStats_dailiesAmount: true
 		},
 		create: {
 			id: globalConfig.clientID
@@ -97,9 +98,10 @@ FROM users;
 			gpOpen: currentClientSettings.gp_open,
 			gpDice: currentClientSettings.gp_dice,
 			gpDaily: currentClientSettings.gp_daily,
-			gpLuckypick: currentClientSettings.gp_luckypick,
-			gpSlots: currentClientSettings.gp_slots,
-			gpHotCold: currentClientSettings.gp_hotcold
-		}
-	});
+                        gpLuckypick: currentClientSettings.gp_luckypick,
+                        gpSlots: currentClientSettings.gp_slots,
+                        gpBlackjack: currentClientSettings.gp_blackjack,
+                        gpHotCold: currentClientSettings.gp_hotcold
+                }
+        });
 }

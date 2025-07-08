@@ -159,9 +159,10 @@ export function measureTextWidth(ctx: CanvasContext, text: string) {
 const localImageCache = new Map<string, Image>();
 
 export async function loadAndCacheLocalImage(path: string) {
-	const cached = localImageCache.get(path);
-	if (cached) return cached;
-	const buff = await readFile(path);
-	const image = await loadImage(buff);
-	return image;
+       const cached = localImageCache.get(path);
+       if (cached) return cached;
+       const buff = await readFile(path);
+       const image = await loadImage(buff);
+       localImageCache.set(path, image);
+       return image;
 }
