@@ -16,10 +16,10 @@ import { mahojiParseNumber, updateClientGPTrackSetting, updateGPTrackSetting } f
 const cardCache = new Map<string, Promise<import('../../../lib/util/canvasUtil').CanvasImage>>();
 const suits = ['spades', 'hearts', 'diamonds', 'clubs'] as const;
 const suitSymbols: Record<(typeof suits)[number], string> = {
-        spades: '♠',
-        hearts: '♥',
-        diamonds: '♦',
-        clubs: '♣'
+	spades: '♠',
+	hearts: '♥',
+	diamonds: '♦',
+	clubs: '♣'
 };
 
 const MIN_BET = 100_000;
@@ -59,14 +59,14 @@ async function generateBlackjackImage(
 		}
 	}
 
-       await drawRow('Dealer', dealer, PAD, hideDealer);
-       for (let i = 0; i < hands.length; i++) {
-               await drawRow(
-                       hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`,
-                       hands[i],
-                       PAD + (i + 1) * (CARD + TEXT + PAD)
-               );
-       }
+	await drawRow('Dealer', dealer, PAD, hideDealer);
+	for (let i = 0; i < hands.length; i++) {
+		await drawRow(
+			hands.length === 1 ? user.badgedUsername : `Hand ${i + 1}${i === active ? '*' : ''}`,
+			hands[i],
+			PAD + (i + 1) * (CARD + TEXT + PAD)
+		);
+	}
 
 	return new AttachmentBuilder(await canvasToBuffer(canvas), { name: 'blackjack.png' });
 }
@@ -74,15 +74,15 @@ async function generateBlackjackImage(
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 function createDeck() {
-       const deck: string[] = [];
-       for (let i = 0; i < 6; i++) {
-               for (const r of ranks) {
-                       for (const s of suits) {
-                               deck.push(`${r}_${s}`);
-                       }
-               }
-       }
-       return shuffleArr(deck);
+	const deck: string[] = [];
+	for (let i = 0; i < 6; i++) {
+		for (const r of ranks) {
+			for (const s of suits) {
+				deck.push(`${r}_${s}`);
+			}
+		}
+	}
+	return shuffleArr(deck);
 }
 
 function draw(deck: string[]) {
@@ -90,21 +90,21 @@ function draw(deck: string[]) {
 }
 
 function handValue(hand: string[]) {
-        let value = 0;
-        let aces = 0;
-        for (const card of hand) {
-                const [rank] = card.split('_');
-                if (rank === 'A') {
-                        aces++;
-                        value += 11;
-                } else if (['J', 'Q', 'K'].includes(rank)) {
-                        value += 10;
-                } else {
-                        value += Number(rank);
-                }
-        }
-        while (value > 21 && aces-- > 0) value -= 10;
-        return value;
+	let value = 0;
+	let aces = 0;
+	for (const card of hand) {
+		const [rank] = card.split('_');
+		if (rank === 'A') {
+			aces++;
+			value += 11;
+		} else if (['J', 'Q', 'K'].includes(rank)) {
+			value += 10;
+		} else {
+			value += Number(rank);
+		}
+	}
+	while (value > 21 && aces-- > 0) value -= 10;
+	return value;
 }
 
 function displayCard(card: string) {
@@ -135,14 +135,14 @@ export async function blackjackCommand(
 ) {
 	await deferInteraction(interaction);
 	if (interaction.user.bot) return 'Bots cannot gamble.';
-       const amountRaw = mahojiParseNumber({ input: _amount, min: MIN_BET, max: MAX_BET });
-       if (amountRaw === null) return 'Specify a bet between 100k and 500m.';
-       const amount = amountRaw;
-       const sideBet = _sidebet ? mahojiParseNumber({ input: _sidebet, min: 1, max: amount }) : undefined;
+	const amountRaw = mahojiParseNumber({ input: _amount, min: MIN_BET, max: MAX_BET });
+	if (amountRaw === null) return 'Specify a bet between 100k and 500m.';
+	const amount = amountRaw;
+	const sideBet = _sidebet ? mahojiParseNumber({ input: _sidebet, min: 1, max: amount }) : undefined;
 
 	if (user.isIronman) return "Ironmen can't gamble.";
-        let totalBet = amount + (sideBet || 0);
-        if (user.GP < totalBet) return "You don't have enough GP.";
+	let totalBet = amount + (sideBet || 0);
+	if (user.GP < totalBet) return "You don't have enough GP.";
 
 	await user.removeItemsFromBank(new Bank().add('Coins', totalBet));
 	const deck = createDeck();
@@ -212,11 +212,11 @@ export async function blackjackCommand(
 		return 'This channel does not support sending messages.';
 	}
 
-        const message = await channel.send({
-                content: formatHands(user, hands, dealer, true),
-                files: [await generateBlackjackImage(user, hands, dealer, true)],
-                components: [buildButtons(isPair(hands[0]) && user.GP >= bets[0], user.GP >= bets[0])]
-        });
+	const message = await channel.send({
+		content: formatHands(user, hands, dealer, true),
+		files: [await generateBlackjackImage(user, hands, dealer, true)],
+		components: [buildButtons(isPair(hands[0]) && user.GP >= bets[0], user.GP >= bets[0])]
+	});
 
 	while (activeHand < hands.length) {
 		const hand = hands[activeHand];
@@ -238,53 +238,53 @@ export async function blackjackCommand(
 
 			await selection.deferUpdate().catch(noOp);
 
-                        if (selection.customId === 'HIT') {
-                                hand.push(draw(deck));
-                        } else if (selection.customId === 'DOUBLE' && !doubled[activeHand]) {
-                                if (user.GP < bets[activeHand]) {
-                                        await selection
-                                                .followUp({ content: "You don't have enough GP to double.", ephemeral: true })
-                                                .catch(noOp);
-                                        continue;
-                                }
-                                await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
-                                totalBet += bets[activeHand];
-                                bets[activeHand] *= 2;
-                                hand.push(draw(deck));
-                                doubled[activeHand] = true;
-                                break;
-                        } else if (
-                                selection.customId === 'SPLIT' &&
-                                hand.length === 2 &&
-                                isPair(hand) &&
-                                user.GP >= bets[activeHand]
-                        ) {
-                               await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
-                               totalBet += bets[activeHand];
-                               hands[activeHand] = [hand[0], draw(deck)];
-                               hands.push([hand[1], draw(deck)]);
-                               bets.push(bets[activeHand]);
-                               doubled.push(false);
-                               await message.edit({
-                                       content: formatHands(user, hands, dealer, true, activeHand),
-                                       files: [await generateBlackjackImage(user, hands, dealer, true)],
-                                       components: [
-                                               buildButtons(
-                                                       isPair(hands[activeHand]) && user.GP >= bets[activeHand],
-                                                       user.GP >= bets[activeHand]
-                                               )
-                                       ]
-                               });
-                               continue;
-                        } else if (selection.customId === 'STAND') {
-                                break;
-                        }
+			if (selection.customId === 'HIT') {
+				hand.push(draw(deck));
+			} else if (selection.customId === 'DOUBLE' && !doubled[activeHand]) {
+				if (user.GP < bets[activeHand]) {
+					await selection
+						.followUp({ content: "You don't have enough GP to double.", ephemeral: true })
+						.catch(noOp);
+					continue;
+				}
+				await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
+				totalBet += bets[activeHand];
+				bets[activeHand] *= 2;
+				hand.push(draw(deck));
+				doubled[activeHand] = true;
+				break;
+			} else if (
+				selection.customId === 'SPLIT' &&
+				hand.length === 2 &&
+				isPair(hand) &&
+				user.GP >= bets[activeHand]
+			) {
+				await user.removeItemsFromBank(new Bank().add('Coins', bets[activeHand]));
+				totalBet += bets[activeHand];
+				hands[activeHand] = [hand[0], draw(deck)];
+				hands.push([hand[1], draw(deck)]);
+				bets.push(bets[activeHand]);
+				doubled.push(false);
+				await message.edit({
+					content: formatHands(user, hands, dealer, true, activeHand),
+					files: [await generateBlackjackImage(user, hands, dealer, true)],
+					components: [
+						buildButtons(
+							isPair(hands[activeHand]) && user.GP >= bets[activeHand],
+							user.GP >= bets[activeHand]
+						)
+					]
+				});
+				continue;
+			} else if (selection.customId === 'STAND') {
+				break;
+			}
 
-                        await message.edit({
-                                content: formatHands(user, hands, dealer, true, activeHand),
-                                files: [await generateBlackjackImage(user, hands, dealer, true)],
-                                components: [buildButtons(false, !doubled[activeHand] && user.GP >= bets[activeHand])]
-                        });
+			await message.edit({
+				content: formatHands(user, hands, dealer, true, activeHand),
+				files: [await generateBlackjackImage(user, hands, dealer, true)],
+				components: [buildButtons(false, !doubled[activeHand] && user.GP >= bets[activeHand])]
+			});
 		}
 		activeHand++;
 	}
