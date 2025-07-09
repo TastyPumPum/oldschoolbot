@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { Bank } from 'oldschooljs';
 
 import { blackjackCommand } from '../../../src/mahoji/lib/abstracted_commands/blackjackCommand';
-import { createTestUser } from '../util';
+import { createTestUser, type TestUser } from '../util';
 
 // Mock deck shuffling and user interaction
 let deck: string[] = [];
@@ -30,8 +30,12 @@ const fakeInteraction = {
         channel: { send: vi.fn().mockResolvedValue(fakeMessage) }
 } as any;
 
-describe('Blackjack Split', async () => {
-        const user = await createTestUser();
+describe('Blackjack Split', () => {
+        let user: TestUser;
+
+        beforeAll(async () => {
+                user = await createTestUser();
+        });
 
         beforeEach(async () => {
                 await user.reset();
