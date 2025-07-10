@@ -83,6 +83,7 @@ import { triviaCommand } from './trivia';
 import { mahojiUseCommand } from './use';
 import { wikiCommand } from './wiki';
 import { xpCommand } from './xp';
+import { mockuserCommand } from './mockuser';
 
 export const allCommands: OSBMahojiCommand[] = [
 	adminCommand,
@@ -164,9 +165,10 @@ export const allCommands: OSBMahojiCommand[] = [
 	geCommand,
 	rpCommand,
 	collectionLogCommand,
-	gearPresetsCommand,
-	statsCommand,
-	xpCommand
+        gearPresetsCommand,
+        statsCommand,
+        xpCommand,
+        mockuserCommand
 ];
 
 if (!globalConfig.isProduction && testPotatoCommand) {
