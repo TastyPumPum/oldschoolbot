@@ -176,7 +176,7 @@ export const activitiesCommand: OSBMahojiCommand = {
 					autocomplete: async (_value: string, user: User) => {
 						const mUser = await mUserFetch(user.id);
 						let list = quests
-							.filter(i => !muser.hasCompletedQuest(i.id))
+							.filter(i => !mUser.hasCompletedQuest(i.id))
 							.map(i => ({ name: i.name, value: i.name }));
 						if (list.length === 0) {
 							list = quests.map(i => ({ name: `${i.name} (completed)`, value: i.name }));

@@ -109,6 +109,7 @@ export const mahojiClient = new MahojiClient({
 				guildID: interaction.guildId,
 				channelID: interaction.channelId,
 				bypassInhibitors: false,
+				bypassBusyCheck: false,
 				apiUser: interaction.user,
 				options
 			});

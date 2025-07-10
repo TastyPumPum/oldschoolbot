@@ -13,6 +13,7 @@ interface PreCommandOptions {
 	guildID?: string | bigint | null;
 	channelID: string | bigint;
 	bypassInhibitors: boolean;
+	bypassBusyCheck: boolean;
 	options: CommandOptions;
 }
 
@@ -30,7 +31,8 @@ export async function preCommand({
 	userID,
 	guildID,
 	channelID,
-	bypassInhibitors
+	bypassInhibitors,
+	bypassBusyCheck = false
 }: PreCommandOptions): PrecommandReturn {
 	if (globalClient.isShuttingDown) {
 		return {
@@ -39,9 +41,15 @@ export async function preCommand({
 		};
 	}
 
-	if (userIsBusy(userID) && !bypassInhibitors && !busyImmuneCommands.includes(abstractCommand.name)) {
+	if (
+		!bypassBusyCheck &&
+		userIsBusy(userID) &&
+		!bypassInhibitors &&
+		!busyImmuneCommands.includes(abstractCommand.name)
+	) {
 		return { reason: { content: 'You cannot use a command right now.' }, dontRunPostCommand: true };
 	}
+
 	if (!busyImmuneCommands.includes(abstractCommand.name)) modifyBusyCounter(userID, 1);
 
 	const guild = guildID ? globalClient.guilds.cache.get(guildID.toString()) : null;

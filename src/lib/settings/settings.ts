@@ -91,16 +91,19 @@ interface RunCommandArgs {
 	member: APIInteractionGuildMember | GuildMember | null;
 	isContinue?: boolean;
 	bypassInhibitors?: true;
+	bypassBusyCheck?: boolean;
 	guildID: string | undefined | null;
 	interaction: ButtonInteraction | ChatInputCommandInteraction;
 	continueDeltaMillis: number | null;
 	ephemeral?: boolean;
 }
+
 export async function runCommand({
 	commandName,
 	args,
 	isContinue,
 	bypassInhibitors,
+	bypassBusyCheck = false,
 	channelID,
 	guildID,
 	user,
@@ -129,6 +132,7 @@ export async function runCommand({
 			channelID,
 			guildID,
 			bypassInhibitors: bypassInhibitors ?? false,
+			bypassBusyCheck: bypassBusyCheck ?? false,
 			apiUser: null,
 			options: args
 		});

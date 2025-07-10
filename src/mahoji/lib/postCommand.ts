@@ -27,9 +27,12 @@ export async function postCommand({
 	inhibited: boolean;
 	continueDeltaMillis: number | null;
 }): Promise<string | undefined> {
+	if (abstractCommand.name === 'mockuser') return;
+
 	if (!busyImmuneCommands.includes(abstractCommand.name)) {
 		TimerManager.setTimeout(() => modifyBusyCounter(userID, -1), 1000);
 	}
+
 	if (shouldTrackCommand(abstractCommand, args)) {
 		const commandUsage = makeCommandUsage({
 			userID,

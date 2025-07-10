@@ -1,6 +1,6 @@
 {
-	"hash": "5410f58e2adaaba0d46e13fe501eec0f",
-	"date": "2025-07-01T02:11:00.157Z",
+	"hash": "7396c804bd08548f335bd0a474f66d28",
+	"date": "2025-07-10T17:58:51.239Z",
 	"data": [
 		{
 			"name": "activities",
@@ -390,6 +390,11 @@
 			"name": "mix",
 			"desc": "Mix potions to train Herblore.",
 			"examples": ["/mix name:Prayer potion"],
+			"subOptions": []
+		},
+		{
+			"name": "mockuser",
+			"desc": "Simulate a minion trip using a mock maxed user.",
 			"subOptions": []
 		},
 		{

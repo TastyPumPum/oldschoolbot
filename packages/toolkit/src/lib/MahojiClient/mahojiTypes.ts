@@ -81,6 +81,7 @@ export interface CommandRunOptions<T extends CommandOptions = {}> {
 	channelID: string;
 	guildID?: string;
 	userID: string;
+	bypassBusyCheck?: boolean;
 }
 
 export type CommandResponse = Promise<null | string | InteractionReplyOptions>;
