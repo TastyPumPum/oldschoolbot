@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 
+import { runCommand } from '@/lib/settings/settings';
 import type { CommandRunOptions } from 'packages/toolkit/dist/util';
 import { createMockUser } from '../../lib/mock/createMockUser';
 import type { OSBMahojiCommand } from '../lib/util';
@@ -107,17 +108,30 @@ export const mockuserCommand: OSBMahojiCommand = {
 		const realMUserFetch = globalThis.mUserFetch;
 		globalThis.mUserFetch = async () => mock;
 
+		const mockInteraction = {
+			user: discordUser,
+			replied: false,
+			deferred: false,
+			ephemeral: false,
+			reply: async (msg: any) => console.log('[Mock Reply]', msg),
+			editReply: async (msg: any) => console.log('[Mock EditReply]', msg),
+			followUp: async (msg: any) => console.log('[Mock FollowUp]', msg),
+			isRepliable: () => true
+		} as any;
+
 		try {
-			return await cmd.run({
-				options: args,
-				userID,
-				channelID,
-				client: globalClient.mahojiClient,
-				interaction: null as any,
+			return await runCommand({
+				commandName: cmd.name,
+				args,
 				user: discordUser,
-				member: undefined,
+				channelID,
+				member: null,
+				isContinue: false,
+				bypassInhibitors: true,
+				bypassBusyCheck: true,
 				guildID: undefined,
-				bypassBusyCheck: mock.isMock
+				interaction: mockInteraction,
+				continueDeltaMillis: null
 			});
 		} finally {
 			globalThis.mUserFetch = realMUserFetch;

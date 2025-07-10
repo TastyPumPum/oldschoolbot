@@ -32,7 +32,7 @@ export async function preCommand({
 	guildID,
 	channelID,
 	bypassInhibitors,
-	bypassBusyCheck = false
+	bypassBusyCheck
 }: PreCommandOptions): PrecommandReturn {
 	if (globalClient.isShuttingDown) {
 		return {

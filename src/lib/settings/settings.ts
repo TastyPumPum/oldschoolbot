@@ -97,13 +97,12 @@ interface RunCommandArgs {
 	continueDeltaMillis: number | null;
 	ephemeral?: boolean;
 }
-
 export async function runCommand({
 	commandName,
 	args,
 	isContinue,
 	bypassInhibitors,
-	bypassBusyCheck = false,
+	bypassBusyCheck,
 	channelID,
 	guildID,
 	user,
