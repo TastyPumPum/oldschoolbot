@@ -7,8 +7,11 @@ import { logError } from './logError';
 import { getActivityOfUser } from './minionIsBusy';
 
 export default async function addSubTaskToActivityTask<T extends ActivityTaskData>(
-	taskToAdd: Omit<T, 'finishDate' | 'id'>
+        taskToAdd: Omit<T, 'finishDate' | 'id'>
 ) {
+       if ((global as any).__mockMode) {
+               return null;
+       }
 	const usersTask = getActivityOfUser(taskToAdd.userID);
 	if (usersTask) {
 		throw new UserError(
