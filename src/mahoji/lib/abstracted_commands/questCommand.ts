@@ -22,7 +22,7 @@ export async function questCommand(user: MUser, channelID: string, name?: string
 			return `That's not a valid quest, the quests you can do are: ${quests.map(q => q.name).join(', ')}.`;
 		}
 
-		if (user.user.finished_quest_ids.includes(quest.id)) {
+		if (user.hasCompletedQuest(quest.id)) {
 			return `You've already completed ${quest.name}.`;
 		}
 
@@ -35,7 +35,7 @@ export async function questCommand(user: MUser, channelID: string, name?: string
 		// Check if the user has completed the required quests (if any)
 		if (quest.prerequisitesQuests) {
 			for (const prerequisite of quest.prerequisitesQuests) {
-				if (!user.user.finished_quest_ids.includes(prerequisite)) {
+				if (!user.hasCompletedQuest(prerequisite)) {
 					return `You need to complete "${quests.find(q => q.id === prerequisite)?.name}" before starting ${
 						quest.name
 					}.`;
@@ -76,9 +76,7 @@ export async function questCommand(user: MUser, channelID: string, name?: string
 		return 'You already have the maximum amount of Quest Points.';
 	}
 
-	const qpFromUnfinishedQuests = sumArr(
-		quests.filter(i => !user.user.finished_quest_ids.includes(i.id)).map(i => i.qp)
-	);
+	const qpFromUnfinishedQuests = sumArr(quests.filter(i => !user.hasCompletedQuest(i.id)).map(i => i.qp));
 
 	if (qpFromUnfinishedQuests > 0 && currentQP >= MAX_GLOBAL_QP) {
 		return `You already have the maximum amount of Quest Points from doing quests, you can get ${qpFromUnfinishedQuests} more from specific quests.`;

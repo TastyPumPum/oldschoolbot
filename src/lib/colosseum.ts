@@ -463,7 +463,7 @@ export async function colosseumCommand(user: MUser, channelID: string) {
 		return `${user.usernameOrMention} is busy`;
 	}
 
-	if (!user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)) {
+	if (!user.hasCompletedQuest(QuestID.ChildrenOfTheSun)) {
 		return `You need to complete the "Children of the Sun" quest before you can enter the Colosseum. Send your minion to do the quest using: ${mentionCommand(
 			globalClient,
 			'activities',

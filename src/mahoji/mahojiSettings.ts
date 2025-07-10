@@ -232,7 +232,7 @@ export async function hasMonsterRequirements(user: MUser, monster: KillableMonst
 	}
 
 	if (monster.requiredQuests) {
-		const incompleteQuest = monster.requiredQuests.find(quest => !user.user.finished_quest_ids.includes(quest));
+		const incompleteQuest = monster.requiredQuests.find(quest => !user.hasCompletedQuest(quest));
 		if (incompleteQuest) {
 			return [
 				false,

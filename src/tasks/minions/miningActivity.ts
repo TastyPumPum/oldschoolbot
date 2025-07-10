@@ -152,7 +152,7 @@ export const miningTask: MinionTask = {
 			gearBank: user.gearBank,
 			duration,
 			isPowermining: powermine,
-			hasFinishedCOTS: user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)
+			hasFinishedCOTS: user.hasCompletedQuest(QuestID.ChildrenOfTheSun)
 		});
 
 		const updateResult = await updateBank.transact(user);

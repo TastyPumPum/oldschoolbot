@@ -86,7 +86,7 @@ export const buyCommand: OSBMahojiCommand = {
 		}
 
 		if (buyable.requiredQuests) {
-			const incompleteQuest = buyable.requiredQuests.find(quest => !user.user.finished_quest_ids.includes(quest));
+			const incompleteQuest = buyable.requiredQuests.find(quest => !user.hasCompletedQuest(quest));
 			if (incompleteQuest) {
 				return `You need to have completed the ${bold(
 					quests.find(i => i.id === incompleteQuest)!.name

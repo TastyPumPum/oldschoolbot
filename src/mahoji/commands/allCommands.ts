@@ -55,6 +55,7 @@ import { mineCommand } from './mine';
 import { minigamesCommand } from './minigames';
 import { minionCommand } from './minion';
 import { mixCommand } from './mix';
+import { mockuserCommand } from './mockuser';
 import { offerCommand } from './offer';
 import { openCommand } from './open';
 import { patreonCommand } from './patreon';
@@ -83,7 +84,6 @@ import { triviaCommand } from './trivia';
 import { mahojiUseCommand } from './use';
 import { wikiCommand } from './wiki';
 import { xpCommand } from './xp';
-import { mockuserCommand } from './mockuser';
 
 export const allCommands: OSBMahojiCommand[] = [
 	adminCommand,
@@ -165,10 +165,10 @@ export const allCommands: OSBMahojiCommand[] = [
 	geCommand,
 	rpCommand,
 	collectionLogCommand,
-        gearPresetsCommand,
-        statsCommand,
-        xpCommand,
-        mockuserCommand
+	gearPresetsCommand,
+	statsCommand,
+	xpCommand,
+	mockuserCommand
 ];
 
 if (!globalConfig.isProduction && testPotatoCommand) {

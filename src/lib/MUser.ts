@@ -33,6 +33,7 @@ import { handleNewCLItems } from './handleNewCLItems';
 import { marketPriceOfBank } from './marketPrices';
 import backgroundImages from './minions/data/bankBackgrounds';
 import type { CombatOptionsEnum } from './minions/data/combatConstants';
+import type { QuestID } from './minions/data/quests';
 import { defaultFarmingContract } from './minions/farming';
 import type { FarmingContract } from './minions/farming/types';
 import type { AttackStyles } from './minions/functions';
@@ -109,11 +110,16 @@ export class MUserClass {
 	skillsAsLevels!: Required<Skills>;
 	badgesString!: string;
 	bitfield!: readonly BitField[];
+	isMock?: boolean;
 
 	constructor(user: User) {
 		this.user = user;
 		this.id = user.id;
 		this.updateProperties();
+	}
+
+	hasCompletedQuest(questID: QuestID) {
+		return this.user.finished_quest_ids.includes(questID);
 	}
 
 	public updateProperties() {

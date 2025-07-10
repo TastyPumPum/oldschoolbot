@@ -229,7 +229,7 @@ export const mineCommand: OSBMahojiCommand = {
 		}
 
 		if (ore.name === 'Tainted essence chunk') {
-			if (!user.user.finished_quest_ids.includes(QuestID.DesertTreasureII)) {
+			if (!user.hasCompletedQuest(QuestID.DesertTreasureII)) {
 				return 'You need to have completed the Desert Treasure II quest to access the scar essence mine.';
 			}
 		}

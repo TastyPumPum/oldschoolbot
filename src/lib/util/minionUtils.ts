@@ -88,7 +88,7 @@ export function checkPeakTimes(): BaseMessageOptions {
 }
 
 export function rollForMoonKeyHalf({ user, duration, loot }: { user: MUser | boolean; duration: number; loot: Bank }) {
-	if (user instanceof MUserClass && !user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)) return;
+	if (user instanceof MUserClass && !user.hasCompletedQuest(QuestID.ChildrenOfTheSun)) return;
 	if (!user) return;
 	perTimeUnitChance(duration, 1, Time.Minute * 60, () => {
 		loot.add('Loop half of key (moon key)');

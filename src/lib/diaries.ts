@@ -129,6 +129,12 @@ export async function userhasDiaryTier(
 	user: MUser,
 	tier: [DiaryID, DiaryTierName] | DiaryTier
 ): Promise<[boolean, string, Diary]> {
+	if (user.isMock) {
+		const diaryGroup = Array.isArray(tier)
+			? diaries.find(d => d.id === tier[0])!
+			: diaries.find(d => [d.easy, d.medium, d.hard, d.elite].includes(tier))!;
+		return [true, '', diaryGroup];
+	}
 	const result = userhasDiaryTierSync(user, tier, {
 		stats: await MUserStats.fromID(user.id),
 		minigameScores: await user.fetchMinigames()
