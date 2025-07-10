@@ -1,7 +1,7 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 
 import { runCommand } from '@/lib/settings/settings';
-import type { CommandRunOptions } from 'packages/toolkit/dist/util';
+import { type CommandRunOptions, channelIsSendable } from 'packages/toolkit/dist/util';
 import { createMockUser } from '../../lib/mock/createMockUser';
 import type { OSBMahojiCommand } from '../lib/util';
 
@@ -34,16 +34,6 @@ function findCommand(fullCommandName: string) {
 	return null;
 }
 
-function prefixMessage(msg: any) {
-	if (typeof msg === 'string') {
-		return `TESTING: ${msg}`;
-	}
-	if (typeof msg === 'object' && msg.content) {
-		return { ...msg, content: `TESTING: ${msg.content}` };
-	}
-	return msg;
-}
-
 export const mockuserCommand: OSBMahojiCommand = {
 	name: 'mockuser',
 	description: 'Simulate a minion trip using a mock maxed user.',
@@ -69,7 +59,12 @@ export const mockuserCommand: OSBMahojiCommand = {
 		}
 	],
 
-	run: async ({ options, userID, channelID }: CommandRunOptions<{ command: string; subcommand?: string }>) => {
+	run: async ({
+		options,
+		userID,
+		channelID,
+		interaction
+	}: CommandRunOptions<{ command: string; subcommand?: string }>) => {
 		const args: Record<string, any> = {};
 		if (options.subcommand) args.name = options.subcommand;
 
@@ -84,14 +79,28 @@ export const mockuserCommand: OSBMahojiCommand = {
 		const realMUserFetch = globalThis.mUserFetch;
 		globalThis.mUserFetch = async () => mock;
 
+		// Use the actual interaction or fallback to sending messages directly to the channel
+		const sendReply = async (msg: any) => {
+			const prefixedMsg =
+				typeof msg === 'string' ? `TESTING: ${msg}` : { ...msg, content: `TESTING: ${msg.content}` };
+			if (interaction) return interaction.reply(prefixedMsg).catch(() => {}); // reply once
+			// fallback: send to channel directly
+			const channel = globalClient.channels.cache.get(channelID);
+			if (channelIsSendable(channel)) {
+				return channel.send(prefixedMsg);
+			} else {
+				console.warn(`Cannot send message to channel ${channelID} because it is not text-based.`);
+			}
+		};
+
 		const mockInteraction = {
 			user: discordUser,
 			replied: false,
 			deferred: false,
 			ephemeral: false,
-			reply: async (msg: any) => console.log('[Mock Reply]', prefixMessage(msg)),
-			editReply: async (msg: any) => console.log('[Mock EditReply]', prefixMessage(msg)),
-			followUp: async (msg: any) => console.log('[Mock FollowUp]', prefixMessage(msg)),
+			reply: sendReply,
+			editReply: sendReply,
+			followUp: sendReply,
 			isRepliable: () => true,
 			isChatInputCommand: () => true,
 			channelId: channelID,
