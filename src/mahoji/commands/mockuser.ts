@@ -1,9 +1,9 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 
 import { runCommand } from '@/lib/settings/settings';
-import { type CommandRunOptions, channelIsSendable } from 'packages/toolkit/dist/util';
 import { createMockUser } from '../../lib/mock/createMockUser';
 import type { OSBMahojiCommand } from '../lib/util';
+import { channelIsSendable, type CommandRunOptions } from 'packages/toolkit/dist/util';
 
 function findCommand(fullCommandName: string) {
 	const cmds = Array.from(globalClient.mahojiClient.commands.values());
@@ -45,7 +45,7 @@ export const mockuserCommand: OSBMahojiCommand = {
 			required: true,
 			autocomplete: async (value: string) => {
 				return Array.from(globalClient.mahojiClient.commands.values())
-					.filter(cmd => !['admin', 'testpotato'].includes(cmd.name))
+					.filter(cmd => !['admin', 'testpotato', 'mockuser'].includes(cmd.name))
 					.filter(cmd => cmd.name.toLowerCase().includes((value ?? '').toLowerCase()))
 					.map(cmd => ({ name: cmd.name, value: cmd.name }))
 					.slice(0, 25);
@@ -81,16 +81,24 @@ export const mockuserCommand: OSBMahojiCommand = {
 
 		// Use the actual interaction or fallback to sending messages directly to the channel
 		const sendReply = async (msg: any) => {
-			const prefixedMsg =
-				typeof msg === 'string' ? `TESTING: ${msg}` : { ...msg, content: `TESTING: ${msg.content}` };
-			if (interaction) return interaction.reply(prefixedMsg).catch(() => {}); // reply once
-			// fallback: send to channel directly
+			const message =
+				typeof msg === 'string'
+					? { content: `TESTING: ${msg}`, ephemeral: false }
+					: { ...msg, content: `TESTING: ${msg.content}`, ephemeral: false };
+
+			if (interaction) {
+				if (!mockInteraction.replied) {
+					mockInteraction.replied = true;
+					return interaction.reply(message).catch(() => {});
+				}
+				return interaction.followUp(message).catch(() => {});
+			}
+
 			const channel = globalClient.channels.cache.get(channelID);
 			if (channelIsSendable(channel)) {
-				return channel.send(prefixedMsg);
-			} else {
-				console.warn(`Cannot send message to channel ${channelID} because it is not text-based.`);
+				return channel.send(message);
 			}
+			console.warn(`Cannot send message to channel ${channelID} because it is not text-based.`);
 		};
 
 		const mockInteraction = {
@@ -121,7 +129,7 @@ export const mockuserCommand: OSBMahojiCommand = {
 		try {
 			return await runCommand({
 				commandName: cmd.name,
-				args: { ...args, mockRun: true },
+				args,
 				user: discordUser,
 				channelID,
 				member: null,
