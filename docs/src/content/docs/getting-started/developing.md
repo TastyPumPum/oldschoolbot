@@ -26,6 +26,8 @@ lastUpdated: 2024-10-01T03:41:00.552Z
 
 `pnpm monorepo:test`: Run this if you want to test either monorepo (oldschooljs or toolkit).
 
+`/mocktrip command:<your trip>`: Quickly simulate a trip with a fully maxed mock account. Useful for checking XP rates and loot; it does **not** give real progression.
+
 ### Spritesheet
 
 The spritesheet is a big image file containing most icons the bot uses for items, not all items are in it, if the bot need any that aren't in it, it will download them on demand.

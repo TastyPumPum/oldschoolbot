@@ -80,6 +80,7 @@ import { tksCommand } from './tokkulshop';
 import { toolsCommand } from './tools';
 import { tradeCommand } from './trade';
 import { triviaCommand } from './trivia';
+import { mockTripCommand } from './mocktrip';
 import { mahojiUseCommand } from './use';
 import { wikiCommand } from './wiki';
 import { xpCommand } from './xp';
@@ -129,8 +130,9 @@ export const allCommands: OSBMahojiCommand[] = [
 	massCommand,
 	minigamesCommand,
 	minionCommand,
-	simulateCommand,
-	sellCommand,
+        simulateCommand,
+        mockTripCommand,
+        sellCommand,
 	sacrificeCommand,
 	rollCommand,
 	runecraftCommand,

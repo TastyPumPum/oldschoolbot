@@ -26,6 +26,10 @@ import { slayerMasters } from '../../lib/slayer/slayerMasters';
 import { getUsersCurrentSlayerInfo } from '../../lib/slayer/slayerUtil';
 import { allSlayerMonsters } from '../../lib/slayer/tasks';
 import { Gear } from '../../lib/structures/Gear';
+import { calcMaxTripLength } from '../../lib/util/calcMaxTripLength';
+import { determineMiningTrip } from './mine';
+import { determineMiningResult } from '../../tasks/minions/miningActivity';
+import { SkillsArray } from '../../lib/skilling/types';
 import type { FarmingPatchName } from '../../lib/util/farmingHelpers';
 import { farmingPatchNames, getFarmingKeyFromName, userGrowingProgressStr } from '../../lib/util/farmingHelpers';
 import getOSItem from '../../lib/util/getOSItem';
@@ -36,6 +40,7 @@ import { gearViewCommand } from '../lib/abstracted_commands/gearCommands';
 import { getPOH } from '../lib/abstracted_commands/pohCommand';
 import { allUsableItems } from '../lib/abstracted_commands/useCommand';
 import { BingoManager } from '../lib/bingo/BingoManager';
+import { mockMUser } from '../../tests/unit/userutil';
 import type { OSBMahojiCommand } from '../lib/util';
 import { userStatsUpdate } from '../mahojiSettings';
 import { fetchBingosThatUserIsInvolvedIn } from './bingo';
@@ -376,16 +381,16 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 						}
 					]
 				},
-				{
-					type: ApplicationCommandOptionType.Subcommand,
-					name: 'max',
-					description: 'Set all your stats to the maximum level, and get max QP.'
-				},
-				{
-					type: ApplicationCommandOptionType.Subcommand,
-					name: 'patron',
-					description: 'Set your patron perk level.',
-					options: [
+                                {
+                                        type: ApplicationCommandOptionType.Subcommand,
+                                        name: 'max',
+                                        description: 'Set all your stats to the maximum level, and get max QP.'
+                                },
+                                {
+                                        type: ApplicationCommandOptionType.Subcommand,
+                                        name: 'patron',
+                                        description: 'Set your patron perk level.',
+                                        options: [
 						{
 							type: ApplicationCommandOptionType.String,
 							name: 'tier',
@@ -585,10 +590,10 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 				wipe?: { thing: (typeof thingsToWipe)[number] };
 				set?: { qp?: number; all_ca_tasks?: boolean };
 				get_code?: {};
-				bingo_tools?: { start_bingo: string };
-				setslayertask?: { master: string; monster: string; quantity: number };
-				events?: {};
-			}>) => {
+                                bingo_tools?: { start_bingo: string };
+                                setslayertask?: { master: string; monster: string; quantity: number };
+                               events?: {};
+                       }>) => {
 				if (globalConfig.isProduction) {
 					logError('Test command ran in production', { userID: userID.toString() });
 					return 'This will never happen...';
@@ -875,7 +880,7 @@ Warning: Visiting a test dashboard may let developers see your IP address. Attem
 				if (options.setxp) {
 					return setXP(user, options.setxp.skill, options.setxp.xp);
 				}
-				if (options.spawn) {
+                               if (options.spawn) {
 					const { preset, collectionlog, item, items } = options.spawn;
 					const bankToGive = new Bank();
 					if (preset) {
@@ -903,9 +908,10 @@ Warning: Visiting a test dashboard may let developers see your IP address. Attem
 						}
 					}
 
-					await user.addItemsToBank({ items: bankToGive, collectionLog: Boolean(collectionlog) });
-					return `Spawned: ${bankToGive.toString().slice(0, 500)}.`;
-				}
+                                       await user.addItemsToBank({ items: bankToGive, collectionLog: Boolean(collectionlog) });
+                                       return `Spawned: ${bankToGive.toString().slice(0, 500)}.`;
+                               }
+
 
 				if (options.setmonsterkc) {
 					const monster = effectiveMonsters.find(m =>
