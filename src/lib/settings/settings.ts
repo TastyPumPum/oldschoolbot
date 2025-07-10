@@ -122,7 +122,6 @@ export async function runCommand({
 	}
 	const abstractCommand = convertMahojiCommandToAbstractCommand(mahojiCommand);
 
-	const error: Error | null = null;
 	let inhibited = false;
 	try {
 		const inhibitedReason = await preCommand({
@@ -163,15 +162,24 @@ export async function runCommand({
 			user,
 			interaction
 		});
-		if (result && !interaction.replied) {
+
+		// Add "TESTING:" prefix for mockuser calls (detected by mockRun flag in args)
+		let finalResult = result;
+		if (args?.mockRun) {
+			if (typeof result === 'string') {
+				finalResult = `TESTING: ${result}`;
+			} else if (result && typeof result.content === 'string') {
+				finalResult = { ...result, content: `TESTING: ${result.content}` };
+			}
+		}
+
+		if (finalResult && !interaction.replied) {
 			await interactionReply(
 				interaction,
-				typeof result === 'string'
-					? { content: result, ephemeral: ephemeral }
-					: { ...result, ephemeral: ephemeral }
+				typeof finalResult === 'string' ? { content: finalResult, ephemeral } : { ...finalResult, ephemeral }
 			);
 		}
-		return result;
+		return finalResult;
 	} catch (err: any) {
 		await handleInteractionError(err, interaction);
 	} finally {
@@ -182,7 +190,6 @@ export async function runCommand({
 				guildID,
 				channelID,
 				args,
-				error,
 				isContinue: isContinue ?? false,
 				inhibited,
 				continueDeltaMillis

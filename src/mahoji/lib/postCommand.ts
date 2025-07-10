@@ -21,60 +21,54 @@ export async function postCommand({
 	userID: string;
 	guildID?: string | bigint | null;
 	channelID: string | bigint;
-	error: Error | string | null;
 	args: CommandOptions;
 	isContinue: boolean;
 	inhibited: boolean;
 	continueDeltaMillis: number | null;
 }): Promise<string | undefined> {
-	if (abstractCommand.name === 'mockuser') return;
+	try {
+		if (abstractCommand.name === 'mockuser') return;
 
-	if (!busyImmuneCommands.includes(abstractCommand.name)) {
-		TimerManager.setTimeout(() => modifyBusyCounter(userID, -1), 1000);
-	}
-
-	if (shouldTrackCommand(abstractCommand, args)) {
-		const commandUsage = makeCommandUsage({
-			userID,
-			channelID,
-			guildID,
-			commandName: abstractCommand.name,
-			args,
-			isContinue,
-			inhibited,
-			continueDeltaMillis
-		});
-		try {
-			await prisma.$transaction([
-				prisma.commandUsage.create({
-					data: commandUsage,
-					select: {
-						id: true
-					}
-				}),
-				prisma.user.upsert({
-					where: {
-						id: userID
-					},
-					create: {
-						id: userID,
-						last_command_date: new Date(),
-						username: globalClient.users.cache.get(userID)?.username
-					},
-					update: {
-						last_command_date: new Date(),
-						username: globalClient.users.cache.get(userID)?.username
-					},
-					select: {
-						id: true
-					}
-				})
-			]);
-		} catch (err) {
-			logError(err);
+		if (shouldTrackCommand(abstractCommand, args)) {
+			const commandUsage = makeCommandUsage({
+				userID,
+				channelID,
+				guildID,
+				commandName: abstractCommand.name,
+				args,
+				isContinue,
+				inhibited,
+				continueDeltaMillis
+			});
+			try {
+				await prisma.$transaction([
+					prisma.commandUsage.create({
+						data: commandUsage,
+						select: { id: true }
+					}),
+					prisma.user.upsert({
+						where: { id: userID },
+						create: {
+							id: userID,
+							last_command_date: new Date(),
+							username: globalClient.users.cache.get(userID)?.username
+						},
+						update: {
+							last_command_date: new Date(),
+							username: globalClient.users.cache.get(userID)?.username
+						},
+						select: { id: true }
+					})
+				]);
+			} catch (err) {
+				logError(err);
+			}
+		}
+		if (inhibited) return;
+		return undefined;
+	} finally {
+		if (!busyImmuneCommands.includes(abstractCommand.name)) {
+			TimerManager.setTimeout(() => modifyBusyCounter(userID, -1), 1000);
 		}
 	}
-	if (inhibited) return;
-
-	return undefined;
 }

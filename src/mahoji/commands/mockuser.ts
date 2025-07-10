@@ -5,39 +5,18 @@ import type { CommandRunOptions } from 'packages/toolkit/dist/util';
 import { createMockUser } from '../../lib/mock/createMockUser';
 import type { OSBMahojiCommand } from '../lib/util';
 
-function parseArgs(input: string): { command: string; args: Record<string, any> } {
-	const parts = input.split(/\s+/);
-	const args: Record<string, any> = {};
-	const commandParts: string[] = [];
-
-	for (const part of parts) {
-		if (part.includes(':')) {
-			const [key, val] = part.split(':');
-			let v: any = val;
-			if (val === 'true') v = true;
-			else if (val === 'false') v = false;
-			else if (!Number.isNaN(Number(val))) v = Number(val);
-			args[key] = v;
-		} else {
-			commandParts.push(part.toLowerCase());
-		}
-	}
-
-	return { command: commandParts.join(' '), args };
-}
-
 function findCommand(fullCommandName: string) {
 	const cmds = Array.from(globalClient.mahojiClient.commands.values());
 
 	for (const cmd of cmds) {
-		if (cmd.name === fullCommandName) return cmd;
+		if (cmd.name === fullCommandName) return { cmd, subcommand: undefined };
 
 		for (const option of cmd.options ?? []) {
 			if (
 				option.type === ApplicationCommandOptionType.Subcommand &&
 				`${cmd.name} ${option.name}` === fullCommandName
 			) {
-				return cmd;
+				return { cmd, subcommand: option.name };
 			}
 			if (option.type === ApplicationCommandOptionType.SubcommandGroup) {
 				for (const sub of option.options ?? []) {
@@ -45,7 +24,7 @@ function findCommand(fullCommandName: string) {
 						sub.type === ApplicationCommandOptionType.Subcommand &&
 						`${cmd.name} ${option.name} ${sub.name}` === fullCommandName
 					) {
-						return cmd;
+						return { cmd, subcommand: `${option.name} ${sub.name}` };
 					}
 				}
 			}
@@ -55,54 +34,51 @@ function findCommand(fullCommandName: string) {
 	return null;
 }
 
+function prefixMessage(msg: any) {
+	if (typeof msg === 'string') {
+		return `TESTING: ${msg}`;
+	}
+	if (typeof msg === 'object' && msg.content) {
+		return { ...msg, content: `TESTING: ${msg.content}` };
+	}
+	return msg;
+}
+
 export const mockuserCommand: OSBMahojiCommand = {
 	name: 'mockuser',
 	description: 'Simulate a minion trip using a mock maxed user.',
 	options: [
 		{
 			type: ApplicationCommandOptionType.String,
-			name: 'input',
-			description: 'Command and args, e.g. "mine granite quantity:1"',
+			name: 'command',
+			description: 'Base command, e.g. "craft"',
 			required: true,
 			autocomplete: async (value: string) => {
-				const cmds = Array.from(globalClient.mahojiClient.commands.values());
-				const results: { name: string; value: string }[] = [];
-
-				for (const cmd of cmds) {
-					// Add base command
-					results.push({ name: cmd.name, value: cmd.name });
-
-					// Handle subcommands and subcommand groups
-					for (const option of cmd.options ?? []) {
-						if (option.type === ApplicationCommandOptionType.Subcommand) {
-							results.push({ name: `${cmd.name} ${option.name}`, value: `${cmd.name} ${option.name}` });
-						} else if (option.type === ApplicationCommandOptionType.SubcommandGroup) {
-							for (const subOption of option.options ?? []) {
-								if (subOption.type === ApplicationCommandOptionType.Subcommand) {
-									results.push({
-										name: `${cmd.name} ${option.name} ${subOption.name}`,
-										value: `${cmd.name} ${option.name} ${subOption.name}`
-									});
-								}
-							}
-						}
-					}
-				}
-				return results
-					.filter(res => res.value.toLowerCase().includes((value ?? '').toLowerCase()))
+				return Array.from(globalClient.mahojiClient.commands.values())
+					.filter(cmd => !['admin', 'testpotato'].includes(cmd.name))
+					.filter(cmd => cmd.name.toLowerCase().includes((value ?? '').toLowerCase()))
+					.map(cmd => ({ name: cmd.name, value: cmd.name }))
 					.slice(0, 25);
 			}
+		},
+		{
+			type: ApplicationCommandOptionType.String,
+			name: 'subcommand',
+			description: 'Subcommand, e.g. "leather"',
+			required: false
 		}
 	],
-	run: async ({ options, userID, channelID }: CommandRunOptions<{ input: string }>) => {
-		const { command, args } = parseArgs(options.input);
 
-		const cmd = findCommand(command);
-		if (!cmd) return `Unknown command: ${command}`;
+	run: async ({ options, userID, channelID }: CommandRunOptions<{ command: string; subcommand?: string }>) => {
+		const args: Record<string, any> = {};
+		if (options.subcommand) args.name = options.subcommand;
 
+		const found = findCommand(options.command);
+		if (!found) return `Unknown command: ${options.command}`;
+
+		const { cmd } = found;
 		const realUser = await mUserFetch(userID);
 		const mock = createMockUser(realUser);
-
 		const discordUser = globalClient.users.cache.get(userID) ?? (await globalClient.users.fetch(userID));
 
 		const realMUserFetch = globalThis.mUserFetch;
@@ -113,16 +89,30 @@ export const mockuserCommand: OSBMahojiCommand = {
 			replied: false,
 			deferred: false,
 			ephemeral: false,
-			reply: async (msg: any) => console.log('[Mock Reply]', msg),
-			editReply: async (msg: any) => console.log('[Mock EditReply]', msg),
-			followUp: async (msg: any) => console.log('[Mock FollowUp]', msg),
-			isRepliable: () => true
+			reply: async (msg: any) => console.log('[Mock Reply]', prefixMessage(msg)),
+			editReply: async (msg: any) => console.log('[Mock EditReply]', prefixMessage(msg)),
+			followUp: async (msg: any) => console.log('[Mock FollowUp]', prefixMessage(msg)),
+			isRepliable: () => true,
+			isChatInputCommand: () => true,
+			channelId: channelID,
+			guildId: undefined,
+			createdTimestamp: Date.now(),
+			id: 'mock-interaction-id',
+			commandName: cmd.name,
+			options: {
+				data: [],
+				resolved: {}
+			},
+			deferReply: async () => {
+				mockInteraction.deferred = true;
+				return Promise.resolve();
+			}
 		} as any;
 
 		try {
 			return await runCommand({
 				commandName: cmd.name,
-				args,
+				args: { ...args, mockRun: true },
 				user: discordUser,
 				channelID,
 				member: null,
@@ -131,7 +121,8 @@ export const mockuserCommand: OSBMahojiCommand = {
 				bypassBusyCheck: true,
 				guildID: undefined,
 				interaction: mockInteraction,
-				continueDeltaMillis: null
+				continueDeltaMillis: null,
+				ephemeral: false
 			});
 		} finally {
 			globalThis.mUserFetch = realMUserFetch;

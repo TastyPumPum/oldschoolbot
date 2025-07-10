@@ -115,14 +115,13 @@ export const mahojiClient = new MahojiClient({
 			});
 			return result;
 		},
-		postCommand: ({ command, interaction, error, inhibited, options }) =>
+		postCommand: ({ command, interaction, inhibited, options }) =>
 			postCommand({
 				abstractCommand: convertMahojiCommandToAbstractCommand(command),
 				userID: interaction.user.id,
 				guildID: interaction.guildId,
 				channelID: interaction.channelId,
 				args: options,
-				error,
 				isContinue: false,
 				inhibited,
 				continueDeltaMillis: null
