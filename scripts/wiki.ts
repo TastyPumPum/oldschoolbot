@@ -384,6 +384,9 @@ async function wiki() {
 		runTimedLoggedFn('Mining Snapshots', () =>
 			execAsync('tsx --tsconfig scripts/tsconfig.json ./scripts/wiki/miningSnapshots.ts')
 		),
+		runTimedLoggedFn('Woodcutting Snapshots', () =>
+			execAsync('tsx --tsconfig scripts/tsconfig.json ./scripts/wiki/woodcuttingSnapshots.ts')
+		),
 		runTimedLoggedFn('Update Authors', updateAuthors),
 		runTimedLoggedFn('Render Combat Achievements', renderCombatAchievementsFile),
 		runTimedLoggedFn('Render Clue Boosts', clueBoosts),
