@@ -150,6 +150,7 @@ export async function blackjackCommand(
 	const bets = [amount];
 	const doubled = [false];
 	const dealer = [draw(deck), draw(deck)];
+	const initialPair = isPair(hands[0]);
 
 	const isBlackjack = (hand: string[]) => {
 		const ranks = hand.map(c => c.split('_')[0]);
@@ -173,7 +174,7 @@ export async function blackjackCommand(
 		}
 
 		if (sideBet) {
-			const sideBetWin = isPair(hands[0]) ? sideBet * 10 : 0;
+			const sideBetWin = initialPair ? sideBet * 10 : 0;
 			if (sideBetWin) resultParts.push(`Side bet won ${Util.toKMB(sideBetWin)}.`);
 			else resultParts.push('Side bet lost.');
 			payout += sideBetWin;
@@ -215,7 +216,7 @@ export async function blackjackCommand(
 	const message = await channel.send({
 		content: formatHands(user, hands, dealer, true),
 		files: [await generateBlackjackImage(user, hands, dealer, true)],
-		components: [buildButtons(isPair(hands[0]) && user.GP >= bets[0], user.GP >= bets[0])]
+		components: [buildButtons(isPair(hands[0]) && user.GP >= bets[0], hands[0].length === 2 && user.GP >= bets[0])]
 	});
 
 	while (activeHand < hands.length) {
@@ -240,7 +241,7 @@ export async function blackjackCommand(
 
 			if (selection.customId === 'HIT') {
 				hand.push(draw(deck));
-			} else if (selection.customId === 'DOUBLE' && !doubled[activeHand]) {
+			} else if (selection.customId === 'DOUBLE' && hand.length === 2 && !doubled[activeHand]) {
 				if (user.GP < bets[activeHand]) {
 					await selection
 						.followUp({ content: "You don't have enough GP to double.", ephemeral: true })
@@ -271,7 +272,7 @@ export async function blackjackCommand(
 					components: [
 						buildButtons(
 							isPair(hands[activeHand]) && user.GP >= bets[activeHand],
-							user.GP >= bets[activeHand]
+							hands[activeHand].length === 2 && user.GP >= bets[activeHand]
 						)
 					]
 				});
@@ -283,7 +284,9 @@ export async function blackjackCommand(
 			await message.edit({
 				content: formatHands(user, hands, dealer, true, activeHand),
 				files: [await generateBlackjackImage(user, hands, dealer, true)],
-				components: [buildButtons(false, !doubled[activeHand] && user.GP >= bets[activeHand])]
+				components: [
+					buildButtons(false, !doubled[activeHand] && hand.length === 2 && user.GP >= bets[activeHand])
+				]
 			});
 		}
 		activeHand++;
@@ -319,7 +322,7 @@ export async function blackjackCommand(
 	});
 
 	if (sideBet) {
-		const sideBetWin = isPair(hands[0]) ? sideBet * 10 : 0;
+		const sideBetWin = initialPair ? sideBet * 10 : 0;
 		if (sideBetWin) resultParts.push(`Side bet won ${Util.toKMB(sideBetWin)}.`);
 		else resultParts.push('Side bet lost.');
 		payout += sideBetWin;
