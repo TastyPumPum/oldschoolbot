@@ -51,6 +51,7 @@ model Analytic {
   gpDaily            BigInt?
   gpLuckypick        BigInt?
   gpSlots            BigInt?
+  gpBlackjack        BigInt?
   gpHotCold          BigInt?
 
   @@map("analytics_table")
