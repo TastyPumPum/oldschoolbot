@@ -32,6 +32,14 @@ You can alch items while training Agility.
 
 It will pick the highest alch-value item from your list of favorites to alch.
 
+## Zero-time Fletching
+
+You can also fletch certain items while doing laps. Pick an item from the autocomplete list with the `fletching:` option.
+
+You cannot fletch and alch at the same time.
+
+Example: [[/laps name:Ardougne Rooftop Course fletching:Bronze dart]]
+
 ## Graceful
 
 Rooftop agility courses reward the player with marks of grace which can be used to buy pieces of the Graceful outfit (260 marks for full outfit). You can also purchase Amylase packs which will give you 100 amylase crystals per amylase pack, costing 10 marks of grace each.
