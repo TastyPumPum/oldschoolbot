@@ -32,7 +32,8 @@ import type {
 	EnchantingActivityTaskOptions,
 	FarmingActivityTaskOptions,
 	FiremakingActivityTaskOptions,
-	FishingActivityTaskOptions,
+        FishingActivityTaskOptions,
+        BarbloreActivityTaskOptions,
 	FletchingActivityTaskOptions,
 	GauntletOptions,
 	GiantsFoundryActivityTaskOptions,
@@ -68,6 +69,9 @@ import type {
 import { giantsFoundryAlloys } from './../../mahoji/lib/abstracted_commands/giantsFoundryCommand';
 import type { NightmareZoneActivityTaskOptions, UnderwaterAgilityThievingTaskOptions } from './../types/minions';
 import { interactionReply } from './interactionReply';
+
+const BARBLORE_ACTIVITY_TYPE =
+        (activity_type_enum as any).BarbloreFishing ?? ('BarbloreFishing' as activity_type_enum);
 
 const taskCanBeRepeated = (activity: Activity, user: MUser) => {
 	if (activity.type === activity_type_enum.ClueCompletion) {
@@ -349,17 +353,28 @@ const tripHandlers = {
 			quantity: data.quantity
 		})
 	},
-	[activity_type_enum.Fishing]: {
-		commandName: 'fish',
-		args: (data: FishingActivityTaskOptions) => {
-			const fish = Fishing.Fishes.find(f => f.id === (data.fishID as number));
-			return {
-				name: fish ? fish.name : Items.itemNameFromId(data.fishID),
-				quantity: data.iQty,
-				flakes: data.flakesQuantity !== undefined
-			};
-		}
-	},
+        [activity_type_enum.Fishing]: {
+                commandName: 'fish',
+                args: (data: FishingActivityTaskOptions) => {
+                        const fish = Fishing.Fishes.find(f => f.id === (data.fishID as number));
+                        return {
+                                name: fish ? fish.name : Items.itemNameFromId(data.fishID),
+                                quantity: data.iQty,
+                                flakes: data.flakesQuantity !== undefined
+                        };
+                }
+        },
+        [BARBLORE_ACTIVITY_TYPE]: {
+                commandName: 'fish',
+                args: (data: BarbloreActivityTaskOptions) => {
+                        const fish = Fishing.Fishes.find(f => f.id === (data.fishID as number));
+                        return {
+                                name: fish ? fish.name : Items.itemNameFromId(data.fishID),
+                                quantity: data.iQty,
+                                barblore: true
+                        };
+                }
+        },
 	[activity_type_enum.FishingTrawler]: {
 		commandName: 'minigames',
 		args: () => ({ fishing_trawler: { start: {} } })

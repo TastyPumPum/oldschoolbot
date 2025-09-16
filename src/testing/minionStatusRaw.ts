@@ -17,8 +17,9 @@ import type {
 	ColoTaskOptions,
 	CookingActivityTaskOptions,
 	CraftingActivityTaskOptions,
-	FiremakingActivityTaskOptions,
-	FishingActivityTaskOptions,
+        FiremakingActivityTaskOptions,
+        FishingActivityTaskOptions,
+        BarbloreActivityTaskOptions,
 	FletchingActivityTaskOptions,
 	GroupMonsterActivityTaskOptions,
 	InfernoOptions,
@@ -61,11 +62,21 @@ export function minionStatusRaw(task: ActivityTaskData): string {
 			const item = Crafting.Craftables.find(i => i.id === data.craftableID);
 			return `Crafted ${data.quantity}x ${item?.name} in ${d}`;
 		}
-		case 'Fishing': {
-			const data = task as FishingActivityTaskOptions;
-			const fish = Fishing.Fishes.find(i => i.id === data.fishID);
-			return `Fished ${data.quantity}x ${fish?.name} in ${d}`;
-		}
+                case 'Fishing': {
+                        const data = task as FishingActivityTaskOptions;
+                        const fish = Fishing.Fishes.find(i => i.id === data.fishID);
+                        return `Fished ${data.quantity}x ${fish?.name} in ${d}`;
+                }
+                case 'BarbloreFishing': {
+                        const data = task as BarbloreActivityTaskOptions;
+                        const fish = Fishing.Fishes.find(i => i.id === data.fishID);
+                        const mixes = data.mixPlan
+                                .filter(plan => plan.quantity > 0)
+                                .map(plan => `${plan.quantity.toLocaleString()}x ${plan.mixName}`)
+                                .join(', ');
+                        const mixPart = mixes.length > 0 ? ` and mixed ${mixes}` : '';
+                        return `Barblore fished ${data.quantity}x ${fish?.name}${mixPart} in ${d}`;
+                }
 		case 'Mining': {
 			const data = task as MiningActivityTaskOptions;
 			const ore = Mining.Ores.find(i => i.id === data.oreID);

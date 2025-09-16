@@ -163,11 +163,56 @@ export interface ClueActivityTaskOptions extends ActivityTaskOptions {
 }
 
 export interface FishingActivityTaskOptions extends ActivityTaskOptions {
-	type: 'Fishing';
-	fishID: number;
-	quantity: number;
-	flakesQuantity?: number;
-	iQty?: number;
+        type: 'Fishing';
+        fishID: number;
+        quantity: number;
+        flakesQuantity?: number;
+        iQty?: number;
+}
+
+export interface BarbloreActivityTaskOptions extends ActivityTaskOptions {
+        type: 'BarbloreFishing';
+        fishID: number;
+        quantity: number;
+        xp: {
+                fishing: number;
+                agility: number;
+                strength: number;
+                herblore: number;
+                cooking: number;
+        };
+        xpPerHour: {
+                fishing: number;
+                agility: number;
+                strength: number;
+                herblore: number;
+                cooking: number;
+        };
+        mixPlan: {
+                ingredient: 'Roe' | 'Caviar';
+                mixID: number;
+                mixName: string;
+                potionID: number;
+                potionName: string;
+                quantity: number;
+                xpPerMix: number;
+        }[];
+        leftoverFish: {
+                trout: number;
+                salmon: number;
+                sturgeon: number;
+        };
+        leftoverIngredients: {
+                roe: number;
+                caviar: number;
+        };
+        ingredientsUsed: {
+                roe: number;
+                caviar: number;
+        };
+        fishOffcuts: number;
+        boosts: string[];
+        iQty?: number;
 }
 
 export interface MiningActivityTaskOptions extends ActivityTaskOptions {
@@ -621,11 +666,12 @@ export type ActivityTaskData =
 	| ScatteringActivityTaskOptions
 	| OfferingActivityTaskOptions
 	| AnimatedArmourActivityTaskOptions
-	| CookingActivityTaskOptions
-	| CraftingActivityTaskOptions
-	| FiremakingActivityTaskOptions
-	| FishingActivityTaskOptions
-	| MiningActivityTaskOptions
+        | CookingActivityTaskOptions
+        | CraftingActivityTaskOptions
+        | FiremakingActivityTaskOptions
+        | BarbloreActivityTaskOptions
+        | FishingActivityTaskOptions
+        | MiningActivityTaskOptions
 	| MotherlodeMiningActivityTaskOptions
 	| PlunderActivityTaskOptions
 	| SmithingActivityTaskOptions

@@ -50,8 +50,9 @@ import type {
 	EnchantingActivityTaskOptions,
 	FarmingActivityTaskOptions,
 	FightCavesActivityTaskOptions,
-	FiremakingActivityTaskOptions,
-	FishingActivityTaskOptions,
+        FiremakingActivityTaskOptions,
+        FishingActivityTaskOptions,
+        BarbloreActivityTaskOptions,
 	FletchingActivityTaskOptions,
 	GauntletOptions,
 	GroupMonsterActivityTaskOptions,
@@ -148,15 +149,26 @@ export function minionStatus(user: MUser) {
 			} Cooking level is ${user.skillLevel(SkillsEnum.Cooking)}`;
 		}
 
-		case 'Fishing': {
-			const data = currentTask as FishingActivityTaskOptions;
+                case 'Fishing': {
+                        const data = currentTask as FishingActivityTaskOptions;
 
-			const fish = Fishing.Fishes.find(fish => fish.id === data.fishID);
+                        const fish = Fishing.Fishes.find(fish => fish.id === data.fishID);
 
-			return `${name} is currently fishing ${data.quantity}x ${fish?.name}. ${formattedDuration} Your ${
-				Emoji.Fishing
-			} Fishing level is ${user.skillLevel(SkillsEnum.Fishing)}`;
-		}
+                        return `${name} is currently fishing ${data.quantity}x ${fish?.name}. ${formattedDuration} Your ${
+                                Emoji.Fishing
+                        } Fishing level is ${user.skillLevel(SkillsEnum.Fishing)}`;
+                }
+
+                case 'BarbloreFishing': {
+                        const data = currentTask as BarbloreActivityTaskOptions;
+                        const fish = Fishing.Fishes.find(_fish => _fish.id === data.fishID);
+                        const mixSummary = data.mixPlan
+                                .filter(plan => plan.quantity > 0)
+                                .map(plan => `${plan.quantity.toLocaleString()}x ${plan.mixName}`)
+                                .join(', ');
+                        const mixPart = mixSummary.length > 0 ? ` They are creating ${mixSummary}.` : '';
+                        return `${name} is currently training Barblore while fishing ${fish?.name}. ${formattedDuration}${mixPart}`;
+                }
 
 		case 'Mining': {
 			const data = currentTask as MiningActivityTaskOptions;
