@@ -119,17 +119,99 @@ describe('Fish Command', async () => {
 		expect(res).toContain('You need Fishing bait');
 	});
 
-	it('should give angler boost', async () => {
-		const user = await createTestUser();
-		await user.equip('skilling', ItemGroups.anglerOutfit);
-		const startingXP = convertLVLtoXP(80);
-		await user.update({ skills_fishing: startingXP });
-		const res = await user.runCommand(fishCommand, { name: 'lobster', quantity: 50 });
-		expect(res).toContain('is now fishing 50x Lobster');
-		await user.runActivity();
-		expect(user.bank.amount('Raw lobster')).toEqual(50);
-		const xpToReceive = 50 * 90 * XP_MULTIPLIER;
-		const xpWithAnglerBoost = increaseNumByPercent(xpToReceive, 2.5);
-		expect(user.skillsAsXP.fishing).toEqual(Math.ceil(startingXP + xpWithAnglerBoost));
-	});
+        it('should give angler boost', async () => {
+                const user = await createTestUser();
+                await user.equip('skilling', ItemGroups.anglerOutfit);
+                const startingXP = convertLVLtoXP(80);
+                await user.update({ skills_fishing: startingXP });
+                const res = await user.runCommand(fishCommand, { name: 'lobster', quantity: 50 });
+                expect(res).toContain('is now fishing 50x Lobster');
+                await user.runActivity();
+                expect(user.bank.amount('Raw lobster')).toEqual(50);
+                const xpToReceive = 50 * 90 * XP_MULTIPLIER;
+                const xpWithAnglerBoost = increaseNumByPercent(xpToReceive, 2.5);
+                expect(user.skillsAsXP.fishing).toEqual(Math.ceil(startingXP + xpWithAnglerBoost));
+        });
+
+        it('should reject barblore for non barbarian fish', async () => {
+                const user = await createTestUser();
+                const res = await user.runCommand(fishCommand, { name: 'shrimps', barblore: true });
+                expect(res).toEqual('The Barblore method can only be used while Barbarian fishing.');
+        });
+
+        it('should reject barblore without potions', async () => {
+                const user = await createTestUser();
+                await user.update({
+                        skills_fishing: convertLVLtoXP(99),
+                        skills_agility: convertLVLtoXP(99),
+                        skills_strength: convertLVLtoXP(99),
+                        skills_herblore: convertLVLtoXP(99),
+                        skills_cooking: convertLVLtoXP(99),
+                        bank: new Bank().add('Feather', 10_000)
+                });
+                const res = await user.runCommand(fishCommand, { name: 'Barbarian fishing', barblore: true });
+                expect(res).toEqual('You need suitable (2) dose potions in your bank to create Barbarian mixes for Barblore.');
+        });
+
+        it('should perform a barblore trip', async () => {
+                const user = await createTestUser();
+                const startingBank = new Bank()
+                        .add('Feather', 10_000)
+                        .add('Restore potion(2)', 400)
+                        .add('Extended super antifire(2)', 400);
+                await user.update({
+                        skills_fishing: convertLVLtoXP(99),
+                        skills_agility: convertLVLtoXP(99),
+                        skills_strength: convertLVLtoXP(99),
+                        skills_herblore: convertLVLtoXP(99),
+                        skills_cooking: convertLVLtoXP(99),
+                        bank: startingBank
+                });
+
+                const initialBank = new Bank(user.bank);
+                const initialFishingXP = user.skillsAsXP.fishing;
+                const initialAgilityXP = user.skillsAsXP.agility;
+                const initialStrengthXP = user.skillsAsXP.strength;
+                const initialCookingXP = user.skillsAsXP.cooking;
+                const initialHerbloreXP = user.skillsAsXP.herblore;
+
+                const response = await user.runCommand(fishCommand, { name: 'Barbarian fishing', barblore: true });
+                expect(response).toContain('Barblore');
+
+                const activity = (await user.runActivity()) as any;
+                const data = activity;
+
+                expect(user.skillsAsXP.fishing).toEqual(initialFishingXP + data.xp.fishing * XP_MULTIPLIER);
+                expect(user.skillsAsXP.agility).toEqual(initialAgilityXP + data.xp.agility * XP_MULTIPLIER);
+                expect(user.skillsAsXP.strength).toEqual(initialStrengthXP + data.xp.strength * XP_MULTIPLIER);
+                expect(user.skillsAsXP.cooking).toEqual(initialCookingXP + data.xp.cooking * XP_MULTIPLIER);
+                expect(user.skillsAsXP.herblore).toEqual(initialHerbloreXP + data.xp.herblore * XP_MULTIPLIER);
+
+                const roePlan = data.mixPlan.find(plan => plan.ingredient === 'Roe');
+                const caviarPlan = data.mixPlan.find(plan => plan.ingredient === 'Caviar');
+
+                const expectedRestorePotions =
+                        initialBank.amount('Restore potion(2)') - (roePlan?.quantity ?? 0);
+                const expectedExtendedPotions =
+                        initialBank.amount('Extended super antifire(2)') - (caviarPlan?.quantity ?? 0);
+
+                expect(user.bank.amount('Restore potion(2)')).toEqual(expectedRestorePotions);
+                expect(user.bank.amount('Extended super antifire(2)')).toEqual(expectedExtendedPotions);
+
+                if (roePlan) {
+                        expect(user.bank.amount(roePlan.mixName)).toEqual(roePlan.quantity);
+                }
+                if (caviarPlan) {
+                        expect(user.bank.amount(caviarPlan.mixName)).toEqual(caviarPlan.quantity);
+                }
+
+                expect(user.bank.amount('Leaping trout')).toEqual(data.leftoverFish.trout);
+                expect(user.bank.amount('Leaping salmon')).toEqual(data.leftoverFish.salmon);
+                expect(user.bank.amount('Leaping sturgeon')).toEqual(data.leftoverFish.sturgeon);
+                expect(user.bank.amount('Roe')).toEqual(data.leftoverIngredients.roe);
+                expect(user.bank.amount('Caviar')).toEqual(data.leftoverIngredients.caviar);
+                expect(user.bank.amount('Fish offcuts')).toEqual(data.fishOffcuts);
+
+                expect(user.bank.amount('Feather')).toEqual(initialBank.amount('Feather') - data.quantity);
+        });
 });

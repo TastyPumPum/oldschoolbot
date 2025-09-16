@@ -28,6 +28,7 @@ import { enchantingTask } from '../tasks/minions/enchantingActivity';
 import { farmingTask } from '../tasks/minions/farmingActivity';
 import { firemakingTask } from '../tasks/minions/firemakingActivity';
 import { fishingTask } from '../tasks/minions/fishingActivity';
+import { barbloreTask } from '../tasks/minions/barbloreActivity';
 import { fletchingTask } from '../tasks/minions/fletchingActivity';
 import { CreateForestersRationsTask } from '../tasks/minions/forestersRationActivity';
 import { gloryChargingTask } from '../tasks/minions/gloryChargingActivity';
@@ -135,10 +136,11 @@ export const allTasks: MinionTask[] = [
 	castingTask,
 	clueTask,
 	collectingTask,
-	constructionTask,
-	cookingTask,
-	craftingTask,
-	darkAltarTask,
+        constructionTask,
+        cookingTask,
+        craftingTask,
+        barbloreTask,
+        darkAltarTask,
 	ouraniaAltarTask,
 	enchantingTask,
 	farmingTask,
