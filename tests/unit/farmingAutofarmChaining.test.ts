@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { MUser } from '../../src/lib/MUser.js';
 import type { AutoFarmStepData, FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
 
 const handleTripFinish = vi.fn();
@@ -171,7 +172,7 @@ describe('auto farm chaining busy check', () => {
 					contractsCompleted: 0
 				}
 			})
-		};
+		} as unknown as MUser;
 
 		(globalThis as any).mUserFetch = vi.fn().mockResolvedValue(user);
 
