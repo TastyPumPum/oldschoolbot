@@ -6,6 +6,10 @@ import type { AutoFarmStepData, FarmingActivityTaskOptions } from '../../src/lib
 const handleTripFinish = vi.fn();
 const updateBankSetting = vi.fn();
 const userStatsBankUpdate = vi.fn();
+const mahojiClientSettingsFetch = vi.fn().mockResolvedValue({
+	farming_loot_bank: {}
+});
+const mahojiClientSettingsUpdate = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/lib/skilling/skills/farming/utils/farmingHelpers.js', () => ({
 	getFarmingKeyFromName: vi.fn().mockReturnValue('test_patch')
@@ -17,6 +21,11 @@ vi.mock('@/lib/util/handleTripFinish.js', () => ({
 
 vi.mock('@/lib/util/updateBankSetting.js', () => ({
 	updateBankSetting
+}));
+
+vi.mock('@/lib/util/clientSettings.js', () => ({
+	mahojiClientSettingsFetch,
+	mahojiClientSettingsUpdate
 }));
 
 vi.mock('@/mahoji/mahojiSettings.js', () => ({
@@ -133,6 +142,7 @@ describe('auto farm chaining busy check', () => {
 			addItemsToCollectionLog: vi.fn().mockResolvedValue(undefined),
 			transactItems: vi.fn().mockResolvedValue(undefined),
 			update: vi.fn().mockResolvedValue(undefined),
+			perkTier: vi.fn().mockReturnValue(0),
 			farmingContract: vi.fn().mockReturnValue({
 				contract: {
 					plantsContract: null,
