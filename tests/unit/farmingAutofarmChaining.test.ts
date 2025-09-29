@@ -44,9 +44,7 @@ const stubPlants = [stubPlant];
 
 vi.mock('@/lib/skilling/skills/farming/index.js', () => ({
 	Farming: {
-		Plants: {
-			find: (predicate: (plant: (typeof stubPlants)[number]) => boolean) => stubPlants.find(predicate)
-		},
+		Plants: stubPlants,
 		calcVariableYield: vi.fn().mockReturnValue(0)
 	}
 }));
@@ -188,10 +186,8 @@ describe('auto farm chaining busy check', () => {
 		const { farmingTask } = await import('../../src/tasks/minions/farmingActivity.js');
 		const { Farming } = await import('../../src/lib/skilling/skills/farming/index.js');
 
-		expect(
-			Farming.Plants.find(plant => plant.name === 'Test plant'),
-			'stub plant should be available for farming task'
-		).toBe(stubPlant);
+		const foundPlant = Farming.Plants.find(plant => plant.name === 'Test plant');
+		expect(foundPlant, 'stub plant should be available for farming task').toBe(stubPlant);
 
 		const nextStep: AutoFarmStepData = {
 			plantsName: 'Test plant',
