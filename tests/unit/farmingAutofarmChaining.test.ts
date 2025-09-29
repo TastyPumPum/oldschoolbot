@@ -7,48 +7,6 @@ const handleTripFinish = vi.fn();
 const updateBankSetting = vi.fn();
 const userStatsBankUpdate = vi.fn();
 
-const stubPlant = {
-	id: 1,
-	name: 'Test plant',
-	aliases: ['test plant'],
-	seedType: 'test',
-	plantXp: 10,
-	checkXp: 0,
-	harvestXp: 0,
-	herbXp: undefined,
-	herbLvl: undefined,
-	inputItems: {},
-	outputLogs: undefined,
-	outputRoots: undefined,
-	givesLogs: false,
-	givesCrops: false,
-	fixedOutput: false,
-	variableYield: false,
-	numOfStages: 1,
-	chanceOfDeath: 0,
-	chance1: 0,
-	chance99: 0,
-	treeWoodcuttingLevel: undefined,
-	needsChopForHarvest: false,
-	petChance: 0,
-	growthTime: 0,
-	timePerPatchTravel: 0,
-	timePerHarvest: 0,
-	woodcuttingXp: 0,
-	canPayFarmer: false,
-	canCompostPatch: false,
-	canCompostandPay: false
-} as const;
-
-const stubPlants = [stubPlant];
-
-vi.mock('@/lib/skilling/skills/farming/index.js', () => ({
-	Farming: {
-		Plants: stubPlants,
-		calcVariableYield: vi.fn().mockReturnValue(0)
-	}
-}));
-
 vi.mock('@/lib/skilling/skills/farming/utils/farmingHelpers.js', () => ({
 	getFarmingKeyFromName: vi.fn().mockReturnValue('test_patch')
 }));
@@ -186,11 +144,12 @@ describe('auto farm chaining busy check', () => {
 		const { farmingTask } = await import('../../src/tasks/minions/farmingActivity.js');
 		const { Farming } = await import('../../src/lib/skilling/skills/farming/index.js');
 
-		const foundPlant = Farming.Plants.find(plant => plant.name === 'Test plant');
-		expect(foundPlant, 'stub plant should be available for farming task').toBe(stubPlant);
+		const plant = Farming.Plants.find(p => p.name === 'Guam');
+		expect(plant, 'guam plant should exist in farming data').not.toBeNull();
+		const plantName = plant!.name;
 
 		const nextStep: AutoFarmStepData = {
-			plantsName: 'Test plant',
+			plantsName: plantName,
 			quantity: 1,
 			upgradeType: null,
 			payment: false,
@@ -217,7 +176,7 @@ describe('auto farm chaining busy check', () => {
 			userID,
 			channelID,
 			duration: 1000,
-			plantsName: 'Test plant',
+			plantsName: plantName,
 			quantity: 1,
 			upgradeType: null,
 			payment: false,
