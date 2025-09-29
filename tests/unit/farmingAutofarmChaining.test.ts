@@ -83,14 +83,10 @@ vi.mock('@/lib/util/logError.js', () => ({
 	}
 }));
 
-vi.mock(
-	'@oldschoolgg/rng',
-	() => ({
-		randInt: vi.fn().mockReturnValue(0),
-		roll: vi.fn().mockReturnValue(false)
-	}),
-	{ virtual: true }
-);
+vi.mock('@oldschoolgg/rng', () => ({
+	randInt: vi.fn().mockReturnValue(0),
+	roll: vi.fn().mockReturnValue(false)
+}));
 
 describe('auto farm chaining busy check', () => {
 	afterEach(() => {
@@ -230,7 +226,10 @@ describe('auto farm chaining busy check', () => {
 			autoFarmPlan: [nextStep]
 		};
 
-		await expect(farmingTask.run(data)).resolves.toBeUndefined();
+		const runPromise =
+			'isNew' in farmingTask ? farmingTask.run(data, { user, handleTripFinish }) : farmingTask.run(data);
+
+		await expect(runPromise).resolves.toBeUndefined();
 
 		expect(createActivity).toHaveBeenCalledOnce();
 		expect(getActivityOfUser).toHaveBeenCalledOnce();
