@@ -187,24 +187,27 @@ export const farmingTask: MinionTask = {
 						nextPid = inserted.id;
 					}
 				}
-				await addSubTaskToActivityTask<FarmingActivityTaskOptions>({
-					plantsName: nextStep.plantsName,
-					patchType: nextStep.patchType,
-					userID,
-					channelID,
-					quantity: nextStep.quantity,
-					upgradeType: nextStep.upgradeType,
-					payment: nextStep.payment,
-					treeChopFeePaid: nextStep.treeChopFeePaid,
-					treeChopFeePlanned: nextStep.treeChopFeePlanned,
-					planting: nextStep.planting,
-					duration: nextStep.duration,
-					currentDate: nextStep.currentDate,
-					type: 'Farming',
-					autoFarmed: true,
-					pid: nextPid,
-					autoFarmPlan: remainingSteps
-				});
+				await addSubTaskToActivityTask<FarmingActivityTaskOptions>(
+					{
+						plantsName: nextStep.plantsName,
+						patchType: nextStep.patchType,
+						userID,
+						channelID,
+						quantity: nextStep.quantity,
+						upgradeType: nextStep.upgradeType,
+						payment: nextStep.payment,
+						treeChopFeePaid: nextStep.treeChopFeePaid,
+						treeChopFeePlanned: nextStep.treeChopFeePlanned,
+						planting: nextStep.planting,
+						duration: nextStep.duration,
+						currentDate: nextStep.currentDate,
+						type: 'Farming',
+						autoFarmed: true,
+						pid: nextPid,
+						autoFarmPlan: remainingSteps
+					},
+					data.id
+				);
 			}
 		} else if (patchType.patchPlanted) {
 			// If they do have something planted here, harvest it and possibly replant.
@@ -567,24 +570,27 @@ export const farmingTask: MinionTask = {
 						nextPid = inserted.id;
 					}
 				}
-				await addSubTaskToActivityTask<FarmingActivityTaskOptions>({
-					plantsName: nextStep.plantsName,
-					patchType: nextStep.patchType,
-					userID,
-					channelID,
-					quantity: nextStep.quantity,
-					upgradeType: nextStep.upgradeType,
-					payment: nextStep.payment,
-					treeChopFeePaid: nextStep.treeChopFeePaid,
-					treeChopFeePlanned: nextStep.treeChopFeePlanned,
-					planting: nextStep.planting,
-					duration: nextStep.duration,
-					currentDate: nextStep.currentDate,
-					type: 'Farming',
-					autoFarmed: true,
-					pid: nextPid,
-					autoFarmPlan: remainingSteps
-				});
+				await addSubTaskToActivityTask<FarmingActivityTaskOptions>(
+					{
+						plantsName: nextStep.plantsName,
+						patchType: nextStep.patchType,
+						userID,
+						channelID,
+						quantity: nextStep.quantity,
+						upgradeType: nextStep.upgradeType,
+						payment: nextStep.payment,
+						treeChopFeePaid: nextStep.treeChopFeePaid,
+						treeChopFeePlanned: nextStep.treeChopFeePlanned,
+						planting: nextStep.planting,
+						duration: nextStep.duration,
+						currentDate: nextStep.currentDate,
+						type: 'Farming',
+						autoFarmed: true,
+						pid: nextPid,
+						autoFarmPlan: remainingSteps
+					},
+					data.id
+				);
 			}
 		}
 	}

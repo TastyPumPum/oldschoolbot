@@ -5,10 +5,11 @@ import { logError } from '@/lib/util/logError.js';
 import { isGroupActivity } from '@/lib/util.js';
 
 export default async function addSubTaskToActivityTask<T extends ActivityTaskData>(
-	taskToAdd: Omit<T, 'finishDate' | 'id'>
+	taskToAdd: Omit<T, 'finishDate' | 'id'>,
+	finishingTaskID?: number
 ) {
 	const usersTask = ActivityManager.getActivityOfUser(taskToAdd.userID);
-	if (usersTask) {
+	if (usersTask && (!finishingTaskID || usersTask.id !== finishingTaskID)) {
 		throw new UserError(
 			`That user is busy, so they can't do this minion activity. They have a ${usersTask.type} activity still ongoing`
 		);
