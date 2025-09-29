@@ -40,10 +40,14 @@ const stubPlant = {
 	canCompostandPay: false
 } as const;
 
+const stubPlants = [stubPlant];
+
 vi.mock('@/lib/skilling/skills/farming/index.js', () => ({
 	Farming: {
-		Plants: [stubPlant],
-		calcVariableYield: vi.fn()
+		Plants: {
+			find: (predicate: (plant: (typeof stubPlants)[number]) => boolean) => stubPlants.find(predicate)
+		},
+		calcVariableYield: vi.fn().mockReturnValue(0)
 	}
 }));
 
@@ -90,10 +94,15 @@ vi.mock('@oldschoolgg/rng', () => ({
 }));
 
 describe('auto farm chaining busy check', () => {
+	const originalActivityManager = (globalThis as any).ActivityManager;
+	const originalPrisma = (globalThis as any).prisma;
+	const originalMUserFetch = (globalThis as any).mUserFetch;
+
 	afterEach(() => {
-		delete (globalThis as any).ActivityManager;
-		delete (globalThis as any).prisma;
-		delete (globalThis as any).mUserFetch;
+		(globalThis as any).ActivityManager = originalActivityManager;
+		(globalThis as any).prisma = originalPrisma;
+		(globalThis as any).mUserFetch = originalMUserFetch;
+		vi.restoreAllMocks();
 	});
 
 	it('schedules the next step when the finishing activity is the only busy task', async () => {
@@ -177,6 +186,12 @@ describe('auto farm chaining busy check', () => {
 		(globalThis as any).mUserFetch = vi.fn().mockResolvedValue(user);
 
 		const { farmingTask } = await import('../../src/tasks/minions/farmingActivity.js');
+		const { Farming } = await import('../../src/lib/skilling/skills/farming/index.js');
+
+		expect(
+			Farming.Plants.find(plant => plant.name === 'Test plant'),
+			'stub plant should be available for farming task'
+		).toBe(stubPlant);
 
 		const nextStep: AutoFarmStepData = {
 			plantsName: 'Test plant',
