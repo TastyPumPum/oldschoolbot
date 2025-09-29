@@ -58,7 +58,7 @@ describe('auto farm chaining busy check', () => {
 		(globalThis as any).ActivityManager = originalActivityManager;
 		(globalThis as any).prisma = originalPrisma;
 		(globalThis as any).mUserFetch = originalMUserFetch;
-		vi.restoreAllMocks();
+		vi.clearAllMocks();
 	});
 
 	it('schedules the next step when the finishing activity is the only busy task', async () => {
@@ -94,7 +94,11 @@ describe('auto farm chaining busy check', () => {
 
 		(globalThis as any).prisma = {
 			activity: { create: createActivity },
-			farmedCrop: { create: createFarmedCrop }
+			farmedCrop: { create: createFarmedCrop },
+			clientStorage: {
+				findFirst: vi.fn().mockResolvedValue(null),
+				update: vi.fn().mockResolvedValue(undefined)
+			}
 		};
 
 		const getActivityOfUser = vi.fn().mockReturnValue({
