@@ -46,7 +46,7 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 			updateBankSetting: vi.fn().mockResolvedValue(undefined)
 		});
 
-		executeFarmingStepMock.mockResolvedValue({
+		executeFarmingStepMock.mockImplementation(async () => ({
 			message: 'finished step',
 			loot: new Bank().add('Seed pack', 1),
 			summary: {
@@ -64,7 +64,7 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 				xpMessages: {},
 				contractCompleted: true
 			}
-		});
+		}));
 
 		user = {
 			id: '1',
@@ -92,6 +92,7 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 			patchType: {} as any,
 			userID: '1',
 			channelID: '123',
+			id: 123,
 			quantity: 1,
 			upgradeType: null,
 			payment: false,
@@ -127,7 +128,6 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 		canRunAutoContractMock.mockResolvedValue(true);
 
 		await handleCombinedAutoFarm({ user: user as any, taskData });
-
 		expect(executeFarmingStepMock).toHaveBeenCalledTimes(1);
 		expect(handleTripFinishMock).toHaveBeenCalledTimes(1);
 		const extraComponents = handleTripFinishMock.mock.calls[0]?.[7];
