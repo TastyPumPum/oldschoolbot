@@ -9,7 +9,7 @@ const prepareFarmingStepMock = vi.fn();
 const calcMaxTripLengthMock = vi.fn();
 const allFarmMock = vi.fn(() => true);
 
-const mockPlants = vi.hoisted(() => {
+const mockPlantFixtures = vi.hoisted(() => {
 	const createMockPlant = (
 		name: string,
 		seedType: 'tree' | 'herb' | 'fruit_tree',
@@ -26,7 +26,7 @@ const mockPlants = vi.hoisted(() => {
 		harvestXp: 0,
 		herbXp: undefined,
 		herbLvl: undefined,
-		inputItems: new Bank(input),
+		inputItemsRecord: input,
 		outputCrop: undefined,
 		givesLogs: false,
 		givesCrops: true,
@@ -57,6 +57,8 @@ const mockPlants = vi.hoisted(() => {
 	];
 });
 
+const mockedPlants: any[] = [];
+
 vi.mock('../../src/lib/util/addSubTaskToActivityTask.js', () => ({
 	default: addSubTaskToActivityTaskMock
 }));
@@ -75,8 +77,16 @@ vi.mock('../../src/lib/minions/functions/autoFarmFilters.js', () => ({
 }));
 
 vi.mock('../../src/lib/skilling/skills/farming/index.js', () => ({
-	plants: mockPlants
+	plants: mockedPlants
 }));
+
+for (const fixture of mockPlantFixtures) {
+	const { inputItemsRecord, ...plant } = fixture;
+	mockedPlants.push({
+		...plant,
+		inputItems: new Bank(inputItemsRecord)
+	});
+}
 
 const { autoFarm } = await import('../../src/lib/minions/functions/autoFarm.js');
 
