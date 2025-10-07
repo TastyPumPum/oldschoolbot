@@ -1,5 +1,5 @@
 import { Bank } from 'oldschooljs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BitField } from '../../src/lib/constants.js';
 import type { FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
@@ -26,7 +26,11 @@ vi.mock('@/mahoji/lib/abstracted_commands/farmingContractCommand.js', () => ({
 	canRunAutoContract: canRunAutoContractMock
 }));
 
-const { handleCombinedAutoFarm } = await import('../../src/tasks/minions/combinedAutoFarmActivity.js');
+let handleCombinedAutoFarm: typeof import('@/tasks/minions/combinedAutoFarmActivity.js')['handleCombinedAutoFarm'];
+
+beforeAll(async () => {
+	({ handleCombinedAutoFarm } = await import('@/tasks/minions/combinedAutoFarmActivity.js'));
+});
 
 describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 	let user: MUserStub;
