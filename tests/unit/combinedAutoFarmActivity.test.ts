@@ -4,26 +4,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BitField } from '../../src/lib/constants.js';
 import type { FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
 
-const executeFarmingStepMock = vi.fn();
-const handleTripFinishMock = vi.fn();
-const makeAutoContractButtonMock = vi.fn().mockReturnValue('AUTO_BUTTON');
-const canRunAutoContractMock = vi.fn();
+const mocks = vi.hoisted(() => {
+	return {
+		executeFarmingStepMock: vi.fn(),
+		handleTripFinishMock: vi.fn(),
+		makeAutoContractButtonMock: vi.fn(),
+		canRunAutoContractMock: vi.fn()
+	};
+});
 
 vi.mock('@/tasks/minions/farmingStep.js', () => ({
 	__esModule: true,
-	executeFarmingStep: executeFarmingStepMock
+	executeFarmingStep: mocks.executeFarmingStepMock
 }));
 vi.mock('@/lib/util/handleTripFinish.js', () => ({
 	__esModule: true,
-	handleTripFinish: handleTripFinishMock
+	handleTripFinish: mocks.handleTripFinishMock
 }));
 vi.mock('@/lib/util/interactions.js', () => ({
 	__esModule: true,
-	makeAutoContractButton: makeAutoContractButtonMock
+	makeAutoContractButton: mocks.makeAutoContractButtonMock
 }));
 vi.mock('@/mahoji/lib/abstracted_commands/farmingContractCommand.js', () => ({
 	__esModule: true,
-	canRunAutoContract: canRunAutoContractMock
+	canRunAutoContract: mocks.canRunAutoContractMock
 }));
 
 const { handleCombinedAutoFarm } = await import('../../src/tasks/minions/combinedAutoFarmActivity.js');
@@ -33,10 +37,10 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 	let taskData: FarmingActivityTaskOptions;
 
 	beforeEach(() => {
-		executeFarmingStepMock.mockReset();
-		handleTripFinishMock.mockReset();
-		makeAutoContractButtonMock.mockReset().mockReturnValue('AUTO_BUTTON');
-		canRunAutoContractMock.mockReset();
+		mocks.executeFarmingStepMock.mockReset();
+		mocks.handleTripFinishMock.mockReset();
+		mocks.makeAutoContractButtonMock.mockReset().mockReturnValue('AUTO_BUTTON');
+		mocks.canRunAutoContractMock.mockReset();
 		vi.stubGlobal('prisma', {
 			farmedCrop: {
 				create: vi.fn().mockResolvedValue({ id: 123 })
@@ -46,7 +50,7 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 			updateBankSetting: vi.fn().mockResolvedValue(undefined)
 		});
 
-		executeFarmingStepMock.mockResolvedValue({
+		mocks.executeFarmingStepMock.mockResolvedValue({
 			message: 'finished step',
 			loot: new Bank().add('Seed pack', 1),
 			summary: {
@@ -124,36 +128,36 @@ describe('handleCombinedAutoFarm auto contract button behaviour', () => {
 	});
 
 	it('relies on handleTripFinish when auto contract is available', async () => {
-		canRunAutoContractMock.mockResolvedValue(true);
+		mocks.canRunAutoContractMock.mockResolvedValue(true);
 
 		await handleCombinedAutoFarm({ user: user as any, taskData });
 
-		expect(executeFarmingStepMock).toHaveBeenCalledTimes(1);
-		expect(handleTripFinishMock).toHaveBeenCalledTimes(1);
-		const extraComponents = handleTripFinishMock.mock.calls[0]?.[7];
+		expect(mocks.executeFarmingStepMock).toHaveBeenCalledTimes(1);
+		expect(mocks.handleTripFinishMock).toHaveBeenCalledTimes(1);
+		const extraComponents = mocks.handleTripFinishMock.mock.calls[0]?.[7];
 		expect(extraComponents).toBeUndefined();
-		expect(makeAutoContractButtonMock).not.toHaveBeenCalled();
+		expect(mocks.makeAutoContractButtonMock).not.toHaveBeenCalled();
 	});
 
 	it('adds auto contract button when contract completed but auto contract unavailable', async () => {
-		canRunAutoContractMock.mockResolvedValue(false);
+		mocks.canRunAutoContractMock.mockResolvedValue(false);
 
 		await handleCombinedAutoFarm({ user: user as any, taskData });
 
-		const extraComponents = handleTripFinishMock.mock.calls[0]?.[7];
+		const extraComponents = mocks.handleTripFinishMock.mock.calls[0]?.[7];
 		expect(extraComponents).toEqual(['AUTO_BUTTON']);
-		expect(makeAutoContractButtonMock).toHaveBeenCalledTimes(1);
+		expect(mocks.makeAutoContractButtonMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('respects the disable auto contract button bitfield', async () => {
-		canRunAutoContractMock.mockResolvedValue(false);
+		mocks.canRunAutoContractMock.mockResolvedValue(false);
 		user.bitfield = [BitField.DisableAutoFarmContractButton];
 
 		await handleCombinedAutoFarm({ user: user as any, taskData });
 
-		const extraComponents = handleTripFinishMock.mock.calls[0]?.[7];
+		const extraComponents = mocks.handleTripFinishMock.mock.calls[0]?.[7];
 		expect(extraComponents).toBeUndefined();
-		expect(makeAutoContractButtonMock).not.toHaveBeenCalled();
+		expect(mocks.makeAutoContractButtonMock).not.toHaveBeenCalled();
 	});
 });
 
