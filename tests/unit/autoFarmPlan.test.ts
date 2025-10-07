@@ -9,51 +9,53 @@ const prepareFarmingStepMock = vi.fn();
 const calcMaxTripLengthMock = vi.fn();
 const allFarmMock = vi.fn(() => true);
 
-const createMockPlant = (
-	name: string,
-	seedType: 'tree' | 'herb' | 'fruit_tree',
-	level: number,
-	input: Record<string, number>
-) => ({
-	id: seedType.length,
-	name,
-	aliases: [name.toLowerCase()],
-	seedType,
-	level,
-	plantXp: 0,
-	checkXp: 0,
-	harvestXp: 0,
-	herbXp: undefined,
-	herbLvl: undefined,
-	inputItems: new Bank(input),
-	outputCrop: undefined,
-	givesLogs: false,
-	givesCrops: true,
-	fixedOutput: true,
-	fixedOutputAmount: 1,
-	variableYield: false,
-	numOfStages: 1,
-	chanceOfDeath: 0,
-	chance1: 0,
-	chance99: 0,
-	treeWoodcuttingLevel: undefined,
-	needsChopForHarvest: false,
-	petChance: 1,
-	growthTime: 0,
-	timePerPatchTravel: 10,
-	timePerHarvest: 10,
-	woodcuttingXp: undefined,
-	canPayFarmer: false,
-	canCompostPatch: true,
-	canCompostandPay: false,
-	protectionPayment: null
-});
+const mockPlants = vi.hoisted(() => {
+	const createMockPlant = (
+		name: string,
+		seedType: 'tree' | 'herb' | 'fruit_tree',
+		level: number,
+		input: Record<string, number>
+	) => ({
+		id: seedType.length,
+		name,
+		aliases: [name.toLowerCase()],
+		seedType,
+		level,
+		plantXp: 0,
+		checkXp: 0,
+		harvestXp: 0,
+		herbXp: undefined,
+		herbLvl: undefined,
+		inputItems: new Bank(input),
+		outputCrop: undefined,
+		givesLogs: false,
+		givesCrops: true,
+		fixedOutput: true,
+		fixedOutputAmount: 1,
+		variableYield: false,
+		numOfStages: 1,
+		chanceOfDeath: 0,
+		chance1: 0,
+		chance99: 0,
+		treeWoodcuttingLevel: undefined,
+		needsChopForHarvest: false,
+		petChance: 1,
+		growthTime: 0,
+		timePerPatchTravel: 10,
+		timePerHarvest: 10,
+		woodcuttingXp: undefined,
+		canPayFarmer: false,
+		canCompostPatch: true,
+		canCompostandPay: false,
+		protectionPayment: null
+	});
 
-const mockPlants = [
-	createMockPlant('Magic tree', 'tree', 75, { 'Magic seed': 1 }),
-	createMockPlant('Snapdragon', 'herb', 62, { 'Snapdragon seed': 3 }),
-	createMockPlant('Apple tree', 'fruit_tree', 55, { 'Apple tree seed': 1 })
-];
+	return [
+		createMockPlant('Magic tree', 'tree', 75, { 'Magic seed': 1 }),
+		createMockPlant('Snapdragon', 'herb', 62, { 'Snapdragon seed': 3 }),
+		createMockPlant('Apple tree', 'fruit_tree', 55, { 'Apple tree seed': 1 })
+	];
+});
 
 vi.mock('../../src/lib/util/addSubTaskToActivityTask.js', () => ({
 	default: addSubTaskToActivityTaskMock
