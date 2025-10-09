@@ -34,19 +34,28 @@ export async function fetchMultipleCLLeaderboards(
 			const userIds = Array.from(userEventMap.keys());
 			const userIdsList = userIds.length > 0 ? userIds.map(i => `'${i}'`).join(', ') : 'NULL';
 
+			const whereConditions: string[] = [];
+			if (ironmenOnly) {
+				whereConditions.push('"u"."minion.ironman" = true');
+			}
+			if (userIds.length > 0) {
+				whereConditions.push(`u.id IN (${userIdsList})`);
+			}
+
+			const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' OR ')}` : '';
+
 			const query = `
 SELECT u.id,
-       COUNT(*)::int AS qty,
+       COUNT(DISTINCT t.val)::int AS qty,
        TRIM(COALESCE(string_agg(b.text, ' '), '') || ' ' || COALESCE(username, 'Unknown')) AS full_name
 FROM users u
 ${SQL.LEFT_JOIN_BADGES}
 JOIN LATERAL (
-  SELECT 1
+  SELECT DISTINCT val
   FROM UNNEST(u.cl_array) AS val
   WHERE val = ANY(ARRAY[${items.join(', ')}])
 ) t ON TRUE
-${ironmenOnly ? 'WHERE "u"."minion.ironman" = true' : ''}
-${userIds.length > 0 ? `OR u.id IN (${userIdsList})` : ''}
+${whereClause}
 ${SQL.GROUP_BY_U_ID}
 ORDER BY qty DESC
 LIMIT ${resultLimit};
