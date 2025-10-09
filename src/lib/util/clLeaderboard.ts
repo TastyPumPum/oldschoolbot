@@ -34,7 +34,8 @@ export async function fetchMultipleCLLeaderboards(
 			const userIds = Array.from(userEventMap.keys());
 			const userIdsList = userIds.length > 0 ? userIds.map(i => `'${i}'`).join(', ') : 'NULL';
 
-			const baseCondition = ironmenOnly ? '"u"."minion.ironman" = true AND t.qty > 0' : 't.qty > 0';
+			const qtyColumn = 'COALESCE(t.qty, 0)';
+			const baseCondition = ironmenOnly ? `"u"."minion.ironman" = true AND ${qtyColumn} > 0` : `${qtyColumn} > 0`;
 			const extraCondition = userIds.length > 0 ? `u.id IN (${userIdsList})` : '';
 			const whereClause = extraCondition
 				? `WHERE (${baseCondition}) OR ${extraCondition}`
@@ -43,11 +44,11 @@ export async function fetchMultipleCLLeaderboards(
 			const query = `
 SELECT
         u.id,
-        t.qty::int AS qty,
+        ${qtyColumn}::int AS qty,
         ${SQL.SELECT_FULL_NAME}
 FROM users u
 ${SQL.LEFT_JOIN_BADGES}
-JOIN LATERAL (
+LEFT JOIN LATERAL (
         SELECT COUNT(DISTINCT val)::int AS qty
         FROM UNNEST(u.cl_array) AS val
         WHERE val = ANY(ARRAY[${items.join(', ')}])
