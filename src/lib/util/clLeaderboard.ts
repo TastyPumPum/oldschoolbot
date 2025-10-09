@@ -41,18 +41,18 @@ export async function fetchMultipleCLLeaderboards(
 				: `WHERE ${baseCondition}`;
 
 			const query = `
-SELECT u.id,
-       SUM(DISTINCT t.qty)::int AS qty,
-       TRIM(COALESCE(string_agg(b.text, ' '), '') || ' ' || COALESCE(username, 'Unknown')) AS full_name
+SELECT
+        u.id,
+        t.qty::int AS qty,
+        ${SQL.SELECT_FULL_NAME}
 FROM users u
 ${SQL.LEFT_JOIN_BADGES}
 JOIN LATERAL (
-  SELECT COUNT(DISTINCT val)::int AS qty
-  FROM UNNEST(u.cl_array) AS val
-  WHERE val = ANY(ARRAY[${items.join(', ')}])
+        SELECT COUNT(DISTINCT val)::int AS qty
+        FROM UNNEST(u.cl_array) AS val
+        WHERE val = ANY(ARRAY[${items.join(', ')}])
 ) t ON TRUE
 ${whereClause}
-${SQL.GROUP_BY_U_ID}
 ORDER BY qty DESC
 LIMIT ${resultLimit};
 `;
