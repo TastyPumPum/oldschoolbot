@@ -55,9 +55,12 @@ LIMIT 60;
 }
 
 export const SQL = {
-	SELECT_FULL_NAME:
-		"TRIM(COALESCE(string_agg(b.text, ' '), '') || ' ' || COALESCE(username, 'Unknown')) AS full_name",
-	LEFT_JOIN_BADGES: 'LEFT JOIN badges b ON b.id = ANY(u.badges)',
+	SELECT_FULL_NAME: "TRIM(COALESCE(b.badge_text, '') || ' ' || COALESCE(username, 'Unknown')) AS full_name",
+	LEFT_JOIN_BADGES: `LEFT JOIN LATERAL (
+	    SELECT string_agg(text, ' ') AS badge_text
+	    FROM badges
+	    WHERE id = ANY(u.badges)
+	) b ON TRUE`,
 	GROUP_BY_U_ID: 'GROUP BY u.id',
 	WHERE_IRON: (ironOnly: boolean) => (ironOnly ? '"minion.ironman" = true' : '')
 } as const;
