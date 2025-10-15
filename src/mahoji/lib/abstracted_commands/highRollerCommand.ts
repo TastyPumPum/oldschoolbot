@@ -1,10 +1,16 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, Message } from 'discord.js';
-import { Bank, type Item, Items, toKMB } from 'oldschooljs';
-
-import { BitField, Time } from '@/lib/constants.js';
+import { BitField } from '@/lib/constants.js';
 import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
-import { mUserFetch } from '@/lib/util/mUserFetch.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
+import { Time } from '@oldschoolgg/toolkit';
+import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonInteraction,
+	ButtonStyle,
+	ComponentType,
+	Message
+} from 'discord.js';
+import { Bank, type Item, Items, toKMB } from 'oldschooljs';
 
 type HighRollerPayoutMode = 'winner_takes_all' | 'top_three';
 
@@ -20,7 +26,9 @@ const MAX_PARTICIPANTS = 50;
 const MIN_PARTICIPANTS = 2;
 const MIN_TOP_THREE_PARTICIPANTS = 4;
 
-const randomGambleItems: Item[] = Items.filter(item => item.tradeable && marketPriceOrBotPrice(item.id) >= 1);
+const randomGambleItems: Item[] = [
+	...Items.filter(item => item.tradeable === true && marketPriceOrBotPrice(item.id) >= 1).values()
+];
 
 function pickRandomItem(rng: RNGProvider): Item {
 	if (randomGambleItems.length === 0) {
@@ -102,17 +110,29 @@ function formatRollResults(rolls: RollResult[]): string {
 	return lines.join('\n');
 }
 
+// Edit the message we sent for this interaction if possible; otherwise reply.
+async function safeEdit(
+	interaction: MInteraction,
+	options: string | { content?: string; components?: any[]; allowedMentions?: any }
+) {
+	const msg = (interaction.interactionResponse as Message | null) ?? null;
+	if (msg) {
+		if (typeof options === 'string') return msg.edit({ content: options });
+		return msg.edit(options);
+	}
+	if (typeof options === 'string') return interaction.reply({ content: options });
+	return interaction.reply(options as any);
+}
+
 async function collectDirectInvites({
 	interaction,
 	host,
 	inviteIDs,
-	stake,
 	stakeDisplay
 }: {
 	interaction: MInteraction;
 	host: MUser;
 	inviteIDs: string[];
-	stake: number;
 	stakeDisplay: string;
 }): Promise<string[] | null> {
 	if (inviteIDs.length === 0) {
@@ -164,7 +184,7 @@ async function collectDirectInvites({
 			}
 			confirmed.add(button.user.id);
 			await button.deferUpdate();
-			await interaction.editReply({
+			await message?.edit({
 				content: `${host.badgedUsername} is waiting on confirmations... (${confirmed.size}/${uniqueInviteIDs.length} ready)`,
 				components: [row]
 			});
@@ -173,7 +193,7 @@ async function collectDirectInvites({
 			}
 		});
 		collector.on('end', async (_collected, reason) => {
-			await interaction.editReply({ components: [] });
+			await message?.edit({ components: [] });
 			if (reason === 'confirmed') {
 				resolve([host.id, ...uniqueInviteIDs]);
 				return;
@@ -182,7 +202,7 @@ async function collectDirectInvites({
 			const declinedMentions = [...declined, ...missing]
 				.filter((value, index, array) => array.indexOf(value) === index)
 				.map(id => `<@${id}>`);
-			await interaction.editReply({
+			await message?.edit({
 				content: declinedMentions.length
 					? `The gamble was cancelled because ${declinedMentions.join(', ')} didn't confirm in time.`
 					: `The gamble was cancelled because not everyone confirmed in time.`,
@@ -223,7 +243,7 @@ async function collectOpenLobby({
 		time: Time.Second * 30
 	});
 	collector.on('end', async () => {
-		await interaction.editReply({ components: [] });
+		await message?.edit({ components: [] });
 	});
 	return new Promise(resolve => {
 		collector.on('collect', async (button: ButtonInteraction) => {
@@ -251,10 +271,8 @@ async function collectOpenLobby({
 				}
 				joined.add(mUser.id);
 				await button.deferUpdate();
-				await interaction.editReply({
-					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nParticipants (${joined.size}): ${[
-						...joined
-					]
+				await message?.edit({
+					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nParticipants (${joined.size}): ${[...joined]
 						.map(id => `<@${id}>`)
 						.join(', ')}`,
 					components: [row],
@@ -273,10 +291,8 @@ async function collectOpenLobby({
 				}
 				joined.delete(mUser.id);
 				await button.deferUpdate();
-				await interaction.editReply({
-					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nParticipants (${joined.size}): ${[
-						...joined
-					]
+				await message?.edit({
+					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nParticipants (${joined.size}): ${[...joined]
 						.map(id => `<@${id}>`)
 						.join(', ')}`,
 					components: [row],
@@ -287,7 +303,7 @@ async function collectOpenLobby({
 		collector.on('end', (_collected, _reason) => {
 			const participants = [...joined];
 			if (participants.length < MIN_PARTICIPANTS) {
-				interaction.editReply({
+				message?.edit({
 					content: `Not enough participants joined the High Roller Pot.`,
 					components: []
 				});
@@ -373,6 +389,7 @@ export async function highRollerCommand({
 	invitesInput: string | null | undefined;
 }): Promise<CommandResponse> {
 	await interaction.defer();
+
 	const stake = mahojiParseNumber({ input: stakeInput ?? undefined, min: 1, max: 500_000_000_000 });
 	if (!stake) {
 		return `Please provide a valid stake of at least 1 GP.`;
@@ -380,34 +397,41 @@ export async function highRollerCommand({
 	if (user.bitfield.includes(BitField.SelfGamblingLocked)) {
 		return 'You have gambling disabled and cannot join High Roller Pots.';
 	}
+
 	const stakeDisplay = toKMB(stake);
 	const mode: HighRollerPayoutMode = payoutMode ?? 'winner_takes_all';
+
 	const mentionMatches = invitesInput
 		? [...invitesInput.matchAll(/<@!?([0-9]{16,20})>/g)].map(match => match[1])
 		: [];
 	const numericMatches = invitesInput ? invitesInput.split(/\s+/).filter(part => /^\d{16,20}$/.test(part)) : [];
 	const inviteIDs = [...new Set([...mentionMatches, ...numericMatches])].filter(id => id !== user.id);
+
 	const joinMode: JoinMode = inviteIDs.length > 0 ? { type: 'invites', inviteIDs } : { type: 'open' };
+
 	const participantIDs =
 		joinMode.type === 'invites'
 			? await collectDirectInvites({
-					interaction,
-					host: user,
-					inviteIDs: joinMode.inviteIDs,
-					stake,
-					stakeDisplay
-				})
+				interaction,
+				host: user,
+				inviteIDs: joinMode.inviteIDs,
+				stakeDisplay
+			})
 			: await collectOpenLobby({ interaction, host: user, stake, stakeDisplay });
+
 	if (!participantIDs || participantIDs.length === 0) {
 		return interaction.returnStringOrFile('The High Roller Pot was cancelled.');
 	}
+
 	if (!participantIDs.includes(user.id)) {
 		participantIDs.unshift(user.id);
 	}
+
 	const limitedIDs = participantIDs.slice(0, MAX_PARTICIPANTS);
 	const participants = await Promise.all(limitedIDs.map(async id => (id === user.id ? user : mUserFetch(id))));
+
 	if (mode === 'top_three' && participants.length < MIN_TOP_THREE_PARTICIPANTS) {
-		await interaction.editReply({
+		await safeEdit(interaction, {
 			content: `Top 3 payout mode requires at least ${MIN_TOP_THREE_PARTICIPANTS} participants. Only ${participants.length} joined.`,
 			components: []
 		});
@@ -415,16 +439,18 @@ export async function highRollerCommand({
 			`Top 3 payout mode requires at least ${MIN_TOP_THREE_PARTICIPANTS} participants. Only ${participants.length} joined.`
 		);
 	}
+
 	try {
 		await ensureParticipantsReady({ participants, stake });
 	} catch (error) {
 		const reason = (error as Error).message;
-		await interaction.editReply({
+		await safeEdit(interaction, {
 			content: `The High Roller Pot could not start: ${reason}`,
 			components: []
 		});
 		return interaction.returnStringOrFile(`The High Roller Pot could not start: ${reason}`);
 	}
+
 	const removedParticipants: MUser[] = [];
 	try {
 		for (const participant of participants) {
@@ -436,12 +462,13 @@ export async function highRollerCommand({
 			await participant.addItemsToBank({ items: new Bank().add('Coins', stake) });
 		}
 		const reason = (error as Error).message ?? 'an unknown error occurred while reserving GP.';
-		await interaction.editReply({
+		await safeEdit(interaction, {
 			content: `The High Roller Pot could not start: ${reason}`,
 			components: []
 		});
 		return interaction.returnStringOrFile(`The High Roller Pot could not start: ${reason}`);
 	}
+
 	const rolls = generateUniqueRolls({
 		count: participants.length,
 		rollFn: () => {
@@ -450,12 +477,15 @@ export async function highRollerCommand({
 			return { item, value };
 		}
 	});
+
 	const rollResults: RollResult[] = participants.map((participant, index) => ({
 		user: participant,
 		item: rolls[index]!.item,
 		value: rolls[index]!.value
 	}));
+
 	rollResults.sort((a, b) => b.value - a.value);
+
 	const { pot, payoutsMessages } = await payoutWinners({
 		interaction,
 		host: user,
@@ -463,9 +493,12 @@ export async function highRollerCommand({
 		stake,
 		mode
 	});
-	const summary = `**High Roller Pot** (${mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
-		.map(result => result.user.badgedUsername)
-		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
-	await interaction.editReply({ content: summary, components: [] });
+
+	const summary = `**High Roller Pot** (${mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'
+		})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
+			.map(result => result.user.badgedUsername)
+			.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
+
+	await safeEdit(interaction, { content: summary, components: [] });
 	return interaction.returnStringOrFile(summary);
 }
