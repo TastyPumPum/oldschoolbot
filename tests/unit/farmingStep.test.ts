@@ -1,27 +1,23 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-const mockModule = vi.mock as unknown as (
-	path: string,
-	factory: () => unknown,
-	options?: { virtual?: boolean }
-) => ReturnType<typeof vi.mock>;
+function mockVirtualModule(path: string, factory: () => unknown) {
+	(
+		vi.mock as unknown as (
+			modulePath: string,
+			moduleFactory: () => unknown,
+			options?: { virtual?: boolean }
+		) => unknown
+	)(path, factory, { virtual: true });
+}
 
-mockModule(
-	'@oldschoolgg/rng',
-	() => ({
-		randInt: () => 1,
-		roll: () => false
-	}),
-	{ virtual: true }
-);
+mockVirtualModule('@oldschoolgg/rng', () => ({
+	randInt: () => 1,
+	roll: () => false
+}));
 
-mockModule(
-	'@/lib/canvas/chatHeadImage.js',
-	() => ({
-		default: vi.fn()
-	}),
-	{ virtual: true }
-);
+mockVirtualModule('@/lib/canvas/chatHeadImage.js', () => ({
+	default: vi.fn()
+}));
 
 import type { MUser } from '../../src/lib/MUser.js';
 import type { IPatchData } from '../../src/lib/skilling/skills/farming/utils/types.js';
