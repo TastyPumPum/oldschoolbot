@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+// @ts-expect-error Vitest allows specifying virtual mocks via the third argument.
 vi.mock(
 	'@oldschoolgg/rng',
 	() => ({
@@ -8,9 +9,17 @@ vi.mock(
 	}),
 	{ virtual: true }
 );
+// @ts-expect-error Provide a simple stub for the canvas dependency which isn't built during tests.
+vi.mock(
+	'@/lib/canvas/chatHeadImage.js',
+	() => ({
+		default: vi.fn()
+	}),
+	{ virtual: true }
+);
 
 import type { MUser } from '../../src/lib/MUser.js';
-import type { PatchTypes } from '../../src/lib/skilling/skills/farming/utils/types.js';
+import type { IPatchData } from '../../src/lib/skilling/skills/farming/utils/types.js';
 import type { FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
 import { executeFarmingStep } from '../../src/tasks/minions/farmingStep.js';
 
@@ -47,7 +56,7 @@ interface FakeUser {
 	toString: () => string;
 }
 
-const basePatch: PatchTypes.IPatchData = {
+const basePatch: IPatchData = {
 	lastPlanted: 'Marigold',
 	patchPlanted: true,
 	plantTime: Date.now(),
@@ -93,9 +102,9 @@ type MockGlobalClient = Record<string, unknown> & {
 };
 
 const globals = globalThis as typeof globalThis & {
-	ClientSettings?: MockClientSettings;
-	prisma?: MockPrisma;
-	globalClient?: MockGlobalClient;
+	ClientSettings?: MockClientSettings | undefined;
+	prisma?: MockPrisma | undefined;
+	globalClient?: MockGlobalClient | undefined;
 };
 
 const originalClientSettings = globals.ClientSettings;
@@ -106,14 +115,14 @@ beforeEach(() => {
 	globals.ClientSettings = {
 		...(originalClientSettings ?? {}),
 		updateBankSetting: vi.fn().mockResolvedValue(undefined)
-	};
+	} as any;
 	globals.prisma = {
 		...(originalPrisma ?? {}),
 		farmedCrop: {
 			create: vi.fn().mockResolvedValue({ id: 1 }),
 			update: vi.fn().mockResolvedValue(undefined)
 		}
-	};
+	} as any;
 	globals.globalClient = {
 		...(originalGlobalClient ?? {}),
 		emit: vi.fn(),
@@ -121,7 +130,7 @@ beforeEach(() => {
 			fetch: vi.fn(),
 			cache: new Map()
 		}
-	};
+	} as any;
 });
 
 afterEach(() => {

@@ -1,8 +1,8 @@
 import { randInt, roll } from '@oldschoolgg/rng';
 import { Emoji, Events } from '@oldschoolgg/toolkit';
-import type { CropUpgradeType } from '@prisma/client';
 import { Bank, itemID, Monsters } from 'oldschooljs';
 
+import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import chatHeadImage from '@/lib/canvas/chatHeadImage.js';
 import { combatAchievementTripEffect } from '@/lib/combat_achievements/combatAchievements.js';
 import { BitField } from '@/lib/constants.js';
