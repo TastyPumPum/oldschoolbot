@@ -1,8 +1,8 @@
 import { randInt, roll } from '@oldschoolgg/rng';
 import { Emoji, Events } from '@oldschoolgg/toolkit';
-import type { CropUpgradeType } from '@prisma/client';
 import { Bank, itemID, Monsters } from 'oldschooljs';
 
+import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import chatHeadImage from '@/lib/canvas/chatHeadImage.js';
 import { combatAchievementTripEffect } from '@/lib/combat_achievements/combatAchievements.js';
 import { BitField } from '@/lib/constants.js';
@@ -637,7 +637,9 @@ export async function executeFarmingStep({
 			? xpBreakdownParts.join(', ').replace(/, ([^,]*)$/, ', and $1')
 			: xpBreakdownParts[0];
 	infoStr.push(
-		`${plantingStr}harvesting ${patchType.lastQuantity}x ${plantToHarvest.name}.${payStr}\n\nYou received ${xpBreakdown}. In total: ${xpRes}. ${
+		`${user}, ${user.minionName} finished farming your patches.\n\n${plantingStr}harvesting ${patchType.lastQuantity}x ${
+			plantToHarvest.name
+		}.${payStr}\n\nYou received ${xpBreakdown}. In total: ${xpRes}. ${
 			woodcuttingOutcome.woodcuttingOccurred ? wcXP : ''
 		}`
 	);
