@@ -1,16 +1,22 @@
 import { Time } from '@oldschoolgg/toolkit';
 import {
 	ActionRowBuilder,
+	AttachmentBuilder,
 	ButtonBuilder,
 	type ButtonInteraction,
 	ButtonStyle,
 	ComponentType,
-	type Message
+	EmbedBuilder,
+	type Message,
+	type MessageEditOptions
 } from 'discord.js';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
+import type { CanvasImage, Canvas as SkiaCanvas } from 'skia-canvas';
 
+import { OSRSCanvas } from '@/lib/canvas/OSRSCanvas.js';
 import { BitField } from '@/lib/constants.js';
 import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
+import type { CompatibleResponse } from '@/lib/structures/PaginatedMessage.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
 type HighRollerPayoutMode = 'winner_takes_all' | 'top_three';
@@ -20,6 +26,44 @@ type RollResult = {
 	item: Item;
 	value: number;
 };
+
+type ItemAttachment = { attachment: AttachmentBuilder; name: string };
+
+const fallbackItemAttachmentCache = new Map<number, ItemAttachment>();
+const fallbackItemAttachmentPromises = new Map<number, Promise<ItemAttachment>>();
+
+async function getFallbackItemAttachment(itemID: number): Promise<ItemAttachment> {
+	const cached = fallbackItemAttachmentCache.get(itemID);
+	if (cached) {
+		return cached;
+	}
+	const existingPromise = fallbackItemAttachmentPromises.get(itemID);
+	if (existingPromise) {
+		return existingPromise;
+	}
+
+	const promise = (async () => {
+		try {
+			const itemImage = await OSRSCanvas.getItemImage({ itemID });
+			const width = (itemImage as { width?: number }).width ?? 36;
+			const height = (itemImage as { height?: number }).height ?? 32;
+			const canvas = new OSRSCanvas({ width, height });
+			const drawable = itemImage as SkiaCanvas | CanvasImage;
+			canvas.ctx.drawImage(drawable, 0, 0, width, height, 0, 0, width, height);
+			const buffer = await canvas.toBuffer();
+			const name = `item-${itemID}.png`;
+			const attachment = new AttachmentBuilder(buffer, { name });
+			const result: ItemAttachment = { attachment, name };
+			fallbackItemAttachmentCache.set(itemID, result);
+			return result;
+		} finally {
+			fallbackItemAttachmentPromises.delete(itemID);
+		}
+	})();
+
+	fallbackItemAttachmentPromises.set(itemID, promise);
+	return promise;
+}
 
 type JoinMode = { type: 'invites'; inviteIDs: string[] } | { type: 'open' };
 
@@ -103,26 +147,81 @@ export function generateUniqueRolls({
 	return rolls.map(roll => roll!) as { item: Item; value: number }[];
 }
 
-function formatRollResults(rolls: RollResult[]): string {
+export async function formatRollResults(
+	rolls: RollResult[]
+): Promise<{ description: string; attachments: AttachmentBuilder[] }> {
 	const lines: string[] = [];
+	const attachments = new Map<number, ItemAttachment>();
+	const globalGetItemEmoji = (globalThis as { getItemEmoji?: (itemID: number) => string | null }).getItemEmoji;
+
 	for (const [position, roll] of rolls.entries()) {
-		lines.push(`${position + 1}. ${roll.user.badgedUsername} rolled ${roll.item.name} worth ${toKMB(roll.value)}`);
+		const emoji = globalGetItemEmoji?.(roll.item.id) ?? null;
+		if (emoji) {
+			lines.push(
+				`${position + 1}. ${roll.user.badgedUsername} rolled ${emoji} ${roll.item.name} worth ${toKMB(roll.value)}`
+			);
+			continue;
+		}
+
+		const attachment = attachments.get(roll.item.id) ?? (await getFallbackItemAttachment(roll.item.id));
+		attachments.set(roll.item.id, attachment);
+		lines.push(
+			`${position + 1}. ${roll.user.badgedUsername} rolled ![${roll.item.name}](attachment://${attachment.name}) ${roll.item.name} worth ${toKMB(roll.value)}`
+		);
 	}
-	return lines.join('\n');
+
+	return { description: lines.join('\n'), attachments: [...attachments.values()].map(entry => entry.attachment) };
+}
+
+export async function buildHighRollerResponse({
+	mode,
+	stake,
+	pot,
+	rollResults,
+	payoutsMessages
+}: {
+	mode: HighRollerPayoutMode;
+	stake: number;
+	pot: number;
+	rollResults: RollResult[];
+	payoutsMessages: string[];
+}): Promise<CompatibleResponse> {
+	const { description, attachments } = await formatRollResults(rollResults);
+	const participants = rollResults.map(result => result.user.badgedUsername).join(', ');
+	const modeLabel = mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10';
+	const summaryEmbed = new EmbedBuilder()
+		.setTitle('High Roller Pot')
+		.setDescription(
+			`${modeLabel}\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${participants}`
+		);
+
+	if (payoutsMessages.length > 0) {
+		summaryEmbed.addFields({ name: 'Payouts', value: payoutsMessages.join('\n') });
+	}
+
+	const rollEmbed = new EmbedBuilder().setTitle('Rolls').setDescription(description || 'No rolls to display.');
+
+	const response: CompatibleResponse = {
+		embeds: [summaryEmbed, rollEmbed],
+		components: []
+	};
+
+	if (attachments.length > 0) {
+		(response as { files: AttachmentBuilder[] }).files = attachments;
+	}
+
+	return response;
 }
 
 // Edit the message we sent for this interaction if possible; otherwise reply.
-async function safeEdit(
-	interaction: MInteraction,
-	options: string | { content?: string; components?: any[]; allowedMentions?: any }
-) {
+async function safeEdit(interaction: MInteraction, options: string | CompatibleResponse) {
 	const msg = (interaction.interactionResponse as Message | null) ?? null;
 	if (msg) {
 		if (typeof options === 'string') return msg.edit({ content: options });
-		return msg.edit(options);
+		return msg.edit(options as MessageEditOptions);
 	}
 	if (typeof options === 'string') return interaction.reply({ content: options });
-	return interaction.reply(options as any);
+	return interaction.reply(options as CompatibleResponse);
 }
 
 async function collectDirectInvites({
@@ -540,12 +639,14 @@ export async function highRollerCommand({
 		mode
 	});
 
-	const summary = `**High Roller Pot** (${
-		mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'
-	})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
-		.map(result => result.user.badgedUsername)
-		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
+	const response = await buildHighRollerResponse({
+		mode,
+		stake,
+		pot,
+		rollResults,
+		payoutsMessages
+	});
 
-	await safeEdit(interaction, { content: summary, components: [] });
-	return interaction.returnStringOrFile(summary);
+	await safeEdit(interaction, response);
+	return interaction.returnStringOrFile(response);
 }
