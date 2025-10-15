@@ -124,7 +124,7 @@ export const gambleCommand: OSBMahojiCommand = {
 					type: 'String',
 					name: 'payout_mode',
 					description: 'Choose how the pot will be distributed.',
-					required: true,
+					required: false,
 					choices: [
 						{ name: 'Winner takes all', value: 'winner_takes_all' },
 						{ name: 'Top 3 (60/30/10)', value: 'top_three' }
@@ -212,7 +212,7 @@ export const gambleCommand: OSBMahojiCommand = {
 		duel?: { user: MahojiUserOption; amount?: string };
 		lucky_pick?: { amount: string };
 		slots?: { amount?: string };
-		high_roller?: { stake: string; payout_mode: 'winner_takes_all' | 'top_three'; invites?: string };
+		high_roller?: { stake: string; payout_mode?: 'winner_takes_all' | 'top_three'; invites?: string };
 		hot_cold?: { choice?: 'hot' | 'cold'; amount?: string };
 		give_random_item?: { user: MahojiUserOption };
 	}>) => {

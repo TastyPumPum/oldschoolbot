@@ -18,6 +18,7 @@ type JoinMode = { type: 'invites'; inviteIDs: string[] } | { type: 'open' };
 
 const MAX_PARTICIPANTS = 50;
 const MIN_PARTICIPANTS = 2;
+const MIN_TOP_THREE_PARTICIPANTS = 4;
 
 const randomGambleItems: Item[] = Items.filter(item => item.tradeable && marketPriceOrBotPrice(item.id) >= 1);
 
@@ -368,7 +369,7 @@ export async function highRollerCommand({
 	user: MUser;
 	rng: RNGProvider;
 	stakeInput: string | null | undefined;
-	payoutMode: HighRollerPayoutMode;
+	payoutMode?: HighRollerPayoutMode | null;
 	invitesInput: string | null | undefined;
 }): Promise<CommandResponse> {
 	await interaction.defer();
@@ -380,6 +381,7 @@ export async function highRollerCommand({
 		return 'You have gambling disabled and cannot join High Roller Pots.';
 	}
 	const stakeDisplay = toKMB(stake);
+	const mode: HighRollerPayoutMode = payoutMode ?? 'winner_takes_all';
 	const mentionMatches = invitesInput
 		? [...invitesInput.matchAll(/<@!?([0-9]{16,20})>/g)].map(match => match[1])
 		: [];
@@ -404,6 +406,15 @@ export async function highRollerCommand({
 	}
 	const limitedIDs = participantIDs.slice(0, MAX_PARTICIPANTS);
 	const participants = await Promise.all(limitedIDs.map(async id => (id === user.id ? user : mUserFetch(id))));
+	if (mode === 'top_three' && participants.length < MIN_TOP_THREE_PARTICIPANTS) {
+		await interaction.editReply({
+			content: `Top 3 payout mode requires at least ${MIN_TOP_THREE_PARTICIPANTS} participants. Only ${participants.length} joined.`,
+			components: []
+		});
+		return interaction.returnStringOrFile(
+			`Top 3 payout mode requires at least ${MIN_TOP_THREE_PARTICIPANTS} participants. Only ${participants.length} joined.`
+		);
+	}
 	try {
 		await ensureParticipantsReady({ participants, stake });
 	} catch (error) {
@@ -450,9 +461,9 @@ export async function highRollerCommand({
 		host: user,
 		sortedResults: rollResults,
 		stake,
-		mode: payoutMode
+		mode
 	});
-	const summary = `**High Roller Pot** (${payoutMode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
+	const summary = `**High Roller Pot** (${mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
 		.map(result => result.user.badgedUsername)
 		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
 	await interaction.editReply({ content: summary, components: [] });
