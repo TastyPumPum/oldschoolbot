@@ -1,16 +1,17 @@
-import { BitField } from '@/lib/constants.js';
-import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
-import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 import { Time } from '@oldschoolgg/toolkit';
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
-	ButtonInteraction,
+	type ButtonInteraction,
 	ButtonStyle,
 	ComponentType,
-	Message
+	type Message
 } from 'discord.js';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
+
+import { BitField } from '@/lib/constants.js';
+import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
+import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
 type HighRollerPayoutMode = 'winner_takes_all' | 'top_three';
 
@@ -128,12 +129,14 @@ async function collectDirectInvites({
 	interaction,
 	host,
 	inviteIDs,
-	stakeDisplay
+	stakeDisplay,
+	payoutDescription
 }: {
 	interaction: MInteraction;
 	host: MUser;
 	inviteIDs: string[];
 	stakeDisplay: string;
+	payoutDescription: string;
 }): Promise<string[] | null> {
 	if (inviteIDs.length === 0) {
 		return [host.id];
@@ -152,7 +155,7 @@ async function collectDirectInvites({
 		new ButtonBuilder().setCustomId('HR_DECLINE').setLabel('Decline').setStyle(ButtonStyle.Secondary)
 	);
 	await interaction.reply({
-		content: `${host.badgedUsername} has challenged ${mentionList} to a High Roller Pot for **${stakeDisplay}** each. Click Confirm to join.`,
+		content: `${host.badgedUsername} has challenged ${mentionList} to a High Roller Pot for **${stakeDisplay}** each (Payout: ${payoutDescription}). Click Confirm to join.`,
 		components: [row],
 		allowedMentions: { users: uniqueInviteIDs }
 	});
@@ -185,7 +188,7 @@ async function collectDirectInvites({
 			confirmed.add(button.user.id);
 			await button.deferUpdate();
 			await message?.edit({
-				content: `${host.badgedUsername} is waiting on confirmations... (${confirmed.size}/${uniqueInviteIDs.length} ready)`,
+				content: `${host.badgedUsername} is waiting on confirmations... (${confirmed.size}/${uniqueInviteIDs.length} ready)\nPayout: ${payoutDescription}`,
 				components: [row]
 			});
 			if (confirmed.size === uniqueInviteIDs.length) {
@@ -217,20 +220,23 @@ async function collectOpenLobby({
 	interaction,
 	host,
 	stake,
-	stakeDisplay
+	stakeDisplay,
+	payoutDescription
 }: {
 	interaction: MInteraction;
 	host: MUser;
 	stake: number;
 	stakeDisplay: string;
+	payoutDescription: string;
 }): Promise<string[] | null> {
 	const joined = new Set<string>([host.id]);
 	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
 		new ButtonBuilder().setCustomId('HR_JOIN').setLabel('Join gamble').setStyle(ButtonStyle.Success),
-		new ButtonBuilder().setCustomId('HR_LEAVE').setLabel('Leave').setStyle(ButtonStyle.Secondary)
+		new ButtonBuilder().setCustomId('HR_LEAVE').setLabel('Leave').setStyle(ButtonStyle.Secondary),
+		new ButtonBuilder().setCustomId('HR_FORCE_START').setLabel('Force start').setStyle(ButtonStyle.Primary)
 	);
 	await interaction.reply({
-		content: `${host.badgedUsername} opened a High Roller Pot for **${stakeDisplay}** each. Click Join to participate! (30s)`,
+		content: `${host.badgedUsername} opened a High Roller Pot for **${stakeDisplay}** each (Payout: ${payoutDescription}). Click Join to participate! (30s)`,
 		components: [row],
 		allowedMentions: { users: [] }
 	});
@@ -272,12 +278,30 @@ async function collectOpenLobby({
 				joined.add(mUser.id);
 				await button.deferUpdate();
 				await message?.edit({
-					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nParticipants (${joined.size}): ${[...joined]
+					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nPayout: ${payoutDescription}\nParticipants (${joined.size}): ${[
+						...joined
+					]
 						.map(id => `<@${id}>`)
 						.join(', ')}`,
 					components: [row],
 					allowedMentions: { users: [] }
 				});
+				return;
+			}
+			if (button.customId === 'HR_FORCE_START') {
+				if (button.user.id !== host.id) {
+					await button.reply({ content: `Only the host can force start this gamble.`, ephemeral: true });
+					return;
+				}
+				if (joined.size < MIN_PARTICIPANTS) {
+					await button.reply({
+						content: `You need at least ${MIN_PARTICIPANTS} participants to start this gamble.`,
+						ephemeral: true
+					});
+					return;
+				}
+				await button.deferUpdate();
+				collector.stop('force_start');
 				return;
 			}
 			if (button.customId === 'HR_LEAVE') {
@@ -292,7 +316,9 @@ async function collectOpenLobby({
 				joined.delete(mUser.id);
 				await button.deferUpdate();
 				await message?.edit({
-					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nParticipants (${joined.size}): ${[...joined]
+					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nPayout: ${payoutDescription}\nParticipants (${joined.size}): ${[
+						...joined
+					]
 						.map(id => `<@${id}>`)
 						.join(', ')}`,
 					components: [row],
@@ -300,7 +326,7 @@ async function collectOpenLobby({
 				});
 			}
 		});
-		collector.on('end', (_collected, _reason) => {
+		collector.on('end', (_collected, reason) => {
 			const participants = [...joined];
 			if (participants.length < MIN_PARTICIPANTS) {
 				message?.edit({
@@ -309,6 +335,12 @@ async function collectOpenLobby({
 				});
 				resolve(null);
 				return;
+			}
+			if (reason === 'force_start') {
+				message?.edit({
+					content: `${host.badgedUsername} force-started the High Roller Pot with ${participants.length} participants.`,
+					components: []
+				});
 			}
 			resolve(participants);
 		});
@@ -401,6 +433,13 @@ export async function highRollerCommand({
 	const stakeDisplay = toKMB(stake);
 	const mode: HighRollerPayoutMode = payoutMode ?? 'winner_takes_all';
 
+	const payoutDescription = mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 (60/30/10)';
+
+	await user.sync();
+	if (user.GP < stake) {
+		return `You need at least ${toKMB(stake)} GP to host this High Roller Pot.`;
+	}
+
 	const mentionMatches = invitesInput
 		? [...invitesInput.matchAll(/<@!?([0-9]{16,20})>/g)].map(match => match[1])
 		: [];
@@ -412,12 +451,19 @@ export async function highRollerCommand({
 	const participantIDs =
 		joinMode.type === 'invites'
 			? await collectDirectInvites({
-				interaction,
-				host: user,
-				inviteIDs: joinMode.inviteIDs,
-				stakeDisplay
-			})
-			: await collectOpenLobby({ interaction, host: user, stake, stakeDisplay });
+					interaction,
+					host: user,
+					inviteIDs: joinMode.inviteIDs,
+					stakeDisplay,
+					payoutDescription
+				})
+			: await collectOpenLobby({
+					interaction,
+					host: user,
+					stake,
+					stakeDisplay,
+					payoutDescription
+				});
 
 	if (!participantIDs || participantIDs.length === 0) {
 		return interaction.returnStringOrFile('The High Roller Pot was cancelled.');
@@ -494,10 +540,11 @@ export async function highRollerCommand({
 		mode
 	});
 
-	const summary = `**High Roller Pot** (${mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'
-		})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
-			.map(result => result.user.badgedUsername)
-			.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
+	const summary = `**High Roller Pot** (${
+		mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'
+	})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
+		.map(result => result.user.badgedUsername)
+		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
 
 	await safeEdit(interaction, { content: summary, components: [] });
 	return interaction.returnStringOrFile(summary);
