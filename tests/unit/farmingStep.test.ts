@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-const mockModule = (path: string, factory: () => unknown, options?: { virtual?: boolean }): void => {
-	vi.mock(path, factory as Parameters<typeof vi.mock>[1], options);
-};
+const mockModule = vi.mock as unknown as (
+	path: string,
+	factory: () => unknown,
+	options?: { virtual?: boolean }
+) => ReturnType<typeof vi.mock>;
 
 mockModule(
 	'@oldschoolgg/rng',
