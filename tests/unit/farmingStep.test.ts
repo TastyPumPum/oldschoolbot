@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
-// @ts-expect-error Vitest allows specifying virtual mocks via the third argument.
-vi.mock(
+const mockModule = vi.mock as unknown as (
+	id: Parameters<typeof vi.mock>[0],
+	factory: Parameters<typeof vi.mock>[1],
+	options?: { virtual?: boolean }
+) => void;
+
+mockModule(
 	'@oldschoolgg/rng',
 	() => ({
 		randInt: () => 1,
@@ -9,8 +14,8 @@ vi.mock(
 	}),
 	{ virtual: true }
 );
-// @ts-expect-error Provide a simple stub for the canvas dependency which isn't built during tests.
-vi.mock(
+
+mockModule(
 	'@/lib/canvas/chatHeadImage.js',
 	() => ({
 		default: vi.fn()
