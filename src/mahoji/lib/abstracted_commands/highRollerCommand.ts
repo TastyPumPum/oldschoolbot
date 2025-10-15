@@ -9,8 +9,9 @@ import {
 } from 'discord.js';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
 
-import { BitField } from '@/lib/constants.js';
+import { BitField, globalConfig } from '@/lib/constants.js';
 import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
+import type { OldSchoolBotClient } from '@/lib/structures/OldSchoolBotClient.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
 type HighRollerPayoutMode = 'winner_takes_all' | 'top_three';
@@ -30,6 +31,78 @@ const MIN_TOP_THREE_PARTICIPANTS = 4;
 const randomGambleItems: Item[] = [
 	...Items.filter(item => item.tradeable === true && marketPriceOrBotPrice(item.id) >= 1).values()
 ];
+
+const itemEmojiCache = new Map<number, string | null>();
+let supportGuildEmojisFetched = false;
+
+function sanitizeEmojiName(name: string): string {
+	return name
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, '_')
+		.replace(/_+/g, '_')
+		.replace(/^_+|_+$/g, '');
+}
+
+async function fetchSupportGuild() {
+	const client = (globalThis as typeof globalThis & { globalClient?: OldSchoolBotClient }).globalClient;
+	if (!client) {
+		return null;
+	}
+	const guild = client.guilds.cache.get(globalConfig.supportServerID) ?? null;
+	if (!guild) {
+		return null;
+	}
+	if (!supportGuildEmojisFetched) {
+		try {
+			await guild.emojis.fetch();
+		} catch (error) {
+			(globalThis as any).Logging?.logError?.(error as Error);
+		}
+		supportGuildEmojisFetched = true;
+	}
+	return guild;
+}
+
+async function getItemEmoji(item: Item): Promise<string | null> {
+	if (itemEmojiCache.has(item.id)) {
+		return itemEmojiCache.get(item.id) ?? null;
+	}
+	const guild = await fetchSupportGuild();
+	if (!guild) {
+		itemEmojiCache.set(item.id, null);
+		return null;
+	}
+	const candidates = new Set<string>();
+	const addCandidate = (value: string | null | undefined) => {
+		if (!value) return;
+		const sanitized = sanitizeEmojiName(value);
+		if (sanitized) {
+			candidates.add(sanitized);
+			candidates.add(sanitized.replace(/_/g, ''));
+		}
+	};
+	addCandidate(item.name);
+	addCandidate(item.wiki_name ?? undefined);
+	candidates.add(item.id.toString());
+	candidates.add(`item_${item.id}`);
+	candidates.add(`item${item.id}`);
+
+	const emoji = guild.emojis.cache.find(e => {
+		if (!e.name) return false;
+		const normalized = sanitizeEmojiName(e.name);
+		if (candidates.has(e.name) || candidates.has(normalized)) {
+			return true;
+		}
+		if (normalized && candidates.has(normalized.replace(/_/g, ''))) {
+			return true;
+		}
+		return normalized.includes(item.id.toString());
+	});
+
+	const emojiString = emoji?.toString() ?? null;
+	itemEmojiCache.set(item.id, emojiString);
+	return emojiString;
+}
 
 function pickRandomItem(rng: RNGProvider): Item {
 	if (randomGambleItems.length === 0) {
@@ -103,10 +176,15 @@ export function generateUniqueRolls({
 	return rolls.map(roll => roll!) as { item: Item; value: number }[];
 }
 
-function formatRollResults(rolls: RollResult[]): string {
+async function formatRollResults(rolls: RollResult[]): Promise<string> {
 	const lines: string[] = [];
 	for (const [position, roll] of rolls.entries()) {
-		lines.push(`${position + 1}. ${roll.user.badgedUsername} rolled ${roll.item.name} worth ${toKMB(roll.value)}`);
+		const emoji = await getItemEmoji(roll.item);
+		lines.push(
+			`${position + 1}. ${roll.user.badgedUsername} rolled ${roll.item.name} worth ${toKMB(roll.value)}${
+				emoji ? ` ${emoji}` : ''
+			}`
+		);
 	}
 	return lines.join('\n');
 }
@@ -540,11 +618,12 @@ export async function highRollerCommand({
 		mode
 	});
 
+	const formattedRolls = await formatRollResults(rollResults);
 	const summary = `**High Roller Pot** (${
 		mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'
 	})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
 		.map(result => result.user.badgedUsername)
-		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
+		.join(', ')}\n\n**Rolls**\n${formattedRolls}\n\n${payoutsMessages.join('\n')}`;
 
 	await safeEdit(interaction, { content: summary, components: [] });
 	return interaction.returnStringOrFile(summary);
