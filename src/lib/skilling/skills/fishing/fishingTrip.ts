@@ -14,14 +14,12 @@ export function calcFishingTripResult({
 	duration,
 	catches,
 	loot,
-	flakesBeingUsed,
 	gearBank
 }: {
 	fish: Fish;
 	duration: number;
 	catches: number[];
 	loot: number[];
-	flakesBeingUsed?: number;
 	gearBank: GearBank;
 }) {
 	const updateBank = new UpdateBank();
@@ -82,14 +80,6 @@ export function calcFishingTripResult({
 		if (qty > 0) {
 			updateBank.itemLootBank.set(EItem.RAW_KARAMBWANJI, qty * baseKarambwanji);
 		}
-	}
-
-	if (flakesBeingUsed && flakesBeingUsed > 0) {
-		updateBank.itemCostBank.add('Spirit flakes', flakesBeingUsed);
-	}
-
-	if (fish.bait && totalCatches > 0) {
-		updateBank.itemCostBank.add(fish.bait, totalCatches);
 	}
 
 	if (fish.clueScrollChance) {

@@ -171,6 +171,7 @@ export interface FishingActivityTaskOptions extends ActivityTaskOptions {
 	flakesToRemove?: number;
 	powerfish?: boolean;
 	spiritFlakes?: boolean;
+	spiritFlakePreference?: boolean;
 	iQty?: number;
 }
 

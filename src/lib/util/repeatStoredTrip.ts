@@ -355,7 +355,7 @@ const tripHandlers = {
 			name: data.fishID,
 			quantity: data.iQty,
 			powerfish: data.powerfish ?? false,
-			spirit_flakes: data.spiritFlakes ?? false
+			spirit_flakes: data.spiritFlakePreference ?? data.spiritFlakes ?? false
 		})
 	},
 	[activity_type_enum.FishingTrawler]: {

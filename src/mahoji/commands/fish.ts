@@ -101,6 +101,17 @@ export const fishCommand = defineCommand({
 			return result;
 		}
 
+		if (result.suppliesToRemove.length > 0) {
+			try {
+				await user.transactItems({ itemsToRemove: result.suppliesToRemove });
+			} catch (err) {
+				if (err instanceof Error) {
+					return err.message;
+				}
+				throw err;
+			}
+		}
+
 		await ActivityManager.startTrip<FishingActivityTaskOptions>({
 			fishID: spot.name,
 			userID: user.id,
@@ -111,6 +122,7 @@ export const fishCommand = defineCommand({
 			flakesToRemove: result.flakesBeingUsed,
 			powerfish: Boolean(options.powerfish),
 			spiritFlakes: result.isUsingSpiritFlakes,
+			spiritFlakePreference: result.spiritFlakePreference,
 			iQty: options.quantity ? options.quantity : undefined,
 			duration: result.duration,
 			type: 'Fishing'

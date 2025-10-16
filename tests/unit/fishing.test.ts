@@ -179,6 +179,9 @@ describe('calcFishingTripStart', () => {
 		expect(out.quantity).toBeGreaterThanOrEqual(1);
 		expect(out.flakesBeingUsed).toBeLessThanOrEqual(out.quantity);
 		expect(out.isUsingSpiritFlakes).toBeTruthy();
+		expect(out.spiritFlakePreference).toBe(true);
+		expect(out.suppliesToRemove.amount('Spirit flakes')).toBe(out.flakesBeingUsed);
+		expect(out.suppliesToRemove.amount('Fishing bait')).toBe(out.quantity);
 	});
 
 	test('powerfishing disables spirit flakes usage', () => {
@@ -202,6 +205,29 @@ describe('calcFishingTripStart', () => {
 		expect(out.isPowerfishing).toBeTruthy();
 		expect(out.isUsingSpiritFlakes).toBeFalsy();
 		expect(out.flakesBeingUsed).toBeUndefined();
+		expect(out.spiritFlakePreference).toBe(true);
+	});
+
+	test('spirit flakes are consumed even when no bonus fish are granted', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10).add('Spirit flakes', 10) });
+
+		const res = calcFishingTripStart({
+			gearBank,
+			fish,
+			maxTripLength: 1_000_000,
+			quantityInput: 5,
+			wantsToUseFlakes: true,
+			powerfish: false,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof res).toBe('object');
+		const out = res as Exclude<typeof res, string>;
+		expect(out.flakesBeingUsed).toBe(out.quantity);
+		expect(out.suppliesToRemove.amount('Spirit flakes')).toBe(out.quantity);
 	});
 
 	test('limited trip length reduces catches without failing the request', () => {
