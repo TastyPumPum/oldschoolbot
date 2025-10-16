@@ -1,7 +1,7 @@
 import type { Item } from 'oldschooljs';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { MUser } from '@/lib/MUser.js';
+type FakeMUser = { badgedUsername: string };
 
 vi.mock('@/lib/canvas/OSRSCanvas.js', () => {
 	class FakeOSRSCanvas {
@@ -95,7 +95,7 @@ describe('buildHighRollerResponse', () => {
 			pot: 1_000_000,
 			rollResults: [
 				{
-					user: { badgedUsername: 'Tester' } as unknown as MUser,
+					user: { badgedUsername: 'Tester' } as FakeMUser,
 					item: dummyItem,
 					value: 5_000
 				}
@@ -104,17 +104,22 @@ describe('buildHighRollerResponse', () => {
 		});
 
 		expect(response.files).toBeDefined();
-		const files = (response.files ?? []) as { name?: string }[];
-		expect(files).toHaveLength(1);
-		expect(files[0]!.name).toBe('item-1.png');
+		const files = response.files ?? [];
+		expect(files.length).toBe(1);
+		const file = files[0];
+		const fileName = file && typeof file === 'object' && 'name' in file ? (file as { name?: string }).name : null;
+		expect(fileName).toBe('item-1.png');
 
 		const rollEmbed = response.embeds?.[1];
-		const rollEmbedData = typeof rollEmbed?.toJSON === 'function' ? rollEmbed.toJSON() : rollEmbed;
-		const rollDescription =
-			(rollEmbedData as { description?: string } | undefined)?.description ??
-			(rollEmbedData as { data?: { description?: string } } | undefined)?.data?.description ??
+		const rollEmbedDescription =
+			(rollEmbed && typeof rollEmbed === 'object' && 'data' in rollEmbed
+				? ((rollEmbed as { data?: { description?: string } }).data?.description ?? null)
+				: null) ??
+			(rollEmbed && typeof rollEmbed === 'object' && 'description' in rollEmbed
+				? ((rollEmbed as { description?: string }).description ?? null)
+				: null) ??
 			'';
-		expect(rollDescription).toContain('![Dummy item](attachment://item-1.png)');
+		expect(rollEmbedDescription).toContain('![Dummy item](attachment://item-1.png)');
 
 		getItemImageSpy.mockRestore();
 		if (originalGetItemEmoji) {

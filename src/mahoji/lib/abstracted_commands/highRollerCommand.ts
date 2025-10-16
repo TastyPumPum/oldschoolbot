@@ -11,8 +11,8 @@ import {
 	type MessageEditOptions
 } from 'discord.js';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
-import type { CanvasImage, Canvas as SkiaCanvas } from 'skia-canvas';
 
+import type { Canvas, CanvasImage } from '@/lib/canvas/canvasUtil.js';
 import { OSRSCanvas } from '@/lib/canvas/OSRSCanvas.js';
 import { BitField } from '@/lib/constants.js';
 import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
@@ -48,7 +48,7 @@ async function getFallbackItemAttachment(itemID: number): Promise<ItemAttachment
 			const width = (itemImage as { width?: number }).width ?? 36;
 			const height = (itemImage as { height?: number }).height ?? 32;
 			const canvas = new OSRSCanvas({ width, height });
-			const drawable = itemImage as SkiaCanvas | CanvasImage;
+			const drawable = itemImage as Canvas | CanvasImage;
 			canvas.ctx.drawImage(drawable, 0, 0, width, height, 0, 0, width, height);
 			const buffer = await canvas.toBuffer();
 			const name = `item-${itemID}.png`;
