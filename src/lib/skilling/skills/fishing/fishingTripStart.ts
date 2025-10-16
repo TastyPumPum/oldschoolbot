@@ -38,10 +38,13 @@ function rollExtraLoot({
 	let updatedLoot = lootAmount + 1;
 	let updatedFlakesUsed = flakesUsed;
 	let updatedInv = currentInv + 1;
+	let blessingExtra = 0;
+	let flakeExtra = 0;
 
 	if (rng.rand() < blessingChance / 100) {
 		updatedLoot += 1;
 		updatedInv += 1;
+		blessingExtra = 1;
 	}
 
 	const canUseFlakes = spiritFlakes && updatedFlakesUsed < flakesAvailable;
@@ -50,13 +53,16 @@ function rollExtraLoot({
 		if (rng.rand() < 0.5) {
 			updatedLoot += 1;
 			updatedInv += 1;
+			flakeExtra = 1;
 		}
 	}
 
 	return {
 		loot: updatedLoot,
 		flakesUsed: updatedFlakesUsed,
-		inv: updatedInv
+		inv: updatedInv,
+		blessingExtra,
+		flakeExtra
 	};
 }
 
@@ -94,6 +100,8 @@ function determineFishingTime({
 	let ticksElapsed = 0;
 	let flakesUsed = 0;
 	let currentInv = 0;
+	let blessingExtra = 0;
+	let flakeExtra = 0;
 
 	const fishCount = fish.subfishes!.length;
 	const catches = new Array<number>(fishCount).fill(0);
@@ -178,6 +186,8 @@ function determineFishingTime({
 					loot[i] = result.loot;
 					flakesUsed = result.flakesUsed;
 					currentInv = result.inv;
+					blessingExtra += result.blessingExtra;
+					flakeExtra += result.flakeExtra;
 					break;
 				}
 			}
@@ -215,7 +225,9 @@ function determineFishingTime({
 		loot,
 		ticksElapsed,
 		flakesUsed,
-		baitUsed
+		baitUsed,
+		blessingExtra,
+		flakeExtra
 	};
 }
 
@@ -322,7 +334,7 @@ export function calcFishingTripStart({
 		}
 	}
 
-	const { catches, loot, ticksElapsed, flakesUsed, baitUsed } = determineFishingTime({
+	const { catches, loot, ticksElapsed, flakesUsed, baitUsed, blessingExtra, flakeExtra } = determineFishingTime({
 		quantity,
 		tripTicks,
 		isPowerfishing,
@@ -365,6 +377,8 @@ export function calcFishingTripStart({
 		isPowerfishing,
 		isUsingSpiritFlakes: !isPowerfishing && flakesUsed > 0,
 		spiritFlakePreference,
-		suppliesToRemove
+		suppliesToRemove,
+		blessingExtra,
+		flakeExtra
 	};
 }
