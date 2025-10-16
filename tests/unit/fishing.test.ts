@@ -45,9 +45,12 @@ describe('calcFishingTripStart', () => {
 	});
 
 	test('returns helpful message when final quantity is 0', () => {
-		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		const fish = Fishing.Fishes.find(f => f.name === 'Tuna/Swordfish')!;
 
-		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 1) });
+		const gearBank = makeGearBank({
+			bank: new Bank(),
+			skillsAsLevels: { fishing: 1 }
+		});
 
 		const res = calcFishingTripStart({
 			gearBank,

@@ -69,13 +69,13 @@ export const fishCommand: OSBMahojiCommand = {
 			return `${spot.name} is not supported yet.`;
 		}
 
+		if (spot.skillReqs && !user.hasSkillReqs(spot.skillReqs)) {
+			return `To fish ${spot.name}, you need ${formatSkillRequirements(spot.skillReqs)}.`;
+		}
+
 		const minimumFishingLevel = spot.subfishes[0]?.level ?? 1;
 		if (user.skillsAsLevels.fishing < minimumFishingLevel) {
 			return `${user.minionName} needs ${minimumFishingLevel} Fishing to fish ${spot.name}.`;
-		}
-
-		if (spot.skillReqs && !user.hasSkillReqs(spot.skillReqs)) {
-			return `To fish ${spot.name}, you need ${formatSkillRequirements(spot.skillReqs)}.`;
 		}
 
 		if (spot.qpRequired && user.QP < spot.qpRequired) {
