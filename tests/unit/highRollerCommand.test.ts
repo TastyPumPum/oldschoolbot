@@ -15,6 +15,10 @@ vi.mock('@/lib/canvas/OSRSCanvas.js', () => {
 			this.height = height;
 		}
 
+		getCanvas() {
+			return { width: this.width, height: this.height };
+		}
+
 		async toBuffer() {
 			return Buffer.from('fake');
 		}
