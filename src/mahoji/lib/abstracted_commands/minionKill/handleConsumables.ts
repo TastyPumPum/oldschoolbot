@@ -59,13 +59,13 @@ export function getItemCostFromConsumables({
 			const multiply = consumable.qtyPerMinute
 				? (timeToFinish / Time.Minute) * Number(itemMultiple)
 				: Number(itemMultiple);
-			if (!Number.isFinite(multiply) || multiply <= 0) {
+			if (!Number.isFinite(multiply) || multiply < 0) {
 				continue;
 			}
 
 			for (const [item, qty] of consumable.itemCost.items()) {
 				const quantityToAdd = Number(qty) * multiply;
-				if (!Number.isFinite(quantityToAdd) || quantityToAdd <= 0) {
+				if (!Number.isFinite(quantityToAdd) || quantityToAdd < 0) {
 					continue;
 				}
 				floatCostsPerKill.add(item.id, quantityToAdd);
