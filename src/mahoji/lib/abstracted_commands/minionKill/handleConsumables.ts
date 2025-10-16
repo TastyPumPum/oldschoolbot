@@ -46,7 +46,14 @@ export function getItemCostFromConsumables({
 		}
 
 		let itemMultiple = consumable.qtyPerKill ?? consumable.qtyPerMinute ?? null;
-		if (itemMultiple) {
+		if (itemMultiple != null) {
+			if (typeof itemMultiple !== 'number') {
+				itemMultiple = Number(itemMultiple);
+			}
+			if (!Number.isFinite(itemMultiple)) {
+				continue;
+			}
+
 			if (consumable.isRuneCost) {
 				// Free casts for kodai + sotd
 				if (gearBank.hasEquipped('Kodai wand')) {
@@ -56,16 +63,18 @@ export function getItemCostFromConsumables({
 				}
 			}
 
-			const multiply = consumable.qtyPerMinute
-				? (timeToFinish / Time.Minute) * Number(itemMultiple)
-				: Number(itemMultiple);
-			if (!Number.isFinite(multiply) || multiply < 0) {
+			const multiply = consumable.qtyPerMinute ? (timeToFinish / Time.Minute) * itemMultiple : itemMultiple;
+			if (!Number.isFinite(multiply) || multiply <= 0) {
 				continue;
 			}
 
 			for (const [item, qty] of consumable.itemCost.items()) {
-				const quantityToAdd = Number(qty) * multiply;
-				if (!Number.isFinite(quantityToAdd) || quantityToAdd < 0) {
+				const resolvedQty = typeof qty === 'number' ? qty : Number(qty);
+				if (!Number.isFinite(resolvedQty)) {
+					continue;
+				}
+				const quantityToAdd = resolvedQty * multiply;
+				if (!Number.isFinite(quantityToAdd) || quantityToAdd <= 0) {
 					continue;
 				}
 				floatCostsPerKill.add(item.id, quantityToAdd);
