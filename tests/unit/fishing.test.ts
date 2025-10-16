@@ -53,6 +53,8 @@ function createDeterministicRNG(seed = 1): SimpleRNG {
 			return next() < percent / 100;
 		}
 	};
+}
+
 class SequenceRNG implements RNGProvider {
 	private readonly fallback = new SeedableRNG(1);
 	private randQueue: number[];

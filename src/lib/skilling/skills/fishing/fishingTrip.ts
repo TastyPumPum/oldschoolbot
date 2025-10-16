@@ -153,7 +153,6 @@ export function calcFishingTripResult({
 		messages,
 		xpPerHour: toKMB(xpPerHour),
 		bonusXpPerHour,
-		otherXpPerHour: toKMB(otherXpPerHour),
 		blessingExtra,
 		flakeExtra
 	};
