@@ -1,3 +1,4 @@
+import { SeedableRNG } from '@oldschoolgg/rng';
 import { calcPerHour, Table, Time } from '@oldschoolgg/toolkit';
 import { type Bank, convertLVLtoXP, EItem, Items } from 'oldschooljs';
 import { uniqueBy } from 'remeda';
@@ -88,6 +89,8 @@ function renderFishingXpHrTable() {
 
 				const tripLengthHours = 3000;
 
+				const rng = new SeedableRNG(1);
+
 				const trip = Fishing.util.calcFishingTripStart({
 					gearBank,
 					fish,
@@ -95,7 +98,8 @@ function renderFishingXpHrTable() {
 					quantityInput: undefined,
 					wantsToUseFlakes: false,
 					powerfish: false,
-					hasWildyEliteDiary: false
+					hasWildyEliteDiary: false,
+					rng
 				});
 				if (typeof trip === 'string') throw new Error(`Error calculating trip: ${trip}`);
 				const result = Fishing.util.calcFishingTripResult({
@@ -103,7 +107,8 @@ function renderFishingXpHrTable() {
 					catches: trip.catches,
 					loot: trip.loot,
 					gearBank,
-					duration: trip.duration
+					duration: trip.duration,
+					rng
 				});
 				result.updateBank.itemLootBank.remove('Heron', result.updateBank.itemLootBank.amount('Heron'));
 

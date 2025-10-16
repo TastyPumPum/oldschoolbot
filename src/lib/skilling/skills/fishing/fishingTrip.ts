@@ -1,4 +1,4 @@
-import { roll } from '@oldschoolgg/rng';
+import { MathRNG, type RNGProvider } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { EItem, toKMB } from 'oldschooljs';
 
@@ -14,14 +14,18 @@ export function calcFishingTripResult({
 	duration,
 	catches,
 	loot,
-	gearBank
+	gearBank,
+	rng
 }: {
 	fish: Fish;
 	duration: number;
 	catches: number[];
 	loot: number[];
 	gearBank: GearBank;
+	rng?: RNGProvider;
 }) {
+	const rngProvider = rng ?? MathRNG;
+
 	const updateBank = new UpdateBank();
 	const messages: string[] = [];
 	const fishingLevel = gearBank.skillsAsLevels.fishing;
@@ -46,7 +50,7 @@ export function calcFishingTripResult({
 
 		if (subfish.tertiary) {
 			for (let j = 0; j < quantity; j++) {
-				if (roll(subfish.tertiary.chance)) {
+				if (rngProvider.roll(subfish.tertiary.chance)) {
 					updateBank.itemLootBank.add(subfish.tertiary.id);
 				}
 			}
@@ -71,7 +75,7 @@ export function calcFishingTripResult({
 		const catchCount = updateBank.itemLootBank.amount(EItem.MINNOW);
 		let totalMinnows = 0;
 		for (let i = 0; i < catchCount; i++) {
-			totalMinnows += Math.floor(Math.random() * (max - min + 1)) + min;
+			totalMinnows += rngProvider.randInt(min, max);
 		}
 		updateBank.itemLootBank.set(EItem.MINNOW, totalMinnows);
 	} else if (fish.name === 'Karambwanji') {
@@ -89,7 +93,7 @@ export function calcFishingTripResult({
 	if (fish.petChance) {
 		const { petDropRate } = skillingPetDropRate(gearBank, 'fishing', fish.petChance);
 		for (let i = 0; i < totalCatches; i++) {
-			if (roll(petDropRate)) {
+			if (rngProvider.roll(petDropRate)) {
 				updateBank.itemLootBank.add('Heron');
 			}
 		}
