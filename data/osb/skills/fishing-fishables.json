@@ -27,7 +27,11 @@
 				"xp": 50,
 				"intercept": 0.12549019607843137,
 				"slope": 0.0064025610244097635,
-				"other_xp": 5
+				"bonus_xp": {
+					"agility": 5,
+					"strength": 5,
+					"cooking": 10
+				}
 			},
 			{
 				"id": 11330,
@@ -35,7 +39,11 @@
 				"xp": 70,
 				"intercept": 0.06274509803921569,
 				"slope": 0.0032012805122048817,
-				"other_xp": 6
+				"bonus_xp": {
+					"agility": 6,
+					"strength": 6,
+					"cooking": 10
+				}
 			},
 			{
 				"id": 11332,
@@ -43,7 +51,11 @@
 				"xp": 80,
 				"intercept": 0.03137254901960784,
 				"slope": 0.002240896358543417,
-				"other_xp": 7
+				"bonus_xp": {
+					"agility": 7,
+					"strength": 7,
+					"cooking": 15
+				}
 			}
 		],
 		"pet_chance": 426954,

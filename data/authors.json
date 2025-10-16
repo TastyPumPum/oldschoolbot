@@ -1,6 +1,6 @@
 {
-	"osb/Skills/fishing.mdx": ["TastyPumPum", "Magnaboy"],
 	"osb/Skills/mining.mdx": ["TastyPumPum", "Magnaboy", "DayV"],
+	"osb/Skills/fishing.mdx": ["TastyPumPum", "Magnaboy"],
 	"getting-started/changelog.mdx": ["Magnaboy", "TastyPumPum", "alexandermenteer"],
 	"getting-started/wiki.md": ["Magnaboy", "DayV", "dark", "Jonesey"],
 	"osb/Buyables/buyables.md": ["Magnaboy", "TastyPumPum"],
