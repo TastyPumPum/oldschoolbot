@@ -16,7 +16,6 @@ export function calcFishingTripResult({
 	loot,
 	gearBank,
 	rng,
-	isPowerfishing = false,
 	blessingExtra = 0,
 	flakeExtra = 0,
 	usedBarbarianCutEat = false
@@ -27,7 +26,6 @@ export function calcFishingTripResult({
 	loot: number[];
 	gearBank: GearBank;
 	rng?: RNGProvider;
-	isPowerfishing?: boolean;
 	blessingExtra?: number;
 	flakeExtra?: number;
 	usedBarbarianCutEat?: boolean;

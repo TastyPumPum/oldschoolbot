@@ -404,7 +404,6 @@ describe('calcFishingTripStart', () => {
 			loot: start.loot,
 			gearBank,
 			rng: createDeterministicRNG(321),
-			isPowerfishing: true,
 			usedBarbarianCutEat: start.usedBarbarianCutEat
 		});
 
@@ -643,7 +642,6 @@ describe('calcFishingTripResult', () => {
 			loot: start.loot,
 			gearBank: finishingGear,
 			rng: createDeterministicRNG(99),
-			isPowerfishing: true,
 			usedBarbarianCutEat: start.usedBarbarianCutEat
 		});
 

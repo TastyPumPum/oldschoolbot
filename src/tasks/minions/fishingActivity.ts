@@ -28,7 +28,6 @@ export const fishingTask: MinionTask = {
 			catches: Qty,
 			loot,
 			gearBank: user.gearBank,
-			isPowerfishing: Boolean(data.powerfish),
 			blessingExtra,
 			flakeExtra,
 			rng,
