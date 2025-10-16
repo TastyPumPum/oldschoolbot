@@ -7,7 +7,7 @@ import { anglerItemsArr } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
 
-export const fishCommand: defineCommand({
+export const fishCommand = defineCommand({
 	name: 'fish',
 	description: 'Send your minion to fish fish.',
 	attributes: {
