@@ -210,7 +210,13 @@ describe('calcFishingTripStart', () => {
 
 	test('spirit flakes are consumed even when no bonus fish are granted', () => {
 		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
-		vi.spyOn(Math, 'random').mockReturnValue(0.99);
+		let idx = 0;
+		const rolls = [0, 0.99, 0.99];
+		vi.spyOn(Math, 'random').mockImplementation(() => {
+			const value = rolls[idx % rolls.length];
+			idx++;
+			return value;
+		});
 
 		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10).add('Spirit flakes', 10) });
 
