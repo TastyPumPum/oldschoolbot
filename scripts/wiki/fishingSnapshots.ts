@@ -108,7 +108,9 @@ function renderFishingXpHrTable() {
 					loot: trip.loot,
 					gearBank,
 					duration: trip.duration,
-					rng
+					rng,
+					blessingExtra: trip.blessingExtra,
+					flakeExtra: trip.flakeExtra
 				});
 				result.updateBank.itemLootBank.remove('Heron', result.updateBank.itemLootBank.amount('Heron'));
 
