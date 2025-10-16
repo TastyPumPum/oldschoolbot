@@ -108,7 +108,8 @@ function renderFishingXpHrTable() {
 					loot: trip.loot,
 					gearBank,
 					duration: trip.duration,
-					rng
+					rng,
+					isPowerfishing: false
 				});
 				result.updateBank.itemLootBank.remove('Heron', result.updateBank.itemLootBank.amount('Heron'));
 

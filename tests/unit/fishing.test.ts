@@ -6,6 +6,55 @@ import { Fishing } from '../../src/lib/skilling/skills/fishing/fishing.js';
 import { calcFishingTripStart } from '../../src/lib/skilling/skills/fishing/fishingTripStart.js';
 import { makeGearBank } from './utils.js';
 
+interface SimpleRNG {
+	roll(max: number): boolean;
+	randInt(min: number, max: number): number;
+	randFloat(min: number, max: number): number;
+	rand(): number;
+	shuffle<T>(array: T[]): T[];
+	pick<T>(array: T[]): T;
+	percentChance(percent: number): boolean;
+}
+
+function createDeterministicRNG(seed = 1): SimpleRNG {
+	let state = seed % 2147483647;
+	if (state <= 0) state += 2147483646;
+
+	const next = () => {
+		state = (state * 16807) % 2147483647;
+		return state / 2147483647;
+	};
+
+	return {
+		roll(max: number) {
+			return Math.floor(next() * max) === 0;
+		},
+		randInt(min: number, max: number) {
+			return Math.floor(next() * (max - min + 1)) + min;
+		},
+		randFloat(min: number, max: number) {
+			return next() * (max - min) + min;
+		},
+		rand() {
+			return next();
+		},
+		shuffle<T>(array: T[]) {
+			const result = [...array];
+			for (let i = result.length - 1; i > 0; i--) {
+				const j = Math.floor(next() * (i + 1));
+				[result[i], result[j]] = [result[j], result[i]];
+			}
+			return result;
+		},
+		pick<T>(array: T[]) {
+			return array[Math.floor(next() * array.length)];
+		},
+		percentChance(percent: number) {
+			return next() < percent / 100;
+		}
+	};
+}
+
 describe('calcFishingTripStart', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
@@ -207,6 +256,47 @@ describe('calcFishingTripStart', () => {
 		expect(out.isUsingSpiritFlakes).toBeFalsy();
 		expect(out.flakesBeingUsed).toBeUndefined();
 		expect(out.spiritFlakePreference).toBe(true);
+	});
+
+	test('barbarian cut-eat powerfishing sustains bait and awards expected XP', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
+		const rng = createDeterministicRNG(321);
+
+		const gearBank = makeGearBank({
+			bank: new Bank().add('Feather', 1),
+			skillsAsLevels: { fishing: 99, cooking: 99 }
+		});
+
+		const res = calcFishingTripStart({
+			gearBank,
+			fish,
+			maxTripLength: 60 * 60 * 1000,
+			quantityInput: undefined,
+			wantsToUseFlakes: false,
+			powerfish: true,
+			hasWildyEliteDiary: false,
+			rng
+		});
+
+		expect(typeof res).toBe('object');
+		const start = res as Exclude<typeof res, string>;
+		expect(start.quantity).toBeGreaterThan(1);
+		expect(start.suppliesToRemove.amount('Feather')).toBeLessThanOrEqual(1);
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: start.duration,
+			catches: start.catches,
+			loot: start.loot,
+			gearBank,
+			rng: createDeterministicRNG(321),
+			isPowerfishing: true
+		});
+
+		expect(result.xpPerHour).toBe('108k');
+		expect(result.bonusXpPerHour.agility).toBe('9.8k');
+		expect(result.bonusXpPerHour.strength).toBe('9.8k');
+		expect(result.bonusXpPerHour.cooking).toBe('16.8k');
 	});
 
 	test('spirit flakes are consumed even when no bonus fish are granted', () => {

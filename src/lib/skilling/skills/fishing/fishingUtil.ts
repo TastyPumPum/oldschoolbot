@@ -24,6 +24,31 @@ const anglerItemsArr = [
 
 const anglerItems = anglerItemsArr.map(item => [item.id, item.boost] as const);
 
+const leapingGuttingConfig: Record<
+	number,
+	{
+		xp: number;
+		successChance(level: number): number;
+		baitPerSuccess: number;
+	}
+> = {
+	[EItem.LEAPING_TROUT]: {
+		xp: 10,
+		successChance: level => Math.min(level * 0.0067, 1),
+		baitPerSuccess: 1.5
+	},
+	[EItem.LEAPING_SALMON]: {
+		xp: 10,
+		successChance: level => Math.min(level * 0.0125, 1),
+		baitPerSuccess: 1.75
+	},
+	[EItem.LEAPING_STURGEON]: {
+		xp: 15,
+		successChance: level => Math.min(level * 0.0125, 1),
+		baitPerSuccess: 11 / 6
+	}
+};
+
 function calcRadasBlessingBoost(gearBank: GearBank) {
 	const blessingBoosts = [
 		["Rada's blessing 4", 8],
@@ -66,4 +91,37 @@ function calcAnglerBoostPercent(gearBank: GearBank) {
 	return round(boostPercent, 1);
 }
 
-export { calcRadasBlessingBoost, calcMinnowQuantityRange, calcAnglerBoostPercent, anglerItems, anglerItemsArr };
+function calcLeapingExpectedCookingXP(id: number, quantity: number, cookingLevel: number, xpPerSuccess?: number) {
+	if (quantity <= 0) {
+		return 0;
+	}
+	const config = leapingGuttingConfig[id];
+	if (!config) {
+		return 0;
+	}
+	const xp = xpPerSuccess ?? config.xp;
+	const chance = config.successChance(cookingLevel);
+	return quantity * xp * chance;
+}
+
+function calcLeapingExpectedBait(id: number, quantity: number, cookingLevel: number) {
+	if (quantity <= 0) {
+		return 0;
+	}
+	const config = leapingGuttingConfig[id];
+	if (!config) {
+		return 0;
+	}
+	const chance = config.successChance(cookingLevel);
+	return quantity * chance * config.baitPerSuccess;
+}
+
+export {
+	calcRadasBlessingBoost,
+	calcMinnowQuantityRange,
+	calcAnglerBoostPercent,
+	anglerItems,
+	anglerItemsArr,
+	calcLeapingExpectedCookingXP,
+	calcLeapingExpectedBait
+};

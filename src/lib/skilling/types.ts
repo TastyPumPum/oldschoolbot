@@ -75,13 +75,15 @@ export interface Burnable {
 	inputLogs: number;
 }
 
+export type BonusXPMap = Partial<Record<SkillNameType, number>>;
+
 export interface FishInSpot {
 	id: number;
 	level: number;
 	xp: number;
 	intercept: number;
 	slope: number;
-	otherXP?: number;
+	bonusXP?: BonusXPMap;
 	tertiary?: { chance: number; id: number };
 }
 

@@ -4,7 +4,7 @@ import { Bank, EItem, Items } from 'oldschooljs';
 
 import type { Fish } from '@/lib/skilling/types.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
-import { calcRadasBlessingBoost } from './fishingUtil.js';
+import { calcLeapingExpectedBait, calcRadasBlessingBoost } from './fishingUtil.js';
 
 const harpoonBoosts = [
 	{ id: EItem.CRYSTAL_HARPOON, boostPercent: 35 },
@@ -72,6 +72,8 @@ function determineFishingTime({
 	flakesAvailable,
 	harpoonBoost,
 	hasWildyEliteDiary,
+	initialBait,
+	useBarbarianCutEat,
 	rng
 }: {
 	quantity: number;
@@ -85,6 +87,8 @@ function determineFishingTime({
 	flakesAvailable: number;
 	harpoonBoost: number;
 	hasWildyEliteDiary: boolean;
+	initialBait: number;
+	useBarbarianCutEat: boolean;
 	rng: RNGProvider;
 }) {
 	let ticksElapsed = 0;
@@ -191,11 +195,27 @@ function determineFishingTime({
 		}
 	}
 
+	const totalCaught = catches.reduce((total, val) => total + val, 0);
+	let baitUsed = 0;
+	if (fish.bait) {
+		baitUsed = totalCaught;
+		if (useBarbarianCutEat) {
+			const cookingLevel = gearBank.skillsAsLevels.cooking;
+			const expectedBait = fish.subfishes!.reduce((sum, subfish, idx) => {
+				const qty = catches[idx] ?? 0;
+				return sum + calcLeapingExpectedBait(subfish.id, qty, cookingLevel);
+			}, 0);
+			baitUsed = Math.max(0, Math.ceil(totalCaught - expectedBait));
+			baitUsed = Math.min(baitUsed, initialBait);
+		}
+	}
+
 	return {
 		catches,
 		loot,
 		ticksElapsed,
-		flakesUsed
+		flakesUsed,
+		baitUsed
 	};
 }
 
@@ -283,16 +303,26 @@ export function calcFishingTripStart({
 	const tripTicks = maxTrip / (Time.Second * 0.6);
 	const flakesAvailable = gearBank.bank.amount('Spirit flakes');
 
+	const useBarbarianCutEat =
+		fish.name === 'Barbarian fishing' &&
+		isPowerfishing &&
+		gearBank.skillsAsLevels.fishing >= 99 &&
+		gearBank.skillsAsLevels.cooking >= 80;
+
+	const initialBait = fish.bait ? gearBank.bank.amount(fish.bait) : 0;
+
 	if (fish.bait) {
 		const baseCost = new Bank().add(fish.bait);
 		const maxCanDo = gearBank.bank.fits(baseCost);
 		if (maxCanDo === 0) {
 			return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
 		}
-		quantity = Math.min(quantity, maxCanDo);
+		if (!useBarbarianCutEat) {
+			quantity = Math.min(quantity, maxCanDo);
+		}
 	}
 
-	const { catches, loot, ticksElapsed, flakesUsed } = determineFishingTime({
+	const { catches, loot, ticksElapsed, flakesUsed, baitUsed } = determineFishingTime({
 		quantity,
 		tripTicks,
 		isPowerfishing,
@@ -304,6 +334,8 @@ export function calcFishingTripStart({
 		flakesAvailable,
 		harpoonBoost,
 		hasWildyEliteDiary,
+		initialBait,
+		useBarbarianCutEat,
 		rng: rngProvider
 	});
 
@@ -315,8 +347,8 @@ export function calcFishingTripStart({
 	const duration = Time.Second * 0.6 * ticksElapsed;
 
 	const suppliesToRemove = new Bank();
-	if (fish.bait && totalCaught > 0) {
-		suppliesToRemove.add(fish.bait, totalCaught);
+	if (fish.bait && baitUsed > 0) {
+		suppliesToRemove.add(fish.bait, baitUsed);
 	}
 	if (!isPowerfishing && flakesUsed > 0) {
 		suppliesToRemove.add('Spirit flakes', flakesUsed);
