@@ -305,7 +305,7 @@ describe('calcFishingTripStart', () => {
 
 	test('barbarian fishing respects agility/strength thresholds', () => {
 		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
-		const rngPattern = [0.5, 0.2, 0.25, 0.01];
+		const rngPattern = [0.25, 0.05, 0.05, 0.4];
 		const rngQueue = Array.from({ length: 2500 }, () => rngPattern).flat();
 
 		const lowLevels = makeGearBank({
