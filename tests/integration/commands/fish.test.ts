@@ -2,6 +2,7 @@ import { Bank, convertLVLtoXP, EItem, ItemGroups } from 'oldschooljs';
 import { describe, expect, it } from 'vitest';
 
 import { MAX_LEVEL } from '../../../src/lib/constants.js';
+import { formatSkillRequirements } from '../../../src/lib/util/smallUtils.js';
 import { fishCommand } from '../../../src/mahoji/commands/fish.js';
 import { createTestUser, mockClient } from '../util.js';
 
@@ -35,7 +36,7 @@ describe('Fish Command', async () => {
 		await user.update({ skills_fishing: 1 });
 		const res = await user.runCommand(fishCommand, { name: 'Barbarian fishing' });
 		expect(res).toEqual(
-			'To fish Barbarian fishing, you need <:Agility:785559391424487435> 15, <:Strength:785559403161829376> 15.'
+			`To fish Barbarian fishing, you need ${formatSkillRequirements({ agility: 15, strength: 15 })}.`
 		);
 	});
 
