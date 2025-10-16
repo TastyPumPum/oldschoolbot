@@ -7,7 +7,7 @@ import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 export const fishingTask: MinionTask = {
 	type: 'Fishing',
 	async run(data: FishingActivityTaskOptions, { handleTripFinish, user }) {
-		const { fishID, channelID, Qty, loot = [], flakesToRemove } = data;
+		const { fishID, channelID, Qty, loot = [] } = data;
 
 		const fish = Fishing.Fishes.find(f => f.name === fishID);
 		if (!fish || !fish.subfishes) {
@@ -19,7 +19,6 @@ export const fishingTask: MinionTask = {
 			duration: data.duration,
 			catches: Qty,
 			loot,
-			flakesBeingUsed: flakesToRemove,
 			gearBank: user.gearBank
 		});
 

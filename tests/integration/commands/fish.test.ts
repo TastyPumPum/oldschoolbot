@@ -88,8 +88,10 @@ describe('Fish Command', async () => {
 	it('should fish with flakes', async () => {
 		const user = await createTestUser();
 		await user.update({ bank: new Bank({ 'Spirit flakes': 1_000 }) });
+		const startingFlakes = user.bank.amount('Spirit flakes');
 		const res = await user.runCommand(fishCommand, { name: 'Shrimps/Anchovies', spirit_flakes: true });
 		expect(res).toContain('50% more fish from using spirit flakes');
+		expect(user.bank.amount('Spirit flakes')).toBeLessThan(startingFlakes);
 		await user.runActivity();
 		expect(user.bank.amount('Spirit flakes')).toBeLessThan(1_000);
 		expect(user.bank.amount('Raw shrimps') + user.bank.amount('Raw anchovies')).toBeGreaterThan(0);
@@ -98,8 +100,10 @@ describe('Fish Command', async () => {
 	it('should still use flakes if bank contains fewer flakes than fish quantity', async () => {
 		const user = await createTestUser();
 		await user.update({ bank: new Bank({ 'Spirit flakes': 100 }) });
+		const startingFlakes = user.bank.amount('Spirit flakes');
 		const res = await user.runCommand(fishCommand, { name: 'Shrimps/Anchovies', spirit_flakes: true });
 		expect(res).toContain('50% more fish from using spirit flakes');
+		expect(user.bank.amount('Spirit flakes')).toBeLessThanOrEqual(startingFlakes);
 	});
 
 	it('should use fishing bait', async () => {
@@ -107,11 +111,32 @@ describe('Fish Command', async () => {
 		await user.update({ skills_fishing: 100_000, bank: new Bank({ 'Fishing bait': 100 }) });
 		const res = await user.runCommand(fishCommand, { name: 'Sardine/Herring', quantity: 50 });
 		expect(res).toContain('is now fishing Sardine/Herring');
-		const startingBait = user.bank.amount('Fishing bait');
+		const baitAfterCommand = user.bank.amount('Fishing bait');
+		expect(baitAfterCommand).toBeLessThan(100);
 		await user.runActivity();
-		expect(user.bank.amount('Fishing bait')).toBeLessThan(startingBait);
 		expect(user.bank.amount('Raw sardine') + user.bank.amount('Raw herring')).toBeGreaterThan(0);
 		expect(user.skillsAsXP.fishing).toBeGreaterThan(100_000);
+	});
+
+	it('should finish trips even if supplies are spent mid-trip', async () => {
+		const user = await createTestUser();
+		await user.update({
+			skills_fishing: 100_000,
+			bank: new Bank({ 'Fishing bait': 100, 'Spirit flakes': 50, 'Fishing rod': 1 })
+		});
+		const res = await user.runCommand(fishCommand, {
+			name: 'Sardine/Herring',
+			quantity: 25,
+			spirit_flakes: true
+		});
+		expect(res).toContain('is now fishing Sardine/Herring');
+		const remainingBait = user.bank.amount('Fishing bait');
+		const remainingFlakes = user.bank.amount('Spirit flakes');
+		expect(remainingBait).toBeLessThan(100);
+		expect(remainingFlakes).toBeLessThan(50);
+		await user.update({ bank: new Bank({ 'Fishing rod': 1 }) });
+		await user.runActivity();
+		expect(user.bank.amount('Raw sardine') + user.bank.amount('Raw herring')).toBeGreaterThan(0);
 	});
 
 	it('should not let you fish without fishing bait', async () => {

@@ -41,10 +41,13 @@ function rollExtraLoot({
 		updatedInv += 1;
 	}
 
-	if (spiritFlakes && updatedFlakesUsed < flakesAvailable && Math.random() < 0.5) {
-		updatedLoot += 1;
+	const canUseFlakes = spiritFlakes && updatedFlakesUsed < flakesAvailable;
+	if (canUseFlakes) {
 		updatedFlakesUsed += 1;
-		updatedInv += 1;
+		if (Math.random() < 0.5) {
+			updatedLoot += 1;
+			updatedInv += 1;
+		}
 	}
 
 	return {
@@ -212,6 +215,7 @@ export function calcFishingTripStart({
 	}
 
 	let quantity = quantityInput ?? 3000;
+	const spiritFlakePreference = wantsToUseFlakes;
 	let isUsingSpiritFlakes = wantsToUseFlakes;
 	let isPowerfishing = powerfish;
 
@@ -299,6 +303,14 @@ export function calcFishingTripStart({
 
 	const duration = Time.Second * 0.6 * ticksElapsed;
 
+	const suppliesToRemove = new Bank();
+	if (fish.bait && totalCaught > 0) {
+		suppliesToRemove.add(fish.bait, totalCaught);
+	}
+	if (!isPowerfishing && flakesUsed > 0) {
+		suppliesToRemove.add('Spirit flakes', flakesUsed);
+	}
+
 	return {
 		duration,
 		quantity: totalCaught,
@@ -308,6 +320,8 @@ export function calcFishingTripStart({
 		catches,
 		loot,
 		isPowerfishing,
-		isUsingSpiritFlakes: isUsingSpiritFlakes && flakesUsed > 0
+		isUsingSpiritFlakes: !isPowerfishing && flakesUsed > 0,
+		spiritFlakePreference,
+		suppliesToRemove
 	};
 }
