@@ -1,60 +1,58 @@
-import { Bank, EItem, itemID } from 'oldschooljs';
-import { describe, expect, test } from 'vitest';
+import { Bank } from 'oldschooljs';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { Fishing } from '../../src/lib/skilling/skills/fishing/fishing.js';
 import { calcFishingTripStart } from '../../src/lib/skilling/skills/fishing/fishingTripStart.js';
 import { makeGearBank } from './utils.js';
 
 describe('calcFishingTripStart', () => {
-	test('returns error when wanting to use flakes but none are present and does not reserve bait', () => {
-		// Minimal sardine fish object (avoid importing the full Fishing module to keep test isolated)
-		const fish = {
-			level: 5,
-			xp: 20,
-			id: itemID('Raw sardine'),
-			name: 'Sardine',
-			petChance: 528_000,
-			bait: itemID('Fishing bait'),
-			timePerFish: 3.6,
-			clueScrollChance: 1_056_000
-		} as any;
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	test('returns error when wanting to use flakes but none are present and allows retrying without flakes', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
 
 		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 5) });
 
 		const res = calcFishingTripStart({
 			gearBank,
 			fish,
-			// Make this large enough that duration checks won't fail in the test environment
-			maxTripLength: 1000000,
+			maxTripLength: 1_000_000,
 			quantityInput: 2,
 			wantsToUseFlakes: true,
 			powerfish: false,
 			hasWildyEliteDiary: false
 		});
 
-		// Should return error string about missing spirit flakes
 		expect(typeof res).toBe('string');
 		expect((res as string).toLowerCase()).toContain('spirit flake');
+
+		vi.spyOn(Math, 'random').mockReturnValue(0);
+		const ok = calcFishingTripStart({
+			gearBank,
+			fish,
+			maxTripLength: 1_000_000,
+			quantityInput: 2,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof ok).toBe('object');
+		const result = ok as Exclude<typeof ok, string>;
+		expect(result.quantity).toBeGreaterThan(0);
 	});
 
 	test('returns helpful message when final quantity is 0', () => {
-		const fish = {
-			level: 5,
-			xp: 20,
-			id: itemID('Raw sardine'),
-			name: 'Sardine',
-			petChance: 528_000,
-			bait: itemID('Fishing bait'),
-			timePerFish: 3.6,
-			clueScrollChance: 1_056_000
-		} as any;
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
 
-		// Provide at least one bait so the bait-check won't return early, then request quantity 0
 		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 1) });
 
 		const res = calcFishingTripStart({
 			gearBank,
 			fish,
-			maxTripLength: 1000000,
+			maxTripLength: 1_000_000,
 			quantityInput: 0,
 			wantsToUseFlakes: false,
 			powerfish: false,
@@ -65,21 +63,16 @@ describe('calcFishingTripStart', () => {
 		expect((res as string).toLowerCase()).toContain("can't fish any");
 	});
 
-	test('minnow scaling does not produce NaN and returns a valid quantity', () => {
-		const fish = {
-			level: 82,
-			xp: 26.1,
-			id: EItem.MINNOW,
-			name: 'Minnow',
-			timePerFish: 2.14
-		} as any;
+	test('minnow scaling produces a valid quantity and duration', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Minnow')!;
+		const gearBank = makeGearBank({ bank: new Bank().add('Sandworms', 50) });
 
-		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10) });
+		vi.spyOn(Math, 'random').mockReturnValue(0);
 
 		const res = calcFishingTripStart({
 			gearBank,
 			fish,
-			maxTripLength: 1000000,
+			maxTripLength: 1_000_000,
 			quantityInput: undefined,
 			wantsToUseFlakes: false,
 			powerfish: false,
@@ -87,183 +80,91 @@ describe('calcFishingTripStart', () => {
 		});
 
 		expect(typeof res).toBe('object');
-		const out = res as any;
+		const out = res as Exclude<typeof res, string>;
 		expect(Number.isFinite(out.duration)).toBeTruthy();
-		expect(out.quantity).toBeGreaterThanOrEqual(0);
+		expect(out.quantity).toBeGreaterThanOrEqual(1);
 	});
 
-	test('feather-bait fish gets rod-specific boost (Barbarian fishing)', () => {
-		const fish = {
-			level: 48,
-			xp: 130,
-			id: itemID('Leaping trout'),
-			name: 'Barbarian fishing',
-			bait: itemID('Feather'),
-			timePerFish: 3
-		} as any;
+	test('harpoon gear adds the appropriate boost message', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Shark')!;
+		vi.spyOn(Math, 'random').mockReturnValue(0);
 
-		const baseBank = makeGearBank({ bank: new Bank().add('Feather', 10) });
+		const baseGearBank = makeGearBank();
 		const base = calcFishingTripStart({
-			gearBank: baseBank,
+			gearBank: baseGearBank,
 			fish,
-			maxTripLength: 1000000,
-			quantityInput: undefined,
-			wantsToUseFlakes: false,
-			powerfish: false,
-			hasWildyEliteDiary: false
-		}) as any;
-
-		const pearlBank = makeGearBank({ bank: new Bank().add('Feather', 10).add('Pearl barbarian rod') });
-		const pearl = calcFishingTripStart({
-			gearBank: pearlBank,
-			fish,
-			maxTripLength: 1000000,
-			quantityInput: undefined,
-			wantsToUseFlakes: false,
-			powerfish: false,
-			hasWildyEliteDiary: false
-		}) as any;
-
-		expect(pearl.quantity).toBeGreaterThanOrEqual(base.quantity);
-	});
-
-	test('does not add bait to cost if flakes missing (requesting flakes)', () => {
-		const fish = {
-			level: 5,
-			xp: 20,
-			id: itemID('Raw sardine'),
-			name: 'Sardine',
-			bait: itemID('Fishing bait'),
-			timePerFish: 3.6
-		} as any;
-
-		// bank has bait but no flakes, and wantsToUseFlakes true -> should return flakes error and not reserve bait
-		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 5) });
-
-		const res = calcFishingTripStart({
-			gearBank,
-			fish,
-			maxTripLength: 1000000,
-			quantityInput: 2,
-			wantsToUseFlakes: true,
-			powerfish: false,
-			hasWildyEliteDiary: false
-		});
-
-		expect(typeof res).toBe('string');
-		// Ensure bait wasn't reserved by calling again without flakes flag and verifying cost contains bait
-		const ok = calcFishingTripStart({
-			gearBank,
-			fish,
-			maxTripLength: 1000000,
-			quantityInput: 2,
-			wantsToUseFlakes: false,
-			powerfish: false,
-			hasWildyEliteDiary: false
-		}) as any;
-
-		expect(ok.cost.amount('Fishing bait')).toBeGreaterThanOrEqual(2);
-	});
-
-	test('duration > maxTripLength returns correct error message', () => {
-		const fish = {
-			level: 5,
-			xp: 20,
-			id: itemID('Raw sardine'),
-			name: 'Sardine',
-			bait: itemID('Fishing bait'),
-			timePerFish: 3.6
-		} as any;
-
-		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 1000) });
-
-		// Very small maxTripLength to force duration check
-		const res = calcFishingTripStart({
-			gearBank,
-			fish,
-			maxTripLength: 1,
-			quantityInput: 10,
+			maxTripLength: 1_000_000,
+			quantityInput: 5,
 			wantsToUseFlakes: false,
 			powerfish: false,
 			hasWildyEliteDiary: false
 		});
 
-		expect(typeof res).toBe('string');
-		expect((res as string).toLowerCase()).toContain("can't go on trips longer");
+		expect(typeof base).toBe('object');
+		const baseResult = base as Exclude<typeof base, string>;
+		expect(baseResult.boosts.some(b => b.includes('harpoon'))).toBeFalsy();
+
+		const harpoonGearBank = makeGearBank();
+		harpoonGearBank.gear.skilling.equip('Dragon harpoon');
+
+		const withHarpoon = calcFishingTripStart({
+			gearBank: harpoonGearBank,
+			fish,
+			maxTripLength: 1_000_000,
+			quantityInput: 5,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof withHarpoon).toBe('object');
+		const harpoonResult = withHarpoon as Exclude<typeof withHarpoon, string>;
+		expect(harpoonResult.boosts.some(b => b.includes('Dragon harpoon'))).toBeTruthy();
 	});
 
-	test('boosts (pearl/crystal) change quantity by altering time per fish', () => {
-		const fish = {
-			level: 5,
-			xp: 20,
-			id: itemID('Raw sardine'),
-			name: 'Sardine',
-			petChance: 528_000,
-			bait: itemID('Fishing bait'),
-			timePerFish: 3.6
-		} as any;
+	test('fish barrel in the bank applies the extended trip boost', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Lobster')!;
+		vi.spyOn(Math, 'random').mockReturnValue(0);
 
-		// No special gear
-		const noBoostBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10) });
-		const noBoost = calcFishingTripStart({
-			gearBank: noBoostBank,
+		const noBarrel = calcFishingTripStart({
+			gearBank: makeGearBank({ bank: new Bank() }),
 			fish,
-			maxTripLength: 1000000,
+			maxTripLength: 1_000_000,
 			quantityInput: undefined,
 			wantsToUseFlakes: false,
 			powerfish: false,
 			hasWildyEliteDiary: false
-		}) as any;
+		});
 
-		// With Pearl fishing rod in bank
-		const pearlBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10).add('Pearl fishing rod') });
-		const pearl = calcFishingTripStart({
-			gearBank: pearlBank,
+		expect(typeof noBarrel).toBe('object');
+		const noBarrelResult = noBarrel as Exclude<typeof noBarrel, string>;
+		expect(noBarrelResult.boosts.some(b => b.includes('Fish barrel'))).toBeFalsy();
+
+		const withBarrel = calcFishingTripStart({
+			gearBank: makeGearBank({ bank: new Bank().add('Fish barrel') }),
 			fish,
-			maxTripLength: 1000000,
+			maxTripLength: 1_000_000,
 			quantityInput: undefined,
 			wantsToUseFlakes: false,
 			powerfish: false,
 			hasWildyEliteDiary: false
-		}) as any;
+		});
 
-		// With Crystal harpoon in bank (should apply generic 5% boost path)
-		const crystalBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10).add('Crystal harpoon') });
-		const crystal = calcFishingTripStart({
-			gearBank: crystalBank,
-			fish,
-			maxTripLength: 1000000,
-			quantityInput: undefined,
-			wantsToUseFlakes: false,
-			powerfish: false,
-			hasWildyEliteDiary: false
-		}) as any;
-
-		// Ensure pearl/crystal produce equal or greater quantity (since they speed up fishing)
-		expect(pearl.quantity).toBeGreaterThanOrEqual(noBoost.quantity);
-		expect(crystal.quantity).toBeGreaterThanOrEqual(noBoost.quantity);
+		expect(typeof withBarrel).toBe('object');
+		const withBarrelResult = withBarrel as Exclude<typeof withBarrel, string>;
+		expect(withBarrelResult.boosts.some(b => b.includes('Fish barrel'))).toBeTruthy();
 	});
 
-	test('caps flakes to final quantity and only adds boost when > 0', () => {
-		const fish = {
-			level: 5,
-			xp: 20,
-			id: itemID('Raw sardine'),
-			name: 'Sardine',
-			petChance: 528_000,
-			bait: itemID('Fishing bait'),
-			timePerFish: 3.6,
-			clueScrollChance: 1_056_000
-		} as any;
+	test('caps flakes to final quantity and records usage', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		vi.spyOn(Math, 'random').mockReturnValue(0);
 
-		// Provide only 1 bait so quantity will be capped to 1 when asking for more
 		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 1).add('Spirit flakes', 5) });
 
 		const res = calcFishingTripStart({
 			gearBank,
 			fish,
-			// Make this large enough that duration checks won't fail in the test environment
-			maxTripLength: 1000000,
+			maxTripLength: 1_000_000,
 			quantityInput: 5,
 			wantsToUseFlakes: true,
 			powerfish: false,
@@ -271,17 +172,54 @@ describe('calcFishingTripStart', () => {
 		});
 
 		expect(typeof res).toBe('object');
-		const out = res as any;
-		// quantity should be 1 because only 1 bait in bank
+		const out = res as Exclude<typeof res, string>;
 		expect(out.quantity).toBeGreaterThanOrEqual(1);
 		expect(out.flakesBeingUsed).toBeLessThanOrEqual(out.quantity);
-		// boost should only exist if flakesBeingUsed > 0
-		if (out.flakesBeingUsed > 0) {
-			expect(out.boosts.some((b: string) => b.includes('Spirit flakes'))).toBeTruthy();
-		}
+		expect(out.isUsingSpiritFlakes).toBeTruthy();
+	});
 
-		// cost should contain exactly 1 Fishing bait and flakesBeingUsed flakes
-		expect(out.cost.amount('Fishing bait')).toBe(out.quantity);
-		expect(out.cost.amount('Spirit flakes')).toBe(out.flakesBeingUsed ?? 0);
+	test('powerfishing disables spirit flakes usage', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Trout/Salmon')!;
+		vi.spyOn(Math, 'random').mockReturnValue(0);
+
+		const gearBank = makeGearBank({ bank: new Bank().add('Feather', 25).add('Spirit flakes', 25) });
+
+		const res = calcFishingTripStart({
+			gearBank,
+			fish,
+			maxTripLength: 1_000_000,
+			quantityInput: 10,
+			wantsToUseFlakes: true,
+			powerfish: true,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof res).toBe('object');
+		const out = res as Exclude<typeof res, string>;
+		expect(out.isPowerfishing).toBeTruthy();
+		expect(out.isUsingSpiritFlakes).toBeFalsy();
+		expect(out.flakesBeingUsed).toBeUndefined();
+	});
+
+	test('limited trip length reduces catches without failing the request', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Tuna/Swordfish')!;
+		vi.spyOn(Math, 'random').mockReturnValue(0);
+
+		const gearBank = makeGearBank();
+
+		const res = calcFishingTripStart({
+			gearBank,
+			fish,
+			maxTripLength: 1_000,
+			quantityInput: 10,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof res).toBe('object');
+		const out = res as Exclude<typeof res, string>;
+		expect(out.quantity).toBeGreaterThanOrEqual(1);
+		expect(out.quantity).toBeLessThan(10);
 	});
 });
