@@ -1,5 +1,5 @@
 import { round } from '@oldschoolgg/toolkit';
-import { EItem, itemID } from 'oldschooljs';
+import { EItem } from 'oldschooljs';
 
 import type { GearBank } from '@/lib/structures/GearBank.js';
 

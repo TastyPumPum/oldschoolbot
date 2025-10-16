@@ -26,7 +26,9 @@ describe('calcFishingTripStart', () => {
 			// Make this large enough that duration checks won't fail in the test environment
 			maxTripLength: 1000000,
 			quantityInput: 2,
-			wantsToUseFlakes: true
+			wantsToUseFlakes: true,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		});
 
 		// Should return error string about missing spirit flakes
@@ -54,7 +56,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: 0,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		});
 
 		expect(typeof res).toBe('string');
@@ -77,7 +81,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: undefined,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		});
 
 		expect(typeof res).toBe('object');
@@ -102,7 +108,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: undefined,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		}) as any;
 
 		const pearlBank = makeGearBank({ bank: new Bank().add('Feather', 10).add('Pearl barbarian rod') });
@@ -111,7 +119,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: undefined,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		}) as any;
 
 		expect(pearl.quantity).toBeGreaterThanOrEqual(base.quantity);
@@ -135,7 +145,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: 2,
-			wantsToUseFlakes: true
+			wantsToUseFlakes: true,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		});
 
 		expect(typeof res).toBe('string');
@@ -145,7 +157,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: 2,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		}) as any;
 
 		expect(ok.cost.amount('Fishing bait')).toBeGreaterThanOrEqual(2);
@@ -169,7 +183,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1,
 			quantityInput: 10,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		});
 
 		expect(typeof res).toBe('string');
@@ -194,7 +210,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: undefined,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		}) as any;
 
 		// With Pearl fishing rod in bank
@@ -204,7 +222,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: undefined,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		}) as any;
 
 		// With Crystal harpoon in bank (should apply generic 5% boost path)
@@ -214,7 +234,9 @@ describe('calcFishingTripStart', () => {
 			fish,
 			maxTripLength: 1000000,
 			quantityInput: undefined,
-			wantsToUseFlakes: false
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		}) as any;
 
 		// Ensure pearl/crystal produce equal or greater quantity (since they speed up fishing)
@@ -243,7 +265,9 @@ describe('calcFishingTripStart', () => {
 			// Make this large enough that duration checks won't fail in the test environment
 			maxTripLength: 1000000,
 			quantityInput: 5,
-			wantsToUseFlakes: true
+			wantsToUseFlakes: true,
+			powerfish: false,
+			hasWildyEliteDiary: false
 		});
 
 		expect(typeof res).toBe('object');
