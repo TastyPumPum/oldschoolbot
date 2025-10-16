@@ -1,3 +1,4 @@
+import type { RNGProvider } from '@oldschoolgg/rng';
 import { round } from '@oldschoolgg/toolkit';
 import { EItem } from 'oldschooljs';
 
@@ -91,7 +92,19 @@ function calcAnglerBoostPercent(gearBank: GearBank) {
 	return round(boostPercent, 1);
 }
 
-function calcLeapingExpectedCookingXP(id: number, quantity: number, cookingLevel: number, xpPerSuccess?: number) {
+function calcLeapingExpectedCookingXP({
+	id,
+	quantity,
+	cookingLevel,
+	xpPerSuccess,
+	rng
+}: {
+	id: number;
+	quantity: number;
+	cookingLevel: number;
+	xpPerSuccess?: number;
+	rng?: RNGProvider;
+}) {
 	if (quantity <= 0) {
 		return 0;
 	}
@@ -101,7 +114,19 @@ function calcLeapingExpectedCookingXP(id: number, quantity: number, cookingLevel
 	}
 	const xp = xpPerSuccess ?? config.xp;
 	const chance = config.successChance(cookingLevel);
-	return quantity * xp * chance;
+	const expectedSuccesses = quantity * chance;
+	let successes = Math.floor(expectedSuccesses);
+	const fractional = expectedSuccesses - successes;
+	if (fractional > 0) {
+		if (rng) {
+			if (rng.rand() < fractional) {
+				successes++;
+			}
+		} else if (fractional >= 0.5) {
+			successes++;
+		}
+	}
+	return successes * xp;
 }
 
 function calcLeapingExpectedBait(id: number, quantity: number, cookingLevel: number) {

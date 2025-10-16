@@ -7,7 +7,15 @@ import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 export const fishingTask: MinionTask = {
 	type: 'Fishing',
 	async run(data: FishingActivityTaskOptions, { handleTripFinish, user, rng }) {
-		const { fishID, channelID, Qty, loot = [], blessingExtra = 0, flakeExtra = 0 } = data;
+		const {
+			fishID,
+			channelID,
+			Qty,
+			loot = [],
+			blessingExtra = 0,
+			flakeExtra = 0,
+			usedBarbarianCutEat = false
+		} = data;
 
 		const fish = Fishing.Fishes.find(f => f.name === fishID);
 		if (!fish || !fish.subfishes) {
@@ -23,7 +31,8 @@ export const fishingTask: MinionTask = {
 			isPowerfishing: Boolean(data.powerfish),
 			blessingExtra,
 			flakeExtra,
-			rng
+			rng,
+			usedBarbarianCutEat
 		});
 
 		const updateResult = await result.updateBank.transact(user);
