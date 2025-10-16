@@ -352,14 +352,12 @@ const tripHandlers = {
 	},
 	[activity_type_enum.Fishing]: {
 		commandName: 'fish',
-		args: (data: FishingActivityTaskOptions) => {
-			const fish = Fishing.Fishes.find(f => f.id === (data.fishID as number));
-			return {
-				name: fish ? fish.name : Items.itemNameFromId(data.fishID),
-				quantity: data.iQty,
-				flakes: data.flakesQuantity !== undefined
-			};
-		}
+		args: (data: FishingActivityTaskOptions) => ({
+			name: data.fishID,
+			quantity: data.iQty,
+			powerfish: data.powerfish ?? false,
+			spirit_flakes: data.spiritFlakes ?? false
+		})
 	},
 	[activity_type_enum.FishingTrawler]: {
 		commandName: 'minigames',
