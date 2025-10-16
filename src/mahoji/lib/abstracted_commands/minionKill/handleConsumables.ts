@@ -56,10 +56,12 @@ export function getItemCostFromConsumables({
 				}
 			}
 
-			const baseMultiply = consumable.qtyPerMinute
+			const multiply = consumable.qtyPerMinute
 				? (timeToFinish / Time.Minute) * Number(itemMultiple)
 				: Number(itemMultiple);
-			const multiply = Number.isFinite(baseMultiply) ? Math.max(0, baseMultiply) : 0;
+			if (!Number.isFinite(multiply) || multiply <= 0) {
+				continue;
+			}
 
 			for (const [item, qty] of consumable.itemCost.items()) {
 				const quantityToAdd = Number(qty) * multiply;
