@@ -1,7 +1,7 @@
 import type { Item } from 'oldschooljs';
 import { describe, expect, it, vi } from 'vitest';
 
-type FakeMUser = { badgedUsername: string };
+import { mockMUser } from './userutil.js';
 
 vi.mock('@/lib/canvas/OSRSCanvas.js', () => {
 	class FakeOSRSCanvas {
@@ -95,7 +95,7 @@ describe('buildHighRollerResponse', () => {
 			pot: 1_000_000,
 			rollResults: [
 				{
-					user: { badgedUsername: 'Tester' } as FakeMUser,
+					user: mockMUser({ id: 'tester' }),
 					item: dummyItem,
 					value: 5_000
 				}
