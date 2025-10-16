@@ -337,10 +337,10 @@ describe('calcFishingTripStart', () => {
 			isPowerfishing: true
 		});
 
-		expect(result.xpPerHour).toBe('108k');
-		expect(result.bonusXpPerHour.agility).toBe('9.8k');
-		expect(result.bonusXpPerHour.strength).toBe('9.8k');
-		expect(result.bonusXpPerHour.cooking).toBe('16.8k');
+		expect(result.xpPerHour).toBe('110.4k');
+		expect(result.bonusXpPerHour.agility).toBe('10k');
+		expect(result.bonusXpPerHour.strength).toBe('10k');
+		expect(result.bonusXpPerHour.cooking).toBe('17.2k');
 	});
 
 	test('spirit flakes are consumed even when no bonus fish are granted', () => {
