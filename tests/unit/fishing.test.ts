@@ -1,3 +1,4 @@
+import { SeedableRNG } from '@oldschoolgg/rng';
 import { Bank } from 'oldschooljs';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
@@ -234,6 +235,41 @@ describe('calcFishingTripStart', () => {
 		const out = res as Exclude<typeof res, string>;
 		expect(out.flakesBeingUsed).toBe(out.quantity);
 		expect(out.suppliesToRemove.amount('Spirit flakes')).toBe(out.quantity);
+	});
+
+	test('seeded RNG produces deterministic trip start results', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		const attempt = () =>
+			calcFishingTripStart({
+				gearBank: makeGearBank({ bank: new Bank().add('Fishing bait', 100).add('Spirit flakes', 100) }),
+				fish,
+				maxTripLength: 1_000_000,
+				quantityInput: 25,
+				wantsToUseFlakes: true,
+				powerfish: false,
+				hasWildyEliteDiary: false,
+				rng: new SeedableRNG(123)
+			});
+
+		const res1 = attempt();
+		const res2 = attempt();
+
+		expect(typeof res1).toBe('object');
+		expect(typeof res2).toBe('object');
+		if (typeof res1 === 'string' || typeof res2 === 'string') {
+			throw new Error('Expected deterministic trip start results');
+		}
+
+		expect(res1.duration).toBe(res2.duration);
+		expect(res1.quantity).toBe(res2.quantity);
+		expect(res1.catches).toStrictEqual(res2.catches);
+		expect(res1.loot).toStrictEqual(res2.loot);
+		expect(res1.flakesBeingUsed).toBe(res2.flakesBeingUsed);
+		expect(res1.boosts).toStrictEqual(res2.boosts);
+		expect(res1.isPowerfishing).toBe(res2.isPowerfishing);
+		expect(res1.isUsingSpiritFlakes).toBe(res2.isUsingSpiritFlakes);
+		expect(res1.spiritFlakePreference).toBe(res2.spiritFlakePreference);
+		expect(res1.suppliesToRemove.equals(res2.suppliesToRemove)).toBe(true);
 	});
 
 	test('limited trip length reduces catches without failing the request', () => {

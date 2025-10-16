@@ -1,3 +1,4 @@
+import { MathRNG, type RNGProvider } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, EItem, Items } from 'oldschooljs';
 
@@ -23,7 +24,8 @@ function rollExtraLoot({
 	currentInv,
 	blessingChance,
 	spiritFlakes,
-	flakesAvailable
+	flakesAvailable,
+	rng
 }: {
 	lootAmount: number;
 	flakesUsed: number;
@@ -31,12 +33,13 @@ function rollExtraLoot({
 	blessingChance: number;
 	spiritFlakes: boolean;
 	flakesAvailable: number;
+	rng: RNGProvider;
 }) {
 	let updatedLoot = lootAmount + 1;
 	let updatedFlakesUsed = flakesUsed;
 	let updatedInv = currentInv + 1;
 
-	if (Math.random() < blessingChance / 100) {
+	if (rng.rand() < blessingChance / 100) {
 		updatedLoot += 1;
 		updatedInv += 1;
 	}
@@ -44,7 +47,7 @@ function rollExtraLoot({
 	const canUseFlakes = spiritFlakes && updatedFlakesUsed < flakesAvailable;
 	if (canUseFlakes) {
 		updatedFlakesUsed += 1;
-		if (Math.random() < 0.5) {
+		if (rng.rand() < 0.5) {
 			updatedLoot += 1;
 			updatedInv += 1;
 		}
@@ -68,7 +71,8 @@ function determineFishingTime({
 	blessingChance,
 	flakesAvailable,
 	harpoonBoost,
-	hasWildyEliteDiary
+	hasWildyEliteDiary,
+	rng
 }: {
 	quantity: number;
 	tripTicks: number;
@@ -81,6 +85,7 @@ function determineFishingTime({
 	flakesAvailable: number;
 	harpoonBoost: number;
 	hasWildyEliteDiary: boolean;
+	rng: RNGProvider;
 }) {
 	let ticksElapsed = 0;
 	let flakesUsed = 0;
@@ -138,7 +143,7 @@ function determineFishingTime({
 			for (let i = fishCount - 1; i >= 0; i--) {
 				const subfish = fish.subfishes![i];
 				if (fishingLevel < subfish.level) continue;
-				if (Math.random() < probabilities[i]) {
+				if (rng.rand() < probabilities[i]) {
 					catches[i]++;
 					break;
 				}
@@ -155,7 +160,7 @@ function determineFishingTime({
 			for (let i = fishCount - 1; i >= 0; i--) {
 				const subfish = fish.subfishes![i];
 				if (fishingLevel < subfish.level) continue;
-				if (Math.random() < probabilities[i]) {
+				if (rng.rand() < probabilities[i]) {
 					catches[i]++;
 					const result = rollExtraLoot({
 						lootAmount: loot[i],
@@ -163,7 +168,8 @@ function determineFishingTime({
 						currentInv,
 						blessingChance,
 						spiritFlakes: isUsingSpiritFlakes,
-						flakesAvailable
+						flakesAvailable,
+						rng
 					});
 					loot[i] = result.loot;
 					flakesUsed = result.flakesUsed;
@@ -200,7 +206,8 @@ export function calcFishingTripStart({
 	quantityInput,
 	wantsToUseFlakes,
 	powerfish,
-	hasWildyEliteDiary
+	hasWildyEliteDiary,
+	rng
 }: {
 	gearBank: GearBank;
 	fish: Fish;
@@ -209,7 +216,10 @@ export function calcFishingTripStart({
 	wantsToUseFlakes: boolean;
 	powerfish: boolean;
 	hasWildyEliteDiary: boolean;
+	rng?: RNGProvider;
 }) {
+	const rngProvider = rng ?? MathRNG;
+
 	if (!fish.subfishes || fish.subfishes.length === 0) {
 		return 'This fishing spot is not yet supported.';
 	}
@@ -293,7 +303,8 @@ export function calcFishingTripStart({
 		blessingChance,
 		flakesAvailable,
 		harpoonBoost,
-		hasWildyEliteDiary
+		hasWildyEliteDiary,
+		rng: rngProvider
 	});
 
 	const totalCaught = catches.reduce((total, val) => total + val, 0);
