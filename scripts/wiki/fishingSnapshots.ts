@@ -109,6 +109,7 @@ function renderFishingXpHrTable() {
 					gearBank,
 					duration: trip.duration,
 					rng,
+					isPowerfishing: false,
 					blessingExtra: trip.blessingExtra,
 					flakeExtra: trip.flakeExtra
 				});

@@ -20,6 +20,7 @@ export const fishingTask: MinionTask = {
 			catches: Qty,
 			loot,
 			gearBank: user.gearBank,
+			isPowerfishing: Boolean(data.powerfish),
 			blessingExtra,
 			flakeExtra,
 			rng
@@ -34,11 +35,15 @@ export const fishingTask: MinionTask = {
 
 		let message = `${user}, ${user.minionName} finished fishing ${result.totalCatches} ${fish.name}. `;
 
-		if (result.otherXpPerHour !== '0') {
-			message += `You received ${result.updateBank.xpBank} (${result.xpPerHour}/Hr and ${result.otherXpPerHour}/Hr).`;
-		} else {
-			message += `You received ${result.updateBank.xpBank} (${result.xpPerHour}/Hr).`;
+		const bonusXpEntries = Object.entries(result.bonusXpPerHour ?? {}).filter(([, value]) => value);
+		const perHourSegments = [`${result.xpPerHour}/Hr`];
+		if (bonusXpEntries.length > 0) {
+			for (const [skill, value] of bonusXpEntries) {
+				const formattedSkill = `${skill.charAt(0).toUpperCase()}${skill.slice(1)}`;
+				perHourSegments.push(`${value}/Hr ${formattedSkill}`);
+			}
 		}
+		message += `You received ${result.updateBank.xpBank} (${perHourSegments.join(', ')}).`;
 
 		if (itemTransactionResult?.itemsAdded.length) {
 			message += `\nYou received ${itemTransactionResult.itemsAdded}.`;

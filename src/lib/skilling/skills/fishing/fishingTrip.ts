@@ -3,11 +3,11 @@ import { Time } from '@oldschoolgg/toolkit';
 import { EItem, toKMB } from 'oldschooljs';
 
 import addSkillingClueToLoot from '@/lib/minions/functions/addSkillingClueToLoot.js';
-import type { Fish } from '@/lib/skilling/types.js';
+import type { Fish, SkillNameType } from '@/lib/skilling/types.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
 import { UpdateBank } from '@/lib/structures/UpdateBank.js';
 import { skillingPetDropRate } from '@/lib/util.js';
-import { calcAnglerBoostPercent, calcMinnowQuantityRange } from './fishingUtil.js';
+import { calcAnglerBoostPercent, calcLeapingExpectedCookingXP, calcMinnowQuantityRange } from './fishingUtil.js';
 
 export function calcFishingTripResult({
 	fish,
@@ -16,6 +16,7 @@ export function calcFishingTripResult({
 	loot,
 	gearBank,
 	rng,
+	isPowerfishing = false,
 	blessingExtra = 0,
 	flakeExtra = 0
 }: {
@@ -25,6 +26,7 @@ export function calcFishingTripResult({
 	loot: number[];
 	gearBank: GearBank;
 	rng?: RNGProvider;
+	isPowerfishing?: boolean;
 	blessingExtra?: number;
 	flakeExtra?: number;
 }) {
@@ -33,9 +35,14 @@ export function calcFishingTripResult({
 	const updateBank = new UpdateBank();
 	const messages: string[] = [];
 	const fishingLevel = gearBank.skillsAsLevels.fishing;
+	const useBarbarianCutEat =
+		isPowerfishing &&
+		fish.name === 'Barbarian fishing' &&
+		gearBank.skillsAsLevels.fishing >= 99 &&
+		gearBank.skillsAsLevels.cooking >= 80;
 
 	let fishingXP = 0;
-	let otherXP = 0;
+	const bonusXP: Partial<Record<SkillNameType, number>> = {};
 	const totalCatches = catches.reduce((total, val) => total + val, 0);
 
 	for (let i = 0; i < fish.subfishes!.length; i++) {
@@ -48,8 +55,25 @@ export function calcFishingTripResult({
 		fishingXP += quantity * subfish.xp;
 		updateBank.itemLootBank.add(subfish.id, lootQty);
 
-		if (subfish.otherXP) {
-			otherXP += quantity * subfish.otherXP;
+		if (subfish.bonusXP) {
+			for (const [skillName, xpPerCatch] of Object.entries(subfish.bonusXP) as [SkillNameType, number][]) {
+				if (skillName === 'cooking' && !useBarbarianCutEat) {
+					continue;
+				}
+
+				let xpToAdd = quantity * xpPerCatch;
+
+				if (skillName === 'cooking') {
+					xpToAdd = calcLeapingExpectedCookingXP(
+						subfish.id,
+						quantity,
+						gearBank.skillsAsLevels.cooking,
+						xpPerCatch
+					);
+				}
+
+				bonusXP[skillName] = (bonusXP[skillName] ?? 0) + xpToAdd;
+			}
 		}
 
 		if (subfish.tertiary) {
@@ -77,9 +101,10 @@ export function calcFishingTripResult({
 	}
 
 	updateBank.xpBank.add('fishing', fishingXP, { duration });
-	if (otherXP > 0) {
-		updateBank.xpBank.add('agility', otherXP, { duration });
-		updateBank.xpBank.add('strength', otherXP, { duration });
+	for (const [skillName, xp] of Object.entries(bonusXP) as [SkillNameType, number][]) {
+		if (xp > 0) {
+			updateBank.xpBank.add(skillName, xp, { duration });
+		}
 	}
 
 	if (fish.name === 'Minnow') {
@@ -112,13 +137,22 @@ export function calcFishingTripResult({
 	}
 
 	const xpPerHour = duration === 0 ? 0 : Math.floor((fishingXP * Time.Hour) / duration);
-	const otherXpPerHour = duration === 0 ? 0 : Math.floor((otherXP * Time.Hour) / duration);
+	const bonusXpPerHour: Partial<Record<SkillNameType, string>> = {};
+	if (duration > 0) {
+		for (const [skillName, xp] of Object.entries(bonusXP) as [SkillNameType, number][]) {
+			const perHour = Math.floor((xp * Time.Hour) / duration);
+			if (perHour > 0) {
+				bonusXpPerHour[skillName] = toKMB(perHour);
+			}
+		}
+	}
 
 	return {
 		updateBank,
 		totalCatches,
 		messages,
 		xpPerHour: toKMB(xpPerHour),
+		bonusXpPerHour,
 		otherXpPerHour: toKMB(otherXpPerHour),
 		blessingExtra,
 		flakeExtra
