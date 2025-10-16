@@ -120,6 +120,8 @@ export const fishCommand = defineCommand({
 			Qty: result.catches,
 			loot: result.loot,
 			flakesToRemove: result.flakesBeingUsed,
+			blessingExtra: result.blessingExtra,
+			flakeExtra: result.flakeExtra,
 			powerfish: Boolean(options.powerfish),
 			spiritFlakes: result.isUsingSpiritFlakes,
 			spiritFlakePreference: result.spiritFlakePreference,

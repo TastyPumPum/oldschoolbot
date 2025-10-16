@@ -15,7 +15,9 @@ export function calcFishingTripResult({
 	catches,
 	loot,
 	gearBank,
-	rng
+	rng,
+	blessingExtra = 0,
+	flakeExtra = 0
 }: {
 	fish: Fish;
 	duration: number;
@@ -23,6 +25,8 @@ export function calcFishingTripResult({
 	loot: number[];
 	gearBank: GearBank;
 	rng?: RNGProvider;
+	blessingExtra?: number;
+	flakeExtra?: number;
 }) {
 	const rngProvider = rng ?? MathRNG;
 
@@ -62,6 +66,14 @@ export function calcFishingTripResult({
 		const bonusXP = (fishingXP * anglerBoost) / 100;
 		fishingXP += bonusXP;
 		messages.push(`**Bonus XP:** ${bonusXP.toFixed(1)} (+${anglerBoost.toFixed(1)}%) XP for angler`);
+	}
+
+	if (blessingExtra > 0) {
+		messages.push(`Rada's blessing granted ${blessingExtra.toLocaleString()} extra fish`);
+	}
+
+	if (flakeExtra > 0) {
+		messages.push(`Spirit flakes granted ${flakeExtra.toLocaleString()} extra fish`);
 	}
 
 	updateBank.xpBank.add('fishing', fishingXP, { duration });
@@ -107,6 +119,8 @@ export function calcFishingTripResult({
 		totalCatches,
 		messages,
 		xpPerHour: toKMB(xpPerHour),
-		otherXpPerHour: toKMB(otherXpPerHour)
+		otherXpPerHour: toKMB(otherXpPerHour),
+		blessingExtra,
+		flakeExtra
 	};
 }

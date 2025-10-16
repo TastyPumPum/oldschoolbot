@@ -1,10 +1,54 @@
-import { SeedableRNG } from '@oldschoolgg/rng';
+import { type RNGProvider, SeedableRNG } from '@oldschoolgg/rng';
 import { Bank } from 'oldschooljs';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { Fishing } from '../../src/lib/skilling/skills/fishing/fishing.js';
 import { calcFishingTripStart } from '../../src/lib/skilling/skills/fishing/fishingTripStart.js';
 import { makeGearBank } from './utils.js';
+
+class SequenceRNG implements RNGProvider {
+	private readonly fallback = new SeedableRNG(1);
+	private randQueue: number[];
+
+	constructor(randQueue: number[]) {
+		this.randQueue = [...randQueue];
+	}
+
+	private nextRand() {
+		if (this.randQueue.length > 0) {
+			return this.randQueue.shift()!;
+		}
+		return this.fallback.rand();
+	}
+
+	rand(): number {
+		return this.nextRand();
+	}
+
+	randFloat(min: number, max: number): number {
+		return min + (max - min) * this.nextRand();
+	}
+
+	randInt(min: number, max: number): number {
+		return Math.floor(this.nextRand() * (max - min + 1)) + min;
+	}
+
+	roll(max: number): boolean {
+		return this.randInt(1, max) === 1;
+	}
+
+	shuffle<T>(array: T[]): T[] {
+		return this.fallback.shuffle(array);
+	}
+
+	pick<T>(array: T[]): T {
+		return this.fallback.pick(array);
+	}
+
+	percentChance(percent: number): boolean {
+		return this.nextRand() < percent / 100;
+	}
+}
 
 describe('calcFishingTripStart', () => {
 	afterEach(() => {
@@ -264,6 +308,8 @@ describe('calcFishingTripStart', () => {
 		expect(res1.quantity).toBe(res2.quantity);
 		expect(res1.catches).toStrictEqual(res2.catches);
 		expect(res1.loot).toStrictEqual(res2.loot);
+		expect(res1.blessingExtra).toBe(res2.blessingExtra);
+		expect(res1.flakeExtra).toBe(res2.flakeExtra);
 		expect(res1.flakesBeingUsed).toBe(res2.flakesBeingUsed);
 		expect(res1.boosts).toStrictEqual(res2.boosts);
 		expect(res1.isPowerfishing).toBe(res2.isPowerfishing);
@@ -292,5 +338,100 @@ describe('calcFishingTripStart', () => {
 		const out = res as Exclude<typeof res, string>;
 		expect(out.quantity).toBeGreaterThanOrEqual(1);
 		expect(out.quantity).toBeLessThan(10);
+	});
+});
+
+describe('calcFishingTripResult', () => {
+	test('seeded RNG produces deterministic trip results', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+
+		const attempt = () => {
+			const gearBank = makeGearBank({
+				bank: new Bank().add('Fishing bait', 100).add('Spirit flakes', 100)
+			});
+			const tripStart = calcFishingTripStart({
+				gearBank,
+				fish,
+				maxTripLength: 1_000_000,
+				quantityInput: 25,
+				wantsToUseFlakes: true,
+				powerfish: false,
+				hasWildyEliteDiary: false,
+				rng: new SeedableRNG(123)
+			});
+			if (typeof tripStart === 'string') {
+				throw new Error('Expected deterministic trip start results');
+			}
+
+			const result = Fishing.util.calcFishingTripResult({
+				fish,
+				duration: tripStart.duration,
+				catches: tripStart.catches,
+				loot: tripStart.loot,
+				gearBank,
+				rng: new SeedableRNG(123),
+				blessingExtra: tripStart.blessingExtra,
+				flakeExtra: tripStart.flakeExtra
+			});
+
+			return { tripStart, result };
+		};
+
+		const run1 = attempt();
+		const run2 = attempt();
+
+		expect(run1.result.totalCatches).toBe(run2.result.totalCatches);
+		expect(run1.result.messages).toStrictEqual(run2.result.messages);
+		expect(run1.result.updateBank.itemLootBank.equals(run2.result.updateBank.itemLootBank)).toBe(true);
+		expect(run1.result.updateBank.xpBank.xpList).toStrictEqual(run2.result.updateBank.xpBank.xpList);
+		expect(run1.result.blessingExtra).toBe(run2.result.blessingExtra);
+		expect(run1.result.flakeExtra).toBe(run2.result.flakeExtra);
+	});
+
+	test('reports blessing and flake gains in completion messages', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		const gearBank = makeGearBank({
+			bank: new Bank().add('Fishing bait', 5).add('Spirit flakes', 5)
+		});
+		gearBank.gear.skilling.equip("Rada's blessing 4");
+
+		const start = calcFishingTripStart({
+			gearBank,
+			fish,
+			maxTripLength: 1_000_000,
+			quantityInput: 1,
+			wantsToUseFlakes: true,
+			powerfish: false,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG([0, 0, 0])
+		});
+
+		expect(typeof start).toBe('object');
+		if (typeof start === 'string') {
+			throw new Error('Expected trip start data');
+		}
+
+		expect(start.blessingExtra).toBeGreaterThanOrEqual(1);
+		expect(start.flakeExtra).toBeGreaterThanOrEqual(1);
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: start.duration,
+			catches: start.catches,
+			loot: start.loot,
+			gearBank,
+			rng: new SeedableRNG(5),
+			blessingExtra: start.blessingExtra,
+			flakeExtra: start.flakeExtra
+		});
+
+		expect(result.blessingExtra).toBe(start.blessingExtra);
+		expect(result.flakeExtra).toBe(start.flakeExtra);
+		expect(
+			result.messages.some(msg => msg.includes("Rada's blessing") && msg.includes(start.blessingExtra.toString()))
+		).toBe(true);
+		expect(
+			result.messages.some(msg => msg.includes('Spirit flakes') && msg.includes(start.flakeExtra.toString()))
+		).toBe(true);
 	});
 });
