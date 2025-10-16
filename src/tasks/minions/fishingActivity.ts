@@ -39,7 +39,7 @@ export const fishingTask: MinionTask = {
 			throw new Error(`Fishing trip update bank failed: ${updateResult}`);
 		}
 
-		const { itemTransactionResult } = updateResult;
+		const { itemTransactionResult, message: xpMessage } = updateResult;
 
 		let message = `${user}, ${user.minionName} finished fishing ${result.totalCatches} ${fish.name}. `;
 
@@ -52,6 +52,16 @@ export const fishingTask: MinionTask = {
 			}
 		}
 		message += `You received ${result.updateBank.xpBank} (${perHourSegments.join(', ')}).`;
+
+		if (xpMessage) {
+			const congratsLines = xpMessage
+				.split('\n')
+				.map(line => line.trim())
+				.filter(line => line.startsWith('**Congratulations'));
+			if (congratsLines.length > 0) {
+				message += `\n${congratsLines.join('\n')}`;
+			}
+		}
 
 		if (itemTransactionResult?.itemsAdded.length) {
 			message += `\nYou received ${itemTransactionResult.itemsAdded}.`;

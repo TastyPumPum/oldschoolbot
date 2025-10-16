@@ -5,7 +5,7 @@ import { userhasDiaryTier, WildernessDiary } from '@/lib/diaries.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import { anglerItemsArr } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
-import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
+import { bankToStrShortNames, formatSkillRequirements } from '@/lib/util/smallUtils.js';
 
 export const fishCommand = defineCommand({
 	name: 'fish',
@@ -132,6 +132,10 @@ export const fishCommand = defineCommand({
 		});
 
 		let response = `${user.minionName} is now fishing ${spot.name}, it'll take around ${formatDuration(result.duration)} to finish.`;
+
+		if (result.suppliesToRemove.length > 0) {
+			response += `\n\n**Used Supplies:** ${bankToStrShortNames(result.suppliesToRemove)}.`;
+		}
 
 		if (result.boosts.length > 0) {
 			response += `\n\n**Boosts:** ${result.boosts.join(', ')}.`;
