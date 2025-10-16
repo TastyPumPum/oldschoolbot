@@ -75,19 +75,35 @@ export interface Burnable {
 	inputLogs: number;
 }
 
-export interface Fish {
+export interface FishInSpot {
+	id: number;
 	level: number;
 	xp: number;
-	id: number;
+	intercept: number;
+	slope: number;
+	otherXP?: number;
+	tertiary?: { chance: number; id: number };
+}
+
+export interface Fish {
 	name: string;
+	alias?: string[];
+	subfishes?: FishInSpot[];
 	petChance?: number;
-	timePerFish: number;
+	clueScrollChance?: number;
+	lostTicks?: number;
+	bankingTime?: number;
+	ticksPerRoll?: number;
 	bait?: number;
 	qpRequired?: number;
 	bigFish?: number;
 	bigFishRate?: number;
-	clueScrollChance?: number;
-	alias?: string[];
+	// Camdozaal fish still rely on these properties.
+	timePerFish?: number;
+	level?: number;
+	xp?: number;
+	id?: number;
+	skillReqs?: Omit<LevelRequirements, 'fishing'>;
 }
 
 export interface Course {

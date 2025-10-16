@@ -18,16 +18,16 @@ function generateFishTable(currentFishLevel: number): LootTable {
 	const camdozaalFishTable = new LootTable()
 		.oneIn(256, 'Barronite handle')
 		.oneIn(5, 'Barronite shards', 3)
-		.add(guppy.id, 1, 4);
+		.add(guppy.id!, 1, 4);
 
-	if (currentFishLevel >= cavefish.level) {
-		camdozaalFishTable.add(cavefish.id, 1, 3);
+	if (currentFishLevel >= cavefish.level!) {
+		camdozaalFishTable.add(cavefish.id!, 1, 3);
 	}
-	if (currentFishLevel >= tetra.level) {
-		camdozaalFishTable.add(tetra.id, 1, 2);
+	if (currentFishLevel >= tetra.level!) {
+		camdozaalFishTable.add(tetra.id!, 1, 2);
 	}
-	if (currentFishLevel >= catfish.level) {
-		camdozaalFishTable.add(catfish.id, 1, 1);
+	if (currentFishLevel >= catfish.level!) {
+		camdozaalFishTable.add(catfish.id!, 1, 1);
 	}
 	return camdozaalFishTable;
 }
@@ -45,7 +45,7 @@ export const camdozaalFishingTask: MinionTask = {
 
 		const loot = camdozaalFishTable.roll(quantity);
 		for (const fish of Fishing.camdozaalFishes) {
-			fishingXP += loot.amount(fish.id) * fish.xp;
+			fishingXP += loot.amount(fish.id!) * fish.xp!;
 		}
 
 		let bonusXP = 0;

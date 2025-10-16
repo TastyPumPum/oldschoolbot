@@ -1,14 +1,28 @@
 import { round } from '@oldschoolgg/toolkit';
-import { itemID } from 'oldschooljs';
+import { EItem } from 'oldschooljs';
 
 import type { GearBank } from '@/lib/structures/GearBank.js';
 
-const anglerItems = [
-	[itemID('Angler hat'), 0.4],
-	[itemID('Angler top'), 0.8],
-	[itemID('Angler waders '), 0.6],
-	[itemID('Angler boots'), 0.2]
+const anglerItemsArr = [
+	{
+		id: EItem.ANGLER_HAT,
+		boost: 0.4
+	},
+	{
+		id: EItem.ANGLER_TOP,
+		boost: 0.8
+	},
+	{
+		id: EItem.ANGLER_WADERS,
+		boost: 0.6
+	},
+	{
+		id: EItem.ANGLER_BOOTS,
+		boost: 0.2
+	}
 ] as const;
+
+const anglerItems = anglerItemsArr.map(item => [item.id, item.boost] as const);
 
 function calcRadasBlessingBoost(gearBank: GearBank) {
 	const blessingBoosts = [
@@ -44,19 +58,12 @@ function calcMinnowQuantityRange(gearBank: GearBank): [number, number] {
 }
 
 function calcAnglerBoostPercent(gearBank: GearBank) {
-	const skillingSetup = gearBank.gear.skilling;
-	let amountEquipped = 0;
-	let boostPercent = 0;
-	for (const [id, percent] of anglerItems) {
-		if (skillingSetup.hasEquipped([id])) {
-			boostPercent += percent;
-			amountEquipped++;
-		}
+	const equippedPieces = anglerItemsArr.filter(item => gearBank.hasEquipped(item.id));
+	if (equippedPieces.length === anglerItemsArr.length) {
+		return 2.5;
 	}
-	if (amountEquipped === 4) {
-		boostPercent += 0.5;
-	}
+	const boostPercent = equippedPieces.reduce((total, item) => total + item.boost, 0);
 	return round(boostPercent, 1);
 }
 
-export { calcRadasBlessingBoost, calcMinnowQuantityRange, calcAnglerBoostPercent, anglerItems };
+export { calcRadasBlessingBoost, calcMinnowQuantityRange, calcAnglerBoostPercent, anglerItems, anglerItemsArr };
