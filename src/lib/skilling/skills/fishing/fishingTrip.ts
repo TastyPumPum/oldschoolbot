@@ -1,3 +1,4 @@
+import { roll } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { EItem, toKMB } from 'oldschooljs';
 
@@ -5,7 +6,7 @@ import addSkillingClueToLoot from '@/lib/minions/functions/addSkillingClueToLoot
 import type { Fish } from '@/lib/skilling/types.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
 import { UpdateBank } from '@/lib/structures/UpdateBank.js';
-import { roll, skillingPetDropRate } from '@/lib/util.js';
+import { skillingPetDropRate } from '@/lib/util.js';
 import { calcAnglerBoostPercent, calcMinnowQuantityRange } from './fishingUtil.js';
 
 export function calcFishingTripResult({
