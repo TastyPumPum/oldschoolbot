@@ -46,7 +46,17 @@ export function getItemCostFromConsumables({
 		}
 
 		let itemMultiple = consumable.qtyPerKill ?? consumable.qtyPerMinute ?? null;
-		if (itemMultiple) {
+		if (itemMultiple != null) {
+			if (typeof itemMultiple !== 'number') {
+				itemMultiple = Number(itemMultiple);
+			}
+			if (!Number.isFinite(itemMultiple)) {
+				continue;
+			}
+			if (itemMultiple < 0) {
+				itemMultiple = 0;
+			}
+
 			if (consumable.isRuneCost) {
 				// Free casts for kodai + sotd
 				if (gearBank.hasEquipped('Kodai wand')) {
@@ -56,10 +66,24 @@ export function getItemCostFromConsumables({
 				}
 			}
 
-			const multiply = consumable.qtyPerMinute ? (timeToFinish / Time.Minute) * itemMultiple : itemMultiple;
+			let multiply = consumable.qtyPerMinute ? (timeToFinish / Time.Minute) * itemMultiple : itemMultiple;
+			if (!Number.isFinite(multiply)) {
+				continue;
+			}
+			if (multiply < 0) {
+				multiply = 0;
+			}
 
 			for (const [item, qty] of consumable.itemCost.items()) {
-				floatCostsPerKill.add(item.id, qty * multiply);
+				const resolvedQty = typeof qty === 'number' ? qty : Number(qty);
+				if (!Number.isFinite(resolvedQty)) {
+					continue;
+				}
+				const quantityToAdd = resolvedQty * multiply;
+				if (!Number.isFinite(quantityToAdd)) {
+					continue;
+				}
+				floatCostsPerKill.add(item.id, quantityToAdd);
 			}
 			if (consumable.boostPercent) {
 				timeToFinish = reduceNumByPercent(timeToFinish, consumable.boostPercent);
