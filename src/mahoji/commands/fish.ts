@@ -7,7 +7,7 @@ import { anglerItemsArr } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
 
-export const fishCommand: OSBMahojiCommand = {
+export const fishCommand: defineCommand({
 	name: 'fish',
 	description: 'Send your minion to fish fish.',
 	attributes: {
@@ -50,16 +50,7 @@ export const fishCommand: OSBMahojiCommand = {
 			required: false
 		}
 	],
-	run: async ({
-		options,
-		user,
-		channelID
-	}: CommandRunOptions<{
-		name: string;
-		quantity?: number;
-		powerfish?: boolean;
-		spirit_flakes?: boolean;
-	}>) => {
+	run: async ({ options, user, channelID }) => {
 		const spot = Fishing.Fishes.find(fish => stringSearch(fish.name, options.name));
 		if (!spot) {
 			return 'Thats not a valid spot you can fish at.';
@@ -133,4 +124,4 @@ export const fishCommand: OSBMahojiCommand = {
 
 		return response;
 	}
-};
+});
