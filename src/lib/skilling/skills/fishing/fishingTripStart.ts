@@ -110,6 +110,24 @@ function determineFishingTime({
 	const fishingLevel = gearBank.skillsAsLevels.fishing;
 	let effectiveFishingLevel = fishingLevel;
 
+	const isBarbarianFishing = fish.name === 'Barbarian fishing';
+	const canCatchSalmon =
+		isBarbarianFishing && gearBank.skillsAsLevels.agility >= 30 && gearBank.skillsAsLevels.strength >= 30;
+	const canCatchSturgeon =
+		isBarbarianFishing && gearBank.skillsAsLevels.agility >= 45 && gearBank.skillsAsLevels.strength >= 45;
+	const canHandleSubfish = (id: number) => {
+		if (!isBarbarianFishing) {
+			return true;
+		}
+		if (id === EItem.LEAPING_SALMON) {
+			return canCatchSalmon;
+		}
+		if (id === EItem.LEAPING_STURGEON) {
+			return canCatchSturgeon;
+		}
+		return true;
+	};
+
 	if (fishingLevel > 68) {
 		if (['Shark', 'Mackerel/Cod/Bass', 'Lobster'].includes(fish.name)) {
 			effectiveFishingLevel += 7;
@@ -154,6 +172,7 @@ function determineFishingTime({
 		while (ticksElapsed < tripTicks) {
 			for (let i = fishCount - 1; i >= 0; i--) {
 				const subfish = fish.subfishes![i];
+				if (!canHandleSubfish(subfish.id)) continue;
 				if (fishingLevel < subfish.level) continue;
 				if (rng.rand() < probabilities[i]) {
 					catches[i]++;
@@ -171,6 +190,7 @@ function determineFishingTime({
 		while (ticksElapsed < tripTicks) {
 			for (let i = fishCount - 1; i >= 0; i--) {
 				const subfish = fish.subfishes![i];
+				if (!canHandleSubfish(subfish.id)) continue;
 				if (fishingLevel < subfish.level) continue;
 				if (rng.rand() < probabilities[i]) {
 					catches[i]++;
@@ -379,6 +399,7 @@ export function calcFishingTripStart({
 		spiritFlakePreference,
 		suppliesToRemove,
 		blessingExtra,
-		flakeExtra
+		flakeExtra,
+		usedBarbarianCutEat: useBarbarianCutEat
 	};
 }

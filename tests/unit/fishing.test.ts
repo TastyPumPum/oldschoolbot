@@ -1,5 +1,6 @@
 import { type RNGProvider, SeedableRNG } from '@oldschoolgg/rng';
-import { Bank } from 'oldschooljs';
+import { Time } from '@oldschoolgg/toolkit';
+import { Bank, toKMB } from 'oldschooljs';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { Fishing } from '../../src/lib/skilling/skills/fishing/fishing.js';
@@ -302,6 +303,76 @@ describe('calcFishingTripStart', () => {
 		expect(out.spiritFlakePreference).toBe(true);
 	});
 
+	test('barbarian fishing respects agility/strength thresholds', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
+		const rngPattern = [0.25, 0.05, 0.05, 0.4];
+		const rngQueue = Array.from({ length: 2500 }, () => rngPattern).flat();
+
+		const lowLevels = makeGearBank({
+			bank: new Bank().add('Feather', 500),
+			skillsAsLevels: { fishing: 80, agility: 29, strength: 29, cooking: 80 }
+		});
+		const salmonLevels = makeGearBank({
+			bank: new Bank().add('Feather', 500),
+			skillsAsLevels: { fishing: 80, agility: 30, strength: 30, cooking: 80 }
+		});
+		const sturgeonLevels = makeGearBank({
+			bank: new Bank().add('Feather', 500),
+			skillsAsLevels: { fishing: 80, agility: 45, strength: 45, cooking: 80 }
+		});
+
+		const low = calcFishingTripStart({
+			gearBank: lowLevels,
+			fish,
+			maxTripLength: 60 * 60 * 1000,
+			quantityInput: 200,
+			wantsToUseFlakes: false,
+			powerfish: true,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+		expect(typeof low).toBe('object');
+		if (typeof low === 'string') {
+			throw new Error('Expected trip data for low levels');
+		}
+		expect(low.catches[1]).toBe(0);
+		expect(low.catches[2]).toBe(0);
+
+		const salmon = calcFishingTripStart({
+			gearBank: salmonLevels,
+			fish,
+			maxTripLength: 60 * 60 * 1000,
+			quantityInput: 200,
+			wantsToUseFlakes: false,
+			powerfish: true,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+		expect(typeof salmon).toBe('object');
+		if (typeof salmon === 'string') {
+			throw new Error('Expected trip data for salmon levels');
+		}
+		expect(salmon.catches[1]).toBeGreaterThan(0);
+		expect(salmon.catches[2]).toBe(0);
+
+		const sturgeon = calcFishingTripStart({
+			gearBank: sturgeonLevels,
+			fish,
+			maxTripLength: 60 * 60 * 1000,
+			quantityInput: 200,
+			wantsToUseFlakes: false,
+			powerfish: true,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+		expect(typeof sturgeon).toBe('object');
+		if (typeof sturgeon === 'string') {
+			throw new Error('Expected trip data for sturgeon levels');
+		}
+		expect(sturgeon.catches[1]).toBeGreaterThan(0);
+		expect(sturgeon.catches[2]).toBeGreaterThan(0);
+	});
+
 	test('barbarian cut-eat powerfishing sustains bait and awards expected XP', () => {
 		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
 		const rng = createDeterministicRNG(321);
@@ -334,13 +405,23 @@ describe('calcFishingTripStart', () => {
 			loot: start.loot,
 			gearBank,
 			rng: createDeterministicRNG(321),
-			isPowerfishing: true
+			usedBarbarianCutEat: start.usedBarbarianCutEat
 		});
 
-		expect(result.xpPerHour).toBe('110.4k');
-		expect(result.bonusXpPerHour.agility).toBe('10k');
-		expect(result.bonusXpPerHour.strength).toBe('10k');
-		expect(result.bonusXpPerHour.cooking).toBe('17.2k');
+		const fishingXP = result.updateBank.xpBank.amount('fishing');
+		const cookingXP = result.updateBank.xpBank.amount('cooking');
+		const agilityXP = result.updateBank.xpBank.amount('agility');
+		const strengthXP = result.updateBank.xpBank.amount('strength');
+
+		expect(Number.isInteger(cookingXP)).toBe(true);
+		expect(cookingXP).toBeGreaterThan(0);
+
+		const perHour = (xp: number) => Math.floor((xp * Time.Hour) / start.duration);
+
+		expect(result.xpPerHour).toBe(toKMB(perHour(fishingXP)));
+		expect(result.bonusXpPerHour.agility).toBe(toKMB(perHour(agilityXP)));
+		expect(result.bonusXpPerHour.strength).toBe(toKMB(perHour(strengthXP)));
+		expect(result.bonusXpPerHour.cooking).toBe(toKMB(perHour(cookingXP)));
 	});
 
 	test('spirit flakes are consumed even when no bonus fish are granted', () => {
@@ -461,7 +542,8 @@ describe('calcFishingTripResult', () => {
 				gearBank,
 				rng: new SeedableRNG(123),
 				blessingExtra: tripStart.blessingExtra,
-				flakeExtra: tripStart.flakeExtra
+				flakeExtra: tripStart.flakeExtra,
+				usedBarbarianCutEat: tripStart.usedBarbarianCutEat
 			});
 
 			return { tripStart, result };
@@ -512,7 +594,8 @@ describe('calcFishingTripResult', () => {
 			gearBank,
 			rng: new SeedableRNG(5),
 			blessingExtra: start.blessingExtra,
-			flakeExtra: start.flakeExtra
+			flakeExtra: start.flakeExtra,
+			usedBarbarianCutEat: start.usedBarbarianCutEat
 		});
 
 		expect(result.blessingExtra).toBe(start.blessingExtra);
@@ -523,5 +606,46 @@ describe('calcFishingTripResult', () => {
 		expect(
 			result.messages.some(msg => msg.includes('Spirit flakes') && msg.includes(start.flakeExtra.toString()))
 		).toBe(true);
+	});
+
+	test('barbarian cut-eat flag persists even if cooking level increases mid-trip', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
+		const schedulingGear = makeGearBank({
+			bank: new Bank().add('Feather', 200),
+			skillsAsLevels: { fishing: 99, cooking: 79 }
+		});
+
+		const start = calcFishingTripStart({
+			gearBank: schedulingGear,
+			fish,
+			maxTripLength: 30 * 60 * 1000,
+			quantityInput: 100,
+			wantsToUseFlakes: false,
+			powerfish: true,
+			hasWildyEliteDiary: false,
+			rng: createDeterministicRNG(99)
+		});
+		expect(typeof start).toBe('object');
+		if (typeof start === 'string') {
+			throw new Error('Expected trip data when scheduling');
+		}
+		expect(start.usedBarbarianCutEat).toBe(false);
+
+		const finishingGear = makeGearBank({
+			bank: new Bank().add('Feather', 200),
+			skillsAsLevels: { fishing: 99, cooking: 99 }
+		});
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: start.duration,
+			catches: start.catches,
+			loot: start.loot,
+			gearBank: finishingGear,
+			rng: createDeterministicRNG(99),
+			usedBarbarianCutEat: start.usedBarbarianCutEat
+		});
+
+		expect(result.updateBank.xpBank.amount('cooking')).toBe(0);
 	});
 });

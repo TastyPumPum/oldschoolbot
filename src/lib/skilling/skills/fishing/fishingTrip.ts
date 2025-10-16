@@ -16,9 +16,9 @@ export function calcFishingTripResult({
 	loot,
 	gearBank,
 	rng,
-	isPowerfishing = false,
 	blessingExtra = 0,
-	flakeExtra = 0
+	flakeExtra = 0,
+	usedBarbarianCutEat = false
 }: {
 	fish: Fish;
 	duration: number;
@@ -26,20 +26,33 @@ export function calcFishingTripResult({
 	loot: number[];
 	gearBank: GearBank;
 	rng?: RNGProvider;
-	isPowerfishing?: boolean;
 	blessingExtra?: number;
 	flakeExtra?: number;
+	usedBarbarianCutEat?: boolean;
 }) {
 	const rngProvider = rng ?? MathRNG;
 
 	const updateBank = new UpdateBank();
 	const messages: string[] = [];
 	const fishingLevel = gearBank.skillsAsLevels.fishing;
-	const useBarbarianCutEat =
-		isPowerfishing &&
-		fish.name === 'Barbarian fishing' &&
-		gearBank.skillsAsLevels.fishing >= 99 &&
-		gearBank.skillsAsLevels.cooking >= 80;
+	const useBarbarianCutEat = Boolean(usedBarbarianCutEat);
+	const isBarbarianFishing = fish.name === 'Barbarian fishing';
+	const canCatchSalmon =
+		isBarbarianFishing && gearBank.skillsAsLevels.agility >= 30 && gearBank.skillsAsLevels.strength >= 30;
+	const canCatchSturgeon =
+		isBarbarianFishing && gearBank.skillsAsLevels.agility >= 45 && gearBank.skillsAsLevels.strength >= 45;
+	const canHandleSubfish = (id: number) => {
+		if (!isBarbarianFishing) {
+			return true;
+		}
+		if (id === EItem.LEAPING_SALMON) {
+			return canCatchSalmon;
+		}
+		if (id === EItem.LEAPING_STURGEON) {
+			return canCatchSturgeon;
+		}
+		return true;
+	};
 
 	let fishingXP = 0;
 	const bonusXP: Partial<Record<SkillNameType, number>> = {};
@@ -51,6 +64,7 @@ export function calcFishingTripResult({
 		const lootQty = loot[i] ?? 0;
 
 		if (quantity === 0 && lootQty === 0) continue;
+		if (!canHandleSubfish(subfish.id)) continue;
 
 		fishingXP += quantity * subfish.xp;
 		updateBank.itemLootBank.add(subfish.id, lootQty);
@@ -60,16 +74,24 @@ export function calcFishingTripResult({
 				if (skillName === 'cooking' && !useBarbarianCutEat) {
 					continue;
 				}
+				if (
+					isBarbarianFishing &&
+					(skillName === 'agility' || skillName === 'strength') &&
+					!canHandleSubfish(subfish.id)
+				) {
+					continue;
+				}
 
 				let xpToAdd = quantity * xpPerCatch;
 
 				if (skillName === 'cooking') {
-					xpToAdd = calcLeapingExpectedCookingXP(
-						subfish.id,
+					xpToAdd = calcLeapingExpectedCookingXP({
+						id: subfish.id,
 						quantity,
-						gearBank.skillsAsLevels.cooking,
-						xpPerCatch
-					);
+						cookingLevel: gearBank.skillsAsLevels.cooking,
+						xpPerSuccess: xpPerCatch,
+						rng: rngProvider
+					});
 				}
 
 				bonusXP[skillName] = (bonusXP[skillName] ?? 0) + xpToAdd;

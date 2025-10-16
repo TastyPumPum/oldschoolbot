@@ -125,6 +125,7 @@ export const fishCommand = defineCommand({
 			powerfish: Boolean(options.powerfish),
 			spiritFlakes: result.isUsingSpiritFlakes,
 			spiritFlakePreference: result.spiritFlakePreference,
+			usedBarbarianCutEat: result.usedBarbarianCutEat,
 			iQty: options.quantity ? options.quantity : undefined,
 			duration: result.duration,
 			type: 'Fishing'

@@ -174,6 +174,7 @@ export interface FishingActivityTaskOptions extends ActivityTaskOptions {
 	spiritFlakePreference?: boolean;
 	blessingExtra?: number;
 	flakeExtra?: number;
+	usedBarbarianCutEat?: boolean;
 	iQty?: number;
 }
 
