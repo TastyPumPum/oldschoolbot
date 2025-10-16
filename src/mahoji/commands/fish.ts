@@ -1,6 +1,7 @@
 import { formatDuration, stringSearch } from '@oldschoolgg/toolkit';
 import { ItemGroups, Monsters } from 'oldschooljs';
 
+import { userhasDiaryTier, WildernessDiary } from '@/lib/diaries.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 
@@ -36,8 +37,14 @@ export const fishCommand: OSBMahojiCommand = {
 		},
 		{
 			type: 'Boolean',
-			name: 'flakes',
-			description: 'Use spirit flakes?',
+			name: 'powerfish',
+			description: 'Powerfish for faster XP without banking loot.',
+			required: false
+		},
+		{
+			type: 'Boolean',
+			name: 'spirit_flakes',
+			description: 'Use spirit flakes for a chance at extra fish.',
 			required: false
 		}
 	],
@@ -45,44 +52,56 @@ export const fishCommand: OSBMahojiCommand = {
 		options,
 		user,
 		channelID
-	}: CommandRunOptions<{ name: string; quantity?: number; flakes?: boolean }>) => {
-		const fish = Fishing.Fishes.find(fish => stringSearch(fish.name, options.name));
-		if (!fish) return 'Thats not a valid fish to catch.';
+	}: CommandRunOptions<{
+		name: string;
+		quantity?: number;
+		powerfish?: boolean;
+		spirit_flakes?: boolean;
+	}>) => {
+		const spot = Fishing.Fishes.find(
+			fish =>
+				stringSearch(fish.name, options.name) || fish.alias?.some(alias => stringSearch(alias, options.name))
+		);
+		if (!spot) return 'Thats not a valid spot you can fish at.';
 
-		if (user.skillsAsLevels.fishing < fish.level) {
-			return `${user.minionName} needs ${fish.level} Fishing to fish ${fish.name}.`;
+		const requiredLevel = spot.subfishes?.[0]?.level ?? spot.level ?? 1;
+		if (user.skillsAsLevels.fishing < requiredLevel) {
+			return `${user.minionName} needs ${requiredLevel} Fishing to fish ${spot.name}.`;
 		}
 
-		if (fish.qpRequired && user.QP < fish.qpRequired) {
-			return `You need ${fish.qpRequired} qp to catch those!`;
+		if (spot.qpRequired && user.QP < spot.qpRequired) {
+			return `You need ${spot.qpRequired} qp to catch those!`;
 		}
 
 		if (
-			fish.name === 'Barbarian fishing' &&
+			spot.name === 'Barbarian fishing' &&
 			(user.skillsAsLevels.agility < 15 || user.skillsAsLevels.strength < 15)
 		) {
 			return 'You need at least 15 Agility and Strength to do Barbarian Fishing.';
 		}
 
-		if (fish.name === 'Infernal eel') {
+		if (spot.name === 'Infernal eel') {
 			const jadKC = await user.getKC(Monsters.TzTokJad.id);
 			if (jadKC === 0) {
 				return 'You are not worthy JalYt. Before you can fish Infernal Eels, you need to have defeated the mighty TzTok-Jad!';
 			}
 		}
 
-		if (fish.name === 'Minnow' && ItemGroups.anglerOutfit.some(_piece => !user.hasEquippedOrInBank(_piece))) {
+		if (spot.name === 'Minnow' && ItemGroups.anglerOutfit.some(_piece => !user.hasEquippedOrInBank(_piece))) {
 			return 'You need to own the Angler Outfit to fish for Minnows.';
 		}
 
 		const maxTripLength = user.calcMaxTripLength('Fishing');
+		const [hasWildyEliteDiary] = await userhasDiaryTier(user, WildernessDiary.elite);
 
 		const res = Fishing.util.calcFishingTripStart({
 			gearBank: user.gearBank,
-			fish,
+			fish: spot,
 			maxTripLength,
 			quantityInput: options.quantity,
-			wantsToUseFlakes: Boolean(options.flakes)
+			wantsToUseFlakes: Boolean(options.spirit_flakes),
+			powerfishing: Boolean(options.powerfish),
+			hasWildyEliteDiary
 		});
 		if (typeof res === 'string') {
 			return res;
@@ -90,7 +109,7 @@ export const fishCommand: OSBMahojiCommand = {
 
 		if (res.cost.length > 0) {
 			if (!user.owns(res.cost)) {
-				return `You don't own the required items to fish ${fish.name}, you need: ${res.cost}.`;
+				return `You don't own the required items to fish ${spot.name}, you need: ${res.cost}.`;
 			}
 			await user.transactItems({
 				itemsToRemove: res.cost
@@ -98,19 +117,32 @@ export const fishCommand: OSBMahojiCommand = {
 		}
 
 		await ActivityManager.startTrip<FishingActivityTaskOptions>({
-			fishID: fish.id,
+			fishID: spot.name,
 			userID: user.id,
 			channelID,
 			quantity: res.quantity,
 			iQty: options.quantity ? options.quantity : undefined,
 			duration: res.duration,
 			type: 'Fishing',
-			flakesQuantity: res.flakesBeingUsed
+			catches: res.catches,
+			loot: res.loot,
+			flakesToRemove: res.flakesToRemove,
+			powerfishing: res.powerfishing,
+			spiritFlakes: res.spiritFlakes
 		});
 
-		let response = `${user.minionName} is now fishing ${res.quantity}x ${fish.name}, it'll take around ${formatDuration(
+		const { powerfishing, spiritFlakes } = res;
+		let response = `${user.minionName} is now fishing ${res.quantity.toLocaleString()}x ${spot.name}, it'll take around ${formatDuration(
 			res.duration
 		)} to finish.`;
+
+		if (powerfishing) {
+			response += '\nThey will drop the fish for the best possible XP rates.';
+		}
+
+		if (spiritFlakes && res.flakesBeingUsed) {
+			response += `\nUsing ${res.flakesBeingUsed.toLocaleString()} spirit flakes.`;
+		}
 
 		if (res.boosts.length > 0) {
 			response += `\n\n**Boosts:** ${res.boosts.join(', ')}.`;

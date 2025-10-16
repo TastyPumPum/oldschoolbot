@@ -150,9 +150,10 @@ export function minionStatus(user: MUser) {
 		case 'Fishing': {
 			const data = currentTask as FishingActivityTaskOptions;
 
-			const fish = Fishing.Fishes.find(fish => fish.id === data.fishID);
+			const fish = Fishing.Fishes.find(fish => fish.name === data.fishID);
+			const verb = data.powerfishing ? 'powerfishing' : 'fishing';
 
-			return `${name} is currently fishing ${data.quantity}x ${fish?.name}. ${formattedDuration} Your ${
+			return `${name} is currently ${verb} ${data.quantity.toLocaleString()}x ${fish?.name}. ${formattedDuration} Your ${
 				Emoji.Fishing
 			} Fishing level is ${user.skillsAsLevels.fishing}`;
 		}

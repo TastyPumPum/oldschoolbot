@@ -81,16 +81,20 @@ function renderFishingXpHrTable() {
 					fish,
 					maxTripLength: Time.Hour * tripLengthHours,
 					quantityInput: undefined,
-					wantsToUseFlakes: false
+					wantsToUseFlakes: false,
+					powerfishing: false,
+					hasWildyEliteDiary: false
 				});
 				if (typeof trip === 'string') throw new Error(`Error calculating trip: ${trip}`);
 				const result = Fishing.util.calcFishingTripResult({
 					fish,
-					quantity: trip.quantity,
+					catches: trip.catches,
+					loot: trip.loot,
 					gearBank,
 					duration: trip.duration,
-					flakesQuantity: trip.flakesBeingUsed,
-					rng: MathRNG
+					rng: MathRNG,
+					powerfishing: trip.powerfishing ?? false,
+					flakesToRemove: trip.flakesToRemove
 				});
 				result.updateBank.itemLootBank.remove('Heron', result.updateBank.itemLootBank.amount('Heron'));
 

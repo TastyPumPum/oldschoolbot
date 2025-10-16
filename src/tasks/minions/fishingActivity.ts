@@ -1,6 +1,6 @@
 import { MathRNG } from '@oldschoolgg/rng';
 import { Emoji, Events } from '@oldschoolgg/toolkit';
-import { EItem } from 'oldschooljs';
+import { EItem, Items } from 'oldschooljs';
 
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
@@ -8,16 +8,18 @@ import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 export const fishingTask: MinionTask = {
 	type: 'Fishing',
 	async run(data: FishingActivityTaskOptions, { handleTripFinish, user }) {
-		const { fishID, quantity, channelID } = data;
-		const fish = Fishing.Fishes.find(fish => fish.id === fishID)!;
+		const { fishID, channelID, catches, loot, powerfishing } = data;
+		const fish = Fishing.Fishes.find(f => f.name === fishID)!;
 
 		const result = Fishing.util.calcFishingTripResult({
 			fish,
+			catches,
+			loot,
 			duration: data.duration,
-			quantity,
-			flakesQuantity: data.flakesQuantity,
 			gearBank: user.gearBank,
-			rng: MathRNG
+			rng: MathRNG,
+			flakesToRemove: data.flakesToRemove,
+			powerfishing: Boolean(powerfishing)
 		});
 
 		const resultOrError = await result.updateBank.transact(user);
@@ -26,13 +28,32 @@ export const fishingTask: MinionTask = {
 			Logging.logError(err, {
 				userID: user.id,
 				fishID,
-				quantity
+				quantity: result.totalCatches
 			});
 			return;
 		}
 		const { itemTransactionResult, rawResults } = resultOrError;
 
-		let str = `${user}, ${user.minionName} finished fishing ${quantity} ${fish.name}. ${rawResults.join(', ')}`;
+		const lootSummary: string[] = [];
+		if (fish.subfishes) {
+			fish.subfishes.forEach((subfish, index) => {
+				const qty = powerfishing ? catches[index] : loot[index];
+				if (!qty) return;
+				const itemName = Items.get(subfish.id)?.name ?? fish.name;
+				lootSummary.push(`${qty.toLocaleString()}x ${itemName}`);
+			});
+		} else {
+			const qty = powerfishing ? result.totalCatches : loot[0];
+			if (qty && fish.id) {
+				lootSummary.push(`${qty.toLocaleString()}x ${Items.get(fish.id)!.name}`);
+			}
+		}
+
+		let str = `${user}, ${user.minionName} finished ${powerfishing ? 'powerfishing' : 'fishing'} ${fish.name}. ${rawResults.join(', ')}`;
+
+		if (!powerfishing && lootSummary.length > 0) {
+			str += `\nThey brought back ${lootSummary.join(', ')}.`;
+		}
 
 		if (result.boosts.length > 0) {
 			str += `\n\n**Boosts:** ${result.boosts.join(', ')}`;

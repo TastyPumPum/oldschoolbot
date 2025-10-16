@@ -75,19 +75,38 @@ export interface Burnable {
 	inputLogs: number;
 }
 
-export interface Fish {
+export interface FishInSpot {
+	id: number;
 	level: number;
 	xp: number;
-	id: number;
+	intercept: number;
+	slope: number;
+	otherXP?: number;
+	tertiary?: { chance: number; id: number };
+}
+
+export interface Fish {
 	name: string;
+	alias?: string[];
+	subfishes?: FishInSpot[];
 	petChance?: number;
-	timePerFish: number;
+	clueScrollChance?: number;
+	lostTicks?: number;
+	bankingTime?: number;
+	ticksPerRoll?: number;
 	bait?: number;
 	qpRequired?: number;
 	bigFish?: number;
 	bigFishRate?: number;
-	clueScrollChance?: number;
-	alias?: string[];
+	skillReqs?: Omit<LevelRequirements, 'fishing'>;
+
+	// Legacy fields used for niche fishing activities (e.g. Camdozaal) that still
+	// operate on the old single-fish model. These will be removed once those
+	// activities are refactored to use fishing spots as well.
+	level?: number;
+	xp?: number;
+	id?: number;
+	timePerFish?: number;
 }
 
 export interface Course {

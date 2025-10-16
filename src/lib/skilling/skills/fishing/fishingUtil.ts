@@ -6,7 +6,7 @@ import type { GearBank } from '@/lib/structures/GearBank.js';
 const anglerItems = [
 	[itemID('Angler hat'), 0.4],
 	[itemID('Angler top'), 0.8],
-	[itemID('Angler waders '), 0.6],
+	[itemID('Angler waders'), 0.6],
 	[itemID('Angler boots'), 0.2]
 ] as const;
 
