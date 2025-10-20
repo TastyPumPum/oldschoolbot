@@ -44,6 +44,7 @@ import { inviteCommand } from '@/mahoji/commands/invite.js';
 import { minionKCommand } from '@/mahoji/commands/k.js';
 import { kcCommand } from '@/mahoji/commands/kc.js';
 import { killCommand } from '@/mahoji/commands/kill.js';
+import { kingdomCommand } from '@/mahoji/commands/kingdom.js';
 import { lapsCommand } from '@/mahoji/commands/laps.js';
 import { leaderboardCommand } from '@/mahoji/commands/leaderboard.js';
 import { lightCommand } from '@/mahoji/commands/light.js';
@@ -121,6 +122,7 @@ export const allCommandsDONTIMPORT: AnyCommand[] = [
 	giftCommand,
 	inviteCommand,
 	kcCommand,
+	kingdomCommand,
 	minionKCommand,
 	lapsCommand,
 	leaderboardCommand,

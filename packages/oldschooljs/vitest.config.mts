@@ -7,7 +7,7 @@ export default defineConfig({
 		benchmark: {
 			include: ['test/**/*.bench.ts']
 		},
-		include: ['test/**/*.test.ts'],
+		include: ['test/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
 		coverage: {
 			provider: 'v8',
 			include: ['src'],

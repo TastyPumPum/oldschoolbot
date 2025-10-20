@@ -53,5 +53,6 @@ export const AncientCavernAncientPageTable = new LootTable()
 export { BarbarianAssault, ChambersOfXeric, FishingTrawler, Gauntlet, Nightmare, Tempoross, Zalcano };
 
 export type { ChambersOfXericOptions } from './ChambersOfXeric.js';
+export * from './ManagingMiscellania.js';
 export * from './Mimic.js';
 export * from './TheatreOfBlood.js';
