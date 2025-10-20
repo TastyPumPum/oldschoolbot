@@ -63,7 +63,7 @@ export function minionStatusRaw(task: ActivityTaskData): string {
 		}
 		case 'Fishing': {
 			const data = task as FishingActivityTaskOptions;
-			const fish = Fishing.Fishes.find(i => i.id === data.fishID);
+			const fish = Fishing.Fishes.find(i => i.name === data.fishID);
 			return `Fished ${data.quantity}x ${fish?.name} in ${d}`;
 		}
 		case 'Mining': {
