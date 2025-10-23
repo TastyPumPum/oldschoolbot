@@ -1,8 +1,8 @@
 import { calcPercentOfNum, calcWhatPercent, toTitleCase } from '@oldschoolgg/toolkit';
-import type { GEListing, GETransaction } from '@prisma/client';
 import { Items } from 'oldschooljs';
 import type { Canvas } from 'skia-canvas';
 
+import type { GEListing, GETransaction } from '@/prisma/main.js';
 import { CanvasSpritesheet } from '@/lib/canvas/CanvasSpritesheet.js';
 import { OSRSCanvas } from '@/lib/canvas/OSRSCanvas.js';
 import type { GEListingWithTransactions } from '@/mahoji/commands/ge.js';
@@ -99,7 +99,10 @@ class GeImageGeneratorSingleton {
 
 		const maxWidth = progressShadowImage.width;
 		ctx.fillStyle = OSRSCanvas.COLORS.ORANGE;
-		let percentFullfilled = calcWhatPercent(listing.quantity_remaining, listing.total_quantity);
+		let percentFullfilled = calcWhatPercent(
+			listing.total_quantity - listing.quantity_remaining,
+			listing.total_quantity
+		);
 		if (listing.type === 'Sell') {
 			percentFullfilled = 100 - percentFullfilled;
 		}

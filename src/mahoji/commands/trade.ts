@@ -19,7 +19,7 @@ function formatBankForDisplay(bank: Bank): string {
 	return fullStr;
 }
 
-export const tradeCommand: OSBMahojiCommand = {
+export const tradeCommand = defineCommand({
 	name: 'trade',
 	description: 'Allows you to trade items with other players.',
 	options: [
@@ -55,25 +55,10 @@ export const tradeCommand: OSBMahojiCommand = {
 			required: false
 		}
 	],
-	run: async ({
-		interaction,
-		userID,
-		guildID,
-		options,
-		user
-	}: CommandRunOptions<{
-		user: MahojiUserOption;
-		send?: string;
-		receive?: string;
-		price?: string;
-		filter?: string;
-		search?: string;
-	}>) => {
+	run: async ({ interaction, user: senderUser, guildID, options }) => {
 		await interaction.defer();
 
 		if (!guildID) return 'You can only run this in a server.';
-		const senderUser = await mUserFetch(userID);
-		const senderAPIUser = user;
 		const recipientUser = await mUserFetch(options.user.user.id);
 		const recipientAPIUser = options.user.user;
 
@@ -118,6 +103,8 @@ export const tradeCommand: OSBMahojiCommand = {
 		}
 
 		if (itemsSent.length === 0 && itemsReceived.length === 0) return "You can't make an empty trade.";
+
+		await senderUser.sync();
 		if (!senderUser.owns(itemsSent)) return "You don't own those items.";
 
 		await interaction.confirmation({
@@ -168,7 +155,7 @@ Both parties must click confirm to make the trade.`,
 			files.push({ attachment: Buffer.from(receivedFull), name: 'items_received.txt' });
 		}
 
-		const content = `${senderAPIUser.username} sold ${formatBankForDisplay(itemsSent)} to ${discrimName(
+		const content = `${senderUser.username} sold ${formatBankForDisplay(itemsSent)} to ${discrimName(
 			recipientAPIUser
 		)} in return for ${formatBankForDisplay(itemsReceived)}.
 
@@ -176,4 +163,4 @@ Both parties must click confirm to make the trade.`,
 
 		return files.length > 0 ? { content, files } : content;
 	}
-};
+});

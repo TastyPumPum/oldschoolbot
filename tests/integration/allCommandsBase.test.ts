@@ -5,6 +5,7 @@ import PromiseQueue from 'p-queue';
 import { shuffle } from 'remeda';
 import { test } from 'vitest';
 
+import type { AnyCommand } from '@/lib/discord/commandOptions.js';
 import { allCommandsDONTIMPORT } from '../../src/mahoji/commands/allCommands.js';
 import { getMaxUserValues } from '../../src/mahoji/commands/testpotato.js';
 import { allUsableItems } from '../../src/mahoji/lib/abstracted_commands/useCommand.js';
@@ -170,7 +171,7 @@ test(
 
 		const rngProvider = new SeedableRNG(1);
 		const stopwatch = new Stopwatch();
-		const processedCommands: { command: OSBMahojiCommand; options: any[] }[] = [];
+		const processedCommands: { command: AnyCommand; options: any[] }[] = [];
 		for (const command of commandsToTest) {
 			if (ignoredCommands.includes(command.name)) continue;
 			let options = hardcodedOptions[command.name];
@@ -216,8 +217,7 @@ test(
 							GP: 100_000_000_000
 						});
 						// stopwatch.check(`	[${command.name}] User ${maxUser.id} created and maxed.`);
-						await maxUser.runCommand(command, options);
-						await maxUser.runActivity();
+						await maxUser.runCmdAndTrip(command, options);
 						// stopwatch.check(`	[${command.name}] Finished running command ${command.name}, result was: ${typeof res === "string" ? res.replace(/\r?\n|\r/g, ' ').replace(/[*_`~>|#]/g, '') : res}`);
 						commandsRan++;
 						// stopwatch.check(`${commandsRan}/${totalCommands} commands ran ${command.name}`);

@@ -10,15 +10,19 @@ import { TimerManager } from '@sapphire/timer-manager';
 import type { TextChannel } from 'discord.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 
+import { analyticsTick } from '@/lib/analytics.js';
+import { syncBlacklists } from '@/lib/blacklists.js';
 import { BitField, Channel, globalConfig } from '@/lib/constants.js';
 import { GrandExchange } from '@/lib/grandExchange.js';
 import { mahojiUserSettingsUpdate } from '@/lib/MUser.js';
+import { cacheGEPrices } from '@/lib/marketPrices.js';
 import { collectMetrics } from '@/lib/metrics.js';
 import { populateRoboChimpCache } from '@/lib/perkTier.js';
 import { fetchUsersWithoutUsernames } from '@/lib/rawSql.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { informationalButtons } from '@/lib/sharedComponents.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
+import { MInteraction } from '@/lib/structures/MInteraction.js';
 import { handleGiveawayCompletion } from '@/lib/util/giveaway.js';
 import { makeBadgeString } from '@/lib/util/makeBadgeString.js';
 import { getSupportGuild } from '@/lib/util.js';
@@ -71,6 +75,7 @@ export const tickers: {
 	startupWait?: number;
 	interval: number;
 	timer: NodeJS.Timeout | null;
+	productionOnly?: true;
 	cb: () => Promise<unknown>;
 }[] = [
 	{
@@ -122,8 +127,8 @@ export const tickers: {
 		startupWait: Time.Minute,
 		interval: Time.Minute * 3.5,
 		timer: null,
+		productionOnly: true,
 		cb: async () => {
-			if (!globalConfig.isProduction) return;
 			const basePlantTime = 1_626_556_507_451;
 			const now = Date.now();
 			const users = await prisma.user.findMany({
@@ -217,12 +222,8 @@ export const tickers: {
 							runCommand({
 								commandName: 'farming',
 								args: { harvest: { patch_name: patchType } },
-								bypassInhibitors: true,
-								channelID: message.channel.id,
-								guildID: undefined,
 								user: await mUserFetch(user.id),
-								member: message.member,
-								interaction: selection,
+								interaction: new MInteraction({ interaction: selection }),
 								continueDeltaMillis: selection.createdAt.getTime() - message.createdAt.getTime()
 							});
 						}
@@ -238,8 +239,8 @@ export const tickers: {
 		timer: null,
 		startupWait: Time.Second * 22,
 		interval: Time.Minute * 20,
+		productionOnly: true,
 		cb: async () => {
-			if (!globalConfig.isProduction) return;
 			const guild = getSupportGuild();
 			const channel = guild?.channels.cache.get(Channel.HelpAndSupport) as TextChannel | undefined;
 			if (!channel) return;
@@ -263,8 +264,8 @@ export const tickers: {
 		startupWait: Time.Second * 19,
 		timer: null,
 		interval: Time.Minute * 20,
+		productionOnly: true,
 		cb: async () => {
-			if (!globalConfig.isProduction) return;
 			const guild = getSupportGuild();
 			const channel = guild?.channels.cache.get(Channel.GrandExchange) as TextChannel | undefined;
 			if (!channel) return;
@@ -304,9 +305,10 @@ export const tickers: {
 		startupWait: Time.Minute * 10,
 		timer: null,
 		interval: Time.Minute * 33.33,
+
+		productionOnly: true,
 		cb: async () => {
 			const users = await fetchUsersWithoutUsernames();
-			if (process.env.TEST) return;
 			for (const { id } of users) {
 				const djsUser = await globalClient.users.fetch(id).catch(() => null);
 				if (!djsUser) {
@@ -344,16 +346,72 @@ export const tickers: {
 				);
 			}
 		}
+	},
+	{
+		name: 'Sync Blacklists',
+		timer: null,
+		interval: Time.Minute * 10,
+		cb: async () => {
+			await syncBlacklists();
+		}
+	},
+	{
+		name: 'Analytics',
+		timer: null,
+		interval: Time.Hour * 4.44,
+		startupWait: Time.Minute * 30,
+		cb: async () => {
+			await analyticsTick();
+		}
+	},
+	{
+		name: 'Presence Update',
+		timer: null,
+		interval: Time.Hour * 8.44,
+		cb: async () => {
+			globalClient.user?.setActivity('/help');
+		}
+	},
+	{
+		name: 'Economy Item Snapshot',
+		timer: null,
+		startupWait: Time.Minute * 20,
+		interval: Time.Hour * 6.55,
+		cb: async () => {
+			await prisma.$queryRawUnsafe(`INSERT INTO economy_item
+SELECT item_id::integer, SUM(qty)::bigint FROM
+(
+    SELECT id, (jdata).key AS item_id, (jdata).value::text::bigint AS qty FROM (select id, json_each(bank) AS jdata FROM users) AS banks
+)
+AS DATA
+GROUP BY item_id;`);
+		}
+	},
+	{
+		name: 'Cache G.E Prices',
+		timer: null,
+		interval: Time.Hour * 12.55,
+		startupWait: Time.Minute * 25,
+		cb: async () => {
+			await cacheGEPrices();
+		}
 	}
 ];
 
 export function initTickers() {
 	for (const ticker of tickers) {
 		if (ticker.timer !== null) clearTimeout(ticker.timer);
+		if (ticker.productionOnly && !globalConfig.isProduction) continue;
 		const fn = async () => {
 			try {
 				if (globalClient.isShuttingDown) return;
+				const start = performance.now();
 				await ticker.cb();
+				const end = performance.now();
+				Logging.logPerf({
+					duration: end - start,
+					text: `Ticker.${ticker.name}`
+				});
 			} catch (err) {
 				Logging.logError(err as Error);
 			} finally {
