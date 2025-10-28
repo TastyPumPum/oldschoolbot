@@ -1,6 +1,7 @@
 import { randomVariation } from '@oldschoolgg/rng';
 import { type Monster, Monsters, NIGHTMARES_HP } from 'oldschooljs';
 
+import type { PvMMethod } from '@/lib/constants.js';
 import { xpCannonVaryPercent, xpPercentToCannon, xpPercentToCannonM } from '@/lib/minions/data/combatConstants.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
@@ -23,6 +24,8 @@ export interface AddMonsterXpParams {
 	cannonMulti?: boolean;
 	burstOrBarrage?: number;
 	superiorCount?: number;
+	attackStyles?: AttackStyles[];
+	boostMethods?: PvMMethod[];
 }
 
 export function addMonsterXPRaw(params: {
@@ -36,15 +39,20 @@ export function addMonsterXPRaw(params: {
 	cannonMulti?: boolean;
 	burstOrBarrage?: number;
 	superiorCount?: number;
-	attackStyles: AttackStyles[];
+	attackStyles?: AttackStyles[];
+	boostMethods?: PvMMethod[];
 }) {
-	const boostMethod = params.burstOrBarrage ? (['barrage'] as const) : (['none'] as const);
+	const resolvedBoostMethods: PvMMethod[] = params.boostMethods?.length
+		? params.boostMethods
+		: params.burstOrBarrage
+			? ['barrage']
+			: ['none'];
 	const maybeMonster = killableMonsters.find(m => m.id === params.monsterID);
 	const maybeOSJSMonster = Monsters.get(params.monsterID);
 	const attackStyles = resolveAttackStyles({
 		monster: maybeMonster,
-		boostMethod,
-		attackStyles: params.attackStyles
+		boostMethod: resolvedBoostMethods,
+		attackStyles: params.attackStyles ?? []
 	});
 	let hp = miscHpMap[params.monsterID] ?? 1;
 	let xpMultiplier = 1;

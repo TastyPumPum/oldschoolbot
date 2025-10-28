@@ -143,6 +143,7 @@ export function doMonsterTrip(data: newOptions) {
 		q: quantity,
 		usingCannon,
 		cannonMulti,
+		chinning,
 		bob: burstOrBarrage,
 		died,
 		pkEncounters,
@@ -385,7 +386,8 @@ export function doMonsterTrip(data: newOptions) {
 				cannonMulti,
 				burstOrBarrage,
 				superiorCount: newSuperiorCount,
-				attackStyles
+				attackStyles,
+				boostMethods
 			})
 		);
 		if (hasKourendHard) {
