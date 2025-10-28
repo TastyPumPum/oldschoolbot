@@ -1,7 +1,7 @@
 import { Time } from '@oldschoolgg/toolkit';
 import {
 	ActionRowBuilder,
-	AttachmentBuilder,
+	type AttachmentBuilder,
 	ButtonBuilder,
 	type ButtonInteraction,
 	ButtonStyle,
@@ -542,15 +542,20 @@ export async function highRollerCommand({
 
 	rollResults.sort((a, b) => b.value - a.value);
 
-	const highRollerImage = await drawHighRollerImage({
-		rolls: rollResults.map((result, index) => ({
-			position: index + 1,
-			username: result.user.badgedUsername,
-			itemID: result.item.id,
-			itemName: result.item.name,
-			value: result.value
-		}))
-	});
+	let highRollerImage: AttachmentBuilder | null = null;
+	try {
+		highRollerImage = await drawHighRollerImage({
+			rolls: rollResults.map((result, index) => ({
+				position: index + 1,
+				username: result.user.badgedUsername,
+				itemID: result.item.id,
+				itemName: result.item.name,
+				value: result.value
+			}))
+		});
+	} catch (err) {
+		console.error('Error generating High Roller image:', err);
+	}
 
 	const { pot, payoutsMessages } = await payoutWinners({
 		interaction,
@@ -561,10 +566,10 @@ export async function highRollerCommand({
 	});
 
 	const summary = `**High Roller Pot** (${
-		mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 60/30/10'
+		mode === 'winner_takes_all' ? 'Winner takes all' : 'Top 3 (60/30/10)'
 	})\nStake: ${toKMB(stake)} GP (Total pot ${toKMB(pot)} GP)\nParticipants (${rollResults.length}): ${rollResults
 		.map(result => result.user.badgedUsername)
-		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
+		.join(', ')}\n\n${payoutsMessages.join('\n')}`;
 
 	const response = highRollerImage
 		? { content: summary, components: [], files: [highRollerImage] }
