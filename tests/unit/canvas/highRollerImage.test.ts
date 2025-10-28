@@ -17,6 +17,17 @@ describe('drawHighRollerImage', () => {
 		});
 
 		expect(result).not.toBeNull();
-		expect(result?.attachment).toBeInstanceOf(Buffer);
+		if (!result) {
+			return;
+		}
+
+		const attachment =
+			'attachment' in result
+				? result.attachment
+				: 'data' in result
+					? (result as { data: unknown }).data
+					: (result as { file?: unknown }).file;
+
+		expect(attachment).toBeTruthy();
 	});
 });

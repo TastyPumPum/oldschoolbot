@@ -558,12 +558,11 @@ export async function highRollerCommand({
 		.map(result => result.user.badgedUsername)
 		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
 
-	const response = highRollerImage ? { content: summary, files: [highRollerImage] } : summary;
-	await safeEdit(
-		interaction,
-		highRollerImage
-			? { content: summary, components: [], files: [highRollerImage] }
-			: { content: summary, components: [] }
-	);
-	return interaction.returnStringOrFile(response);
+	if (highRollerImage) {
+		await safeEdit(interaction, { content: summary, components: [], files: [highRollerImage] });
+		return interaction.returnStringOrFile({ content: summary, files: [highRollerImage] });
+	}
+
+	await safeEdit(interaction, { content: summary, components: [] });
+	return interaction.returnStringOrFile(summary);
 }
