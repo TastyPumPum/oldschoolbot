@@ -3,12 +3,13 @@ import { calcPerHour, deepEqual, Emoji, Time, uniqueArr } from '@oldschoolgg/too
 import { Bank, EMonster, type MonsterKillOptions, MonsterSlayerMaster, Monsters } from 'oldschooljs';
 import { clone } from 'remeda';
 
-import type { BitField } from '@/lib/constants.js';
+import type { BitField, PvMMethod } from '@/lib/constants.js';
 import { trackLoot } from '@/lib/lootTrack.js';
+import { SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { addMonsterXPRaw } from '@/lib/minions/functions/addMonsterXPRaw.js';
 import announceLoot from '@/lib/minions/functions/announceLoot.js';
-import type { AttackStyles } from '@/lib/minions/functions/index.js';
+import { type AttackStyles, resolveAttackStyles } from '@/lib/minions/functions/index.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
 import { SlayerTaskUnlocksEnum } from '@/lib/slayer/slayerUnlocks.js';
 import { type CurrentSlayerInfo, calculateSlayerPoints } from '@/lib/slayer/slayerUtil.js';
@@ -159,6 +160,24 @@ export function doMonsterTrip(data: newOptions) {
 		duration,
 		bitfield
 	} = data;
+	const boostMethods: PvMMethod[] = [];
+	if (burstOrBarrage === SlayerActivityConstants.IceBarrage) {
+		boostMethods.push('barrage');
+	} else if (burstOrBarrage === SlayerActivityConstants.IceBurst) {
+		boostMethods.push('burst');
+	}
+	if (chinning) {
+		boostMethods.push('chinning');
+	}
+	if (usingCannon) {
+		boostMethods.push('cannon');
+	}
+	attackStyles = resolveAttackStyles({
+		monster,
+		attackStyles,
+		boostMethod: boostMethods.length > 0 ? boostMethods : ['none']
+	});
+
 	const currentKC = kcBank.amount(monster.id);
 	const updateBank = new UpdateBank();
 
