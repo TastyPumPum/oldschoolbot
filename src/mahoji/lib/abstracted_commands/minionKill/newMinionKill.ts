@@ -228,10 +228,16 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 		if (!result) continue;
 		for (const boostResult of Array.isArray(result) ? result : [result]) {
 			if (boostResult.changes) {
-				speedDurationResult.currentTaskOptions = mergeDeep(
-					speedDurationResult.currentTaskOptions,
-					boostResult.changes
-				);
+				const { attackStyles: changedAttackStyles, ...otherChanges } = boostResult.changes;
+				if (Object.keys(otherChanges).length > 0) {
+					speedDurationResult.currentTaskOptions = mergeDeep(
+						speedDurationResult.currentTaskOptions,
+						otherChanges
+					);
+				}
+				if (changedAttackStyles && changedAttackStyles.length > 0) {
+					attackStyles = changedAttackStyles;
+				}
 				const newStyles = getAttackStylesContext(attackStyles);
 				primaryStyle = newStyles.primaryStyle;
 				relevantGearStat = newStyles.relevantGearStat;
