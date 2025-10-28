@@ -1,6 +1,7 @@
 import { Time } from '@oldschoolgg/toolkit';
 import {
 	ActionRowBuilder,
+	AttachmentBuilder,
 	ButtonBuilder,
 	type ButtonInteraction,
 	ButtonStyle,
@@ -9,6 +10,7 @@ import {
 } from 'discord.js';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
 
+import { drawHighRollerImage } from '@/lib/canvas/highRollerImage.js';
 import { BitField } from '@/lib/constants.js';
 import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
@@ -112,17 +114,25 @@ function formatRollResults(rolls: RollResult[]): string {
 }
 
 // Edit the message we sent for this interaction if possible; otherwise reply.
-async function safeEdit(
-	interaction: MInteraction,
-	options: string | { content?: string; components?: any[]; allowedMentions?: any }
-) {
-	const msg = (interaction.interactionResponse as Message | null) ?? null;
-	if (msg) {
-		if (typeof options === 'string') return msg.edit({ content: options });
-		return msg.edit(options);
+type SafeEditOptions =
+	| string
+	| { content?: string; components?: any[]; allowedMentions?: any; files?: AttachmentBuilder[] };
+
+function normalizeSafeEditOptions(options: SafeEditOptions) {
+	if (typeof options === 'string') {
+		return { content: options };
 	}
-	if (typeof options === 'string') return interaction.reply({ content: options });
-	return interaction.reply(options as any);
+	const { content, components, allowedMentions, files } = options;
+	return { content, components, allowedMentions, files };
+}
+
+async function safeEdit(interaction: MInteraction, options: SafeEditOptions) {
+	const msg = (interaction.interactionResponse as Message | null) ?? null;
+	const normalized = normalizeSafeEditOptions(options);
+	if (msg) {
+		return msg.edit(normalized as any);
+	}
+	return interaction.reply(normalized as any);
 }
 
 async function collectDirectInvites({
@@ -532,6 +542,16 @@ export async function highRollerCommand({
 
 	rollResults.sort((a, b) => b.value - a.value);
 
+	const highRollerImage = await drawHighRollerImage({
+		rolls: rollResults.map((result, index) => ({
+			position: index + 1,
+			username: result.user.badgedUsername,
+			itemID: result.item.id,
+			itemName: result.item.name,
+			value: result.value
+		}))
+	});
+
 	const { pot, payoutsMessages } = await payoutWinners({
 		interaction,
 		host: user,
@@ -546,6 +566,10 @@ export async function highRollerCommand({
 		.map(result => result.user.badgedUsername)
 		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
 
-	await safeEdit(interaction, { content: summary, components: [] });
-	return interaction.returnStringOrFile(summary);
+	const response = highRollerImage
+		? { content: summary, components: [], files: [highRollerImage] }
+		: { content: summary, components: [] };
+
+	await safeEdit(interaction, response);
+	return interaction.returnStringOrFile(highRollerImage ? { content: summary, files: [highRollerImage] } : summary);
 }
