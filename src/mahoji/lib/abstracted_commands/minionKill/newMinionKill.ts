@@ -7,7 +7,7 @@ import type { PlayerOwnedHouse } from '@/prisma/main.js';
 import type { BitField, PvMMethod } from '@/lib/constants.js';
 import { getSimilarItems } from '@/lib/data/similarItems.js';
 import { checkRangeGearWeapon } from '@/lib/gear/functions/checkRangeGearWeapon.js';
-import type { CombatOptionsEnum } from '@/lib/minions/data/combatConstants.js';
+import { CombatOptionsEnum, SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import { revenantMonsters } from '@/lib/minions/data/killableMonsters/revs.js';
 import { type AttackStyles, getAttackStylesContext, resolveAttackStyles } from '@/lib/minions/functions/index.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
@@ -121,12 +121,23 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 		wildyBurst: isAbleToBurstInWilderness
 	});
 
+	const isForcedMagicMethod = combatMethods.some(method => method === 'barrage' || method === 'burst');
+
 	attackStyles = resolveAttackStyles({
 		monster,
 		boostMethod: combatMethods,
 		attackStyles
 	});
+	if (isForcedMagicMethod && !attackStyles.includes('magic')) {
+		attackStyles = attackStyles.includes('defence') ? ['magic', 'defence'] : ['magic'];
+	}
+	args.attackStyles = attackStyles;
 	const { skillsAsLevels } = gearBank;
+	if (isForcedMagicMethod && attackStyles[0] !== primaryStyle) {
+		const context = getAttackStylesContext(attackStyles);
+		primaryStyle = context.primaryStyle;
+		relevantGearStat = context.relevantGearStat;
+	}
 	if (combatMethods.includes('barrage') && skillsAsLevels.magic < 94) {
 		return `You need 94 Magic to use Ice Barrage. You have ${skillsAsLevels.magic}`;
 	}
@@ -174,6 +185,12 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 	});
 	if (typeof speedDurationResult === 'string') {
 		return speedDurationResult;
+	}
+
+	if (isForcedMagicMethod && !speedDurationResult.currentTaskOptions.bob) {
+		speedDurationResult.currentTaskOptions.bob = combatMethods.includes('barrage')
+			? SlayerActivityConstants.IceBarrage
+			: SlayerActivityConstants.IceBurst;
 	}
 	const quantity = speedDurationResult.finalQuantity;
 	let duration = speedDurationResult.timeToFinish * quantity;
@@ -228,10 +245,17 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 		if (!result) continue;
 		for (const boostResult of Array.isArray(result) ? result : [result]) {
 			if (boostResult.changes) {
-				speedDurationResult.currentTaskOptions = mergeDeep(
-					speedDurationResult.currentTaskOptions,
-					boostResult.changes
-				);
+				const { attackStyles: changedAttackStyles, ...otherChanges } = boostResult.changes;
+				if (Object.keys(otherChanges).length > 0) {
+					speedDurationResult.currentTaskOptions = mergeDeep(
+						speedDurationResult.currentTaskOptions,
+						otherChanges
+					);
+				}
+				if (changedAttackStyles && changedAttackStyles.length > 0) {
+					attackStyles = changedAttackStyles;
+					args.attackStyles = attackStyles;
+				}
 				const newStyles = getAttackStylesContext(attackStyles);
 				primaryStyle = newStyles.primaryStyle;
 				relevantGearStat = newStyles.relevantGearStat;

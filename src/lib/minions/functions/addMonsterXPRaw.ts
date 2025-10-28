@@ -1,6 +1,7 @@
 import { randomVariation } from '@oldschoolgg/rng';
 import { type Monster, Monsters, NIGHTMARES_HP } from 'oldschooljs';
 
+import type { PvMMethod } from '@/lib/constants.js';
 import { xpCannonVaryPercent, xpPercentToCannon, xpPercentToCannonM } from '@/lib/minions/data/combatConstants.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
@@ -23,6 +24,8 @@ export interface AddMonsterXpParams {
 	cannonMulti?: boolean;
 	burstOrBarrage?: number;
 	superiorCount?: number;
+	attackStyles?: AttackStyles[];
+	boostMethods?: PvMMethod[];
 }
 
 export function addMonsterXPRaw(params: {
@@ -36,16 +39,29 @@ export function addMonsterXPRaw(params: {
 	cannonMulti?: boolean;
 	burstOrBarrage?: number;
 	superiorCount?: number;
-	attackStyles: AttackStyles[];
+	attackStyles?: AttackStyles[];
+	boostMethods?: PvMMethod[];
 }) {
-	const boostMethod = params.burstOrBarrage ? (['barrage'] as const) : (['none'] as const);
+	const resolvedBoostMethods: PvMMethod[] = params.boostMethods?.length
+		? params.boostMethods
+		: params.burstOrBarrage
+			? ['barrage']
+			: ['none'];
 	const maybeMonster = killableMonsters.find(m => m.id === params.monsterID);
 	const maybeOSJSMonster = Monsters.get(params.monsterID);
 	const attackStyles = resolveAttackStyles({
 		monster: maybeMonster,
-		boostMethod,
-		attackStyles: params.attackStyles
+		boostMethod: resolvedBoostMethods,
+		attackStyles: params.attackStyles ?? []
 	});
+	const forcedMagic = resolvedBoostMethods.some(method => method === 'barrage' || method === 'burst');
+	const stylesForXP: AttackStyles[] = forcedMagic
+		? attackStyles.includes('defence')
+			? (['magic', 'defence'] as AttackStyles[])
+			: (['magic'] as AttackStyles[])
+		: attackStyles.length > 0
+			? attackStyles
+			: (['attack'] as AttackStyles[]);
 	let hp = miscHpMap[params.monsterID] ?? 1;
 	let xpMultiplier = 1;
 	const cannonQty = params.cannonMulti
@@ -89,12 +105,12 @@ export function addMonsterXPRaw(params: {
 	}
 
 	const totalXP = hp * 4 * normalQty * xpMultiplier + superiorXp;
-	const xpPerSkill = totalXP / attackStyles.length;
+	const xpPerSkill = totalXP / stylesForXP.length;
 
 	const xpBank = new XPBank();
 	const debugId = `d[${params.duration}] mid[${params.monsterID}] qty[${params.quantity}] ${params.isOnTask ? 'task' : 'notask'}`;
 
-	for (const style of attackStyles) {
+	for (const style of stylesForXP) {
 		xpBank.add(style, Math.floor(xpPerSkill), {
 			duration: params.duration,
 			minimal: params.minimal ?? true,

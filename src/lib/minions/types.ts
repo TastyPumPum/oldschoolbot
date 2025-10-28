@@ -11,6 +11,7 @@ import type { OffenceGearStat } from 'oldschooljs/gear';
 
 import type { GearSetupType, XpGainSource } from '@/prisma/main.js';
 import type { ClueTier } from '@/lib/clues/clueTiers.js';
+import type { PvMMethod } from '@/lib/constants.js';
 import type { QuestID } from '@/lib/minions/data/quests.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { POHBoosts } from '@/lib/poh/index.js';
@@ -156,6 +157,8 @@ export interface AddMonsterXpParams {
 	cannonMulti?: boolean;
 	burstOrBarrage?: number;
 	superiorCount?: number;
+	attackStyles?: AttackStyles[];
+	boostMethods?: PvMMethod[];
 }
 
 export interface BlowpipeData {
