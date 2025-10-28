@@ -114,17 +114,25 @@ function formatRollResults(rolls: RollResult[]): string {
 }
 
 // Edit the message we sent for this interaction if possible; otherwise reply.
-async function safeEdit(
-	interaction: MInteraction,
-	options: string | { content?: string; components?: any[]; allowedMentions?: any; files?: AttachmentBuilder[] }
-) {
-	const msg = (interaction.interactionResponse as Message | null) ?? null;
-	if (msg) {
-		if (typeof options === 'string') return msg.edit({ content: options });
-		return msg.edit(options);
+type SafeEditOptions =
+	| string
+	| { content?: string; components?: any[]; allowedMentions?: any; files?: AttachmentBuilder[] };
+
+function normalizeSafeEditOptions(options: SafeEditOptions) {
+	if (typeof options === 'string') {
+		return { content: options };
 	}
-	if (typeof options === 'string') return interaction.reply({ content: options });
-	return interaction.reply(options as any);
+	const { content, components, allowedMentions, files } = options;
+	return { content, components, allowedMentions, files };
+}
+
+async function safeEdit(interaction: MInteraction, options: SafeEditOptions) {
+	const msg = (interaction.interactionResponse as Message | null) ?? null;
+	const normalized = normalizeSafeEditOptions(options);
+	if (msg) {
+		return msg.edit(normalized as any);
+	}
+	return interaction.reply(normalized as any);
 }
 
 async function collectDirectInvites({
@@ -558,11 +566,10 @@ export async function highRollerCommand({
 		.map(result => result.user.badgedUsername)
 		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
 
-	if (highRollerImage) {
-		await safeEdit(interaction, { content: summary, components: [], files: [highRollerImage] });
-		return interaction.returnStringOrFile({ content: summary, files: [highRollerImage] });
-	}
+	const response = highRollerImage
+		? { content: summary, components: [], files: [highRollerImage] }
+		: { content: summary, components: [] };
 
-	await safeEdit(interaction, { content: summary, components: [] });
-	return interaction.returnStringOrFile(summary);
+	await safeEdit(interaction, response);
+	return interaction.returnStringOrFile(highRollerImage ? { content: summary, files: [highRollerImage] } : summary);
 }
