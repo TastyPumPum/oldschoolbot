@@ -55,13 +55,13 @@ export function addMonsterXPRaw(params: {
 		attackStyles: params.attackStyles ?? []
 	});
 	const forcedMagic = resolvedBoostMethods.some(method => method === 'barrage' || method === 'burst');
-	const attackStylesForXP =
-		forcedMagic && !attackStyles.includes('magic')
-			? attackStyles.includes('defence')
-				? (['magic', 'defence'] as AttackStyles[])
-				: (['magic'] as AttackStyles[])
-			: attackStyles;
-	const stylesForXP = attackStylesForXP.length > 0 ? attackStylesForXP : (['attack'] as AttackStyles[]);
+	const stylesForXP: AttackStyles[] = forcedMagic
+		? attackStyles.includes('defence')
+			? (['magic', 'defence'] as AttackStyles[])
+			: (['magic'] as AttackStyles[])
+		: attackStyles.length > 0
+			? attackStyles
+			: (['attack'] as AttackStyles[]);
 	let hp = miscHpMap[params.monsterID] ?? 1;
 	let xpMultiplier = 1;
 	const cannonQty = params.cannonMulti
