@@ -126,6 +126,7 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 		boostMethod: combatMethods,
 		attackStyles
 	});
+	args.attackStyles = attackStyles;
 	const { skillsAsLevels } = gearBank;
 	if (combatMethods.includes('barrage') && skillsAsLevels.magic < 94) {
 		return `You need 94 Magic to use Ice Barrage. You have ${skillsAsLevels.magic}`;
@@ -237,6 +238,7 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 				}
 				if (changedAttackStyles && changedAttackStyles.length > 0) {
 					attackStyles = changedAttackStyles;
+					args.attackStyles = attackStyles;
 				}
 				const newStyles = getAttackStylesContext(attackStyles);
 				primaryStyle = newStyles.primaryStyle;
