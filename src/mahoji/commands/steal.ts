@@ -2,7 +2,6 @@ import { randInt } from '@oldschoolgg/rng';
 import { formatDuration, stringMatches } from '@oldschoolgg/toolkit';
 import { bold } from 'discord.js';
 
-import { ArdougneDiary, userhasDiaryTier } from '@/lib/diaries.js';
 import { quests } from '@/lib/minions/data/quests.js';
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
 import { Thieving } from '@/lib/skilling/skills/thieving/index.js';
@@ -10,7 +9,7 @@ import { type Stealable, stealables } from '@/lib/skilling/skills/thieving/steal
 import type { PickpocketActivityTaskOptions } from '@/lib/types/minions.js';
 import { calcLootXPPickpocketing } from '@/tasks/minions/pickpocketActivity.js';
 
-export const stealCommand: OSBMahojiCommand = {
+export const stealCommand = defineCommand({
 	name: 'steal',
 	description: 'Sends your minion to steal to train Thieving.',
 	attributes: {
@@ -43,7 +42,7 @@ export const stealCommand: OSBMahojiCommand = {
 			min_value: 1
 		}
 	],
-	run: async ({ options, user, channelID }: CommandRunOptions<{ name: string; quantity?: number }>) => {
+	run: async ({ options, user, channelID }) => {
 		const stealable: Stealable | undefined = stealables.find(
 			obj =>
 				stringMatches(obj.name, options.name) ||
@@ -124,7 +123,7 @@ export const stealCommand: OSBMahojiCommand = {
 		} a ${stealable.name} ${quantity}x times, it'll take around ${formatDuration(duration)} to finish.`;
 
 		if (stealable.type === 'pickpockable') {
-			const [hasArdyHard] = await userhasDiaryTier(user, ArdougneDiary.hard);
+			const hasArdyHard = user.hasDiary('ardougne.hard');
 			if (hasArdyHard) {
 				boosts.push('+10% chance of success from Ardougne Hard diary');
 			}
@@ -181,4 +180,4 @@ export const stealCommand: OSBMahojiCommand = {
 
 		return str;
 	}
-};
+});

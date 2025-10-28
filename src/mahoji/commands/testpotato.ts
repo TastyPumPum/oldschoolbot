@@ -1,6 +1,6 @@
-import { randArrItem, randInt } from '@oldschoolgg/rng';
+import { randInt } from '@oldschoolgg/rng';
 import { noOp, stringMatches, Time, uniqueArr } from '@oldschoolgg/toolkit';
-import { EmbedBuilder, MessageFlags } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import { Bank, convertLVLtoXP, Items, itemID, MAX_INT_JAVA } from 'oldschooljs';
 
 import { type Prisma, xp_gains_skill_enum } from '@/prisma/main.js';
@@ -20,7 +20,6 @@ import { allOpenables } from '@/lib/openables.js';
 import { Minigames } from '@/lib/settings/minigames.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import {
-	type FarmingPatchName,
 	farmingPatchNames,
 	getFarmingKeyFromName,
 	userGrowingProgressStr
@@ -29,7 +28,6 @@ import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getF
 import { Skills } from '@/lib/skilling/skills/index.js';
 import { slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
-import { getUsersCurrentSlayerInfo } from '@/lib/slayer/slayerUtil.js';
 import { allSlayerMonsters } from '@/lib/slayer/tasks/index.js';
 import { Gear } from '@/lib/structures/Gear.js';
 import { parseStringBank } from '@/lib/util/parseStringBank.js';
@@ -38,7 +36,6 @@ import { gearViewCommand } from '@/mahoji/lib/abstracted_commands/gearCommands.j
 import { getPOH } from '@/mahoji/lib/abstracted_commands/pohCommand.js';
 import { allUsableItems } from '@/mahoji/lib/abstracted_commands/useCommand.js';
 import { BingoManager } from '@/mahoji/lib/bingo/BingoManager.js';
-import { testBotKvStore } from '@/testing/TestBotStore.js';
 
 export function getMaxUserValues() {
 	const updates: Omit<Prisma.UserUpdateArgs['data'], 'id'> = {};
@@ -131,7 +128,14 @@ const thingsToReset = [
 	{
 		name: 'Bank',
 		run: async (user: MUser) => {
-			await user.update({ bank: {} });
+			await prisma.user.update({
+				where: {
+					id: user.id
+				},
+				data: {
+					bank: {}
+				}
+			});
 			return 'Reset your bank.';
 		}
 	}
@@ -242,9 +246,9 @@ const spawnPresets = [
 
 const thingsToWipe = ['bank', 'combat_achievements', 'cl', 'quests', 'buypayout', 'kc'] as const;
 
-export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduction
+export const testPotatoCommand = globalConfig.isProduction
 	? null
-	: {
+	: defineCommand({
 			name: 'testpotato',
 			description: 'Commands for making testing easier and faster.',
 			options: [
@@ -312,7 +316,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							type: 'String',
 							name: 'item',
 							description: 'Spawn a specific item',
-							autocomplete: async value => {
+							autocomplete: async (value: string) => {
 								if (!value)
 									return [{ name: 'Type something!', value: itemID('Twisted bow').toString() }];
 								return Items.filter(item => item.name.toLowerCase().includes(value.toLowerCase())).map(
@@ -362,7 +366,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							name: 'minigame',
 							description: 'The minigame you want to set your KC for.',
 							required: true,
-							autocomplete: async value => {
+							autocomplete: async (value: string) => {
 								return Minigames.filter(i => {
 									if (!value) return true;
 									return [i.name.toLowerCase(), i.aliases].some(i => i.includes(value.toLowerCase()));
@@ -425,7 +429,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							name: 'add',
 							description: 'The bitfield to add',
 							required: false,
-							autocomplete: async value => {
+							autocomplete: async (value: string) => {
 								return Object.entries(BitFieldData)
 									.filter(bf =>
 										!value ? true : bf[1].name.toLowerCase().includes(value.toLowerCase())
@@ -438,7 +442,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							name: 'remove',
 							description: 'The bitfield to remove',
 							required: false,
-							autocomplete: async value => {
+							autocomplete: async (value: string) => {
 								return Object.entries(BitFieldData)
 									.filter(bf =>
 										!value ? true : bf[1].name.toLowerCase().includes(value.toLowerCase())
@@ -458,7 +462,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							name: 'monster',
 							description: 'The monster you want to set your KC for.',
 							required: true,
-							autocomplete: async value => {
+							autocomplete: async (value: string) => {
 								return effectiveMonsters
 									.filter(i => {
 										if (!value) return true;
@@ -569,7 +573,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 							name: 'monster',
 							description: 'The monster you want to set your task as.',
 							required: true,
-							autocomplete: async value => {
+							autocomplete: async (value: string) => {
 								const filteredMonsters = [...new Set(allSlayerMonsters)].filter(monster => {
 									if (!value) return true;
 									return [monster.name.toLowerCase(), ...monster.aliases].some(aliases =>
@@ -593,33 +597,7 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 					]
 				}
 			],
-			run: async ({
-				options,
-				user,
-				interaction
-			}: CommandRunOptions<{
-				confirmation?: {
-					ephemeral?: boolean;
-					other_person?: MahojiUserOption;
-					another_person?: MahojiUserOption;
-				};
-				party?: {};
-				max?: {};
-				bitfield?: { add?: string; remove?: string };
-				gear?: { thing: string };
-				reset?: { thing: string };
-				setminigamekc?: { minigame: string; kc: number };
-				setxp?: { skill: string; xp: number };
-				spawn?: { preset?: string; collectionlog?: boolean; item?: string; items?: string };
-				setmonsterkc?: { monster: string; kc: string };
-				irontoggle?: {};
-				forcegrow?: { patch_name: FarmingPatchName | 'all' };
-				wipe?: { thing: (typeof thingsToWipe)[number] };
-				set?: { qp?: number; all_ca_tasks?: boolean };
-				get_code?: {};
-				bingo_tools?: { start_bingo: string };
-				setslayertask?: { master: string; monster: string; quantity: number };
-			}>) => {
+			run: async ({ options, user, interaction }) => {
 				if (globalConfig.isProduction) {
 					Logging.logError('Test command ran in production', { userID: user.id });
 					return 'This will never happen...';
@@ -745,68 +723,6 @@ export const testPotatoCommand: OSBMahojiCommand | null = globalConfig.isProduct
 					}
 				}
 
-				if (options.get_code) {
-					const existingCode = testBotKvStore.get(`user.${user.id}.code`);
-
-					let finalCode = existingCode;
-					if (!existingCode) {
-						const words = [
-							'monkey',
-							'chicken',
-							'bandos',
-							'nex',
-							'cow',
-							'dragon',
-							'bronze',
-							'goblin',
-							'zamorak',
-							'saradomin',
-							'armadyl',
-							'kraken',
-							'swan',
-							'wildy',
-							'slayer',
-							'agility',
-							'cooking',
-							'fishing',
-							'mining',
-							'smithing',
-							'runecraft',
-							'crafting',
-							'prayer',
-							'fletching',
-							'farming',
-							'herblore',
-							'hunter',
-							'magic',
-							'attack',
-							'strength',
-							'defence',
-							'ranged',
-							'hitpoints',
-							'ahrim',
-							'guthans',
-							'torags',
-							'veracs',
-							'inferno',
-							'jad',
-							'crystal',
-							'torva',
-							'dharoks'
-						];
-						const newCode = `${randArrItem(words)}${randInt(0, 9)}`;
-						testBotKvStore.set(`user.${user.id}.code`, newCode);
-						finalCode = newCode;
-					}
-
-					return {
-						content: `Your secret code for the dashboard is: \`${finalCode}\` - do not share with anyone.
-
-Warning: Visiting a test dashboard may let developers see your IP address. Attempting to abuse a test dashboard may result in a ban.`,
-						flags: [MessageFlags.Ephemeral]
-					};
-				}
-
 				if (options.set) {
 					const { qp } = options.set;
 					if (qp) {
@@ -876,9 +792,14 @@ Warning: Visiting a test dashboard may let developers see your IP address. Attem
 						return 'Reset your combat achievements.';
 					}
 					if (thing === 'quests') {
-						await user.update({
-							finished_quest_ids: [],
-							collectionLogBank: {}
+						await prisma.user.update({
+							where: {
+								id: user.id
+							},
+							data: {
+								finished_quest_ids: [],
+								collectionLogBank: {}
+							}
 						});
 						return `Your QP, and completed quests, have been reset. You can set your QP to a certain number using ${mentionCommand(
 							'testpotato',
@@ -1070,7 +991,7 @@ Warning: Visiting a test dashboard may let developers see your IP address. Attem
 				}
 
 				if (options.setslayertask) {
-					const usersTask = await getUsersCurrentSlayerInfo(user.id);
+					const usersTask = await user.fetchSlayerInfo();
 
 					const { monster, master } = options.setslayertask;
 
@@ -1125,4 +1046,4 @@ Warning: Visiting a test dashboard may let developers see your IP address. Attem
 
 				return 'Nothin!';
 			}
-		};
+		});

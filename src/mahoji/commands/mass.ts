@@ -26,7 +26,7 @@ async function checkReqs(users: MUser[], monster: KillableMonster, quantity: num
 			return `${user.usernameOrMention} is an ironman, so they can't join!`;
 		}
 
-		const [hasReqs, reason] = await hasMonsterRequirements(user, monster);
+		const [hasReqs, reason] = hasMonsterRequirements(user, monster);
 		if (!hasReqs) {
 			return `${user.usernameOrMention} doesn't have the requirements for this monster: ${reason}`;
 		}
@@ -41,7 +41,7 @@ async function checkReqs(users: MUser[], monster: KillableMonster, quantity: num
 	}
 }
 
-export const massCommand: OSBMahojiCommand = {
+export const massCommand = defineCommand({
 	name: 'mass',
 	description: 'Arrange to mass bosses, killing them as a group.',
 	attributes: {
@@ -55,7 +55,7 @@ export const massCommand: OSBMahojiCommand = {
 			name: 'monster',
 			description: 'The boss you want to mass.',
 			required: true,
-			autocomplete: async value => {
+			autocomplete: async (value: string) => {
 				return killableMonsters
 					.filter(i => i.groupKillable)
 					.filter(i => (!value ? true : i.name.toLowerCase().includes(value.toLowerCase())))
@@ -63,7 +63,7 @@ export const massCommand: OSBMahojiCommand = {
 			}
 		}
 	],
-	run: async ({ interaction, options, user, channelID }: CommandRunOptions<{ monster: string }>) => {
+	run: async ({ interaction, options, user, channelID }) => {
 		await interaction.defer();
 
 		if (user.user.minion_ironman) return 'Ironmen cannot do masses.';
@@ -89,7 +89,7 @@ export const massCommand: OSBMahojiCommand = {
 					if (user.minionIsBusy) {
 						return [true, 'your minion is busy.'];
 					}
-					const [hasReqs, reason] = await hasMonsterRequirements(user, monster);
+					const [hasReqs, reason] = hasMonsterRequirements(user, monster);
 					if (!hasReqs) {
 						return [true, `you don't have the requirements for this monster; ${reason}`];
 					}
@@ -178,4 +178,4 @@ export const massCommand: OSBMahojiCommand = {
 
 		return str;
 	}
-};
+});

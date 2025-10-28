@@ -2,7 +2,7 @@ import { Hiscores, type SkillsScore } from 'oldschooljs/hiscores';
 
 import { statsEmbed } from '@/lib/util/statsEmbed.js';
 
-export const xpCommand: OSBMahojiCommand = {
+export const xpCommand = defineCommand({
 	name: 'xp',
 	description: 'See your OSRS xp.',
 	attributes: {
@@ -22,7 +22,7 @@ export const xpCommand: OSBMahojiCommand = {
 			required: false
 		}
 	],
-	run: async ({ options }: CommandRunOptions<{ rsn: string; to_99?: boolean }>) => {
+	run: async ({ options }) => {
 		const player = await Hiscores.fetch(options.rsn);
 
 		if (options.to_99) {
@@ -39,7 +39,7 @@ export const xpCommand: OSBMahojiCommand = {
 			}
 
 			player.skills.overall.xp = 299_791_913 - totalXP;
-			const embed = statsEmbed({
+			const embed = await statsEmbed({
 				username: options.rsn,
 				color: 7_981_338,
 				player,
@@ -49,7 +49,7 @@ export const xpCommand: OSBMahojiCommand = {
 			return { embeds: [embed] };
 		}
 		return {
-			embeds: [statsEmbed({ username: options.rsn, color: 7_981_338, player, key: 'xp', showExtra: false })]
+			embeds: [await statsEmbed({ username: options.rsn, color: 7_981_338, player, key: 'xp', showExtra: false })]
 		};
 	}
-};
+});

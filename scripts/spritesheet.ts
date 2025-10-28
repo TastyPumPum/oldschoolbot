@@ -4,13 +4,11 @@ import { type GenerateResult, SpriteSheetGenerator } from '@oldschoolgg/spritesh
 import { isFunction, Stopwatch, uniqueArr } from '@oldschoolgg/toolkit';
 import '../src/lib/safeglobals.js';
 
-import { Bank, GearStat, type ItemBank, Items, resolveItems } from 'oldschooljs';
+import { Bank, GearStat, Items, resolveItems } from 'oldschooljs';
 import sharp from 'sharp';
 
 import { ALL_OBTAINABLE_ITEMS } from '@/lib/allObtainableItems.js';
 import { findBestGearSetups } from '@/lib/gear/functions/findBestGearSetups.js';
-import bsoItemsJson from '../data/bso/bso_items.json' with { type: 'json' };
-import bsoMonstersJson from '../data/bso/monsters.json' with { type: 'json' };
 import { BOT_TYPE } from '../src/lib/constants.js';
 import Buyables from '../src/lib/data/buyables/buyables.js';
 import { allCLItems } from '../src/lib/data/Collections.js';
@@ -41,7 +39,8 @@ const manualIDs = [
 	29515, 29516, 29560, 29562, 29564, 29566, 29568, 29570, 29572, 29573, 29574, 29577, 29580, 29583, 29585, 29587,
 	29589, 29591, 29594, 29596, 29598, 29599, 29602, 29605, 29607, 29609, 29611, 29613, 29615, 29617, 29619, 29622,
 	29625, 29628, 29631, 29634, 29637, 29640, 29643, 29648, 29649, 29651, 29652, 29654, 29655, 29657, 29658, 29660,
-	29661, 29663, 29664, 29666, 29667, 29669, 29670, 29672, 29673, 29675, 29676, 29678, 29679, 29684, 29920, 29912
+	29661, 29663, 29664, 29666, 29667, 29669, 29670, 29672, 29673, 29675, 29676, 29678, 29679, 29684, 29920, 29912,
+	30107
 ];
 const trades = Items.filter(i => Boolean(i.tradeable_on_ge)).map(i => i.id);
 const itemsMustBeInSpritesheet: number[] = uniqueArr([
@@ -78,13 +77,20 @@ const itemsMustBeInSpritesheet: number[] = uniqueArr([
 		'Adamant staff of collection',
 		'Rune staff of collection',
 		'Dragon staff of collection',
-		'Gilded staff of collection'
-	]),
-	...uniqueArr(bsoMonstersJson.data.map(m => m.all_droppable_items).flat(100)).filter(id => {
-		if ((bsoItemsJson as any as ItemBank)[id]) return false;
-		if (!Items.has(id)) return false;
-		return true;
-	})
+		'Gilded staff of collection',
+		'Bone shard',
+		'Lump of crystal',
+		'Dwarven rock cake',
+		'Jewellery',
+		'Fishing trophy',
+		'Crystal tangleroot',
+		'Dragonfruit tangleroot',
+		'Herb tangleroot',
+		'White lily tangleroot',
+		'Redwood tangleroot',
+		'Termites',
+		'Fancier boots'
+	])
 ]);
 
 const bisGearItems = new Set<number>();
@@ -103,9 +109,6 @@ for (const stat of Object.values(GearStat)) {
 
 const bisGearMissing = Array.from(bisGearItems).filter(i => !itemsMustBeInSpritesheet.includes(i));
 itemsMustBeInSpritesheet.push(...bisGearMissing);
-console.log(
-	`	Adding ${bisGearMissing.length} items to spritesheet for BiS gear: ${bisGearMissing.map(i => Items.itemNameFromId(i)).join(', ')}`
-);
 
 const getPngFiles = async (dir: string): Promise<string[]> => {
 	const files = await fs.readdir(dir);

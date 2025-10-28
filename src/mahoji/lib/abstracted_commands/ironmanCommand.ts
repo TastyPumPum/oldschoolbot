@@ -169,6 +169,11 @@ After becoming an ironman:
 	await prisma.userEvent.deleteMany({ where: { user_id: user.id } });
 	await prisma.userStats.deleteMany({ where: { user_id: BigInt(user.id) } });
 	await prisma.buyCommandTransaction.deleteMany({ where: { user_id: BigInt(user.id) } });
+	const allTableBanks = await prisma.tableBank.findMany({ where: { user_id: user.id } });
+	for (const tableBank of allTableBanks) {
+		await prisma.tableBankItem.deleteMany({ where: { bank_id: tableBank.id } });
+		await prisma.tableBank.delete({ where: { id: tableBank.id } });
+	}
 
 	// Refund the leagues points they spent
 	const roboChimpUser = await roboChimpUserFetch(user.id);
@@ -186,10 +191,13 @@ After becoming an ironman:
 		});
 	}
 
-	const { newUser } = await user.update({
+	await user.update({
 		minion_ironman: true,
 		minion_hasBought: true
 	});
-	assert(!newUser.GP && !newUser.QP && !newUser.skills_woodcutting, `Ironman sanity check - ID: ${newUser.id}`);
+	assert(
+		!user.user.GP && !user.user.QP && !user.user.skills_woodcutting,
+		`Ironman sanity check - ID: ${user.user.id}`
+	);
 	return 'You are now an ironman.';
 }

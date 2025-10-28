@@ -8,7 +8,6 @@ import { Prisma } from '@/prisma/main.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { BadgesEnum, globalConfig, MAX_LEVEL, Roles } from '@/lib/constants.js';
 import { getCollectionItems } from '@/lib/data/Collections.js';
-import { loggedRawPrismaQuery } from '@/lib/rawSql.js';
 import { Minigames } from '@/lib/settings/minigames.js';
 import { TeamLoot } from '@/lib/simulation/TeamLoot.js';
 import { SkillsArray } from '@/lib/skilling/types.js';
@@ -41,7 +40,7 @@ const CLS_THAT_GET_ROLE = [
 
 for (const cl of CLS_THAT_GET_ROLE) {
 	const items = getCollectionItems(cl);
-	if (!items || items.length === 0) {
+	if (!items || items.size === 0) {
 		throw new Error(`${cl} isn't a valid CL.`);
 	}
 }
@@ -78,7 +77,7 @@ async function topSkillers() {
 		.map((u: any) => {
 			let totalLevel = 0;
 			for (const skill of SkillsArray) {
-				totalLevel += convertXPtoLVL(Number(u[`skills.${skill}` as keyof any]) as any, MAX_LEVEL);
+				totalLevel += convertXPtoLVL(Number(u[`skills.${skill}`]), MAX_LEVEL);
 			}
 			return {
 				id: u.id,
@@ -401,7 +400,7 @@ export async function runRolesTask(dryRun: boolean): Promise<CommandResponse> {
 
 		// Remove all top badges from all users (and add back later)
 		const badgeIDs = `ARRAY[${allBadgeIDs.join(',')}]`;
-		await loggedRawPrismaQuery(`
+		await prisma.$queryRawUnsafe(`
 UPDATE users
 SET badges = badges - ${badgeIDs}
 WHERE badges && ${badgeIDs}

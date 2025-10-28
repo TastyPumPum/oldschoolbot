@@ -1,10 +1,9 @@
 import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 
-import { FaladorDiary, userhasDiaryTier } from '@/lib/diaries.js';
 import { Craftables } from '@/lib/skilling/skills/crafting/craftables/index.js';
 import type { CraftingActivityTaskOptions } from '@/lib/types/minions.js';
 
-export const craftCommand: OSBMahojiCommand = {
+export const craftCommand = defineCommand({
 	name: 'craft',
 	description: 'Craft items with the Crafting skill.',
 	attributes: {
@@ -35,7 +34,7 @@ export const craftCommand: OSBMahojiCommand = {
 			min_value: 1
 		}
 	],
-	run: async ({ options, user, channelID }: CommandRunOptions<{ name: string; quantity?: number }>) => {
+	run: async ({ options, user, channelID }) => {
 		let { quantity } = options;
 
 		if (options.name.toLowerCase().includes('zenyte') && quantity === null) quantity = 1;
@@ -69,7 +68,7 @@ export const craftCommand: OSBMahojiCommand = {
 
 		// Get the base time to craft the item then add on quarter of a second per item to account for banking/etc.
 		let timeToCraftSingleItem = craftable.tickRate * Time.Second * 0.6 + Time.Second / 4;
-		const [hasFallyHard] = await userhasDiaryTier(user, FaladorDiary.hard);
+		const hasFallyHard = user.hasDiary('falador.hard');
 		if (craftable.bankChest && (hasFallyHard || user.skillsAsLevels.crafting >= 99)) {
 			timeToCraftSingleItem /= 3.25;
 		}
@@ -117,4 +116,4 @@ export const craftCommand: OSBMahojiCommand = {
 			craftable.name
 		}, it'll take around ${formatDuration(duration)} to finish. Removed ${itemsNeeded} from your bank.`;
 	}
-};
+});

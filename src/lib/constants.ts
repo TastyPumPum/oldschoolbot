@@ -3,7 +3,7 @@ import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
 import { dateFm, Emoji, PerkTier } from '@oldschoolgg/toolkit';
 import * as dotenv from 'dotenv';
-import { convertLVLtoXP, resolveItems } from 'oldschooljs';
+import { convertLVLtoXP } from 'oldschooljs';
 import * as z from 'zod';
 
 import { activity_type_enum } from '@/prisma/main/enums.js';
@@ -327,50 +327,10 @@ export const SILENT_ERROR = 'SILENT_ERROR';
 export const PATRON_ONLY_GEAR_SETUP =
 	'Sorry - but the `other` gear setup is only available for Tier 3 Patrons (and higher) to use.';
 
-export const projectiles = {
-	arrow: {
-		items: resolveItems(['Adamant arrow', 'Rune arrow', 'Amethyst arrow', 'Dragon arrow']),
-		savedByAvas: true,
-		weapons: resolveItems(['Twisted bow'])
-	},
-	ogreArrow: {
-		items: resolveItems(['Ogre Arrow']),
-		savedByAvas: true,
-		weapons: resolveItems(['Ogre bow'])
-	},
-	bolt: {
-		items: resolveItems([
-			'Runite bolts',
-			'Dragon bolts',
-			'Diamond bolts (e)',
-			'Diamond dragon bolts (e)',
-			'Ruby dragon bolts (e)'
-		]),
-		savedByAvas: true,
-		weapons: resolveItems([
-			'Armadyl crossbow',
-			'Dragon hunter crossbow',
-			'Dragon crossbow',
-			'Zaryte crossbow',
-			'Rune crossbow'
-		])
-	},
-	javelin: {
-		items: resolveItems(['Amethyst javelin', 'Rune javelin', 'Dragon javelin']),
-		savedByAvas: false,
-		weapons: resolveItems(['Heavy ballista'])
-	}
-} as const;
-export type ProjectileType = keyof typeof projectiles;
-
 export const NMZ_STRATEGY = ['experience', 'points'] as const;
 export type NMZStrategy = (typeof NMZ_STRATEGY)[number];
 
 export const busyImmuneCommands = ['admin', 'rp'];
-
-export const FormattedCustomEmoji = /<a?:\w{2,32}:\d{17,20}>/;
-
-export const ParsedCustomEmojiWithGroups = /(?<animated>a?):(?<name>[^:]+):(?<id>\d{17,20})/;
 
 const globalConfigSchema = z.object({
 	clientID: z.string().min(10).max(25),
@@ -378,7 +338,6 @@ const globalConfigSchema = z.object({
 	isCI: z.coerce.boolean().default(false),
 	isProduction: z.boolean(),
 	timeZone: z.literal('UTC'),
-	sentryDSN: z.string().url().optional(),
 	adminUserIDs: z.array(z.string()).default(['157797566833098752', '425134194436341760']),
 	maxingMessage: z.string().default('Congratulations on maxing!'),
 	moderatorLogsChannels: z.string().default(''),
@@ -400,7 +359,6 @@ export const globalConfig = globalConfigSchema.parse({
 	isCI: process.env.CI,
 	isProduction,
 	timeZone: process.env.TZ,
-	sentryDSN: process.env.SENTRY_DSN,
 
 	moderatorLogsChannels: isProduction ? '830145040495411210' : GENERAL_CHANNEL_ID,
 	supportServerID: isProduction ? '342983479501389826' : OLDSCHOOLGG_TESTING_SERVER_ID
@@ -411,7 +369,7 @@ if ((process.env.NODE_ENV === 'production') !== globalConfig.isProduction) {
 }
 
 export const gitHash = process.env.TEST ? 'TESTGITHASH' : execSync('git rev-parse HEAD').toString().trim();
-const gitRemote = BOT_TYPE === 'BSO' ? 'gc/oldschoolbot-secret' : 'oldschoolgg/oldschoolbot';
+const gitRemote = 'oldschoolgg/oldschoolbot';
 
 const GIT_BRANCH = BOT_TYPE === 'BSO' ? 'bso' : 'master';
 

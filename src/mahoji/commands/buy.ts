@@ -19,7 +19,7 @@ const allBuyablesAutocomplete = [
 	{ name: 'Fossil Island Notes' }
 ];
 
-export const buyCommand: OSBMahojiCommand = {
+export const buyCommand = defineCommand({
 	name: 'buy',
 	description: 'Allows you to purchase items.',
 	options: [
@@ -41,13 +41,7 @@ export const buyCommand: OSBMahojiCommand = {
 			required: false
 		}
 	],
-	run: async ({
-		options,
-		userID,
-		interaction,
-		channelID
-	}: CommandRunOptions<{ name: string; quantity?: string }>) => {
-		const user = await mUserFetch(userID);
+	run: async ({ options, user, interaction, channelID }) => {
 		const { name } = options;
 		let quantity: number | null = mahojiParseNumber({ input: options.quantity, min: 1 });
 
@@ -194,4 +188,4 @@ export const buyCommand: OSBMahojiCommand = {
 
 		return `You purchased ${outItems}.`;
 	}
-};
+});

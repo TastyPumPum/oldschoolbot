@@ -41,7 +41,7 @@ function notifyUniques(user: MUser, activity: string, uniques: number[], loot: B
 	}
 }
 
-export const offerCommand: OSBMahojiCommand = {
+export const offerCommand = defineCommand({
 	name: 'offer',
 	description: 'Offer bones or bird eggs.',
 	attributes: {
@@ -74,7 +74,7 @@ export const offerCommand: OSBMahojiCommand = {
 			min_value: 1
 		}
 	],
-	run: async ({ options, user, channelID, interaction }: CommandRunOptions<{ name: string; quantity?: number }>) => {
+	run: async ({ options, user, channelID, interaction }) => {
 		const userBank = user.bank;
 
 		await interaction.defer();
@@ -101,20 +101,22 @@ export const offerCommand: OSBMahojiCommand = {
 				itemsToRemove: new Bank().add(whichOfferable.itemID, quantity)
 			});
 			if (whichOfferable.economyCounter) {
-				const newStats = await user.statsUpdate({
+				await user.statsUpdate({
 					[whichOfferable.economyCounter]: {
 						increment: quantity
 					}
-				}); // Notify uniques
+				});
+				// Notify uniques
 				if (whichOfferable.uniques) {
-					const current = newStats[whichOfferable.economyCounter];
+					const currentCounter = await user.fetchUserStat(whichOfferable.economyCounter);
+
 					notifyUniques(
 						user,
 						whichOfferable.name,
 						whichOfferable.uniques,
 						itemsAdded,
 						quantity,
-						current + randInt(1, quantity)
+						currentCounter + randInt(1, quantity)
 					);
 				}
 			}
@@ -260,4 +262,4 @@ export const offerCommand: OSBMahojiCommand = {
 			bone.name
 		} at the Chaos altar, it'll take around ${formatDuration(duration)} to finish.`;
 	}
-};
+});

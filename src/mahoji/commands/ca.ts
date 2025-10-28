@@ -17,9 +17,7 @@ const viewTypes = ['all', 'incomplete', 'complete'] as const;
 
 export type CAViewType = (typeof viewTypes)[number];
 
-type MonsterNames = (typeof allCAMonsterNames)[number];
-
-export const caCommand: OSBMahojiCommand = {
+export const caCommand = defineCommand({
 	name: 'ca',
 	description: 'Combat Achievements',
 	options: [
@@ -55,17 +53,7 @@ export const caCommand: OSBMahojiCommand = {
 			options: []
 		}
 	],
-	run: async ({
-		options,
-		user,
-		interaction
-	}: CommandRunOptions<{
-		claim?: {};
-		view?: {
-			name?: MonsterNames;
-			type?: CAViewType;
-		};
-	}>) => {
+	run: async ({ options, user, interaction }) => {
 		await interaction.defer();
 
 		const completedTaskIDs = new Set(user.user.completed_ca_task_ids);
@@ -92,7 +80,7 @@ export const caCommand: OSBMahojiCommand = {
 			const reqData = await Requirements.fetchRequiredData(user);
 			for (const task of tasksToCheck) {
 				if ('requirements' in task) {
-					const { hasAll } = task.requirements.check(reqData);
+					const { hasAll } = await task.requirements.check(reqData);
 					if (hasAll) {
 						completedTasks.push(task);
 					}
@@ -177,4 +165,4 @@ export const caCommand: OSBMahojiCommand = {
 
 		return 'Invalid command.';
 	}
-};
+});

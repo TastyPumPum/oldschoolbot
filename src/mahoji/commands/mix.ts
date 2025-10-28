@@ -4,7 +4,7 @@ import { Bank } from 'oldschooljs';
 import Herblore from '@/lib/skilling/skills/herblore/herblore.js';
 import type { HerbloreActivityTaskOptions } from '@/lib/types/minions.js';
 
-export const mixCommand: OSBMahojiCommand = {
+export const mixCommand = defineCommand({
 	name: 'mix',
 	description: 'Mix potions to train Herblore.',
 	attributes: {
@@ -47,11 +47,7 @@ export const mixCommand: OSBMahojiCommand = {
 			required: false
 		}
 	],
-	run: async ({
-		options,
-		user,
-		channelID
-	}: CommandRunOptions<{ name: string; quantity?: number; wesley?: boolean; zahur?: boolean }>) => {
+	run: async ({ options, user, channelID }) => {
 		const mixableItem = Herblore.Mixables.find(
 			i => stringMatches(i.item.name, options.name) || i.aliases.some(alias => stringMatches(alias, options.name))
 		);
@@ -81,7 +77,8 @@ export const mixCommand: OSBMahojiCommand = {
 		let timeToMixSingleItem = tickRate * Time.Second * 0.6 + bankTimePerPotion * Time.Second;
 		let cost = 'is now';
 
-		if ((zahur && mixableZahur) || (wesley && mixableWesley)) {
+		const isInstantTrip = (zahur && mixableZahur) || (wesley && mixableWesley);
+		if (isInstantTrip) {
 			timeToMixSingleItem = 0.000_001;
 			requiredItems.add('Coins', mixableWesley ? 50 : 200);
 			cost = `decided to pay ${
@@ -111,14 +108,17 @@ export const mixCommand: OSBMahojiCommand = {
 			)}, try a lower quantity. The highest amount of ${itemName} you can mix is ${maxCanMix}.`;
 
 		const finalCost = requiredItems.clone().multiply(quantity);
-		if (!user.owns(finalCost))
+		if (!user.owns(finalCost)) {
 			return `You don't have enough items. For ${quantity}x ${itemName}, you're missing **${finalCost
 				.clone()
 				.remove(userBank)}**.`;
+		}
 
-		await user.removeItemsFromBank(finalCost);
+		await user.transactItems({ itemsToRemove: finalCost });
 
 		await ClientSettings.updateBankSetting('herblore_cost_bank', finalCost);
+
+		const duration = isInstantTrip ? Time.Second * 2 : quantity * timeToMixSingleItem;
 
 		await ActivityManager.startTrip<HerbloreActivityTaskOptions>({
 			mixableID: mixableItem.item.id,
@@ -127,12 +127,12 @@ export const mixCommand: OSBMahojiCommand = {
 			zahur: Boolean(zahur),
 			wesley: Boolean(wesley),
 			quantity,
-			duration: quantity * timeToMixSingleItem,
+			duration,
 			type: 'Herblore'
 		});
 
 		return `${user.minionName} ${cost} making ${quantity}x ${
 			mixableItem.outputMultiple ? 'batches of' : ''
-		}${itemName}, it'll take around ${formatDuration(quantity * timeToMixSingleItem)} to finish.`;
+		}${itemName}, it'll take around ${formatDuration(duration)} to finish.`;
 	}
-};
+});

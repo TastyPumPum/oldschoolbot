@@ -1,8 +1,9 @@
 import { formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import type { InteractionReplyOptions } from 'discord.js';
 
-import { PVM_METHODS, type PvMMethod } from '@/lib/constants.js';
+import { PVM_METHODS } from '@/lib/constants.js';
 import { Eatables } from '@/lib/data/eatables.js';
+import { choicesOf } from '@/lib/discord/index.js';
 import { autocompleteMonsters, wikiMonsters } from '@/lib/minions/data/killableMonsters/index.js';
 import calculateMonsterFood from '@/lib/minions/functions/calculateMonsterFood.js';
 import reducedTimeFromKC from '@/lib/minions/functions/reducedTimeFromKC.js';
@@ -11,22 +12,20 @@ import { minionKillCommand } from '@/mahoji/lib/abstracted_commands/minionKill/m
 
 const wikiPrefix = 'https://wiki.oldschool.gg/osb';
 
-async function fetchUsersRecentlyKilledMonsters(userID: string) {
-	const res = await prisma.$queryRawUnsafe<{ mon_id: string; last_killed: Date }[]>(
-		`SELECT DISTINCT((data->>'mi')) AS mon_id, MAX(start_date) as last_killed
-FROM activity
-WHERE user_id = $1
-AND type = 'MonsterKilling'
-AND finish_date > now() - INTERVAL '31 days'
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 10;`,
-		BigInt(userID)
-	);
-	return res.map(i => Number(i.mon_id));
+async function fetchUsersRecentlyKilledMonsters(userID: string): Promise<number[]> {
+	const res = await prisma.userStats.findUnique({
+		where: {
+			user_id: BigInt(userID)
+		},
+		select: {
+			recently_killed_monsters: true
+		}
+	});
+	if (!res) return [];
+	return res.recently_killed_monsters;
 }
 
-export const minionKCommand: OSBMahojiCommand = {
+export const minionKCommand = defineCommand({
 	name: 'k',
 	description: 'Send your minion to kill things.',
 	attributes: {
@@ -39,7 +38,7 @@ export const minionKCommand: OSBMahojiCommand = {
 			name: 'name',
 			description: 'The thing you want to kill.',
 			required: true,
-			autocomplete: async (value, user) => {
+			autocomplete: async (value: string, user: MUser) => {
 				const recentlyKilled = await fetchUsersRecentlyKilledMonsters(user.id);
 				return autocompleteMonsters
 					.filter(m =>
@@ -75,7 +74,7 @@ export const minionKCommand: OSBMahojiCommand = {
 			name: 'method',
 			description: 'If you want to cannon/barrage/burst.',
 			required: false,
-			choices: PVM_METHODS.map(i => ({ name: i, value: i }))
+			choices: choicesOf(PVM_METHODS)
 		},
 		{
 			type: 'Boolean',
@@ -96,20 +95,7 @@ export const minionKCommand: OSBMahojiCommand = {
 			required: false
 		}
 	],
-	run: async ({
-		options,
-		user,
-		channelID,
-		interaction
-	}: CommandRunOptions<{
-		name: string;
-		quantity?: number;
-		method?: PvMMethod;
-		show_info?: boolean;
-		wilderness?: boolean;
-		solo?: boolean;
-		onTask?: boolean;
-	}>) => {
+	run: async ({ options, user, channelID, interaction }) => {
 		if (options.show_info) {
 			return interaction.returnStringOrFile(await monsterInfo(user, options.name));
 		}
@@ -122,10 +108,11 @@ export const minionKCommand: OSBMahojiCommand = {
 			options.method,
 			options.wilderness,
 			options.solo,
+			// @ts-expect-error: Passed by the bot only
 			options.onTask
 		);
 	}
-};
+});
 
 async function monsterInfo(user: MUser, name: string): Promise<string | InteractionReplyOptions> {
 	const otherMon = autocompleteMonsters.find(m => m.name === name || m.aliases.includes(name));
@@ -226,9 +213,6 @@ async function monsterInfo(user: MUser, name: string): Promise<string | Interact
 			min * 0.9
 		)}) to (${formatDuration(max * 0.9)}) to finish.\n`
 	);
-	const response: InteractionReplyOptions = {
-		content: str.join('\n')
-	};
 
-	return response;
+	return str.join('\n');
 }

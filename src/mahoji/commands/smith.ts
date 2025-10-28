@@ -1,13 +1,12 @@
 import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
-import { KaramjaDiary, userhasDiaryTier } from '@/lib/diaries.js';
 import Smithing from '@/lib/skilling/skills/smithing/index.js';
 import smithables from '@/lib/skilling/skills/smithing/smithables/index.js';
 import type { SmithingActivityTaskOptions } from '@/lib/types/minions.js';
 import { pluraliseItemName } from '@/lib/util/smallUtils.js';
 
-export const smithCommand: OSBMahojiCommand = {
+export const smithCommand = defineCommand({
 	name: 'smith',
 	description: 'Smith things using the Smithing skill.',
 	attributes: {
@@ -38,7 +37,7 @@ export const smithCommand: OSBMahojiCommand = {
 			min_value: 1
 		}
 	],
-	run: async ({ options, user, channelID }: CommandRunOptions<{ name: string; quantity?: number }>) => {
+	run: async ({ options, user, channelID }) => {
 		const smithedItem = Smithing.SmithableItems.find(_smithedItem =>
 			stringMatches(_smithedItem.name, options.name)
 		);
@@ -82,8 +81,7 @@ export const smithCommand: OSBMahojiCommand = {
 				doubleCBall = true;
 				timeToUse /= 2;
 			}
-			const [has] = await userhasDiaryTier(user, KaramjaDiary.elite);
-			if (has) {
+			if (user.hasDiary('karamja.elite')) {
 				diaryCannonball = true;
 				timeToUse /= 1.23;
 			}
@@ -149,4 +147,4 @@ export const smithCommand: OSBMahojiCommand = {
 				: ''
 		}`;
 	}
-};
+});
