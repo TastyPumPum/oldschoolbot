@@ -178,6 +178,9 @@ export function doMonsterTrip(data: newOptions) {
 		attackStyles,
 		boostMethod: boostMethods.length > 0 ? boostMethods : ['none']
 	});
+	if ((boostMethods.includes('barrage') || boostMethods.includes('burst')) && !attackStyles.includes('magic')) {
+		attackStyles = attackStyles.includes('defence') ? ['magic', 'defence'] : ['magic'];
+	}
 
 	const currentKC = kcBank.amount(monster.id);
 	const updateBank = new UpdateBank();
