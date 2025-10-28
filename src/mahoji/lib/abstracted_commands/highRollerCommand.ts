@@ -1,6 +1,7 @@
 import { Time } from '@oldschoolgg/toolkit';
 import {
 	ActionRowBuilder,
+	AttachmentBuilder,
 	ButtonBuilder,
 	type ButtonInteraction,
 	ButtonStyle,
@@ -9,6 +10,7 @@ import {
 } from 'discord.js';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
 
+import { drawHighRollerImage } from '@/lib/canvas/highRollerImage.js';
 import { BitField } from '@/lib/constants.js';
 import { marketPriceOrBotPrice } from '@/lib/marketPrices.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
@@ -114,7 +116,7 @@ function formatRollResults(rolls: RollResult[]): string {
 // Edit the message we sent for this interaction if possible; otherwise reply.
 async function safeEdit(
 	interaction: MInteraction,
-	options: string | { content?: string; components?: any[]; allowedMentions?: any }
+	options: string | { content?: string; components?: any[]; allowedMentions?: any; files?: AttachmentBuilder[] }
 ) {
 	const msg = (interaction.interactionResponse as Message | null) ?? null;
 	if (msg) {
@@ -532,6 +534,16 @@ export async function highRollerCommand({
 
 	rollResults.sort((a, b) => b.value - a.value);
 
+	const highRollerImage = await drawHighRollerImage({
+		rolls: rollResults.map((result, index) => ({
+			position: index + 1,
+			username: result.user.badgedUsername,
+			itemID: result.item.id,
+			itemName: result.item.name,
+			value: result.value
+		}))
+	});
+
 	const { pot, payoutsMessages } = await payoutWinners({
 		interaction,
 		host: user,
@@ -546,6 +558,12 @@ export async function highRollerCommand({
 		.map(result => result.user.badgedUsername)
 		.join(', ')}\n\n**Rolls**\n${formatRollResults(rollResults)}\n\n${payoutsMessages.join('\n')}`;
 
-	await safeEdit(interaction, { content: summary, components: [] });
-	return interaction.returnStringOrFile(summary);
+	const response = highRollerImage ? { content: summary, files: [highRollerImage] } : summary;
+	await safeEdit(
+		interaction,
+		highRollerImage
+			? { content: summary, components: [], files: [highRollerImage] }
+			: { content: summary, components: [] }
+	);
+	return interaction.returnStringOrFile(response);
 }
