@@ -54,6 +54,14 @@ export function addMonsterXPRaw(params: {
 		boostMethod: resolvedBoostMethods,
 		attackStyles: params.attackStyles ?? []
 	});
+	const forcedMagic = resolvedBoostMethods.some(method => method === 'barrage' || method === 'burst');
+	const attackStylesForXP =
+		forcedMagic && !attackStyles.includes('magic')
+			? attackStyles.includes('defence')
+				? (['magic', 'defence'] as AttackStyles[])
+				: (['magic'] as AttackStyles[])
+			: attackStyles;
+	const stylesForXP = attackStylesForXP.length > 0 ? attackStylesForXP : (['attack'] as AttackStyles[]);
 	let hp = miscHpMap[params.monsterID] ?? 1;
 	let xpMultiplier = 1;
 	const cannonQty = params.cannonMulti
@@ -97,12 +105,12 @@ export function addMonsterXPRaw(params: {
 	}
 
 	const totalXP = hp * 4 * normalQty * xpMultiplier + superiorXp;
-	const xpPerSkill = totalXP / attackStyles.length;
+	const xpPerSkill = totalXP / stylesForXP.length;
 
 	const xpBank = new XPBank();
 	const debugId = `d[${params.duration}] mid[${params.monsterID}] qty[${params.quantity}] ${params.isOnTask ? 'task' : 'notask'}`;
 
-	for (const style of attackStyles) {
+	for (const style of stylesForXP) {
 		xpBank.add(style, Math.floor(xpPerSkill), {
 			duration: params.duration,
 			minimal: params.minimal ?? true,
