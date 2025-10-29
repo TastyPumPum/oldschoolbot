@@ -18,7 +18,12 @@ import { GrandExchange } from '@/lib/grandExchange.js';
 import { mahojiUserSettingsUpdate } from '@/lib/MUser.js';
 import { cacheGEPrices } from '@/lib/marketPrices.js';
 import { collectMetrics } from '@/lib/metrics.js';
-import { BERT_SAND_BUCKETS, bertResetStart, isManualEligible } from '@/lib/minions/data/bertSand.js';
+import {
+	BERT_SAND_BUCKETS,
+	bertResetStart,
+	hasCollectedThisReset,
+	isManualEligible
+} from '@/lib/minions/data/bertSand.js';
 import { populateRoboChimpCache } from '@/lib/perkTier.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { informationalButtons } from '@/lib/sharedComponents.js';
@@ -384,6 +389,11 @@ VALUES (get_economy_bank());`;
 
 			for (const id of batch) {
 				const user = await mUserFetch(id);
+				const lastCollected = Number(user.stats.last_bert_sand_timestamp ?? 0n);
+				if (hasCollectedThisReset(lastCollected, now)) {
+					continue;
+				}
+
 				const requirementError = isManualEligible(user);
 				if (requirementError) {
 					continue;
