@@ -518,6 +518,8 @@ export interface CollectingOptions extends ActivityTaskOptions {
 	collectableID: number;
 	quantity: number;
 	noStaminas?: boolean;
+	lootQuantityOverride?: number;
+	bertSand?: import('@/lib/minions/data/bertSand.js').BertSandTripMetadata;
 }
 
 export interface KourendFavourActivityTaskOptions extends ActivityTaskOptions {

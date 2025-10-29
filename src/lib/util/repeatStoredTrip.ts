@@ -7,6 +7,7 @@ import type { Activity, Prisma } from '@/prisma/main.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import type { PvMMethod } from '@/lib/constants.js';
 import { findTripBuyable } from '@/lib/data/buyables/tripBuyables.js';
+import { BERT_SAND_ID } from '@/lib/minions/data/bertSand.js';
 import { SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import { autocompleteMonsters } from '@/lib/minions/data/killableMonsters/index.js';
 import { runCommand } from '@/lib/settings/settings.js';
@@ -262,9 +263,9 @@ const tripHandlers = {
 		commandName: 'activities',
 		args: (data: CollectingOptions) => ({
 			collect: {
-				item: Items.itemNameFromId(data.collectableID),
-				no_stams: data.noStaminas,
-				quantity: data.quantity
+				item: data.bertSand ? BERT_SAND_ID : Items.itemNameFromId(data.collectableID),
+				no_stams: data.bertSand ? undefined : data.noStaminas,
+				quantity: data.bertSand ? undefined : data.quantity
 			}
 		})
 	},

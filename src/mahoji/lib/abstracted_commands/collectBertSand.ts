@@ -1,33 +1,26 @@
-import { formatDuration, getNextUTCReset, sleep, Time, toTitleCase } from '@oldschoolgg/toolkit';
-import { Bank } from 'oldschooljs';
+import { formatDuration, getNextUTCReset, Time } from '@oldschoolgg/toolkit';
+import { Items } from 'oldschooljs';
 
-import type { SkillNameType } from '@/lib/skilling/types.js';
+import { ActivityManager } from '@/lib/ActivityManager.js';
+import {
+	BERT_SAND_BUCKETS,
+	BERT_SAND_DURATION,
+	BERT_SAND_ITEM_ID,
+	getBertSandRequirementError,
+	isBertSandReady
+} from '@/lib/minions/data/bertSand.js';
+import type { CollectingOptions } from '@/lib/types/minions.js';
 
-export const BERT_SAND_ID = 'bert_sand' as const;
-const BERT_SAND_BUCKETS = 84;
-const BERT_SAND_SKILL_REQS: readonly [SkillNameType, number][] = [
-	['crafting', 49],
-	['thieving', 17]
-];
-const BERT_SAND_QP_REQUIRED = 5;
+const bertSandCollectable = Items.getOrThrow('Bucket of sand');
 
-function isBertSandReady(lastCollected: number, now: number) {
-	return now >= getNextUTCReset(lastCollected, Time.Day);
-}
-
-export async function collectBertSand(user: MUser, interaction: MInteraction | null) {
+export async function collectBertSand(user: MUser, channelID: string) {
 	const now = Date.now();
 	const stats = await user.fetchStats();
 	const lastCollected = Number(stats.last_bert_sand_timestamp ?? 0n);
 
-	if (user.QP < BERT_SAND_QP_REQUIRED) {
-		return `You need at least ${BERT_SAND_QP_REQUIRED} Quest Points to collect sand for Bert.`;
-	}
-
-	for (const [skill, level] of BERT_SAND_SKILL_REQS) {
-		if (user.skillsAsLevels[skill] < level) {
-			return `You need level ${level} ${toTitleCase(skill)} to collect sand for Bert.`;
-		}
+	const requirementError = getBertSandRequirementError(user);
+	if (requirementError) {
+		return requirementError;
 	}
 
 	if (!isBertSandReady(lastCollected, now)) {
@@ -35,24 +28,18 @@ export async function collectBertSand(user: MUser, interaction: MInteraction | n
 		return `Bert will have more buckets of sand for you in ${formatDuration(nextReset - now)}.`;
 	}
 
-	if (interaction) {
-		await interaction.defer();
-	}
+	await ActivityManager.startTrip<CollectingOptions>({
+		collectableID: BERT_SAND_ITEM_ID,
+		userID: user.id,
+		channelID,
+		quantity: 1,
+		duration: BERT_SAND_DURATION,
+		type: 'Collecting',
+		lootQuantityOverride: BERT_SAND_BUCKETS,
+		bertSand: { lastCollectedAtStart: lastCollected }
+	});
 
-	await sleep(Time.Second * 15);
-
-	const refreshedStats = await user.fetchStats();
-	const refreshedLastCollected = Number(refreshedStats.last_bert_sand_timestamp ?? 0n);
-	if (refreshedLastCollected > lastCollected) {
-		const nextReset = getNextUTCReset(refreshedLastCollected, Time.Day);
-		return `Bert already delivered your buckets of sand. You can collect again in ${formatDuration(
-			nextReset - Date.now()
-		)}.`;
-	}
-
-	const loot = new Bank({ 'Bucket of sand': BERT_SAND_BUCKETS });
-	await user.addItemsToBank({ items: loot, collectionLog: false });
-	await user.statsUpdate({ last_bert_sand_timestamp: Date.now() });
-
-	return `You collect ${BERT_SAND_BUCKETS.toLocaleString()} Buckets of sand from Bert and add them to your bank.`;
+	return `${user.minionName} is now collecting ${BERT_SAND_BUCKETS.toLocaleString()}x ${
+		bertSandCollectable.name
+	}, it'll take around ${formatDuration(BERT_SAND_DURATION)} to finish.`;
 }

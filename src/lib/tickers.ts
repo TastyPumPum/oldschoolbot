@@ -18,6 +18,7 @@ import { GrandExchange } from '@/lib/grandExchange.js';
 import { mahojiUserSettingsUpdate } from '@/lib/MUser.js';
 import { cacheGEPrices } from '@/lib/marketPrices.js';
 import { collectMetrics } from '@/lib/metrics.js';
+import { BERT_SAND_BUCKETS, isBertSandReady, meetsBertSandManualRequirements } from '@/lib/minions/data/bertSand.js';
 import { populateRoboChimpCache } from '@/lib/perkTier.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { informationalButtons } from '@/lib/sharedComponents.js';
@@ -28,7 +29,6 @@ import { getSupportGuild } from '@/lib/util.js';
 
 let lastMessageID: string | null = null;
 let lastMessageGEID: string | null = null;
-const BERT_SAND_BUCKETS = 84;
 const BERT_SAND_BATCH_SIZE = 100;
 const BERT_SAND_ACTIVE_WINDOW = Time.Day * 7;
 let bertSandQueue: string[] = [];
@@ -383,12 +383,19 @@ VALUES (get_economy_bank());`;
 
 			for (const id of batch) {
 				const user = await mUserFetch(id);
-				const stats = await user.fetchStats();
-				const lastCollected = Number(stats.last_bert_sand_timestamp ?? 0n);
-				if (lastCollected >= currentResetStart) {
+
+				if (!meetsBertSandManualRequirements(user)) {
 					continue;
 				}
 
+				const stats = await user.fetchStats();
+				const lastCollected = Number(stats.last_bert_sand_timestamp ?? 0n);
+				if (!isBertSandReady(lastCollected, now)) {
+					continue;
+				}
+
+				// Ardougne elite diary unlocks this auto-collection perk; when it procs we still
+				// enforce the manual requirements so the reward mirrors the slash command.
 				await user.addItemsToBank({ items: loot, collectionLog: false });
 				await user.statsUpdate({ last_bert_sand_timestamp: now });
 			}

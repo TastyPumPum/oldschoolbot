@@ -1,6 +1,7 @@
 import { stringMatches } from '@oldschoolgg/toolkit';
 
 import { ownedItemOption } from '@/lib/discord/index.js';
+import { BERT_SAND_ID } from '@/lib/minions/data/bertSand.js';
 import { Planks } from '@/lib/minions/data/planks.js';
 import Potions from '@/lib/minions/data/potions.js';
 import { quests } from '@/lib/minions/data/quests.js';
@@ -19,7 +20,7 @@ import { castCommand } from '@/mahoji/lib/abstracted_commands/castCommand.js';
 import { chargeGloriesCommand } from '@/mahoji/lib/abstracted_commands/chargeGloriesCommand.js';
 import { chargeWealthCommand } from '@/mahoji/lib/abstracted_commands/chargeWealthCommand.js';
 import { chompyHuntClaimCommand, chompyHuntCommand } from '@/mahoji/lib/abstracted_commands/chompyHuntCommand.js';
-import { BERT_SAND_ID, collectBertSand } from '@/mahoji/lib/abstracted_commands/collectBertSand.js';
+import { collectBertSand } from '@/mahoji/lib/abstracted_commands/collectBertSand.js';
 import { collectCommand } from '@/mahoji/lib/abstracted_commands/collectCommand.js';
 import { decantCommand } from '@/mahoji/lib/abstracted_commands/decantCommand.js';
 import { driftNetCommand } from '@/mahoji/lib/abstracted_commands/driftNetCommand.js';
@@ -558,7 +559,7 @@ export const activitiesCommand = defineCommand({
 				stringMatches(collectItem, 'bert sand') ||
 				stringMatches(collectItem, 'hand in the sand')
 			) {
-				return collectBertSand(user, interaction ?? null);
+				return collectBertSand(user, channelID);
 			}
 			return collectCommand(user, channelID, collectItem, options.collect.quantity, options.collect.no_stams);
 		}
