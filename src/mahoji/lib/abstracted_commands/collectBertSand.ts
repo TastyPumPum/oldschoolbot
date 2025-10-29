@@ -1,30 +1,34 @@
 import { formatDuration, getNextUTCReset, Time } from '@oldschoolgg/toolkit';
-import { Items } from 'oldschooljs';
 
 import { ActivityManager } from '@/lib/ActivityManager.js';
+import type { MUser } from '@/lib/MUser.js';
 import {
 	BERT_SAND_BUCKETS,
 	BERT_SAND_DURATION,
+	BERT_SAND_ID,
 	BERT_SAND_ITEM_ID,
-	getBertSandRequirementError,
-	isBertSandReady
+	hasCollectedThisReset,
+	isManualEligible
 } from '@/lib/minions/data/bertSand.js';
-import type { CollectingOptions } from '@/lib/types/minions.js';
+import type { ActivityTaskMetadata, CollectingOptions } from '@/lib/types/minions.js';
 
-const bertSandCollectable = Items.getOrThrow('Bucket of sand');
+const NON_REPEATABLE_METADATA: ActivityTaskMetadata = {
+	activityID: BERT_SAND_ID,
+	nonRepeatable: true
+};
 
 export async function collectBertSand(user: MUser, channelID: string) {
 	const now = Date.now();
 	const stats = await user.fetchStats();
 	const lastCollected = Number(stats.last_bert_sand_timestamp ?? 0n);
 
-	const requirementError = getBertSandRequirementError(user);
+	const requirementError = isManualEligible(user);
 	if (requirementError) {
 		return requirementError;
 	}
 
-	if (!isBertSandReady(lastCollected, now)) {
-		const nextReset = getNextUTCReset(lastCollected, Time.Day);
+	if (hasCollectedThisReset(lastCollected, now)) {
+		const nextReset = getNextUTCReset(now, Time.Day);
 		return `Bert will have more buckets of sand for you in ${formatDuration(nextReset - now)}.`;
 	}
 
@@ -36,10 +40,9 @@ export async function collectBertSand(user: MUser, channelID: string) {
 		duration: BERT_SAND_DURATION,
 		type: 'Collecting',
 		lootQuantityOverride: BERT_SAND_BUCKETS,
-		bertSand: { lastCollectedAtStart: lastCollected }
+		bertSand: { lastCollectedAtStart: lastCollected },
+		metadata: NON_REPEATABLE_METADATA
 	});
 
-	return `${user.minionName} is now collecting ${BERT_SAND_BUCKETS.toLocaleString()}x ${
-		bertSandCollectable.name
-	}, it'll take around ${formatDuration(BERT_SAND_DURATION)} to finish.`;
+	return `Bert is sorting your buckets of sand… (${formatDuration(BERT_SAND_DURATION)})`;
 }

@@ -18,7 +18,7 @@ import { GrandExchange } from '@/lib/grandExchange.js';
 import { mahojiUserSettingsUpdate } from '@/lib/MUser.js';
 import { cacheGEPrices } from '@/lib/marketPrices.js';
 import { collectMetrics } from '@/lib/metrics.js';
-import { BERT_SAND_BUCKETS, isBertSandReady, meetsBertSandManualRequirements } from '@/lib/minions/data/bertSand.js';
+import { BERT_SAND_BUCKETS, bertResetStart, isManualEligible } from '@/lib/minions/data/bertSand.js';
 import { populateRoboChimpCache } from '@/lib/perkTier.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { informationalButtons } from '@/lib/sharedComponents.js';
@@ -346,7 +346,7 @@ VALUES (get_economy_bank());`;
 		interval: Time.Minute * 5,
 		cb: async () => {
 			const now = Date.now();
-			const currentResetStart = getNextUTCReset(now, Time.Day) - Time.Day;
+			const currentResetStart = bertResetStart(now);
 
 			if (bertSandLastReset < currentResetStart) {
 				bertSandQueue = [];
@@ -380,24 +380,30 @@ VALUES (get_economy_bank());`;
 
 			const loot = new Bank({ 'Bucket of sand': BERT_SAND_BUCKETS });
 			const batch = bertSandQueue.splice(0, BERT_SAND_BATCH_SIZE);
+			const resetStart = bertResetStart(now);
 
 			for (const id of batch) {
 				const user = await mUserFetch(id);
-
-				if (!meetsBertSandManualRequirements(user)) {
+				const requirementError = isManualEligible(user);
+				if (requirementError) {
 					continue;
 				}
 
-				const stats = await user.fetchStats();
-				const lastCollected = Number(stats.last_bert_sand_timestamp ?? 0n);
-				if (!isBertSandReady(lastCollected, now)) {
+				const updated = await prisma.userStats.updateMany({
+					where: {
+						user_id: BigInt(user.id),
+						last_bert_sand_timestamp: { lt: BigInt(resetStart) }
+					},
+					data: { last_bert_sand_timestamp: BigInt(now) }
+				});
+
+				if (updated.count === 0) {
 					continue;
 				}
 
 				// Ardougne elite diary unlocks this auto-collection perk; when it procs we still
 				// enforce the manual requirements so the reward mirrors the slash command.
 				await user.addItemsToBank({ items: loot, collectionLog: false });
-				await user.statsUpdate({ last_bert_sand_timestamp: now });
 			}
 		}
 	},

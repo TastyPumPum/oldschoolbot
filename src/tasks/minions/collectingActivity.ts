@@ -1,7 +1,7 @@
 import { formatDuration, getNextUTCReset, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
-import { getBertSandRequirementError, isBertSandReady } from '@/lib/minions/data/bertSand.js';
+import { BERT_SAND_BUCKETS, bertResetStart, isManualEligible } from '@/lib/minions/data/bertSand.js';
 import type { CollectingOptions } from '@/lib/types/minions.js';
 import { collectables } from '@/mahoji/lib/collectables.js';
 
@@ -9,6 +9,44 @@ export const collectingTask: MinionTask = {
 	type: 'Collecting',
 	async run(data: CollectingOptions, { user, handleTripFinish }) {
 		const { collectableID, quantity, channelID, duration, lootQuantityOverride, bertSand } = data;
+
+		if (bertSand) {
+			const sendResult = (message: string, loot: Bank | null = null) =>
+				handleTripFinish(user, channelID, `${user}, ${message}`, undefined, data, loot);
+
+			const requirementError = isManualEligible(user);
+			if (requirementError) {
+				sendResult(requirementError);
+				return;
+			}
+
+			const now = Date.now();
+			const updated = await prisma.userStats.updateMany({
+				where: {
+					user_id: BigInt(user.id),
+					last_bert_sand_timestamp: { lt: BigInt(bertResetStart(now)) }
+				},
+				data: { last_bert_sand_timestamp: BigInt(now) }
+			});
+
+			if (updated.count === 0) {
+				const nextReset = getNextUTCReset(now, Time.Day);
+				sendResult(
+					`Bert already delivered today. You can collect again in ${formatDuration(nextReset - now)}.`
+				);
+				return;
+			}
+
+			const loot = new Bank({ 'Bucket of sand': BERT_SAND_BUCKETS });
+			await user.addItemsToBank({
+				items: loot,
+				collectionLog: false
+			});
+			await ClientSettings.updateBankSetting('collecting_loot', loot);
+
+			sendResult(`Bert hands you ${BERT_SAND_BUCKETS.toLocaleString()} Buckets of sand.`, loot);
+			return;
+		}
 
 		const collectable = collectables.find(c => c.item.id === collectableID)!;
 		let colQuantity = collectable.quantity;
@@ -23,59 +61,6 @@ export const collectingTask: MinionTask = {
 			totalQuantity = lootQuantityOverride;
 		}
 		const loot = new Bank().add(collectable.item.id, totalQuantity);
-
-		if (bertSand) {
-			const requirementError = getBertSandRequirementError(user);
-			if (requirementError) {
-				handleTripFinish(user, channelID, `${user}, ${requirementError}`, undefined, data);
-				return;
-			}
-
-			const now = Date.now();
-			const refreshedStats = await user.fetchStats();
-			const refreshedLastCollected = Number(refreshedStats.last_bert_sand_timestamp ?? 0n);
-
-			if (refreshedLastCollected > bertSand.lastCollectedAtStart) {
-				const nextReset = getNextUTCReset(refreshedLastCollected, Time.Day);
-				handleTripFinish(
-					user,
-					channelID,
-					`${user}, Bert already delivered your buckets of sand. You can collect again in ${formatDuration(
-						nextReset - now
-					)}.`,
-					undefined,
-					data
-				);
-				return;
-			}
-
-			if (!isBertSandReady(refreshedLastCollected, now)) {
-				const nextReset = getNextUTCReset(refreshedLastCollected, Time.Day);
-				handleTripFinish(
-					user,
-					channelID,
-					`${user}, Bert will have more buckets of sand for you in ${formatDuration(nextReset - now)}.`,
-					undefined,
-					data
-				);
-				return;
-			}
-
-			await user.addItemsToBank({
-				items: loot,
-				collectionLog: false
-			});
-
-			await user.statsUpdate({ last_bert_sand_timestamp: now });
-			await ClientSettings.updateBankSetting('collecting_loot', loot);
-
-			const perHour = Math.round((totalQuantity / (duration / Time.Minute)) * 60).toLocaleString();
-			const str = `${user}, ${user.minionName} finished collecting ${totalQuantity.toLocaleString()}x ${
-				collectable.item.name
-			} from Bert. (${perHour}/hr)`;
-			handleTripFinish(user, channelID, str, undefined, data, loot);
-			return;
-		}
 
 		await user.transactItems({
 			collectionLog: true,

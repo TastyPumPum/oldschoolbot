@@ -18,11 +18,13 @@ export interface BertSandTripMetadata {
 	lastCollectedAtStart: number;
 }
 
-export function isBertSandReady(lastCollected: number, now: number) {
-	return now >= getNextUTCReset(lastCollected, Time.Day);
+export const bertResetStart = (now = Date.now()) => getNextUTCReset(now, Time.Day) - Time.Day;
+
+export function hasCollectedThisReset(lastCollected: number, now = Date.now()) {
+	return lastCollected >= bertResetStart(now);
 }
 
-export function getBertSandRequirementError(user: MUser): string | null {
+export function isManualEligible(user: MUser): string | null {
 	if (user.QP < BERT_SAND_QP_REQUIRED) {
 		return `You need at least ${BERT_SAND_QP_REQUIRED} Quest Points to collect sand for Bert.`;
 	}
@@ -36,10 +38,6 @@ export function getBertSandRequirementError(user: MUser): string | null {
 	return null;
 }
 
-export function meetsBertSandManualRequirements(user: MUser) {
-	return getBertSandRequirementError(user) === null;
-}
-
-export function hasBertSandAutoDelivery(user: MUser) {
-	return user.hasDiary('ardougne.elite');
+export function hasBertSandAutoDelivery(user: { completed_achievement_diaries: string[] }) {
+	return user.completed_achievement_diaries.includes('ardougne.elite');
 }
