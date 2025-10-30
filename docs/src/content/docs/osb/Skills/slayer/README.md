@@ -31,6 +31,11 @@ If you are a Tier 1 patron or higher, you will see an **Auto Slay** button at th
   - [[/slayer manage command\:skip]] — Costs 30 Slayer points
   - Use [[/slayer new_task master\:Turael]] to cancel your task and reset your streak
 
+- **Check Slayer streak leaderboards:**
+
+  - [[/lb slayer_streak type\:standard]]
+  - Add **ironmen_only\:True** to only show ironmen, or switch to Wilderness streaks with [[/lb slayer_streak type\:wilderness]]
+
 - **Buy rewards/unlocks from the Slayer shop:**
 
   - [[/slayer rewards unlock unlockable\:Malevolent Masquerade]]

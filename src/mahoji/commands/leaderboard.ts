@@ -396,11 +396,11 @@ async function gpLb(interaction: MInteraction, ironmanOnly: boolean) {
 	const users = (
 		await prisma.$queryRawUnsafe<{ id: string; GP: number }[]>(
 			`SELECT "id", "GP"
-					   FROM users
-					   WHERE "GP" > 1000000
-					   ${ironmanOnly ? ' AND "minion.ironman" = true ' : ''}
-					   ORDER BY "GP" DESC
-					   LIMIT 100;`
+                                           FROM users
+                                           WHERE "GP" > 1000000
+                                           ${ironmanOnly ? ' AND "minion.ironman" = true ' : ''}
+                                           ORDER BY "GP" DESC
+                                           LIMIT 100;`
 		)
 	).map(res => ({ ...res, score: Number(res.GP) }));
 
@@ -410,6 +410,30 @@ async function gpLb(interaction: MInteraction, ironmanOnly: boolean) {
 		users,
 		title: 'GP Leaderboard',
 		formatter: val => `${val.toLocaleString()} GP`
+	});
+}
+
+async function slayerStreakLb(interaction: MInteraction, type: 'standard' | 'wilderness', ironmanOnly: boolean) {
+	const column = type === 'wilderness' ? 'slayer_wildy_task_streak' : 'slayer_task_streak';
+	const title = type === 'wilderness' ? 'Wilderness Slayer Streak Leaderboard' : 'Slayer Streak Leaderboard';
+	const users = (
+		await prisma.$queryRawUnsafe<{ id: string; streak: number }[]>(
+			`SELECT user_stats.user_id::text AS id, "${column}"::int AS streak
+                         FROM user_stats
+                         ${ironmanOnly ? 'INNER JOIN users ON users.id::bigint = user_stats.user_id' : ''}
+                         WHERE "${column}" IS NOT NULL AND "${column}"::int >= 5
+                         ${ironmanOnly ? ' AND users."minion.ironman" = true ' : ''}
+                         ORDER BY streak DESC
+                         LIMIT 200;`
+		)
+	).map(res => ({ id: res.id, score: Number(res.streak) }));
+
+	return doMenuWrapper({
+		ironmanOnly,
+		interaction,
+		users,
+		title,
+		formatter: val => `${val.toLocaleString()} tasks`
 	});
 }
 
@@ -932,6 +956,24 @@ export const leaderboardCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
+			name: 'slayer_streak',
+			description: 'Check Slayer streak leaderboards.',
+			options: [
+				{
+					type: 'String',
+					name: 'type',
+					description: 'Choose between standard or Wilderness streaks.',
+					required: true,
+					choices: [
+						{ name: 'Standard', value: 'standard' },
+						{ name: 'Wilderness', value: 'wilderness' }
+					]
+				},
+				ironmanOnlyOption
+			]
+		},
+		{
+			type: 'Subcommand',
 			name: 'gp',
 			description: 'Check the GP leaderboard.',
 			options: [ironmanOnlyOption]
@@ -1075,6 +1117,7 @@ export const leaderboardCommand = defineCommand({
 			minigames,
 			hunter_catches,
 			agility_laps,
+			slayer_streak,
 			gp,
 			skills,
 			cl,
@@ -1099,6 +1142,13 @@ export const leaderboardCommand = defineCommand({
 			return creaturesLb(interaction, hunter_catches.creature);
 		}
 		if (agility_laps) return lapsLb(interaction, agility_laps.course);
+		if (slayer_streak) {
+			return slayerStreakLb(
+				interaction,
+				slayer_streak.type as 'standard' | 'wilderness',
+				Boolean(slayer_streak.ironmen_only)
+			);
+		}
 		if (gp) return gpLb(interaction, Boolean(gp.ironmen_only));
 		if (skills) {
 			return skillsLb(interaction, skills.skill, skills.xp ? 'xp' : 'level', Boolean(skills.ironmen_only));
