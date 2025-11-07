@@ -27,12 +27,20 @@ export type PatchData = IPatchData | null;
 export type PlantTier = 0 | 1 | 2 | 3 | 4 | 5;
 export type FarmingContractDifficultyLevel = 'easy' | 'medium' | 'hard';
 
+export type ContractPatchOverrideMode = 'allfarm' | 'replant' | null;
+
+export interface FarmingContractPatchOverride {
+	previousSeedID: number | null;
+	previousMode: ContractPatchOverrideMode;
+}
+
 export interface FarmingContract {
 	hasContract: boolean;
 	difficultyLevel: FarmingContractDifficultyLevel | null;
 	plantToGrow: string | null;
 	plantTier: PlantTier;
 	contractsCompleted: number;
+	contractPatchOverrides?: Partial<Record<FarmingPatchName, FarmingContractPatchOverride>>;
 }
 
 export const ContractOptions = ['easy', 'medium', 'hard', 'easier'] as const;

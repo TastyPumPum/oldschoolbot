@@ -1288,6 +1288,8 @@ enum tame_growth {
 enum AutoFarmFilterEnum {
   AllFarm
   Replant
+  CONTRACT_ALL_FARM
+  CONTRACT_REPLANT
 }
 
 enum GEListingType {

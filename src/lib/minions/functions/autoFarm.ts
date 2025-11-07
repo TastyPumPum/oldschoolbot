@@ -8,7 +8,13 @@ import type { CommandResponseValue } from '@/lib/discord/index.js';
 import { allFarm, replant } from '@/lib/minions/functions/autoFarmFilters.js';
 import { plants } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
-import type { IPatchData, IPatchDataDetailed } from '@/lib/skilling/skills/farming/utils/types.js';
+import type {
+	ContractPatchOverrideMode,
+	FarmingContract,
+	FarmingContractPatchOverride,
+	IPatchData,
+	IPatchDataDetailed
+} from '@/lib/skilling/skills/farming/utils/types.js';
 import type { Plant } from '@/lib/skilling/types.js';
 import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
@@ -28,6 +34,7 @@ interface PlannedAutoFarmStep {
 	friendlyName: string;
 	info: string[];
 	boosts: string[];
+	cost: Bank;
 }
 
 interface BuildSummaryResult {
@@ -134,11 +141,20 @@ export async function autoFarm(
 		autoFarmFilter = AutoFarmFilterEnum.AllFarm;
 	}
 
+	const isContractFilter =
+		autoFarmFilter === AutoFarmFilterEnum.CONTRACT_ALL_FARM ||
+		autoFarmFilter === AutoFarmFilterEnum.CONTRACT_REPLANT;
+	const baseFilter = isContractFilter
+		? autoFarmFilter === AutoFarmFilterEnum.CONTRACT_ALL_FARM
+			? AutoFarmFilterEnum.AllFarm
+			: AutoFarmFilterEnum.Replant
+		: autoFarmFilter;
+
 	const baseBank = user.bank.clone().add('Coins', user.GP);
 
 	const eligiblePlants = [...plants]
 		.filter(p => {
-			switch (autoFarmFilter) {
+			switch (baseFilter) {
 				case AutoFarmFilterEnum.AllFarm:
 					return allFarm(p, farmingLevel, user, user.bank);
 				case AutoFarmFilterEnum.Replant:
@@ -157,10 +173,69 @@ export async function autoFarm(
 	const totalCost = new Bank();
 	const remainingBank = baseBank.clone();
 	let skippedDueToTripLength = false;
+	const statusMessages: string[] = [];
+
+	const { contract: contractData, plant: contractPlant } = user.farmingContract();
+	const contractOverrides: Partial<Record<FarmingPatchName, FarmingContractPatchOverride>> = {
+		...(contractData.contractPatchOverrides ?? {})
+	};
+	let contractNeedsUpdate = false;
+	const baseOverrideMode: ContractPatchOverrideMode =
+		baseFilter === AutoFarmFilterEnum.AllFarm
+			? 'allfarm'
+			: baseFilter === AutoFarmFilterEnum.Replant
+				? 'replant'
+				: null;
+
+	const applyStep = (step: PlannedAutoFarmStep) => {
+		totalCost.add(step.cost);
+		remainingBank.remove(step.cost);
+		if (step.treeChopFee > 0) {
+			const feeBank = new Bank().add('Coins', step.treeChopFee);
+			remainingBank.remove(feeBank);
+		}
+		totalDuration += step.duration;
+	};
+
+	const revertStep = (step: PlannedAutoFarmStep) => {
+		totalCost.remove(step.cost);
+		remainingBank.add(step.cost);
+		if (step.treeChopFee > 0) {
+			const feeBank = new Bank().add('Coins', step.treeChopFee);
+			remainingBank.add(feeBank);
+		}
+		totalDuration -= step.duration;
+	};
+
+	const removePlannedStep = (patchName: FarmingPatchName): { step: PlannedAutoFarmStep; index: number } | null => {
+		const index = plannedSteps.findIndex(step => step.patchName === patchName);
+		if (index === -1) {
+			return null;
+		}
+		const [step] = plannedSteps.splice(index, 1);
+		revertStep(step);
+		return { step, index };
+	};
+
+	const reinsertStep = (step: PlannedAutoFarmStep, index: number) => {
+		plannedSteps.splice(index, 0, step);
+		applyStep(step);
+	};
+
+	const ensureTripWithinLimit = () => {
+		while (totalDuration > maxTripLength && plannedSteps.length > 1) {
+			const removed = plannedSteps.pop();
+			if (!removed) {
+				break;
+			}
+			revertStep(removed);
+			skippedDueToTripLength = true;
+		}
+	};
 
 	let errorString = '';
 	let firstPrepareError: string | null = null;
-	if (autoFarmFilter === AutoFarmFilterEnum.AllFarm) {
+	if (baseFilter === AutoFarmFilterEnum.AllFarm) {
 		errorString = "There's no Farming crops that you have the requirements to plant, and nothing to harvest.";
 	} else {
 		errorString =
@@ -217,15 +292,8 @@ export async function autoFarm(
 			continue;
 		}
 
-		remainingBank.remove(cost);
-		if (treeChopFee > 0) {
-			remainingBank.remove(new Bank().add('Coins', treeChopFee));
-		}
-		totalCost.add(cost);
-		totalDuration += duration;
-
 		const patch = patches[plant.seedType];
-		plannedSteps.push({
+		const step: PlannedAutoFarmStep = {
 			plant,
 			quantity,
 			duration,
@@ -236,9 +304,194 @@ export async function autoFarm(
 			patchName: patchDetailed.patchName,
 			friendlyName: patchDetailed.friendlyName,
 			info: infoStr,
-			boosts: boostStr
-		});
+			boosts: boostStr,
+			cost
+		};
+		applyStep(step);
+		plannedSteps.push(step);
 		usedPatches.add(patchDetailed.patchName);
+	}
+
+	if (!contractData.hasContract && Object.keys(contractOverrides).length > 0) {
+		for (const [patchNameRaw, override] of Object.entries(contractOverrides)) {
+			const patchName = patchNameRaw as FarmingPatchName;
+			const patchDetailed = patchesDetailed.find(p => p.patchName === patchName);
+			if (!patchDetailed || patchDetailed.ready === false) {
+				continue;
+			}
+
+			if (override?.previousMode && override.previousMode !== baseOverrideMode) {
+				// If the user switched filters, keep the override for the matching mode.
+				continue;
+			}
+
+			const targetPlant = override?.previousSeedID ? plants.find(p => p.id === override.previousSeedID) : null;
+
+			if (!targetPlant) {
+				delete contractOverrides[patchName];
+				contractNeedsUpdate = true;
+				continue;
+			}
+
+			const existingIndex = plannedSteps.findIndex(step => step.patchName === patchName);
+			if (existingIndex !== -1 && plannedSteps[existingIndex].plant.id === targetPlant.id) {
+				delete contractOverrides[patchName];
+				contractNeedsUpdate = true;
+				continue;
+			}
+
+			const removal = removePlannedStep(patchName);
+
+			const prepared = await prepareFarmingStep({
+				user,
+				plant: targetPlant,
+				quantity: null,
+				pay: false,
+				patchDetailed,
+				maxTripLength,
+				availableBank: remainingBank.clone(),
+				compostTier
+			});
+
+			if (!prepared.success) {
+				if (removal) {
+					reinsertStep(removal.step, removal.index);
+				}
+				continue;
+			}
+
+			const { quantity, duration, cost, upgradeType, didPay, infoStr, boostStr, treeChopFee } = prepared.data;
+			if (quantity <= 0 || duration <= 0 || duration > maxTripLength) {
+				if (removal) {
+					reinsertStep(removal.step, removal.index);
+				}
+				continue;
+			}
+			if (!remainingBank.has(cost)) {
+				if (removal) {
+					reinsertStep(removal.step, removal.index);
+				}
+				continue;
+			}
+			const totalCoinCost = cost.amount('Coins') + treeChopFee;
+			if (totalCoinCost > 0 && remainingBank.amount('Coins') < totalCoinCost) {
+				if (removal) {
+					reinsertStep(removal.step, removal.index);
+				}
+				continue;
+			}
+
+			const patch = patches[patchName];
+			const overrideStep: PlannedAutoFarmStep = {
+				plant: targetPlant,
+				quantity,
+				duration,
+				upgradeType,
+				didPay,
+				treeChopFee,
+				patch,
+				patchName,
+				friendlyName: patchDetailed.friendlyName,
+				info: [...infoStr, 'Restoring previous crop after contract.'],
+				boosts: boostStr,
+				cost
+			};
+
+			plannedSteps.unshift(overrideStep);
+			applyStep(overrideStep);
+			ensureTripWithinLimit();
+
+			delete contractOverrides[patchName];
+			contractNeedsUpdate = true;
+			statusMessages.push(`Restoring ${overrideStep.friendlyName} with ${overrideStep.plant.name}.`);
+		}
+	}
+
+	if (isContractFilter && contractData.hasContract && contractPlant) {
+		const contractPatchName = contractPlant.seedType;
+		const patchDetailed = patchesDetailed.find(p => p.patchName === contractPatchName);
+		if (patchDetailed) {
+			const removal = removePlannedStep(contractPatchName);
+			const prepared = await prepareFarmingStep({
+				user,
+				plant: contractPlant,
+				quantity: null,
+				pay: false,
+				patchDetailed,
+				maxTripLength,
+				availableBank: remainingBank.clone(),
+				compostTier
+			});
+
+			if (!prepared.success) {
+				if (removal) {
+					reinsertStep(removal.step, removal.index);
+				}
+				statusMessages.push(`Skipped farming contract: ${prepared.error}`);
+			} else {
+				const { quantity, duration, cost, upgradeType, didPay, infoStr, boostStr, treeChopFee } = prepared.data;
+				if (quantity <= 0 || duration <= 0 || duration > maxTripLength) {
+					if (removal) {
+						reinsertStep(removal.step, removal.index);
+					}
+				} else if (!remainingBank.has(cost)) {
+					if (removal) {
+						reinsertStep(removal.step, removal.index);
+					}
+					statusMessages.push(`Skipped farming contract: You don't own ${cost}.`);
+				} else {
+					const totalCoinCost = cost.amount('Coins') + treeChopFee;
+					if (totalCoinCost > 0 && remainingBank.amount('Coins') < totalCoinCost) {
+						if (removal) {
+							reinsertStep(removal.step, removal.index);
+						}
+						statusMessages.push(
+							`Skipped farming contract: You don't own ${new Bank().add('Coins', totalCoinCost)}.`
+						);
+					} else {
+						const patch = patches[contractPatchName];
+						const contractStep: PlannedAutoFarmStep = {
+							plant: contractPlant,
+							quantity,
+							duration,
+							upgradeType,
+							didPay,
+							treeChopFee,
+							patch,
+							patchName: contractPatchName,
+							friendlyName: patchDetailed.friendlyName,
+							info: [...infoStr, 'Prioritising farming contract.'],
+							boosts: boostStr,
+							cost
+						};
+						plannedSteps.unshift(contractStep);
+						applyStep(contractStep);
+						ensureTripWithinLimit();
+
+						if (removal && baseOverrideMode) {
+							const overrideEntry: FarmingContractPatchOverride = {
+								previousSeedID: removal.step.plant.id,
+								previousMode: baseOverrideMode
+							};
+							contractOverrides[contractPatchName] = overrideEntry;
+							contractNeedsUpdate = true;
+						}
+					}
+				}
+			}
+		} else {
+			statusMessages.push('Skipped farming contract: contracted patch is unavailable.');
+		}
+	}
+
+	if (contractNeedsUpdate) {
+		const nextContract: FarmingContract = {
+			...contractData,
+			contractPatchOverrides: { ...contractOverrides }
+		};
+		await user.update({
+			minion_farmingContract: nextContract as any
+		});
 	}
 
 	if (plannedSteps.length === 0) {
@@ -341,6 +594,10 @@ ${infoDetails.join('\n')}`;
 		response += `\n\nSome ready patches were skipped because the total trip length would exceed the maximum of ${formatDuration(
 			maxTripLength
 		)}.`;
+	}
+
+	if (statusMessages.length > 0) {
+		response += `\n\n${statusMessages.join('\n')}`;
 	}
 
 	return response;

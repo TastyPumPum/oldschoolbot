@@ -756,7 +756,10 @@ export async function executeFarmingStep({
 			difficultyLevel: null,
 			plantToGrow: currentContract.plantToGrow,
 			plantTier: currentContract.plantTier,
-			contractsCompleted: contractsCompleted + 1
+			contractsCompleted: contractsCompleted + 1,
+			contractPatchOverrides: {
+				...(currentContract.contractPatchOverrides ?? {})
+			}
 		};
 
 		await user.update({

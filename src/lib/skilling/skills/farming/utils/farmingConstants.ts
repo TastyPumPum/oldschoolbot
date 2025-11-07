@@ -14,5 +14,6 @@ export const defaultFarmingContract: FarmingContract = {
 	difficultyLevel: null,
 	plantToGrow: null,
 	plantTier: 0,
-	contractsCompleted: 0
+	contractsCompleted: 0,
+	contractPatchOverrides: {}
 };

@@ -17,8 +17,22 @@ import { titheFarmCommand, titheFarmShopCommand } from '@/mahoji/lib/abstracted_
 
 const autoFarmFilterTexts: Record<AutoFarmFilterEnum, string> = {
 	AllFarm: 'All crops will be farmed with the highest available seed',
-	Replant: 'Only planted crops will be replanted, using the same seed'
+	Replant: 'Only planted crops will be replanted, using the same seed',
+	CONTRACT_ALL_FARM: 'Prioritise your active farming contract before running the AllFarm filter',
+	CONTRACT_REPLANT: 'Prioritise your active farming contract before running the Replant filter'
 };
+
+const autoFarmFilterDisplayNames: Record<AutoFarmFilterEnum, string> = {
+	AllFarm: 'All crops (best available)',
+	Replant: 'Replant existing crops',
+	CONTRACT_ALL_FARM: 'Farming contract (AllFarm)',
+	CONTRACT_REPLANT: 'Farming contract (Replant)'
+};
+
+const autoFarmFilterChoices = (Object.values(AutoFarmFilterEnum) as AutoFarmFilterEnum[]).map(value => ({
+	name: autoFarmFilterDisplayNames[value],
+	value
+}));
 
 export const farmingCommand = defineCommand({
 	name: 'farming',
@@ -79,7 +93,7 @@ export const farmingCommand = defineCommand({
 					name: 'auto_farm_filter_data',
 					description: 'The auto farm filter you want to use by default. (default: AllFarm)',
 					required: true,
-					choices: choicesOf(Object.values(AutoFarmFilterEnum))
+					choices: autoFarmFilterChoices
 				}
 			]
 		},
@@ -213,7 +227,8 @@ export const farmingCommand = defineCommand({
 				auto_farm_filter: autoFarmFilter
 			});
 
-			return `${autoFarmFilter} filter is now enabled when autofarming: ${autoFarmFilterTexts[autoFarmFilter]}.`;
+			const displayName = autoFarmFilterDisplayNames[autoFarmFilter];
+			return `${displayName} filter is now enabled when autofarming: ${autoFarmFilterTexts[autoFarmFilter]}.`;
 		}
 		if (options.plant) {
 			return farmingPlantCommand({
