@@ -451,7 +451,12 @@ describe('auto farm helpers', () => {
 
 			const contractUpdateCall = findContractUpdateCall(updateSpy.mock.calls);
 			expect(contractUpdateCall).toBeDefined();
-			const overrides = (contractUpdateCall?.minion_farmingContract as any).contractPatchOverrides;
+
+			if (!contractUpdateCall) {
+				throw new Error('Expected contract update call');
+			}
+
+			const overrides = (contractUpdateCall.minion_farmingContract as any).contractPatchOverrides;
 			expect(overrides).toBeDefined();
 			expect(overrides).toHaveProperty(herbPlant.seedType);
 
