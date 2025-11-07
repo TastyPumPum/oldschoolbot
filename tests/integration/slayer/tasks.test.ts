@@ -1,7 +1,11 @@
+import { PerkTier } from '@oldschoolgg/toolkit';
 import { EMonster, Monsters } from 'oldschooljs';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
+import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
+import { getAssignableSlayerTaskIDs } from '@/lib/slayer/slayerUtil.js';
 import { slayerCommand } from '@/mahoji/commands/slayer.js';
+import { patronMsg } from '@/mahoji/mahojiSettings.js';
 import { createTestUser, mockClient, mockMathRandom } from '../util.js';
 
 describe('Slayer Tasks', async () => {
@@ -53,5 +57,97 @@ describe('Slayer Tasks', async () => {
 		expect(await user.runCommand(slayerCommand, { status: {} })).toContain(
 			'Your current task from Turael is to kill **Birds** (**Alternate Monsters**: Chicken, Duck, Duckling, Mounted terrorbird gnome, Penguin, Rooster, Seagull, Terrorbird). You have 16 kills remaining.'
 		);
+	});
+
+	test('Patron skip list management', async () => {
+		const user = await createTestUser();
+		vi.spyOn(user, 'perkTier').mockReturnValue(PerkTier.Two);
+
+		const addRes = await user.runCommand(slayerCommand, {
+			skip_list: { action: 'add', master: 'turael', monster: 'Birds' }
+		});
+		expect(addRes).toContain("Added Birds to Turael's skip list.");
+		expect(user.getSlayerSkipSettings()).toEqual({
+			turael: [Monsters.Bird.id]
+		});
+
+		const listRes = await user.runCommand(slayerCommand, { skip_list: { action: 'list' } });
+		expect(listRes).toContain('Turael: Birds');
+
+		const removeRes = await user.runCommand(slayerCommand, {
+			skip_list: { action: 'remove', master: 'turael', monster: 'Birds' }
+		});
+		expect(removeRes).toBe("Removed Birds from Turael's skip list.");
+		expect(user.getSlayerSkipSettings()).toEqual({});
+
+		vi.restoreAllMocks();
+	});
+
+	test('Auto-skips tasks when on skip list', async () => {
+		const user = await createTestUser();
+		vi.spyOn(user, 'perkTier').mockReturnValue(PerkTier.Two);
+		await user.update({ slayer_points: 90 });
+		const restoreRandom = mockMathRandom(0.1);
+
+		try {
+			await user.runCommand(slayerCommand, {
+				skip_list: { action: 'add', master: 'turael', monster: 'Birds' }
+			});
+
+			const res: any = await user.runCommand(slayerCommand, { new_task: { master: 'turael' } });
+			expect(res.content).toContain('You auto-skipped 1 task(s) and spent 30 Slayer points.');
+			expect(res.content).not.toContain('ran out of Slayer points');
+			await user.sync();
+			expect(user.user.slayer_points).toBe(60);
+		} finally {
+			restoreRandom();
+			vi.restoreAllMocks();
+		}
+	});
+
+	test('Auto-skip stops when out of points', async () => {
+		const user = await createTestUser();
+		vi.spyOn(user, 'perkTier').mockReturnValue(PerkTier.Two);
+		await user.update({ slayer_points: 30 });
+		const restoreRandom = mockMathRandom(0.1);
+
+		try {
+			await user.runCommand(slayerCommand, {
+				skip_list: { action: 'add', master: 'turael', monster: 'Birds' }
+			});
+			await user.runCommand(slayerCommand, {
+				skip_list: { action: 'add', master: 'turael', monster: 'Bats' }
+			});
+
+			const res: any = await user.runCommand(slayerCommand, { new_task: { master: 'turael' } });
+			expect(res.content).toContain('You auto-skipped 1 task(s) and spent 30 Slayer points.');
+			expect(res.content).toContain('You ran out of Slayer points, so I stopped skipping.');
+			await user.sync();
+			expect(user.user.slayer_points).toBe(0);
+		} finally {
+			restoreRandom();
+			vi.restoreAllMocks();
+		}
+	});
+
+	test('All tasks skipped message', async () => {
+		const user = await createTestUser();
+		vi.spyOn(user, 'perkTier').mockReturnValue(PerkTier.Two);
+		const turael = slayerMasters.find(m => m.name === 'Turael')!;
+		const assignable = getAssignableSlayerTaskIDs(user, turael);
+		await user.updateSlayerSkipSettings(turael.aliases[0], assignable);
+
+		const res = await user.runCommand(slayerCommand, { new_task: { master: 'turael' } });
+		expect(res).toBe('All tasks for Turael are in your skip list. Remove at least one with /slayer skip_list.');
+
+		vi.restoreAllMocks();
+	});
+
+	test('Non-patron cannot use skip list', async () => {
+		const user = await createTestUser();
+		const res = await user.runCommand(slayerCommand, {
+			skip_list: { action: 'add', master: 'turael', monster: 'Birds' }
+		});
+		expect(res).toBe(patronMsg(PerkTier.Two));
 	});
 });
