@@ -256,6 +256,34 @@ export async function assignNewSlayerTask(user: MUser, master: SlayerMaster) {
 	return { currentTask, assignedTask };
 }
 
+export function getAssignableSlayerTaskIDs(user: MUser, master: SlayerMaster): number[] {
+	const eligibleTaskIDs = new Set<number>();
+	const baseTasks = master.tasks.filter(task => userCanUseTask(user, task, master, false));
+	for (const task of baseTasks) {
+		eligibleTaskIDs.add(task.monster.id);
+	}
+	const masterName = master.name.toLowerCase();
+	const canAssignBossTasks =
+		user.hasSlayerUnlock(SlayerTaskUnlocksEnum.LikeABoss) &&
+		(masterName === 'konar quo maten' ||
+			masterName === 'duradel' ||
+			masterName === 'nieve' ||
+			masterName === 'chaeldar');
+	if (canAssignBossTasks) {
+		for (const task of bossTasks.filter(task => userCanUseTask(user, task, master, true))) {
+			eligibleTaskIDs.add(task.monster.id);
+		}
+	}
+	const canAssignWildyBossTasks = user.hasSlayerUnlock(SlayerTaskUnlocksEnum.LikeABoss) && master.id === 8;
+	if (canAssignWildyBossTasks) {
+		for (const task of wildernessBossTasks.filter(task => userCanUseTask(user, task, master, true))) {
+			eligibleTaskIDs.add(task.monster.id);
+		}
+	}
+
+	return Array.from(eligibleTaskIDs);
+}
+
 export async function calcMaxBlockedTasks(user: MUser) {
 	const qps = user.QP;
 	let blocks = 0;
