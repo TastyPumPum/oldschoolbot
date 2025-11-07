@@ -478,7 +478,10 @@ export async function autoFarm(
 						const existingOverride = contractOverrides[contractPatchName];
 						if (!existingOverride && baseOverrideMode !== null) {
 							let previousSeedID: number | null = null;
+
 							if (patchDetailed.plant) {
+								previousSeedID = removal.step.plant.id;
+							} else if (patchDetailed.plant) {
 								previousSeedID = patchDetailed.plant.id;
 							}
 
