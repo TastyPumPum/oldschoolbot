@@ -464,7 +464,7 @@ describe('auto farm helpers', () => {
 			expect(updateBankSettingSpy).toHaveBeenCalled();
 		});
 
-		it('does not add overrides when the base plan ignores the contract patch', async () => {
+		it('records override when the base plan ignores the contract patch', async () => {
 			const bank = new Bank()
 				.add('Guam seed', 5)
 				.add('Compost', 5)
@@ -538,7 +538,16 @@ describe('auto farm helpers', () => {
 			const response = await autoFarm(user, patchesDetailed, patches, baseInteraction as MInteraction);
 
 			const contractUpdateCall = findContractUpdateCall(updateSpy.mock.calls);
-			expect(contractUpdateCall).toBeUndefined();
+			expect(contractUpdateCall).toBeDefined();
+
+			if (!contractUpdateCall) {
+				throw new Error('Expected contract update call');
+			}
+
+			const overrides = (contractUpdateCall.minion_farmingContract as any).contractPatchOverrides;
+			expect(overrides).toMatchObject({
+				[herbPlant.seedType]: { previousSeedID: null, previousMode: 'replant' }
+			});
 
 			expect(statsSpy).toHaveBeenCalled();
 			expect(updateBankSettingSpy).toHaveBeenCalled();
@@ -546,6 +555,75 @@ describe('auto farm helpers', () => {
 			if (typeof response === 'string') {
 				expect(typeof response).toBe('string');
 			}
+		});
+
+		it('does not overwrite existing override when rerunning contract', async () => {
+			const bank = new Bank().add('Guam seed', 4).add('Compost', 4).add('Coins', 10_000);
+			const user = mockMUser({ bank, skills_farming: convertLVLtoXP(70) });
+			const mutableUser = user.user as MutableUser;
+			mutableUser.auto_farm_filter = AutoFarmFilterEnum.CONTRACT_REPLANT;
+			mutableUser.minion_defaultCompostToUse = CropUpgradeType.compost;
+			mutableUser.minion_farmingContract = {
+				hasContract: true,
+				difficultyLevel: 'medium',
+				plantToGrow: herbPlant.name,
+				plantTier: 2,
+				contractsCompleted: 6,
+				contractPatchOverrides: {
+					[herbPlant.seedType]: {
+						previousSeedID: marigoldPlant.id,
+						previousMode: 'replant'
+					}
+				}
+			} as any;
+
+			const now = new Date('2020-01-05T00:00:00Z');
+			vi.useFakeTimers();
+			vi.setSystemTime(now);
+
+			const contractPatchState: IPatchData = {
+				lastPlanted: herbPlant.name,
+				patchPlanted: true,
+				plantTime: now.getTime() - herbPlant.growthTime * 60_000 - 1,
+				lastQuantity: 4,
+				lastUpgradeType: null,
+				lastPayment: false
+			};
+			const contractPatchDetailed: IPatchDataDetailed = {
+				...contractPatchState,
+				ready: true,
+				readyIn: 0,
+				readyAt: now,
+				patchName: herbPlant.seedType,
+				friendlyName: 'Herb patch',
+				plant: herbPlant
+			};
+
+			const transactResult = {
+				newUser: user.user,
+				itemsAdded: new Bank(),
+				itemsRemoved: new Bank(),
+				newBank: user.bank.clone(),
+				newCL: user.cl.clone(),
+				previousCL: new Bank(),
+				clLootBank: null
+			} satisfies Awaited<ReturnType<typeof user.transactItems>>;
+			vi.spyOn(user, 'transactItems').mockResolvedValue(transactResult);
+			const updateSpy = vi.spyOn(user, 'update').mockResolvedValue({} as any);
+			vi.spyOn(user, 'statsBankUpdate').mockResolvedValue(undefined);
+			vi.spyOn(global.ClientSettings, 'updateBankSetting').mockResolvedValue();
+
+			calcMaxTripLengthSpy.mockReturnValue(400 * 1000);
+
+			await autoFarm(
+				user,
+				[contractPatchDetailed],
+				{ [herbPlant.seedType]: contractPatchState } as Record<FarmingPatchName, IPatchData>,
+				baseInteraction as MInteraction
+			);
+
+			const contractUpdateCall = findContractUpdateCall(updateSpy.mock.calls);
+			expect(contractUpdateCall).toBeUndefined();
 		});
 
 		it('falls back to base plan when no contract is active', async () => {
@@ -682,6 +760,69 @@ describe('auto farm helpers', () => {
 			expect(statsSpy).toHaveBeenCalled();
 			expect(updateBankSettingSpy).toHaveBeenCalled();
 			expect(response).toBeDefined();
+		});
+
+		it('restores empty override after contract completion', async () => {
+			const bank = new Bank().add('Coins', 10_000);
+			const user = mockMUser({ bank, skills_farming: convertLVLtoXP(50) });
+			const mutableUser = user.user as MutableUser;
+			mutableUser.auto_farm_filter = AutoFarmFilterEnum.CONTRACT_REPLANT;
+			mutableUser.minion_defaultCompostToUse = CropUpgradeType.compost;
+			mutableUser.minion_farmingContract = {
+				hasContract: false,
+				difficultyLevel: null,
+				plantToGrow: null,
+				plantTier: 0,
+				contractsCompleted: 10,
+				contractPatchOverrides: {
+					[herbPlant.seedType]: { previousSeedID: null, previousMode: 'replant' }
+				}
+			} as any;
+
+			const now = new Date('2020-01-06T00:00:00Z');
+			vi.useFakeTimers();
+			vi.setSystemTime(now);
+
+			const emptyPatchState: IPatchData = {
+				lastPlanted: null,
+				patchPlanted: false,
+				plantTime: now.getTime(),
+				lastQuantity: 0,
+				lastUpgradeType: null,
+				lastPayment: false
+			};
+			const emptyPatchDetailed: IPatchDataDetailed = {
+				...emptyPatchState,
+				ready: true,
+				readyIn: 0,
+				readyAt: now,
+				patchName: herbPlant.seedType,
+				friendlyName: 'Herb patch',
+				plant: null
+			};
+
+			const updateSpy = vi.spyOn(user, 'update').mockResolvedValue({} as any);
+
+			calcMaxTripLengthSpy.mockReturnValue(200 * 1000);
+
+			const response = await autoFarm(
+				user,
+				[emptyPatchDetailed],
+				{ [herbPlant.seedType]: emptyPatchState } as Record<FarmingPatchName, IPatchData>,
+				baseInteraction as MInteraction
+			);
+
+			expect(updateSpy).toHaveBeenCalledWith(
+				expect.objectContaining({
+					minion_farmingContract: expect.objectContaining({
+						contractPatchOverrides: {}
+					})
+				})
+			);
+
+			if (typeof response === 'string') {
+				expect(response).toContain("There's no Farming crops");
+			}
 		});
 
 		it('skips contract when seeds are missing but continues base plan', async () => {

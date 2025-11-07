@@ -119,9 +119,9 @@ export async function handleTripFinish(
 		| Buffer
 		| undefined
 		| {
-			name: string;
-			attachment: Buffer;
-		},
+				name: string;
+				attachment: Buffer;
+		  },
 	data: ActivityTaskData,
 	loot: Bank | null,
 	_messages?: string[],
