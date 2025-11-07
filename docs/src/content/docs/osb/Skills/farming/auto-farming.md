@@ -14,7 +14,9 @@ Auto farming collects ready patches into a single Farming activity so you can ha
 
 - **AllFarm** (default) - Plants the best seed you can use in each ready patch, prioritising higher-level crops.
 - **Replant** - Only replants patches that already contained that crop and that you still have seeds for. Empty patches stay empty.
-- Configure the behaviour with [[/farming auto_farm_filter auto_farm_filter_data:AllFarm]] or [[/farming auto_farm_filter auto_farm_filter_data:Replant]].
+- **Farming contract (AllFarm)** - If you have an active farming contract, it is harvested and replanted first before running the AllFarm route.
+- **Farming contract (Replant)** - Handles your active farming contract first and then follows the Replant route for the remaining patches.
+- Configure the behaviour with [[/farming auto_farm_filter auto_farm_filter_data:AllFarm]], [[/farming auto_farm_filter auto_farm_filter_data:Replant]], [[/farming auto_farm_filter auto_farm_filter_data:CONTRACT_ALL_FARM]], or [[/farming auto_farm_filter auto_farm_filter_data:CONTRACT_REPLANT]].
 
 ## Trip Planning
 

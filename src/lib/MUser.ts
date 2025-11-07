@@ -912,12 +912,24 @@ Charge your items using ${mentionCommand('minion', 'charge')}.`
 
 	farmingContract(): DetailedFarmingContract {
 		const currentFarmingContract = this.user.minion_farmingContract as FarmingContract | null;
-		const plant = !currentFarmingContract
-			? undefined
-			: Farming.Plants.find(i => i.name === currentFarmingContract?.plantToGrow);
+		const contract: FarmingContract = currentFarmingContract
+			? {
+					...Farming.defaultFarmingContract,
+					...currentFarmingContract,
+					contractPatchOverrides: {
+						...(currentFarmingContract.contractPatchOverrides ?? {})
+					}
+				}
+			: {
+					...Farming.defaultFarmingContract,
+					contractPatchOverrides: {
+						...(Farming.defaultFarmingContract.contractPatchOverrides ?? {})
+					}
+				};
+		const plant = contract.plantToGrow ? Farming.Plants.find(i => i.name === contract.plantToGrow) : undefined;
 		const farmingInfo = Farming.getFarmingInfoFromUser(this);
 		return {
-			contract: currentFarmingContract ?? Farming.defaultFarmingContract,
+			contract,
 			plant,
 			matchingPlantedCrop: plant
 				? farmingInfo.patchesDetailed.find(i => i.plant && i.plant === plant)

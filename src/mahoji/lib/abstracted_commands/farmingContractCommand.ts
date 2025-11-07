@@ -41,6 +41,7 @@ export async function farmingContractCommand(user: MUser, input?: ContractOption
 	const farmingLevel = user.skillsAsLevels.farming;
 	const currentContract: FarmingContract =
 		(user.user.minion_farmingContract as FarmingContract | null) ?? Farming.defaultFarmingContract;
+	const currentOverrides = currentContract.contractPatchOverrides ?? {};
 	const plant = currentContract.hasContract ? Farming.findPlant(currentContract.plantToGrow) : null;
 
 	if (!input) {
@@ -88,7 +89,8 @@ export async function farmingContractCommand(user: MUser, input?: ContractOption
 				difficultyLevel: newContractLevel,
 				plantToGrow,
 				plantTier,
-				contractsCompleted: currentContract.contractsCompleted
+				contractsCompleted: currentContract.contractsCompleted,
+				contractPatchOverrides: { ...currentOverrides }
 			};
 			await user.update({
 				minion_farmingContract: farmingContractUpdate as any
@@ -142,7 +144,8 @@ export async function farmingContractCommand(user: MUser, input?: ContractOption
 		difficultyLevel: input as FarmingContractDifficultyLevel,
 		plantToGrow,
 		plantTier,
-		contractsCompleted: currentContract.contractsCompleted
+		contractsCompleted: currentContract.contractsCompleted,
+		contractPatchOverrides: { ...currentOverrides }
 	};
 
 	await user.update({
