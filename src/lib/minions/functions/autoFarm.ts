@@ -8,12 +8,17 @@ import type { CommandResponseValue } from '@/lib/discord/index.js';
 import { allFarm, replant } from '@/lib/minions/functions/autoFarmFilters.js';
 import { plants } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
-import type { IPatchData, IPatchDataDetailed } from '@/lib/skilling/skills/farming/utils/types.js';
+import type {
+	FarmingPreferredSeeds,
+	IPatchData,
+	IPatchDataDetailed
+} from '@/lib/skilling/skills/farming/utils/types.js';
 import type { Plant } from '@/lib/skilling/types.js';
 import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
+import { findPlantBySeedID, getPlantsForPatch, parsePreferredSeeds } from './autoFarmPreferences.js';
 import { prepareFarmingStep } from './farmingTripHelpers.js';
 
 interface PlannedAutoFarmStep {
@@ -84,6 +89,10 @@ function buildSummaryForStep(index: number, step: PlannedAutoFarmStep): BuildSum
 	return { summaryLine, extraInfoLines };
 }
 
+type PlanRequest =
+	| { type: 'plant'; reason: 'contract' | 'preference' | 'fallback'; patch: IPatchDataDetailed; plant: Plant }
+	| { type: 'highest'; reason: 'preference'; patch: IPatchDataDetailed };
+
 async function tryRepeatPreviousTrip({
 	user,
 	interaction,
@@ -129,10 +138,36 @@ export async function autoFarm(
 	const farmingLevel = user.skillsAsLevels.farming;
 	const channelID = interaction.channelId ?? user.id;
 
-	let { autoFarmFilter } = user;
-	if (!autoFarmFilter) {
+	let autoFarmFilter = user.autoFarmFilter ?? AutoFarmFilterEnum.AllFarm;
+	const rawAutoFarmFilter = user.user.auto_farm_filter as unknown;
+	let preferContract = Boolean(
+		(user.user as unknown as { minion_farmingPreferContract?: boolean }).minion_farmingPreferContract
+	);
+
+	const pendingUpdates: Partial<{
+		auto_farm_filter: AutoFarmFilterEnum;
+		minion_farmingPreferContract: boolean;
+	}> = {};
+
+	if (rawAutoFarmFilter === 'CONTRACT_ALL_FARM') {
 		autoFarmFilter = AutoFarmFilterEnum.AllFarm;
+		preferContract = true;
+		pendingUpdates.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		pendingUpdates.minion_farmingPreferContract = true;
+	} else if (rawAutoFarmFilter === 'CONTRACT_REPLANT') {
+		autoFarmFilter = AutoFarmFilterEnum.Replant;
+		preferContract = true;
+		pendingUpdates.auto_farm_filter = AutoFarmFilterEnum.Replant;
+		pendingUpdates.minion_farmingPreferContract = true;
 	}
+
+	if (Object.keys(pendingUpdates).length > 0) {
+		await user.update(pendingUpdates as any);
+	}
+
+	const preferredSeeds = parsePreferredSeeds(
+		(user.user as unknown as { minion_farmingPreferredSeeds?: FarmingPreferredSeeds }).minion_farmingPreferredSeeds
+	);
 
 	const baseBank = user.bank.clone().add('Coins', user.GP);
 
@@ -152,93 +187,163 @@ export async function autoFarm(
 	const maxTripLength = calcMaxTripLength(user, 'Farming');
 	const compostTier = (user.user.minion_defaultCompostToUse as CropUpgradeType) ?? 'compost';
 	const plannedSteps: PlannedAutoFarmStep[] = [];
-	const usedPatches = new Set<FarmingPatchName>();
 	let totalDuration = 0;
 	const totalCost = new Bank();
 	const remainingBank = baseBank.clone();
 	let skippedDueToTripLength = false;
 
-	let errorString = '';
+	const hasPreferenceInfluence = preferContract || preferredSeeds.size > 0;
+	let errorString =
+		autoFarmFilter === AutoFarmFilterEnum.AllFarm
+			? "There's no Farming crops that you have the requirements to plant, and nothing to harvest."
+			: "There's no Farming crops that you have planted that are ready to be replanted or no seeds remaining.";
+	if (hasPreferenceInfluence) {
+		errorString = "There's no Farming actions available for your saved preferences.";
+	}
+
 	let firstPrepareError: string | null = null;
-	if (autoFarmFilter === AutoFarmFilterEnum.AllFarm) {
-		errorString = "There's no Farming crops that you have the requirements to plant, and nothing to harvest.";
-	} else {
-		errorString =
-			"There's no Farming crops that you have planted that are ready to be replanted or no seeds remaining.";
+
+	const patchesByName = new Map<FarmingPatchName, IPatchDataDetailed>(
+		patchesDetailed.map(patch => [patch.patchName, patch])
+	);
+	const planRequests: PlanRequest[] = [];
+	const scheduledPatchNames = new Set<FarmingPatchName>();
+	const blockedPatchNames = new Set<FarmingPatchName>();
+
+	if (preferContract) {
+		const contract = user.farmingContract();
+		const contractPlant =
+			contract.plant ??
+			(contract.contract?.plantToGrow ? plants.find(pl => pl.name === contract.contract?.plantToGrow) : null);
+		if (contractPlant) {
+			const contractPatch = patchesByName.get(contractPlant.seedType);
+			if (contractPatch && contractPatch.ready !== false) {
+				planRequests.push({
+					type: 'plant',
+					reason: 'contract',
+					patch: contractPatch,
+					plant: contractPlant
+				});
+				scheduledPatchNames.add(contractPatch.patchName);
+			}
+		}
+	}
+
+	for (const patch of patchesDetailed) {
+		const pref = preferredSeeds.get(patch.patchName);
+		if (!pref) {
+			continue;
+		}
+		blockedPatchNames.add(patch.patchName);
+		if (scheduledPatchNames.has(patch.patchName)) {
+			continue;
+		}
+		if (pref.type === 'empty') {
+			continue;
+		}
+		if (patch.ready === false) {
+			continue;
+		}
+		if (pref.type === 'seed') {
+			const plant = findPlantBySeedID(pref.seedID, patch.patchName);
+			if (!plant) {
+				continue;
+			}
+			planRequests.push({ type: 'plant', reason: 'preference', patch, plant });
+			scheduledPatchNames.add(patch.patchName);
+			continue;
+		}
+		if (pref.type === 'highest_available') {
+			planRequests.push({ type: 'highest', reason: 'preference', patch });
+			scheduledPatchNames.add(patch.patchName);
+		}
 	}
 
 	for (const plant of eligiblePlants) {
-		const patchDetailed = patchesDetailed.find(p => p.patchName === plant.seedType);
-		if (!patchDetailed) continue;
-		if (usedPatches.has(patchDetailed.patchName)) continue;
-		if (patchDetailed.ready === false) continue;
+		const patch = patchesByName.get(plant.seedType);
+		if (!patch) continue;
+		if (patch.ready === false) continue;
+		if (scheduledPatchNames.has(patch.patchName) || blockedPatchNames.has(patch.patchName)) continue;
+		planRequests.push({ type: 'plant', reason: 'fallback', patch, plant });
+		scheduledPatchNames.add(patch.patchName);
+	}
 
-		const prepared = await prepareFarmingStep({
-			user,
-			plant,
-			quantity: null,
-			pay: false,
-			patchDetailed,
-			maxTripLength,
-			availableBank: remainingBank,
-			compostTier
-		});
-		if (!prepared.success) {
-			if (!firstPrepareError) {
-				firstPrepareError = prepared.error;
+	for (const request of planRequests) {
+		const patch = request.patch;
+		if (patch.ready === false) {
+			continue;
+		}
+		const candidates = request.type === 'highest' ? getPlantsForPatch(patch.patchName) : [request.plant];
+		let planned = false;
+		const errorsForPatch: string[] = [];
+		for (const candidate of candidates) {
+			const prepared = await prepareFarmingStep({
+				user,
+				plant: candidate,
+				quantity: null,
+				pay: false,
+				patchDetailed: patch,
+				maxTripLength,
+				availableBank: remainingBank,
+				compostTier
+			});
+			if (!prepared.success) {
+				errorsForPatch.push(prepared.error);
+				continue;
 			}
-			continue;
-		}
 
-		const { quantity, duration, cost, upgradeType, didPay, infoStr, boostStr, treeChopFee } = prepared.data;
-		if (quantity <= 0 || duration <= 0) {
-			continue;
-		}
-		if (duration > maxTripLength) {
-			if (!firstPrepareError) {
-				firstPrepareError = `${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}.`;
+			const { quantity, duration, cost, upgradeType, didPay, infoStr, boostStr, treeChopFee } = prepared.data;
+			if (quantity <= 0 || duration <= 0) {
+				continue;
 			}
-			continue;
-		}
-		if (!remainingBank.has(cost)) {
-			continue;
-		}
-
-		const totalCoinCost = cost.amount('Coins') + treeChopFee;
-		if (totalCoinCost > 0 && remainingBank.amount('Coins') < totalCoinCost) {
-			if (!firstPrepareError) {
-				firstPrepareError = `You don't own ${new Bank().add('Coins', totalCoinCost)}.`;
+			if (duration > maxTripLength) {
+				errorsForPatch.push(
+					`${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}.`
+				);
+				continue;
 			}
-			continue;
+			const totalCoinCost = cost.amount('Coins') + treeChopFee;
+			if (totalCoinCost > 0 && remainingBank.amount('Coins') < totalCoinCost) {
+				errorsForPatch.push(`You don't own ${new Bank().add('Coins', totalCoinCost)}.`);
+				continue;
+			}
+			if (!remainingBank.has(cost)) {
+				errorsForPatch.push(`You don't own ${cost}.`);
+				continue;
+			}
+			if (totalDuration + duration > maxTripLength) {
+				skippedDueToTripLength = true;
+				continue;
+			}
+
+			remainingBank.remove(cost);
+			if (treeChopFee > 0) {
+				remainingBank.remove(new Bank().add('Coins', treeChopFee));
+			}
+			totalCost.add(cost);
+			totalDuration += duration;
+
+			const patchData = patches[patch.patchName];
+			plannedSteps.push({
+				plant: candidate,
+				quantity,
+				duration,
+				upgradeType,
+				didPay,
+				treeChopFee,
+				patch: patchData,
+				patchName: patch.patchName,
+				friendlyName: patch.friendlyName,
+				info: infoStr,
+				boosts: boostStr
+			});
+			planned = true;
+			break;
 		}
 
-		if (totalDuration + duration > maxTripLength) {
-			skippedDueToTripLength = true;
-			continue;
+		if (!planned && errorsForPatch.length > 0 && !firstPrepareError) {
+			firstPrepareError = errorsForPatch[0];
 		}
-
-		remainingBank.remove(cost);
-		if (treeChopFee > 0) {
-			remainingBank.remove(new Bank().add('Coins', treeChopFee));
-		}
-		totalCost.add(cost);
-		totalDuration += duration;
-
-		const patch = patches[plant.seedType];
-		plannedSteps.push({
-			plant,
-			quantity,
-			duration,
-			upgradeType,
-			didPay,
-			treeChopFee,
-			patch,
-			patchName: patchDetailed.patchName,
-			friendlyName: patchDetailed.friendlyName,
-			info: infoStr,
-			boosts: boostStr
-		});
-		usedPatches.add(patchDetailed.patchName);
 	}
 
 	if (plannedSteps.length === 0) {

@@ -1,4 +1,4 @@
-import { Bank, convertLVLtoXP } from 'oldschooljs';
+import { Bank, convertLVLtoXP, itemID } from 'oldschooljs';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, type MockInstance, vi } from 'vitest';
 
 import './setup.js';
@@ -390,5 +390,83 @@ describe('auto farm helpers', () => {
 		expect(taskArgs.autoFarmPlan[0].currentDate).toBe(new Date('2020-01-01T01:00:00Z').valueOf());
 		expect(taskArgs.autoFarmPlan[0].upgradeType).toBe(CropUpgradeType.supercompost);
 		expect(taskArgs.autoFarmPlan[0].payment).toBe(false);
+	});
+
+	it('autoFarm respects empty patch preferences', async () => {
+		const bank = new Bank().add('Guam seed', 4).add('Compost', 4);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser;
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		(mutableUser as any).minion_farmingPreferredSeeds = { herb: { type: 'empty' } };
+
+		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
+
+		const response = await autoFarm(
+			user,
+			[herbPatchDetailed],
+			herbPatches as Record<FarmingPatchName, IPatchData>,
+			baseInteraction as MInteraction
+		);
+
+		if (!isBaseMessage(response)) {
+			throw new Error('Expected BaseMessageOptions response');
+		}
+		expect(response.content).toBe("There's no Farming actions available for your saved preferences.");
+	});
+
+	it('autoFarm follows specific seed preferences', async () => {
+		const bank = new Bank().add('Guam seed', 4).add('Ranarr seed', 4).add('Compost', 8);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser;
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		(mutableUser as any).minion_farmingPreferredSeeds = {
+			herb: { type: 'seed', seedID: itemID('Guam seed') }
+		};
+
+		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
+
+		const response = await autoFarm(
+			user,
+			[herbPatchDetailed],
+			herbPatches as Record<FarmingPatchName, IPatchData>,
+			baseInteraction as MInteraction
+		);
+
+		expect(typeof response).toBe('string');
+		if (typeof response !== 'string') return;
+		expect(response).toContain('Guam');
+		expect(response).not.toContain('Ranarr');
+	});
+
+	it('autoFarm highest_available preference picks best seed', async () => {
+		const bank = new Bank().add('Guam seed', 4).add('Ranarr seed', 4).add('Compost', 8);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser;
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		(mutableUser as any).minion_farmingPreferredSeeds = {
+			herb: { type: 'highest_available' }
+		};
+
+		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
+
+		const response = await autoFarm(
+			user,
+			[herbPatchDetailed],
+			herbPatches as Record<FarmingPatchName, IPatchData>,
+			baseInteraction as MInteraction
+		);
+
+		expect(typeof response).toBe('string');
+		if (typeof response !== 'string') return;
+		expect(response).toContain('Ranarr');
 	});
 });
