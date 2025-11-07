@@ -325,6 +325,13 @@ export async function autoFarm(
 				continue;
 			}
 
+			if (override?.previousSeedID === null) {
+				delete contractOverrides[patchName];
+				contractNeedsUpdate = true;
+				statusMessages.push(`Restoring ${patchDetailed.friendlyName} to its previous state.`);
+				continue;
+			}
+
 			const targetPlant = override?.previousSeedID ? plants.find(p => p.id === override.previousSeedID) : null;
 
 			if (!targetPlant) {
@@ -468,9 +475,17 @@ export async function autoFarm(
 						applyStep(contractStep);
 						ensureTripWithinLimit();
 
-						if (removal) {
+						const existingOverride = contractOverrides[contractPatchName];
+						if (!existingOverride && baseOverrideMode !== null) {
+							let previousSeedID: number | null = null;
+							if (removal) {
+								previousSeedID = removal.step.plant.id;
+							} else if (patchDetailed.plant) {
+								previousSeedID = patchDetailed.plant.id;
+							}
+
 							const overrideEntry: FarmingContractPatchOverride = {
-								previousSeedID: removal.step.plant.id,
+								previousSeedID,
 								previousMode: baseOverrideMode
 							};
 							contractOverrides[contractPatchName] = overrideEntry;
