@@ -16,7 +16,6 @@ import {
 	userCanUseMaster
 } from '@/lib/slayer/slayerUtil.js';
 import type { AssignableSlayerTask, SlayerMaster } from '@/lib/slayer/types.js';
-import { Logging } from '@/lib/util/logging.js';
 
 const SLAYER_TASK_SKIP_COST = 30;
 const MAX_AUTO_SLAYER_SKIPS = 20;
