@@ -478,6 +478,73 @@ describe('auto farm helpers', () => {
 			expect(overrides).toHaveProperty(herbPlant.seedType);
 		});
 
+		it('does not add overrides when the base plan ignores the contract patch', async () => {
+			const bank = new Bank().add('Guam seed', 5).add('Compost', 5).add('Acorn', 3).add('Supercompost', 3);
+			const user = mockMUser({
+				bank,
+				skills_farming: convertLVLtoXP(75),
+				skills_woodcutting: convertLVLtoXP(40)
+			});
+			const mutableUser = user.user as MutableUser;
+			mutableUser.auto_farm_filter = AutoFarmFilterEnum.CONTRACT_REPLANT;
+			mutableUser.minion_defaultCompostToUse = CropUpgradeType.compost;
+			mutableUser.minion_farmingContract = {
+				hasContract: true,
+				difficultyLevel: 'medium',
+				plantToGrow: herbPlant.name,
+				plantTier: 2,
+				contractsCompleted: 3,
+				contractPatchOverrides: {}
+			} as any;
+
+			const now = new Date('2020-01-02T00:00:00Z');
+			vi.useFakeTimers();
+			vi.setSystemTime(now);
+
+			const contractPatchState: IPatchData = {
+				lastPlanted: null,
+				patchPlanted: false,
+				plantTime: now.getTime() - herbPlant.growthTime * 60_000 - 1,
+				lastQuantity: 0,
+				lastUpgradeType: null,
+				lastPayment: false
+			};
+			const contractPatchDetailed: IPatchDataDetailed = {
+				...contractPatchState,
+				ready: true,
+				readyIn: 0,
+				readyAt: now,
+				patchName: herbPlant.seedType,
+				friendlyName: 'Herb patch',
+				plant: null
+			};
+
+			const replantTreeState: IPatchData = { ...treePatch };
+			const replantTreeDetailed: IPatchDataDetailed = { ...treePatchDetailed };
+
+			const patchesDetailed = [replantTreeDetailed, contractPatchDetailed];
+			const patches = {
+				[treePlant.seedType]: replantTreeState,
+				[herbPlant.seedType]: contractPatchState
+			} as Record<FarmingPatchName, IPatchData>;
+
+			calcMaxTripLengthSpy.mockReturnValue(500 * 1000);
+
+			const updateSpy = vi.spyOn(user, 'update');
+
+			const response = await autoFarm(user, patchesDetailed, patches, baseInteraction as MInteraction);
+
+			expect(typeof response).toBe('string');
+
+			expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+			const taskArgs = (addSubTaskToActivityTask as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+			expect(taskArgs.autoFarmPlan[0].plantsName).toBe(herbPlant.name);
+			expect(taskArgs.autoFarmPlan[1]?.plantsName).toBe(treePlant.name);
+
+			const contractUpdateCall = updateSpy.mock.calls.find(call => 'minion_farmingContract' in call[0]);
+			expect(contractUpdateCall).toBeUndefined();
+		});
+
 		it('falls back to base plan when no contract is active', async () => {
 			const bank = new Bank().add('Acorn', 3).add('Supercompost', 3).add('Tomatoes(5)', 3);
 			const user = mockMUser({

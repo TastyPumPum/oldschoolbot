@@ -181,7 +181,11 @@ export async function autoFarm(
 	};
 	let contractNeedsUpdate = false;
 	const baseOverrideMode: ContractPatchOverrideMode =
-		baseFilter === AutoFarmFilterEnum.AllFarm ? 'allfarm' : 'replant';
+		baseFilter === AutoFarmFilterEnum.AllFarm
+			? 'allfarm'
+			: baseFilter === AutoFarmFilterEnum.Replant
+				? 'replant'
+				: null;
 
 	const applyStep = (step: PlannedAutoFarmStep) => {
 		totalCost.add(step.cost);
@@ -313,6 +317,11 @@ export async function autoFarm(
 			const patchName = patchNameRaw as FarmingPatchName;
 			const patchDetailed = patchesDetailed.find(p => p.patchName === patchName);
 			if (!patchDetailed || patchDetailed.ready === false) {
+				continue;
+			}
+
+			if (override?.previousMode && override.previousMode !== baseOverrideMode) {
+				// If the user switched filters, keep the override for the matching mode.
 				continue;
 			}
 
@@ -459,7 +468,7 @@ export async function autoFarm(
 						applyStep(contractStep);
 						ensureTripWithinLimit();
 
-						if (removal) {
+						if (removal && baseOverrideMode) {
 							const overrideEntry: FarmingContractPatchOverride = {
 								previousSeedID: removal.step.plant.id,
 								previousMode: baseOverrideMode
@@ -478,7 +487,7 @@ export async function autoFarm(
 	if (contractNeedsUpdate) {
 		const nextContract: FarmingContract = {
 			...contractData,
-			contractPatchOverrides
+			contractPatchOverrides: { ...contractOverrides }
 		};
 		await user.update({
 			minion_farmingContract: nextContract as any
