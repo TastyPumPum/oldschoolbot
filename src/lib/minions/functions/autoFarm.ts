@@ -468,7 +468,7 @@ export async function autoFarm(
 						applyStep(contractStep);
 						ensureTripWithinLimit();
 
-						if (removal && baseOverrideMode) {
+						if (removal) {
 							const overrideEntry: FarmingContractPatchOverride = {
 								previousSeedID: removal.step.plant.id,
 								previousMode: baseOverrideMode

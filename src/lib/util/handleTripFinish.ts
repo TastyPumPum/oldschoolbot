@@ -119,9 +119,9 @@ export async function handleTripFinish(
 		| Buffer
 		| undefined
 		| {
-				name: string;
-				attachment: Buffer;
-		  },
+			name: string;
+			attachment: Buffer;
+		},
 	data: ActivityTaskData,
 	loot: Bank | null,
 	_messages?: string[],
@@ -177,11 +177,27 @@ export async function handleTripFinish(
 	if (channel && !channelIsSendable(channel)) return;
 
 	const components: ButtonBuilder[] = [];
-	components.push(makeRepeatTripButton());
+	const addComponent = (button: ButtonBuilder) => {
+		const customID = (button.data as { custom_id?: string } | undefined)?.custom_id;
+		if (!customID) {
+			components.push(button);
+			return;
+		}
+		const existingIndex = components.findIndex(
+			existing => (existing.data as { custom_id?: string } | undefined)?.custom_id === customID
+		);
+		if (existingIndex !== -1) {
+			components.splice(existingIndex, 1);
+		}
+		components.push(button);
+	};
+	addComponent(makeRepeatTripButton());
 	const casketReceived = loot ? ClueTiers.find(i => loot?.has(i.id)) : undefined;
-	if (casketReceived) components.push(makeOpenCasketButton(casketReceived));
+	if (casketReceived) addComponent(makeOpenCasketButton(casketReceived));
 	if (perkTier > PerkTier.One) {
-		components.push(...buildClueButtons(loot, perkTier, user));
+		for (const button of buildClueButtons(loot, perkTier, user)) {
+			addComponent(button);
+		}
 
 		const { last_tears_of_guthix_timestamp, last_daily_timestamp } = await user.fetchStats();
 
@@ -194,7 +210,7 @@ export async function handleTripFinish(
 			const meetsIronmanReqs = user.user.minion_ironman ? hasSkillReqs(user, tearsOfGuthixIronmanReqs)[0] : true;
 
 			if (user.QP >= 43 && ready && meetsSkillReqs && meetsIronmanReqs) {
-				components.push(makeTearsOfGuthixButton());
+				addComponent(makeTearsOfGuthixButton());
 			}
 		}
 
@@ -204,40 +220,42 @@ export async function handleTripFinish(
 			const ready = last <= 0 || Date.now() - last >= Time.Hour * 12;
 
 			if (ready) {
-				components.push(makeClaimDailyButton());
+				addComponent(makeClaimDailyButton());
 			}
 		}
 
 		const birdHousedetails = calculateBirdhouseDetails(user);
 		if (birdHousedetails.isReady && !user.bitfield.includes(BitField.DisableBirdhouseRunButton))
-			components.push(makeBirdHouseTripButton());
+			addComponent(makeBirdHouseTripButton());
 
 		if (!user.bitfield.includes(BitField.DisableAutoFarmButton)) {
 			const { patchesDetailed } = Farming.getFarmingInfoFromUser(user);
 			if (patchesDetailed.some(patch => patch.ready === true)) {
-				components.push(makeAutoFarmButton());
+				addComponent(makeAutoFarmButton());
 			}
 		}
 
 		if ((await canRunAutoContract(user)) && !user.bitfield.includes(BitField.DisableAutoFarmContractButton))
-			components.push(makeAutoContractButton());
+			addComponent(makeAutoContractButton());
 
 		const { currentTask } = await user.fetchSlayerInfo();
 		if (
 			(currentTask === null || currentTask.quantity_remaining <= 0) &&
 			['MonsterKilling', 'Inferno', 'FightCaves'].includes(data.type)
 		) {
-			components.push(makeNewSlayerTaskButton());
+			addComponent(makeNewSlayerTaskButton());
 		} else if (!user.bitfield.includes(BitField.DisableAutoSlayButton)) {
-			components.push(makeAutoSlayButton());
+			addComponent(makeAutoSlayButton());
 		}
 		if (loot?.has('Seed pack')) {
-			components.push(makeOpenSeedPackButton());
+			addComponent(makeOpenSeedPackButton());
 		}
 	}
 
 	if (_components) {
-		components.push(..._components);
+		for (const button of _components) {
+			addComponent(button);
+		}
 	}
 
 	handleTriggerShootingStar(user, data, components);
