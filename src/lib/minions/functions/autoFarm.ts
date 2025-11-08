@@ -35,6 +35,13 @@ interface PlannedAutoFarmStep {
 	boosts: string[];
 }
 
+interface PlanRequest {
+	type: 'highest' | 'plant';
+	reason: string;
+	patch: IPatchDataDetailed;
+	plant?: Plant;
+}
+
 interface BuildSummaryResult {
 	summaryLine: string;
 	extraInfoLines: string[];
@@ -198,6 +205,7 @@ export async function autoFarm(
 		contract.plant ??
 		(contract.contract?.plantToGrow ? plants.find(pl => pl.name === contract.contract?.plantToGrow) : null);
 
+	const planRequests: PlanRequest[] = [];
 	for (const patch of patchesDetailed) {
 		const resolved = resolveSeedForPatch({
 			patch,
@@ -211,7 +219,22 @@ export async function autoFarm(
 			continue;
 		}
 
-		const candidates = resolved.type === 'highest' ? getPlantsForPatch(patch.patchName) : [resolved.plant];
+		if (resolved.type === 'plant') {
+			planRequests.push({ type: 'plant', reason: resolved.reason, patch, plant: resolved.plant });
+			continue;
+		}
+
+		planRequests.push({ type: 'highest', reason: resolved.reason, patch });
+	}
+
+	for (const request of planRequests) {
+		const patch = request.patch;
+		const candidates =
+			request.type === 'highest' ? getPlantsForPatch(patch.patchName) : request.plant ? [request.plant] : [];
+		if (candidates.length === 0) {
+			continue;
+		}
+
 		let planned = false;
 		const errorsForPatch: string[] = [];
 		for (const candidate of candidates) {

@@ -117,7 +117,9 @@ export interface ResolveSeedForPatchOptions {
 	fallbackPlant: Plant | null;
 }
 
-export type ResolvedSeedForPatchResult = { type: 'plant'; plant: Plant } | { type: 'highest' };
+export type ResolvedSeedForPatchResult =
+	| { type: 'plant'; plant: Plant; reason: 'contract' | 'preference_seed' | 'fallback' }
+	| { type: 'highest'; reason: 'preference_highest' };
 
 export function resolveSeedForPatch({
 	patch,
@@ -131,7 +133,7 @@ export function resolveSeedForPatch({
 	}
 
 	if (preferContract && contractPlant && contractPlant.seedType === patch.patchName) {
-		return { type: 'plant', plant: contractPlant };
+		return { type: 'plant', plant: contractPlant, reason: 'contract' };
 	}
 
 	const preference = preferences.get(patch.patchName);
@@ -144,15 +146,15 @@ export function resolveSeedForPatch({
 			if (!plant) {
 				return null;
 			}
-			return { type: 'plant', plant };
+			return { type: 'plant', plant, reason: 'preference_seed' };
 		}
 		if (preference.type === 'highest_available') {
-			return { type: 'highest' };
+			return { type: 'highest', reason: 'preference_highest' };
 		}
 	}
 
 	if (fallbackPlant && fallbackPlant.seedType === patch.patchName) {
-		return { type: 'plant', plant: fallbackPlant };
+		return { type: 'plant', plant: fallbackPlant, reason: 'fallback' };
 	}
 
 	return null;

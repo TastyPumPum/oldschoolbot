@@ -62,9 +62,10 @@ function isBaseMessage(value: unknown): value is {
 
 const herbPlant = plants.find(p => p.name === 'Guam');
 const treePlant = plants.find(p => p.name === 'Oak tree');
+const ranarrPlant = plants.find(p => p.name === 'Ranarr');
 
-if (!herbPlant || !treePlant) {
-	throw new Error('Expected Guam and Oak tree plants to exist for tests');
+if (!herbPlant || !treePlant || !ranarrPlant) {
+	throw new Error('Expected Guam, Ranarr, and Oak tree plants to exist for tests');
 }
 
 const [herbSeedItem] = herbPlant.inputItems.items();
@@ -490,6 +491,82 @@ describe('auto farm helpers', () => {
 		if (typeof response !== 'string') return;
 		expect(response).toContain('Ranarr');
 	});
+
+	it('autoFarm prioritizes contract crops when preferred', async () => {
+		const bank = new Bank().add('Guam seed', 4).add('Ranarr seed', 4).add('Compost', 8);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser & {
+			minion_farmingContract?: any;
+			minion_farmingPreferContract?: boolean;
+		};
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		mutableUser.minion_farmingPreferContract = true;
+		mutableUser.minion_farmingContract = {
+			hasContract: true,
+			difficultyLevel: 'easy',
+			plantToGrow: herbPlant.name,
+			plantTier: 1,
+			contractsCompleted: 0
+		};
+		(mutableUser as any).minion_farmingPreferredSeeds = {
+			herb: { type: 'seed', seedID: itemID('Ranarr seed') }
+		};
+
+		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
+
+		const response = await autoFarm(
+			user,
+			[herbPatchDetailed],
+			herbPatches as Record<FarmingPatchName, IPatchData>,
+			baseInteraction as MInteraction
+		);
+
+		expect(typeof response).toBe('string');
+		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+		const taskArgs = (addSubTaskToActivityTask as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+		expect(taskArgs.autoFarmPlan[0].plantsName).toBe(herbPlant.name);
+	});
+
+	it('autoFarm honours per-patch preference when contract priority disabled', async () => {
+		const bank = new Bank().add('Guam seed', 4).add('Ranarr seed', 4).add('Compost', 8);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser & {
+			minion_farmingContract?: any;
+			minion_farmingPreferContract?: boolean;
+		};
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		mutableUser.minion_farmingPreferContract = false;
+		mutableUser.minion_farmingContract = {
+			hasContract: true,
+			difficultyLevel: 'easy',
+			plantToGrow: herbPlant.name,
+			plantTier: 1,
+			contractsCompleted: 0
+		};
+		(mutableUser as any).minion_farmingPreferredSeeds = {
+			herb: { type: 'seed', seedID: itemID('Ranarr seed') }
+		};
+
+		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
+
+		const response = await autoFarm(
+			user,
+			[herbPatchDetailed],
+			herbPatches as Record<FarmingPatchName, IPatchData>,
+			baseInteraction as MInteraction
+		);
+
+		expect(typeof response).toBe('string');
+		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+		const taskArgs = (addSubTaskToActivityTask as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0];
+		expect(taskArgs.autoFarmPlan[0].plantsName).toBe(ranarrPlant.name);
+	});
 });
 
 describe('resolveSeedForPatch', () => {
@@ -507,7 +584,7 @@ describe('resolveSeedForPatch', () => {
 		});
 
 		expect(result).not.toBeNull();
-		expect(result).toMatchObject({ type: 'plant', plant: herbPlant });
+		expect(result).toMatchObject({ type: 'plant', plant: herbPlant, reason: 'contract' });
 	});
 
 	it('honours per-patch preferences when contract priority disabled', () => {
@@ -524,6 +601,6 @@ describe('resolveSeedForPatch', () => {
 		});
 
 		expect(result).not.toBeNull();
-		expect(result).toMatchObject({ type: 'plant', plant: herbPlant });
+		expect(result).toMatchObject({ type: 'plant', plant: herbPlant, reason: 'preference_seed' });
 	});
 });
