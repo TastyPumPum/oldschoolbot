@@ -138,32 +138,10 @@ export async function autoFarm(
 	const farmingLevel = user.skillsAsLevels.farming;
 	const channelID = interaction.channelId ?? user.id;
 
-	let autoFarmFilter = user.autoFarmFilter ?? AutoFarmFilterEnum.AllFarm;
-	const rawAutoFarmFilter = user.user.auto_farm_filter as unknown;
-	let preferContract = Boolean(
+	const autoFarmFilter = user.autoFarmFilter ?? AutoFarmFilterEnum.AllFarm;
+	const preferContract = Boolean(
 		(user.user as unknown as { minion_farmingPreferContract?: boolean }).minion_farmingPreferContract
 	);
-
-	const pendingUpdates: Partial<{
-		auto_farm_filter: AutoFarmFilterEnum;
-		minion_farmingPreferContract: boolean;
-	}> = {};
-
-	if (rawAutoFarmFilter === 'CONTRACT_ALL_FARM') {
-		autoFarmFilter = AutoFarmFilterEnum.AllFarm;
-		preferContract = true;
-		pendingUpdates.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
-		pendingUpdates.minion_farmingPreferContract = true;
-	} else if (rawAutoFarmFilter === 'CONTRACT_REPLANT') {
-		autoFarmFilter = AutoFarmFilterEnum.Replant;
-		preferContract = true;
-		pendingUpdates.auto_farm_filter = AutoFarmFilterEnum.Replant;
-		pendingUpdates.minion_farmingPreferContract = true;
-	}
-
-	if (Object.keys(pendingUpdates).length > 0) {
-		await user.update(pendingUpdates as any);
-	}
 
 	const preferredSeeds = parsePreferredSeeds(
 		(user.user as unknown as { minion_farmingPreferredSeeds?: FarmingPreferredSeeds }).minion_farmingPreferredSeeds
