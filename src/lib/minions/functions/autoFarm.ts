@@ -89,10 +89,6 @@ function buildSummaryForStep(index: number, step: PlannedAutoFarmStep): BuildSum
 	return { summaryLine, extraInfoLines };
 }
 
-type PlanRequest =
-	| { type: 'plant'; reason: 'contract' | 'preference' | 'fallback'; patch: IPatchDataDetailed; plant: Plant }
-	| { type: 'highest'; reason: 'preference'; patch: IPatchDataDetailed };
-
 async function tryRepeatPreviousTrip({
 	user,
 	interaction,
@@ -184,8 +180,6 @@ export async function autoFarm(
 	const patchesByName = new Map<FarmingPatchName, IPatchDataDetailed>(
 		patchesDetailed.map(patch => [patch.patchName, patch])
 	);
-	const planRequests: PlanRequest[] = [];
-
 	const fallbackPlantsByPatch = new Map<FarmingPatchName, Plant>();
 	for (const plant of eligiblePlants) {
 		const patchName = plant.seedType as FarmingPatchName;
@@ -217,20 +211,7 @@ export async function autoFarm(
 			continue;
 		}
 
-		const request: PlanRequest =
-			resolved.type === 'highest'
-				? { type: 'highest', reason: resolved.reason, patch }
-				: { type: 'plant', reason: resolved.reason, patch, plant: resolved.plant };
-
-		planRequests.push(request);
-	}
-
-	for (const request of planRequests) {
-		const patch = request.patch;
-		if (patch.ready === false) {
-			continue;
-		}
-		const candidates = request.type === 'highest' ? getPlantsForPatch(patch.patchName) : [request.plant];
+		const candidates = resolved.type === 'highest' ? getPlantsForPatch(patch.patchName) : [resolved.plant];
 		let planned = false;
 		const errorsForPatch: string[] = [];
 		for (const candidate of candidates) {

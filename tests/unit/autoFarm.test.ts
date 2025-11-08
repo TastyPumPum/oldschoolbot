@@ -507,7 +507,7 @@ describe('resolveSeedForPatch', () => {
 		});
 
 		expect(result).not.toBeNull();
-		expect(result).toMatchObject({ reason: 'contract' });
+		expect(result).toMatchObject({ type: 'plant', plant: herbPlant });
 	});
 
 	it('honours per-patch preferences when contract priority disabled', () => {
@@ -524,6 +524,6 @@ describe('resolveSeedForPatch', () => {
 		});
 
 		expect(result).not.toBeNull();
-		expect(result).toMatchObject({ reason: 'preference' });
+		expect(result).toMatchObject({ type: 'plant', plant: herbPlant });
 	});
 });
