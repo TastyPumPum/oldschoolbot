@@ -4,10 +4,15 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, type 
 import './setup.js';
 
 import { autoFarm } from '../../src/lib/minions/functions/autoFarm.js';
+import { resolveSeedForPatch } from '../../src/lib/minions/functions/autoFarmPreferences.js';
 import { prepareFarmingStep } from '../../src/lib/minions/functions/farmingTripHelpers.js';
 import { plants } from '../../src/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '../../src/lib/skilling/skills/farming/utils/farmingHelpers.js';
-import type { IPatchData, IPatchDataDetailed } from '../../src/lib/skilling/skills/farming/utils/types.js';
+import type {
+	FarmingSeedPreference,
+	IPatchData,
+	IPatchDataDetailed
+} from '../../src/lib/skilling/skills/farming/utils/types.js';
 import addSubTaskToActivityTask from '../../src/lib/util/addSubTaskToActivityTask.js';
 import * as calcMaxTripLengthModule from '../../src/lib/util/calcMaxTripLength.js';
 import { mockMUser } from './userutil.js';
@@ -62,6 +67,12 @@ if (!herbPlant || !treePlant) {
 	throw new Error('Expected Guam and Oak tree plants to exist for tests');
 }
 
+const [herbSeedItem] = herbPlant.inputItems.items();
+if (!herbSeedItem) {
+	throw new Error('Expected Guam plant to have a seed input item');
+}
+const herbSeedID = herbSeedItem[0].id;
+
 const herbPatch: IPatchData = {
 	lastPlanted: null,
 	patchPlanted: false,
@@ -79,6 +90,16 @@ const herbPatchDetailed: IPatchDataDetailed = {
 	patchName: herbPlant.seedType,
 	friendlyName: 'Herb patch',
 	plant: null
+};
+
+const herbPatchReadyDetailed: IPatchDataDetailed = {
+	...herbPatch,
+	ready: true,
+	readyIn: 0,
+	readyAt: new Date(),
+	patchName: herbPlant.seedType,
+	friendlyName: 'Herb patch',
+	plant: herbPlant
 };
 
 const treePatch: IPatchData = {
@@ -468,5 +489,41 @@ describe('auto farm helpers', () => {
 		expect(typeof response).toBe('string');
 		if (typeof response !== 'string') return;
 		expect(response).toContain('Ranarr');
+	});
+});
+
+describe('resolveSeedForPatch', () => {
+	it('prioritizes contract crops when preferred', () => {
+		const preferences = new Map<FarmingPatchName, FarmingSeedPreference>([
+			[herbPlant.seedType, { type: 'seed', seedID: herbSeedID }]
+		]);
+
+		const result = resolveSeedForPatch({
+			patch: herbPatchReadyDetailed,
+			preferContract: true,
+			contractPlant: herbPlant,
+			preferences,
+			fallbackPlant: null
+		});
+
+		expect(result).not.toBeNull();
+		expect(result).toMatchObject({ reason: 'contract' });
+	});
+
+	it('honours per-patch preferences when contract priority disabled', () => {
+		const preferences = new Map<FarmingPatchName, FarmingSeedPreference>([
+			[herbPlant.seedType, { type: 'seed', seedID: herbSeedID }]
+		]);
+
+		const result = resolveSeedForPatch({
+			patch: herbPatchReadyDetailed,
+			preferContract: false,
+			contractPlant: herbPlant,
+			preferences,
+			fallbackPlant: null
+		});
+
+		expect(result).not.toBeNull();
+		expect(result).toMatchObject({ reason: 'preference' });
 	});
 });

@@ -1,4 +1,5 @@
 import { stringMatches, toTitleCase } from '@oldschoolgg/toolkit';
+import { EmbedBuilder } from 'discord.js';
 import { Items } from 'oldschooljs';
 
 import { AutoFarmFilterEnum } from '@/prisma/main/enums.js';
@@ -44,16 +45,17 @@ function formatPreference(preference: FarmingSeedPreference | undefined): string
 	return `seed: ${itemName}`;
 }
 
-function buildPreferencesSummary(
+function buildPreferencesEmbed(
 	patchesDetailed: ReturnType<typeof Farming.getFarmingInfoFromUser>['patchesDetailed'],
 	preferences: Map<FarmingPatchName, FarmingSeedPreference>,
 	preferContract: boolean
-): string {
-	const lines: string[] = [`Contract priority: ${preferContract ? 'enabled' : 'disabled'}.`];
+): EmbedBuilder {
+	const descriptionLines: string[] = [`Contract priority: ${preferContract ? 'enabled' : 'disabled'}.`];
 	for (const patch of patchesDetailed) {
-		lines.push(`${patch.friendlyName} → ${formatPreference(preferences.get(patch.patchName))}`);
+		descriptionLines.push(`${patch.friendlyName} → ${formatPreference(preferences.get(patch.patchName))}`);
 	}
-	return lines.join('\n');
+
+	return new EmbedBuilder().setTitle('Auto-farm preferences').setDescription(descriptionLines.join('\n'));
 }
 
 function resolveSeedPreferenceInput(patchName: FarmingPatchName, seedInput: string): FarmingSeedPreference | string {
@@ -343,12 +345,11 @@ export const farmingCommand = defineCommand({
 			}
 
 			if (!patchNameInput && !seedInput) {
-				const summary = buildPreferencesSummary(patchesDetailed, preferenceMap, preferContractCurrent);
+				const embed = buildPreferencesEmbed(patchesDetailed, preferenceMap, preferContractCurrent);
 				if (responses.length > 0) {
-					responses.push(summary);
-					return responses.join('\n');
+					return { content: responses.join('\n'), embeds: [embed] };
 				}
-				return summary;
+				return { embeds: [embed] };
 			}
 
 			if (!patchNameInput && seedInput) {

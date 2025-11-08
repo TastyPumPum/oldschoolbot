@@ -18,7 +18,7 @@ import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/m
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
-import { findPlantBySeedID, getPlantsForPatch, parsePreferredSeeds } from './autoFarmPreferences.js';
+import { getPlantsForPatch, parsePreferredSeeds, resolveSeedForPatch } from './autoFarmPreferences.js';
 import { prepareFarmingStep } from './farmingTripHelpers.js';
 
 interface PlannedAutoFarmStep {
@@ -185,65 +185,44 @@ export async function autoFarm(
 		patchesDetailed.map(patch => [patch.patchName, patch])
 	);
 	const planRequests: PlanRequest[] = [];
-	const scheduledPatchNames = new Set<FarmingPatchName>();
-	const blockedPatchNames = new Set<FarmingPatchName>();
 
-	if (preferContract) {
-		const contract = user.farmingContract();
-		const contractPlant =
-			contract.plant ??
-			(contract.contract?.plantToGrow ? plants.find(pl => pl.name === contract.contract?.plantToGrow) : null);
-		if (contractPlant) {
-			const contractPatch = patchesByName.get(contractPlant.seedType);
-			if (contractPatch && contractPatch.ready !== false) {
-				planRequests.push({
-					type: 'plant',
-					reason: 'contract',
-					patch: contractPatch,
-					plant: contractPlant
-				});
-				scheduledPatchNames.add(contractPatch.patchName);
-			}
+	const fallbackPlantsByPatch = new Map<FarmingPatchName, Plant>();
+	for (const plant of eligiblePlants) {
+		const patchName = plant.seedType as FarmingPatchName;
+		if (fallbackPlantsByPatch.has(patchName)) {
+			continue;
 		}
+		const patch = patchesByName.get(patchName);
+		if (!patch || patch.ready === false) {
+			continue;
+		}
+		fallbackPlantsByPatch.set(patchName, plant);
 	}
+
+	const contract = user.farmingContract();
+	const contractPlant =
+		contract.plant ??
+		(contract.contract?.plantToGrow ? plants.find(pl => pl.name === contract.contract?.plantToGrow) : null);
 
 	for (const patch of patchesDetailed) {
-		const pref = preferredSeeds.get(patch.patchName);
-		if (!pref) {
-			continue;
-		}
-		blockedPatchNames.add(patch.patchName);
-		if (scheduledPatchNames.has(patch.patchName)) {
-			continue;
-		}
-		if (pref.type === 'empty') {
-			continue;
-		}
-		if (patch.ready === false) {
-			continue;
-		}
-		if (pref.type === 'seed') {
-			const plant = findPlantBySeedID(pref.seedID, patch.patchName);
-			if (!plant) {
-				continue;
-			}
-			planRequests.push({ type: 'plant', reason: 'preference', patch, plant });
-			scheduledPatchNames.add(patch.patchName);
-			continue;
-		}
-		if (pref.type === 'highest_available') {
-			planRequests.push({ type: 'highest', reason: 'preference', patch });
-			scheduledPatchNames.add(patch.patchName);
-		}
-	}
+		const resolved = resolveSeedForPatch({
+			patch,
+			preferContract,
+			contractPlant: contractPlant ?? null,
+			preferences: preferredSeeds,
+			fallbackPlant: fallbackPlantsByPatch.get(patch.patchName) ?? null
+		});
 
-	for (const plant of eligiblePlants) {
-		const patch = patchesByName.get(plant.seedType);
-		if (!patch) continue;
-		if (patch.ready === false) continue;
-		if (scheduledPatchNames.has(patch.patchName) || blockedPatchNames.has(patch.patchName)) continue;
-		planRequests.push({ type: 'plant', reason: 'fallback', patch, plant });
-		scheduledPatchNames.add(patch.patchName);
+		if (!resolved) {
+			continue;
+		}
+
+		const request: PlanRequest =
+			resolved.type === 'highest'
+				? { type: 'highest', reason: resolved.reason, patch }
+				: { type: 'plant', reason: resolved.reason, patch, plant: resolved.plant };
+
+		planRequests.push(request);
 	}
 
 	for (const request of planRequests) {
