@@ -11,7 +11,7 @@ import type { AutocompleteOptionContext } from '@/discord/commandOptions.js';
 async function handleAutocomplete(
 	user: RUser,
 	command: RoboChimpCommand | undefined,
-	autocompleteData: CommandInteractionOption[],
+	autocompleteData: readonly CommandInteractionOption[],
 	member: GuildMember | undefined,
 	option?: CommandOption
 ): Promise<APIApplicationCommandOptionChoice[]> {
@@ -79,7 +79,7 @@ export async function autoCompleteHandler(interaction: AutocompleteInteraction) 
 	const choices = await handleAutocomplete(
 		user,
 		command,
-		(interaction.options as any).data as CommandInteractionOption[],
+		(interaction.options as any).data as readonly CommandInteractionOption[],
 		member
 	);
 	await interaction.respond(choices);

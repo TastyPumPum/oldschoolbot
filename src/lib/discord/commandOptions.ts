@@ -109,7 +109,7 @@ export function convertAPIOptionsToCommandOptions(
 }
 
 export interface AutocompleteOptionContext {
-	options: CommandInteractionOption[];
+	options: readonly CommandInteractionOption[];
 	focusedOption: CommandInteractionOption;
 }
 
