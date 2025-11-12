@@ -2,9 +2,9 @@ import { type ButtonBuilder, dateFm } from '@oldschoolgg/discord';
 import { Emoji, stringMatches } from '@oldschoolgg/toolkit';
 
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
+import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getFarmingInfo.js';
 import type { IPatchData, IPatchDataDetailed } from '@/lib/skilling/skills/farming/utils/types.js';
 import { formatList } from '@/lib/util/smallUtils.js';
-import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getFarmingInfo.js';
 
 export const farmingPatchNames = [
 	'herb',
