@@ -173,14 +173,27 @@ describe('farming task auto farm aggregation', () => {
 
 		await farmingTask.run(taskData, runOptions);
 
-		const [call] = handleTripFinishSpy.mock.calls;
-		const { message, loot } = call[0];
-		const messageContent = typeof message === 'string' ? message : (message.content ?? '');
+		const call = handleTripFinishSpy.mock.calls[0];
+		if (!call) {
+			throw new Error('handleTripFinish was not called during the auto farm scenario.');
+		}
+
+		const [callOptions] = call;
+		if (!callOptions) {
+			throw new Error('handleTripFinish was called without expected arguments.');
+		}
+
+		const { message, loot } = callOptions;
+		const messageContent = typeof message === 'string' ? message : (message?.content ?? '');
 		let extraComponents: ButtonBuilder[] | undefined;
-		if (typeof message !== 'string' && message.components) {
-			extraComponents = Array.isArray(message.components[0])
-				? (message.components[0] as ButtonBuilder[])
-				: (message.components as ButtonBuilder[]);
+		if (typeof message !== 'string') {
+			const components = message?.components;
+			if (Array.isArray(components)) {
+				const firstRow = components[0];
+				extraComponents = Array.isArray(firstRow)
+					? (firstRow as ButtonBuilder[])
+					: (components as ButtonBuilder[]);
+			}
 		}
 
 		return {
