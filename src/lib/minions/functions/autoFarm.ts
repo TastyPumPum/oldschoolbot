@@ -4,7 +4,6 @@ import { type BaseMessageOptions, ButtonBuilder, ButtonStyle } from 'discord.js'
 import { Bank } from 'oldschooljs';
 
 import { AutoFarmFilterEnum, activity_type_enum } from '@/prisma/main/enums.js';
-import type { CommandResponseValue } from '@/lib/discord/index.js';
 import { allFarm, replant } from '@/lib/minions/functions/autoFarmFilters.js';
 import { plants } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
@@ -14,7 +13,7 @@ import type {
 	IPatchDataDetailed
 } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { Plant } from '@/lib/skilling/types.js';
-import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
+import type { AutoFarmStepData } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
@@ -104,7 +103,7 @@ async function tryRepeatPreviousTrip({
 	user: MUser;
 	interaction: MInteraction;
 	errorString: string;
-}): Promise<CommandResponseValue | null> {
+}): Promise<CommandResponse | null> {
 	try {
 		const repeatableTrips = await fetchRepeatTrips(user);
 		const fallbackTrip = repeatableTrips.find(trip => trip.type !== activity_type_enum.Farming);
@@ -134,10 +133,6 @@ export async function autoFarm(
 	patches: Record<FarmingPatchName, IPatchData>,
 	interaction: MInteraction
 ) {
-	if (user.minionIsBusy) {
-		return 'Your minion must not be busy to use this command.';
-	}
-
 	const farmingLevel = user.skillsAsLevels.farming;
 	const channelID = interaction.channelId ?? user.id;
 
@@ -165,8 +160,9 @@ export async function autoFarm(
 		})
 		.sort((a, b) => b.level - a.level);
 
-	const maxTripLength = calcMaxTripLength(user, 'Farming');
-	const compostTier = (user.user.minion_defaultCompostToUse as CropUpgradeType) ?? 'compost';
+	const maxTripLength = await calcMaxTripLength(user, 'Farming');
+	const compostTier = ((user.user.minion_defaultCompostToUse as CropUpgradeType) ?? 'compost') as CropUpgradeType;
+
 	const plannedSteps: PlannedAutoFarmStep[] = [];
 	let totalDuration = 0;
 	const totalCost = new Bank();
@@ -258,9 +254,7 @@ export async function autoFarm(
 				continue;
 			}
 			if (duration > maxTripLength) {
-				errorsForPatch.push(
-					`${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}.`
-				);
+				errorsForPatch.push(`${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}.`);
 				continue;
 			}
 			const totalCoinCost = cost.amount('Coins') + treeChopFee;
@@ -362,25 +356,29 @@ export async function autoFarm(
 		return errorString;
 	}
 
-	await addSubTaskToActivityTask<FarmingActivityTaskOptions>({
-		plantsName: firstStep.plantsName,
-		patchType: firstStep.patchType,
+	await addSubTaskToActivityTask({
 		userID: user.id,
 		channelID: channelID.toString(),
-		quantity: firstStep.quantity,
-		upgradeType: firstStep.upgradeType,
-		payment: firstStep.payment,
-		treeChopFeePaid: firstStep.treeChopFeePaid,
-		treeChopFeePlanned: firstStep.treeChopFeePlanned,
-		planting: firstStep.planting,
+		type: 'Farming',
 		duration: totalDuration,
 		currentDate: firstStep.currentDate,
-		type: 'Farming',
-		autoFarmed: true,
-		pid: firstStep.pid,
-		autoFarmPlan,
-		autoFarmCombined: true
+
+		// ✅ activity-specific payload goes here
+		data: {
+			plantsName: firstStep.plantsName,
+			patchType: firstStep.patchType,
+			quantity: firstStep.quantity,
+			upgradeType: firstStep.upgradeType,
+			payment: firstStep.payment,
+			treeChopFeePaid: firstStep.treeChopFeePaid,
+			treeChopFeePlanned: firstStep.treeChopFeePlanned,
+			planting: firstStep.planting,
+			autoFarmed: true,
+			autoFarmPlan,
+			autoFarmCombined: true
+		}
 	});
+
 
 	const uniqueBoosts = [...new Set(plannedSteps.flatMap(step => step.boosts))];
 	const summaryLines: string[] = [];
@@ -392,7 +390,9 @@ export async function autoFarm(
 		infoDetails.push(...extraInfoLines);
 	});
 
-	let response = `${user}, your minion is now taking around ${formatDuration(totalDuration)} to auto farm the following patches:\n${summaryLines.join('\n')}`;
+	let response = `${user}, your minion is now taking around ${formatDuration(
+		totalDuration
+	)} to auto farm the following patches:\n${summaryLines.join('\n')}`;
 
 	if (infoDetails.length > 0) {
 		response += `

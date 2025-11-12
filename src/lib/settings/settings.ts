@@ -1,8 +1,6 @@
-import { ButtonInteraction } from 'discord.js';
+import { cryptoRng } from '@oldschoolgg/rng';
 
 import type { NewUser } from '@/prisma/main.js';
-import type { CommandOptions } from '@/lib/discord/commandOptions.js';
-import { MInteraction } from '@/lib/structures/MInteraction.js';
 
 type RawCommandHandlerInner = typeof import('@/lib/discord/commandHandler.js')['rawCommandHandlerInner'];
 
@@ -41,22 +39,18 @@ export interface RunCommandArgs {
 export async function runCommand({
 	commandName,
 	args,
-	interaction: _interaction,
-	ignoreUserIsBusy,
-	isContinue
+	interaction,
+	ignoreUserIsBusy
 }: RunCommandArgs): CommandResponse {
-	const interaction: MInteraction =
-		_interaction instanceof ButtonInteraction ? new MInteraction({ interaction: _interaction }) : _interaction;
 	const command = globalClient.allCommands.find(c => c.name === commandName)!;
-
-	const shouldIgnoreBusy = ignoreUserIsBusy ?? (isContinue ? true : undefined);
 
 	const rawCommandHandlerInner = await getRawCommandHandlerInner();
 	const response: Awaited<CommandResponse> = await rawCommandHandlerInner({
 		interaction,
 		command,
 		options: args,
-		ignoreUserIsBusy: shouldIgnoreBusy
+		ignoreUserIsBusy,
+		rng: cryptoRng
 	});
 	return response;
 }

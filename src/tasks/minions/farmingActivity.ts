@@ -38,7 +38,7 @@ export const farmingTask: MinionTask = {
 					nextPid = inserted.id;
 				}
 			}
-			await addSubTaskToActivityTask<FarmingActivityTaskOptions>({
+			await addSubTaskToActivityTask({
 				plantsName: nextStep.plantsName,
 				patchType: nextStep.patchType,
 				userID: user.id,

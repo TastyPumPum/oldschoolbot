@@ -3,9 +3,9 @@ import { EmbedBuilder } from 'discord.js';
 import { Items } from 'oldschooljs';
 
 import { AutoFarmFilterEnum } from '@/prisma/main/enums.js';
+import { choicesOf } from '@/discord/index.js';
 import TitheFarmBuyables from '@/lib/data/buyables/titheFarmBuyables.js';
 import { superCompostables } from '@/lib/data/filterables.js';
-import { choicesOf } from '@/lib/discord/index.js';
 import { autoFarm } from '@/lib/minions/functions/autoFarm.js';
 import {
 	getPlantsForPatch,
@@ -117,7 +117,7 @@ export const farmingCommand = defineCommand({
 					name: 'plant_name',
 					description: 'The plant you want to plant.',
 					required: true,
-					autocomplete: async (value: string, user: MUser) => {
+					autocomplete: async ({ value, user }: StringAutoComplete) => {
 						return Farming.Plants.filter(i => user.skillsAsLevels.farming >= i.level)
 							.filter(i => (!value ? true : i.name.toLowerCase().includes(value.toLowerCase())))
 							.map(i => ({ name: i.name, value: i.name }));
@@ -236,7 +236,7 @@ export const farmingCommand = defineCommand({
 					name: 'buy_reward',
 					description: 'Buy a Tithe Farm reward.',
 					required: false,
-					autocomplete: async (value: string) => {
+					autocomplete: async ({ value }: StringAutoComplete) => {
 						return TitheFarmBuyables.filter(i =>
 							!value ? true : i.name.toLowerCase().includes(value.toLowerCase())
 						).map(i => ({ name: i.name, value: i.name }));
@@ -255,7 +255,7 @@ export const farmingCommand = defineCommand({
 					name: 'plant_name',
 					description: 'The plant you want to put in the Compost Bins.',
 					required: true,
-					autocomplete: async (value: string) => {
+					autocomplete: async ({ value }: StringAutoComplete) => {
 						return superCompostables
 							.filter(i => (!value ? true : i.toLowerCase().includes(value.toLowerCase())))
 							.map(i => ({ name: i, value: i }));
@@ -286,7 +286,7 @@ export const farmingCommand = defineCommand({
 			]
 		}
 	],
-	run: async ({ user, options, interaction, channelID }) => {
+	run: async ({ user, options, interaction, channelId }) => {
 		await interaction.defer();
 		const { patchesDetailed, patches } = Farming.getFarmingInfoFromUser(user);
 
@@ -413,7 +413,7 @@ export const farmingCommand = defineCommand({
 			if (options.tithe_farm.buy_reward) {
 				return titheFarmShopCommand(interaction, user, options.tithe_farm.buy_reward);
 			}
-			return titheFarmCommand(user, channelID);
+			return titheFarmCommand(user, channelId);
 		}
 		if (options.compost_bin) {
 			return compostBinCommand(interaction, user, options.compost_bin.plant_name, options.compost_bin.quantity);

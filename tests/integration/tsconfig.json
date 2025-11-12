@@ -1,10 +1,16 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"include": [".", "../prisma.d.ts", "../../src/**/*"],
+	"include": [
+		".",
+		"../../src/**/*",
+		"../test-utils/**/*"
+	],
 	"compilerOptions": {
 		"noEmit": true,
 		"paths": {
-			"@/*": ["../../src/*"]
+			"@/*": [
+				"../../src/*"
+			]
 		}
 	}
 }
