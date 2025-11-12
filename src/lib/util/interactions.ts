@@ -22,7 +22,7 @@ export function makeOpenSeedPackButton() {
 		.setEmoji({ id: EmojiId.Seedpack });
 }
 
-export function makeAutoFarmContractButton() {
+export function makeAutoContractButton() {
 	return new ButtonBuilder()
 		.setCustomId(InteractionID.Commands.AutoFarmingContract)
 		.setLabel('Auto Farming Contract')

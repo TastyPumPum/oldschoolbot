@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle, type SendableMessage, SpecialResponse } from '@oldschoolgg/discord';
-import { Emoji, formatDuration, makeComponents } from '@oldschoolgg/toolkit';
+import { Emoji, formatDuration } from '@oldschoolgg/toolkit';
 import type { CropUpgradeType } from '@prisma/client';
 import { Bank } from 'oldschooljs';
 
@@ -314,10 +314,9 @@ export async function autoFarm(
 			.setEmoji(Emoji.Stopwatch)
 			.setStyle(ButtonStyle.Secondary);
 
-		const noCropsResponse: SendableMessage = {
-			content: errorString,
-			components: makeComponents([checkPatchesButton])
-		};
+		const components: ButtonBuilder[] = checkPatchesButton();
+
+		const noCropsResponse = new MessageBuilder().setContent(errorString).addComponents(components);
 
 		const repeated = await tryRepeatPreviousTrip({ user, interaction, errorString });
 		if (repeated !== null) {
