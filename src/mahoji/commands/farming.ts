@@ -1,5 +1,5 @@
 import { stringMatches, toTitleCase } from '@oldschoolgg/toolkit';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder } from '@oldschoolgg/discord';
 import { Items } from 'oldschooljs';
 
 import { AutoFarmFilterEnum } from '@/prisma/main/enums.js';
