@@ -47,8 +47,7 @@ export async function preCommand({ command, interaction, user }: PreCommandOptio
 	const end = performance.now();
 	Logging.logPerf({
 		duration: end - start,
-		text: 'Inhibitors',
-		interaction: debugInfo ? interaction : undefined
+		text: 'Inhibitors'
 	});
 
 	if (inhibitResult !== undefined) {
