@@ -7,10 +7,11 @@ import { executeFarmingStep } from './farmingStep.js';
 
 export const farmingTask: MinionTask = {
 	type: 'Farming',
-	async run(data: FarmingActivityTaskOptions) {
-		const user = await mUserFetch(data.userID);
+	async run(data: FarmingActivityTaskOptions, options) {
+		const user = options?.user ?? (await mUserFetch(data.userID));
+		const finishTrip = options?.handleTripFinish ?? handleTripFinish;
 		if (data.autoFarmCombined && data.autoFarmPlan?.length) {
-			await handleCombinedAutoFarm({ user, taskData: data });
+			await handleCombinedAutoFarm({ user, taskData: data, handleTripFinishFn: finishTrip });
 			return;
 		}
 		const result = await executeFarmingStep({ user, channelID: data.channelID, data });
@@ -18,7 +19,7 @@ export const farmingTask: MinionTask = {
 			return;
 		}
 		const message = result.attachment ? { content: result.message, files: [result.attachment] } : result.message;
-		await handleTripFinish({
+		await finishTrip({
 			user,
 			channelId: data.channelID,
 			message,

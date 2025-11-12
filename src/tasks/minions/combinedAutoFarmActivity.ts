@@ -17,6 +17,7 @@ import {
 interface HandleCombinedAutoFarmOptions {
 	user: MUser;
 	taskData: FarmingActivityTaskOptions;
+	handleTripFinishFn?: typeof handleTripFinish;
 }
 
 interface BuildAggregateMessageArgs {
@@ -186,7 +187,8 @@ function buildAggregateMessage({ summaries, totalLoot, user }: BuildAggregateMes
 
 	return lines.join('\n\n').replace(/:minion:\s+:minion:\s*/gi, ':minion: ');
 }
-export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedAutoFarmOptions) {
+export async function handleCombinedAutoFarm({ user, taskData, handleTripFinishFn }: HandleCombinedAutoFarmOptions) {
+	const finishTrip = handleTripFinishFn ?? handleTripFinish;
 	const plan = taskData.autoFarmPlan;
 	const steps =
 		plan && plan.length > 0
@@ -279,7 +281,7 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 		message.components = extraComponents;
 	}
 
-	await handleTripFinish({
+	await finishTrip({
 		user,
 		channelId: taskData.channelID,
 		message,
