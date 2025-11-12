@@ -1,3 +1,4 @@
+import type { ButtonBuilder } from '@oldschoolgg/discord';
 import type { RNGProvider } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
 import type { APIButtonComponentWithCustomId } from 'discord-api-types/v10';
@@ -170,15 +171,22 @@ describe('farming task auto farm aggregation', () => {
 			}
 		};
 
-		await farmingTask.run(taskData, runOptions);
+                await farmingTask.run(taskData, runOptions);
 
-		const [, , message, , , loot, , extraComponents] = handleTripFinishSpy.mock.calls[0];
-		const messageContent = typeof message === 'string' ? message : (message.content ?? '');
+                const [call] = handleTripFinishSpy.mock.calls;
+                const { message, loot } = call[0];
+                const messageContent = typeof message === 'string' ? message : message.content ?? '';
+                let extraComponents: ButtonBuilder[] | undefined;
+                if (typeof message !== 'string' && message.components) {
+                        extraComponents = Array.isArray(message.components[0])
+                                ? (message.components[0] as ButtonBuilder[])
+                                : (message.components as ButtonBuilder[]);
+                }
 
-		return {
-			user,
-			executeSpy,
-			handleTripFinishSpy,
+                return {
+                        user,
+                        executeSpy,
+                        handleTripFinishSpy,
 			canRunAutoContractSpy,
 			messageContent,
 			loot: loot as Bank | null,

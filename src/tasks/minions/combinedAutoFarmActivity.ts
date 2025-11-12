@@ -1,3 +1,4 @@
+import type { BaseSendableMessage } from '@oldschoolgg/discord';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 
@@ -252,29 +253,37 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 		return;
 	}
 
-	const aggregatedContent =
-		summaries.length === messages.length ? buildAggregateMessage({ summaries, totalLoot, user }) : null;
-	const content = aggregatedContent ?? messages.join('\n\n');
-	let message: string | { content: string; files: FarmingStepAttachment[] } = content;
-	if (attachments.length > 0) {
-		message = {
-			content,
-			files: attachments
-		};
-	}
+        const aggregatedContent =
+                summaries.length === messages.length ? buildAggregateMessage({ summaries, totalLoot, user }) : null;
+        const content = aggregatedContent ?? messages.join('\n\n');
+        const message: BaseSendableMessage = { content };
 
-	const loot = totalLoot.length > 0 ? totalLoot : null;
-	let extraComponents: ReturnType<typeof makeAutoContractButton>[] | undefined;
-	const completedContract = summaries.some(summary => summary.contractCompleted) && (loot?.has('Seed pack') ?? false);
-	if (completedContract) {
-		const autoContractDisabled = user.bitfield.includes(BitField.DisableAutoFarmContractButton);
-		if (!autoContractDisabled) {
-			const canAutoContractNow = await canRunAutoContract(user);
-			extraComponents = [
-				canAutoContractNow ? makeAutoContractButton() : makeAutoContractButton({ blocked: true })
-			];
-		}
-	}
+        if (attachments.length > 0) {
+                message.files = attachments;
+        }
 
-	await handleTripFinish(user, taskData.channelID, message, undefined, taskData, loot, undefined, extraComponents);
+        const loot = totalLoot.length > 0 ? totalLoot : null;
+        let extraComponents: ReturnType<typeof makeAutoContractButton>[] | undefined;
+        const completedContract = summaries.some(summary => summary.contractCompleted) && (loot?.has('Seed pack') ?? false);
+        if (completedContract) {
+                const autoContractDisabled = user.bitfield.includes(BitField.DisableAutoFarmContractButton);
+                if (!autoContractDisabled) {
+                        const canAutoContractNow = await canRunAutoContract(user);
+                        extraComponents = [
+                                canAutoContractNow ? makeAutoContractButton() : makeAutoContractButton({ blocked: true })
+                        ];
+                }
+        }
+
+        if (extraComponents?.length) {
+                message.components = extraComponents;
+        }
+
+        await handleTripFinish({
+                user,
+                channelId: taskData.channelID,
+                message,
+                data: taskData,
+                loot
+        });
 }
