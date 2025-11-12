@@ -2,13 +2,13 @@ import { cryptoRng } from '@oldschoolgg/rng';
 
 import type { NewUser } from '@/prisma/main.js';
 
-type RawCommandHandlerInner = typeof import('@/lib/discord/commandHandler.js')['rawCommandHandlerInner'];
+type RawCommandHandlerInner = typeof import('@/discord/commandHandler.js')['rawCommandHandlerInner'];
 
 let cachedRawCommandHandlerInner: RawCommandHandlerInner | null = null;
 
 async function getRawCommandHandlerInner(): Promise<RawCommandHandlerInner> {
 	if (!cachedRawCommandHandlerInner) {
-		({ rawCommandHandlerInner: cachedRawCommandHandlerInner } = await import('@/lib/discord/commandHandler.js'));
+		({ rawCommandHandlerInner: cachedRawCommandHandlerInner } = await import('@/discord/commandHandler.js'));
 	}
 	return cachedRawCommandHandlerInner;
 }

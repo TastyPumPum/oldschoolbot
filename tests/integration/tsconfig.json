@@ -1,16 +1,10 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"include": [
-		".",
-		"../../src/**/*",
-		"../test-utils/**/*"
-	],
+	"include": [".", "../../src/**/*", "../test-utils/**/*"],
 	"compilerOptions": {
 		"noEmit": true,
 		"paths": {
-			"@/*": [
-				"../../src/*"
-			]
+			"@/*": ["../../src/*"]
 		}
 	}
 }

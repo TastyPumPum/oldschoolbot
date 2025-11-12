@@ -1,6 +1,6 @@
-import { Emoji, formatDuration, makeComponents, SpecialResponse } from '@oldschoolgg/toolkit';
+import { ButtonBuilder, ButtonStyle, type SendableMessage, SpecialResponse } from '@oldschoolgg/discord';
+import { Emoji, formatDuration, makeComponents } from '@oldschoolgg/toolkit';
 import type { CropUpgradeType } from '@prisma/client';
-import { type BaseMessageOptions, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Bank } from 'oldschooljs';
 
 import { AutoFarmFilterEnum, activity_type_enum } from '@/prisma/main/enums.js';
@@ -254,7 +254,9 @@ export async function autoFarm(
 				continue;
 			}
 			if (duration > maxTripLength) {
-				errorsForPatch.push(`${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}.`);
+				errorsForPatch.push(
+					`${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}.`
+				);
 				continue;
 			}
 			const totalCoinCost = cost.amount('Coins') + treeChopFee;
@@ -312,7 +314,7 @@ export async function autoFarm(
 			.setEmoji(Emoji.Stopwatch)
 			.setStyle(ButtonStyle.Secondary);
 
-		const noCropsResponse: BaseMessageOptions = {
+		const noCropsResponse: SendableMessage = {
 			content: errorString,
 			components: makeComponents([checkPatchesButton])
 		};
@@ -378,7 +380,6 @@ export async function autoFarm(
 			autoFarmCombined: true
 		}
 	});
-
 
 	const uniqueBoosts = [...new Set(plannedSteps.flatMap(step => step.boosts))];
 	const summaryLines: string[] = [];

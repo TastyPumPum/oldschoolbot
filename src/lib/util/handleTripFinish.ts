@@ -33,6 +33,7 @@ import {
 	tearsOfGuthixIronmanReqs,
 	tearsOfGuthixSkillReqs
 } from '@/mahoji/lib/abstracted_commands/tearsOfGuthixCommand.js';
+import { canShowAutoFarmButton } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 
 const activitiesToTrackAsPVMGPSource: activity_type_enum[] = [
 	'GroupMonsterKilling',
@@ -140,6 +141,16 @@ const tripFinishEffects: TripFinishEffect[] = [
 			const canRun = Boolean(await canRunAutoContract(user));
 			if (!canRun) return;
 			components.push(makeAutoContractButton());
+		}
+	},
+	{
+		name: 'Autofarm Button',
+		requiredPerkTier: PerkTier.Two,
+		fn: async ({ user, components }) => {
+			if (user.bitfield.includes(BitField.DisableAutoFarmButton)) return;
+			const canShow = await canShowAutoFarmButton(user);
+			if (!canShow) return;
+			components.push(makeAutoFarmButton());
 		}
 	},
 	{

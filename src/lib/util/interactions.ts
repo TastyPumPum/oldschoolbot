@@ -22,12 +22,20 @@ export function makeOpenSeedPackButton() {
 		.setEmoji({ id: EmojiId.Seedpack });
 }
 
-export function makeAutoFarmButton() {
+export function makeAutoFarmContractButton() {
 	return new ButtonBuilder()
 		.setCustomId(InteractionID.Commands.AutoFarmingContract)
 		.setLabel('Auto Farming Contract')
 		.setStyle(ButtonStyle.Secondary)
 		.setEmoji({ id: EmojiId.Seedpack });
+}
+
+export function makeAutoFarmButton() {
+	return new ButtonBuilder()
+		.setCustomId(InteractionID.Commands.AutoFarm)
+		.setLabel('Auto Farm')
+		.setStyle(ButtonStyle.Secondary)
+		.setEmoji({ id: EmojiId.Farming });
 }
 
 export function makeRepeatTripButton() {

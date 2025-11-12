@@ -2,16 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rawCommandHandlerInner = vi.fn(async () => 'ok');
 
-vi.mock('@/lib/discord/commandHandler.js', () => ({
+vi.mock('@/discord/commandHandler.js', () => ({
 	rawCommandHandlerInner
 }));
-vi.mock('@/lib/discord/commandHandler.ts', () => ({
+vi.mock('@/discord/commandHandler.ts', () => ({
 	rawCommandHandlerInner
 }));
-vi.mock('src/lib/discord/commandHandler.js', () => ({
+vi.mock('src/discord/commandHandler.js', () => ({
 	rawCommandHandlerInner
 }));
-vi.mock('src/lib/discord/commandHandler.ts', () => ({
+vi.mock('src/discord/commandHandler.ts', () => ({
 	rawCommandHandlerInner
 }));
 
