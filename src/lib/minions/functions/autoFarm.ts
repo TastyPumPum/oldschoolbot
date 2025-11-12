@@ -314,7 +314,7 @@ export async function autoFarm(
 			.setEmoji(Emoji.Stopwatch)
 			.setStyle(ButtonStyle.Secondary);
 
-               const components: ButtonBuilder[] = [checkPatchesButton];
+		const components: ButtonBuilder[] = [checkPatchesButton];
 
 		const noCropsResponse = new MessageBuilder().setContent(errorString).addComponents(components);
 

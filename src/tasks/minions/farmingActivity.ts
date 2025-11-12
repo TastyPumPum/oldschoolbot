@@ -13,20 +13,18 @@ export const farmingTask: MinionTask = {
 			await handleCombinedAutoFarm({ user, taskData: data });
 			return;
 		}
-                const result = await executeFarmingStep({ user, channelID: data.channelID, data });
-                if (!result) {
-                        return;
-                }
-                const message = result.attachment
-                        ? { content: result.message, files: [result.attachment] }
-                        : result.message;
-                await handleTripFinish({
-                        user,
-                        channelId: data.channelID,
-                        message,
-                        data,
-                        loot: result.loot ?? null
-                });
+		const result = await executeFarmingStep({ user, channelID: data.channelID, data });
+		if (!result) {
+			return;
+		}
+		const message = result.attachment ? { content: result.message, files: [result.attachment] } : result.message;
+		await handleTripFinish({
+			user,
+			channelId: data.channelID,
+			message,
+			data,
+			loot: result.loot ?? null
+		});
 		if (data.autoFarmPlan?.length) {
 			const [nextStep, ...remainingSteps] = data.autoFarmPlan;
 			let nextPid = nextStep.pid;
