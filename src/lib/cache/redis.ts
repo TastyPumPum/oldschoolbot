@@ -4,44 +4,18 @@ import {
 	type IGuild,
 	type IMember,
 	type IRole,
-	ZEmoji,
 	ZMember,
 	ZRole
 } from '@oldschoolgg/schemas';
 import { Time } from '@oldschoolgg/toolkit';
+import { RedisKeys } from '@oldschoolgg/util';
 import { Redis } from 'ioredis';
-import type { z } from 'zod';
 
+import type { Guild } from '@/prisma/main.js';
 import { MockedRedis } from '@/lib/cache/redis-mock.js';
-import { BOT_TYPE, globalConfig } from '@/lib/constants.js';
+import { globalConfig } from '@/lib/constants.js';
 import type { RobochimpUser } from '@/lib/roboChimp.js';
 import { fetchUsernameAndCache } from '@/lib/util.js';
-
-export enum CacheKeyPrefix {
-	Member = 'member',
-	Role = 'role',
-	Emoji = 'emoji',
-	RoboChimp = 'robochimp'
-}
-
-const fmkey = (...parts: string[]) => parts.join(':');
-
-const Key = {
-	Client: {
-		DisabledCommands: (clientId: string) => fmkey('client', BOT_TYPE, clientId, 'disabled_commands')
-	},
-	User: {
-		BadgedUsername: (userId: string) => fmkey('user', BOT_TYPE, userId, 'badged_username'),
-		LockStatus: (userId: string) => fmkey('user', BOT_TYPE, userId, 'lock_status'),
-		Ratelimit: (type: string, userId: string) => fmkey('user', BOT_TYPE, 'ratelimit', type, userId)
-	},
-	Guild: (id: string) => fmkey('guild', id),
-	Member: (guildId: string, userId: string) => fmkey(CacheKeyPrefix.Member, guildId, userId),
-	Emoji: (guildId: string, id: string) => fmkey(CacheKeyPrefix.Emoji, guildId, id),
-	Role: (guildId: string, id: string) => fmkey(CacheKeyPrefix.Role, guildId, id),
-	RoboChimpUser: (userId: string | bigint) => fmkey(CacheKeyPrefix.RoboChimp, 'user', userId.toString()),
-	Channel: (channelId: string) => fmkey('channel', channelId)
-};
 
 type LockStatus = 'locked' | 'unlocked';
 
@@ -50,14 +24,6 @@ const TTL = {
 	Hour: Time.Hour / Time.Second,
 	Day: Time.Day / Time.Second
 };
-
-const TTLS = {
-	Guild: TTL.Hour * 24,
-	Member: TTL.Hour * 23,
-	Role: TTL.Hour * 100,
-	RoboChimpUser: TTL.Hour * 4,
-	Channel: TTL.Hour * 100
-} as const;
 
 type RatelimitConfig = {
 	windowSeconds: number;
@@ -73,7 +39,7 @@ const RATELIMITS: Record<RatelimitType, RatelimitConfig> = {
 } as const;
 
 class CacheManager {
-	private client: Redis | MockedRedis;
+	private client: Redis;
 
 	constructor() {
 		if (globalConfig.isProduction) {
@@ -83,11 +49,11 @@ class CacheManager {
 				const redis = new Redis({ reconnectOnError: () => false });
 				redis.on('error', () => {
 					redis.disconnect();
-					this.client = new MockedRedis();
+					this.client = new MockedRedis() as any as Redis;
 				});
 				this.client = redis;
 			} catch {
-				this.client = new MockedRedis();
+				this.client = new MockedRedis() as any as Redis;
 			}
 		}
 	}
@@ -96,8 +62,8 @@ class CacheManager {
 		await this.client.set(key, value, 'EX', ttlSeconds);
 	}
 
-	private async setObject(key: string, value: object, ttlSeconds: number) {
-		await this.setString(key, JSON.stringify(value), ttlSeconds);
+	private async setJson(key: string, value: object) {
+		await this.client.set(key, JSON.stringify(value));
 	}
 
 	private async getJson<T = unknown>(key: string): Promise<T | null> {
@@ -109,21 +75,16 @@ class CacheManager {
 		return this.client.get(key);
 	}
 
-	private async del(key: string) {
-		await this.client.del(key);
-	}
-
-	private async bulkSet<T>(items: T[], getKey: (x: T) => string, schema: z.ZodType<T> | null, ttlSeconds: number) {
+	private async bulkSet<T>(items: T[], getKey: (x: T) => string): Promise<void> {
 		const pipeline = this.client.pipeline();
 		for (const item of items) {
-			if (schema) schema.parse(item);
 			const json = JSON.stringify(item);
-			pipeline.set(getKey(item), json, 'EX', ttlSeconds);
+			pipeline.set(getKey(item), json);
 		}
 		await pipeline.exec();
 	}
 
-	private async getRawDatabaseGuild(id: string) {
+	private async getGuildSettings(id: string): Promise<Guild | null> {
 		const guildSettings = await prisma.guild.findUnique({
 			where: { id },
 			select: {
@@ -137,11 +98,11 @@ class CacheManager {
 	}
 
 	async getGuild(guildId: string): Promise<IGuild> {
-		const key = Key.Guild(guildId);
+		const key = RedisKeys.OSB.GuildSettings(guildId);
 		const cached = await this.getJson<IGuild>(key);
 		if (cached) return cached;
 
-		const guildSettings = await this.getRawDatabaseGuild(guildId);
+		const guildSettings = await this.getGuildSettings(guildId);
 		const guild: IGuild = guildSettings
 			? {
 					id: guildSettings.id,
@@ -156,7 +117,7 @@ class CacheManager {
 					staff_only_channels: []
 				};
 
-		await this.setObject(Key.Guild(guildId), guild, TTLS.Guild);
+		await this.setJson(RedisKeys.OSB.GuildSettings(guild.id), guild);
 		return guild;
 	}
 
@@ -182,15 +143,15 @@ class CacheManager {
 			petchannel: guildSettings.petchannel,
 			staff_only_channels: guildSettings.staffOnlyChannels
 		};
-		return this.setObject(Key.Guild(guildId), newGuild, TTLS.Guild);
+		return this.setJson(RedisKeys.OSB.GuildSettings(guildId), newGuild);
 	}
 
 	async getMember(guildId: string, userId: string) {
-		return this.getJson<IMember>(Key.Member(guildId, userId));
+		return this.getJson<IMember>(RedisKeys.Discord.Member(guildId, userId));
 	}
 
 	async getChannel(channelId: string): Promise<IChannel> {
-		const key = Key.Channel(channelId);
+		const key = RedisKeys.Discord.Channel(channelId);
 		const cached = await this.getJson<IChannel>(key);
 		if (cached) return cached;
 
@@ -203,59 +164,47 @@ class CacheManager {
 			guild_id: 'guild_id' in rawChannel && rawChannel.guild_id ? rawChannel.guild_id : null
 		};
 
-		await this.setObject(key, channel, TTLS.Channel);
+		await this.client.set(key, JSON.stringify(channel));
 		return channel;
 	}
 
 	async getMainServerMember(userId: string) {
-		return this.getJson<IMember>(Key.Member(globalConfig.supportServerID, userId));
+		return this.getJson<IMember>(RedisKeys.Discord.Member(globalConfig.supportServerID, userId));
 	}
 
-	async setMember(member: IMember) {
+	async setMember(member: IMember): Promise<void> {
 		ZMember.parse(member);
-		await this.setObject(Key.Member(member.guild_id, member.user_id), member, TTLS.Member);
+		await this.setJson(RedisKeys.Discord.Member(member.guild_id, member.user_id), member);
 	}
 
-	async bulkSetMembers(members: IMember[]) {
-		await this.bulkSet(members, m => Key.Member(m.guild_id, m.user_id), ZMember, TTLS.Member);
+	async bulkSetMembers(members: IMember[]): Promise<void> {
+		await this.bulkSet(members, m => RedisKeys.Discord.Member(m.guild_id, m.user_id));
 	}
 
-	async bulkSetEmojis(emojis: IEmoji[]) {
-		await this.bulkSet(emojis, e => Key.Emoji(e.guild_id, e.id), ZEmoji, TTLS.Guild);
+	async bulkSetEmojis(emojis: IEmoji[]): Promise<void> {
+		await this.bulkSet(emojis, e => RedisKeys.Discord.Emoji(e.guild_id, e.id));
 	}
 
 	async getRole(guildId: string, roleId: string) {
-		return this.getJson<IRole>(Key.Role(guildId, roleId));
+		return this.getJson<IRole>(RedisKeys.Discord.Role(guildId, roleId));
 	}
 
 	async setRole(role: IRole) {
 		ZRole.parse(role);
-		await this.setObject(Key.Role(role.guild_id, role.id), role, TTLS.Role);
+		await this.setJson(RedisKeys.Discord.Role(role.guild_id, role.id), role);
 	}
 
 	async bulkSetRoles(roles: IRole[]) {
-		await this.bulkSet(roles, r => Key.Role(r.guild_id, r.id), ZRole, TTLS.Role);
+		await this.bulkSet(roles, r => RedisKeys.Discord.Role(r.guild_id, r.id));
 	}
 
-	async deleteGuild(id: string) {
-		await this.del(Key.Guild(id));
-	}
-
-	async setRoboChimpUser(data: RobochimpUser) {
-		await this.setObject(Key.RoboChimpUser(data.id), data, TTLS.RoboChimpUser);
-	}
-
-	async getRoboChimpUser(userId: string) {
-		return this.getJson<RobochimpUser>(Key.RoboChimpUser(userId));
-	}
-
-	async bulkSetRoboChimpUser(users: RobochimpUser[]) {
-		await this.bulkSet(users, u => Key.RoboChimpUser(u.id), null, TTLS.RoboChimpUser);
+	async getRoboChimpUser(userId: string): Promise<RobochimpUser | null> {
+		return this.getJson<RobochimpUser>(RedisKeys.RoboChimpUser(BigInt(userId)));
 	}
 
 	// Users
 	async getUserLockStatus(userId: string): Promise<LockStatus> {
-		const status = await this.getString(Key.User.LockStatus(userId));
+		const status = await this.getString(RedisKeys.OSB.User.LockStatus(userId));
 		return (status as LockStatus | null) ?? 'unlocked';
 	}
 
@@ -264,11 +213,11 @@ class CacheManager {
 		if (current === newStatus) {
 			throw new Error(`User is already ${newStatus}`);
 		}
-		await this.setString(Key.User.LockStatus(userId), newStatus, 25);
+		await this.setString(RedisKeys.OSB.User.LockStatus(userId), newStatus, 25);
 	}
 
 	async _getBadgedUsernameRaw(userId: string): Promise<string | null> {
-		return this.getString(Key.User.BadgedUsername(userId));
+		return this.client.get(RedisKeys.OSB.User.BadgedUsername(userId));
 	}
 
 	async getBadgedUsername(userId: string) {
@@ -280,8 +229,8 @@ class CacheManager {
 		return result;
 	}
 
-	async setBadgedUsername(userId: string, badgedUsername: string) {
-		await this.setString(Key.User.BadgedUsername(userId), badgedUsername, Time.Hour * 12);
+	async setBadgedUsername(userId: string, badgedUsername: string): Promise<void> {
+		await this.client.set(RedisKeys.OSB.User.BadgedUsername(userId), badgedUsername);
 	}
 
 	private async doRatelimitCheck({
@@ -295,7 +244,7 @@ class CacheManager {
 		windowSeconds: number;
 		max: number;
 	}): Promise<{ success: true } | { success: false; timeRemainingMs: number }> {
-		const fullKey = Key.User.Ratelimit(inputKey, userId);
+		const fullKey = RedisKeys.OSB.User.Ratelimit(inputKey, userId);
 		const count = await this.client.incr(fullKey);
 
 		if (count === 1) await this.client.expire(fullKey, windowSeconds);
@@ -326,27 +275,34 @@ class CacheManager {
 	}
 
 	public async getRatelimitTTL(userId: string, type: RatelimitType): Promise<number> {
-		const ttl = await this.client.ttl(Key.User.Ratelimit(type, userId));
+		const ttl = await this.client.ttl(RedisKeys.OSB.User.Ratelimit(type, userId));
 		return ttl < 0 ? 0 : ttl;
 	}
 
 	public async resetRatelimit(userId: string, type: RatelimitType): Promise<void> {
-		await this.client.del(Key.User.Ratelimit(type, userId));
+		await this.client.del(RedisKeys.OSB.User.Ratelimit(type, userId));
 	}
 
 	// Client
 	async getDisabledCommands(): Promise<string[]> {
-		const res = (await this.getJson<string[]>(Key.Client.DisabledCommands(globalClient.applicationId))) ?? [];
+		const res = (await this.getJson<string[]>(RedisKeys.OSB.DisabledCommands)) ?? [];
 		return res;
 	}
 
 	async setDisabledCommands(newDisabledCommands: string[]): Promise<void> {
-		const res = await this.setObject(
-			Key.Client.DisabledCommands(globalClient.applicationId),
-			newDisabledCommands,
-			TTL.Hour * 4
-		);
-		return res;
+		await this.setJson(RedisKeys.OSB.DisabledCommands, newDisabledCommands);
+	}
+
+	async isUserBlacklisted(id: string): Promise<boolean> {
+		return (await this.client.sismember(RedisKeys.BlacklistedUsers, id)) === 1;
+	}
+
+	async isGuildBlacklisted(id: string): Promise<boolean> {
+		return (await this.client.sismember(RedisKeys.BlacklistedGuilds, id)) === 1;
+	}
+
+	async getAllBlacklistedUsers(): Promise<Set<string>> {
+		return new Set(await this.client.smembers(RedisKeys.BlacklistedUsers));
 	}
 
 	async close() {
