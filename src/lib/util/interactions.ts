@@ -22,12 +22,19 @@ export function makeOpenSeedPackButton() {
 		.setEmoji({ id: EmojiId.Seedpack });
 }
 
-export function makeAutoContractButton() {
+interface MakeAutoContractButtonOptions {
+	blocked?: boolean;
+}
+
+export function makeAutoContractButton(options: MakeAutoContractButtonOptions = {}) {
+	const blocked = options.blocked ?? false;
+	const label = blocked ? 'Auto Farming Contract (Unlock requirements pending)' : 'Auto Farming Contract';
 	return new ButtonBuilder()
 		.setCustomId(InteractionID.Commands.AutoFarmingContract)
-		.setLabel('Auto Farming Contract')
+		.setLabel(label)
 		.setStyle(ButtonStyle.Secondary)
-		.setEmoji({ id: EmojiId.Seedpack });
+		.setEmoji({ id: EmojiId.Seedpack })
+		.setDisabled(blocked);
 }
 
 export function makeAutoFarmButton() {
