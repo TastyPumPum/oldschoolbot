@@ -6883,12 +6883,6 @@ snapshots:
       '@babel/types': 7.28.5
       source-map-js: 1.2.1
 
-  magicast@0.5.1:
-    dependencies:
-      '@babel/parser': 7.28.5
-      '@babel/types': 7.28.5
-      source-map-js: 1.2.1
-
   make-dir@4.0.0:
     dependencies:
       semver: 7.7.3
