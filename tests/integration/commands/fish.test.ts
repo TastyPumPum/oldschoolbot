@@ -68,7 +68,6 @@ describe('Fish Command', async () => {
 			skills_strength: 999_999
 		});
 
-		// Give the user feathers and the barbarian rod so the new bait checks pass
 		await user.setBank(new Bank({ Feather: 1_000 }));
 		await user.equip('skilling', [EItem.PEARL_BARBARIAN_ROD]);
 
@@ -93,6 +92,7 @@ describe('Fish Command', async () => {
 	it('should fish with flakes', async () => {
 		const user = await createTestUser();
 		await (user as any).update({ bank: new Bank({ 'Spirit flakes': 1_000 }) });
+
 		const startingFlakes = user.bank.amount('Spirit flakes');
 		const startingXP = user.skillsAsXP.fishing;
 
@@ -101,10 +101,9 @@ describe('Fish Command', async () => {
 		expect(user.bank.amount('Spirit flakes')).toBeLessThan(startingFlakes);
 
 		await user.runActivity();
+		await user.sync();
 
-		// Still expect flakes to have been consumed
 		expect(user.bank.amount('Spirit flakes')).toBeLessThan(1_000);
-		// Trip should give some Fishing XP, even if loot rolls are unlucky
 		expect(user.skillsAsXP.fishing).toBeGreaterThan(startingXP);
 	});
 
@@ -129,8 +128,8 @@ describe('Fish Command', async () => {
 
 		const startingXP = user.skillsAsXP.fishing;
 		await user.runActivity();
+		await user.sync();
 
-		// We care that bait is used and XP is gained; fish loot can be zero in edge RNG cases
 		expect(user.skillsAsXP.fishing).toBeGreaterThan(startingXP);
 	});
 
@@ -155,11 +154,10 @@ describe('Fish Command', async () => {
 
 		const startingXP = user.skillsAsXP.fishing;
 
-		// Simulate the player spending supplies during the trip but keeping the rod
 		await (user as any).update({ bank: new Bank({ 'Fishing rod': 1 }) });
 		await user.runActivity();
+		await user.sync();
 
-		// The important part is that the trip still finishes and grants XP
 		expect(user.skillsAsXP.fishing).toBeGreaterThan(startingXP);
 	});
 
@@ -181,8 +179,8 @@ describe('Fish Command', async () => {
 		expect(res).toContain('is now fishing Lobster');
 
 		await user.runActivity();
+		await user.sync();
 
-		// Focus on XP gain as the stable signal; loot can be zero in rare RNG cases
 		const xpAfter = user.skillsAsXP.fishing;
 		expect(xpAfter).toBeGreaterThan(startingXP);
 	});
