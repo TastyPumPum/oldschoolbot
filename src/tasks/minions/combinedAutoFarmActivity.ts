@@ -282,7 +282,7 @@ export async function handleCombinedAutoFarm({
 			const canAutoContractNow = await canRunAutoContract(user);
 			const autoContractButton = makeAutoContractButton();
 			if (!canAutoContractNow) {
-				autoContractButton.setDisabled(true);
+				autoContractButton.setLabel('Auto Farming Contract (Unlock requirements pending)').setDisabled(true);
 			}
 			extraComponents = [autoContractButton];
 		}
