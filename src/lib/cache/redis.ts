@@ -14,7 +14,7 @@ import { Redis } from 'ioredis';
 
 import type { Guild } from '@/prisma/main.js';
 import { MockedRedis } from '@/lib/cache/redis-mock.js';
-import { globalConfig } from '@/lib/constants.js';
+import { BOT_TYPE, globalConfig } from '@/lib/constants.js';
 import type { RobochimpUser } from '@/lib/roboChimp.js';
 import { fetchUsernameAndCache } from '@/lib/util.js';
 
