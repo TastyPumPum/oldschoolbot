@@ -10,7 +10,9 @@ export type DatabaseStoredActivityData = Omit<
 	'finishDate' | 'id' | 'type' | 'channelId' | 'userID' | 'duration'
 >;
 
-export default async function addSubTaskToActivityTask(taskToAdd: Omit<ActivityTaskData, 'finishDate' | 'id'>) {
+export default async function addSubTaskToActivityTask(
+	taskToAdd: Omit<ActivityTaskData, 'finishDate' | 'id'>
+): Promise<void> {
 	const userIds: string[] =
 		'users' in taskToAdd && taskToAdd.users ? (taskToAdd.users as string[]) : [taskToAdd.userID];
 	const existingActivities = await prisma.activity.count({
@@ -56,10 +58,12 @@ export default async function addSubTaskToActivityTask(taskToAdd: Omit<ActivityT
 		all_user_ids: userIds.map(i => BigInt(i))
 	};
 	try {
-		const createdActivity = await prisma.activity.create({
-			data
+		await prisma.activity.create({
+			data,
+			select: {
+				id: true
+			}
 		});
-		return createdActivity;
 	} catch (err: unknown) {
 		Logging.logError(err as Error, {
 			user_id: taskToAdd.userID,
