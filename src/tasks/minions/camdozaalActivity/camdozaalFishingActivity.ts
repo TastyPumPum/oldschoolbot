@@ -1,4 +1,4 @@
-import { calcPercentOfNum, Emoji, Events } from '@oldschoolgg/toolkit';
+import { Emoji, Events } from '@oldschoolgg/toolkit';
 import { LootTable } from 'oldschooljs';
 
 import addSkillingClueToLoot from '@/lib/minions/functions/addSkillingClueToLoot.js';
@@ -47,14 +47,12 @@ export const camdozaalFishingTask: MinionTask = {
 			fishingXP += loot.amount(fish.id!) * fish.xp!;
 		}
 
-		let bonusXP = 0;
-
-		const anglerBoostPercent = Fishing.util.calcAnglerBoostPercent(user.gearBank);
-		if (anglerBoostPercent > 0) {
-			const amountToAdd = Math.ceil(calcPercentOfNum(anglerBoostPercent, fishingXP));
-			fishingXP += amountToAdd;
-			bonusXP += amountToAdd;
-		}
+		const { totalXP: fishingXPWithAngler, bonusXP } = Fishing.util.calcAnglerBonusXP({
+			gearBank: user.gearBank,
+			xp: fishingXP,
+			roundingMethod: 'ceil'
+		});
+		fishingXP = fishingXPWithAngler;
 
 		// Add xp to user
 		const xpRes = await user.addXP({
