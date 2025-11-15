@@ -63,7 +63,7 @@ export const fishCommand = defineCommand({
 			return `To fish ${spot.name}, you need ${formatSkillRequirements(spot.skillReqs)}.`;
 		}
 
-		const minimumFishingLevel = spot.subfishes[0]?.level ?? 1;
+		const minimumFishingLevel = Math.min(...spot.subfishes.map(sub => sub.level ?? 1));
 		if (user.skillsAsLevels.fishing < minimumFishingLevel) {
 			return `${user.minionName} needs ${minimumFishingLevel} Fishing to fish ${spot.name}.`;
 		}
@@ -83,8 +83,8 @@ export const fishCommand = defineCommand({
 			return 'You need to own the Angler Outfit to fish for Minnows.';
 		}
 
-		const maxTripLength = user.calcMaxTripLength('Fishing');
-		const [hasWildyEliteDiary] = await userhasDiaryTier(user, WildernessDiary.elite);
+		const maxTripLength = await user.calcMaxTripLength('Fishing');
+		const hasWildyEliteDiary = user.hasDiary('wilderness.elite');
 
 		const result = Fishing.util.calcFishingTripStart({
 			gearBank: user.gearBank,
