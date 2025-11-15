@@ -334,5 +334,5 @@ export async function handleTripFinish(
 		message.addAllowedUserMentions(data.users);
 	}
 
-	await globalClient.sendMessage(channelId, message);
+	await globalClient.sendMessageOrWebhook(channelId, message);
 }

@@ -34,6 +34,10 @@ export class TestClient extends AsyncEventEmitter<any> implements AsyncDisposabl
 		return [options.leader];
 	}
 
+	async reactToMsg() {
+		return;
+	}
+
 	mentionCommand() {
 		return '';
 	}
@@ -73,6 +77,10 @@ export class TestClient extends AsyncEventEmitter<any> implements AsyncDisposabl
 
 	async fetchMessage(_messageId: string) {
 		return mockMessage();
+	}
+
+	async sendMessageOrWebhook(channelId: string, message: SendableMessage) {
+		return this.sendMessage(channelId, message);
 	}
 
 	async sendMessage(channelId: string, message: SendableMessage) {

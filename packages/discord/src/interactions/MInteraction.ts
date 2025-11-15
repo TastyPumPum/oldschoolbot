@@ -1,4 +1,9 @@
-import type { IButtonInteraction, IChatInputCommandInteraction, IMember } from '@oldschoolgg/schemas';
+import type {
+	IButtonInteraction,
+	IChatInputCommandInteraction,
+	IInteractionResponse,
+	IMember
+} from '@oldschoolgg/schemas';
 import { deepMerge } from '@oldschoolgg/toolkit';
 import {
 	type APIChatInputApplicationCommandInteraction,
@@ -9,7 +14,7 @@ import {
 
 import type { DiscordClient } from '../client/DiscordClient.js';
 import type { BaseSendableMessage, SendableMessage } from '../client/types.js';
-import { Permissions } from '../Permissions.js';
+import { convertApiMemberToZMember } from '../index.js';
 import { BaseInteraction } from './BaseInteraction.js';
 import { interactionConfirmation } from './confirmation.js';
 import { PaginatedMessage, type PaginatedMessageOptions } from './PaginatedMessage.js';
@@ -49,13 +54,11 @@ export class MInteraction<T extends AnyInteraction = AnyInteraction> extends Bas
 
 	get member(): IMember | null {
 		if (!this.rawInteraction.member) return null;
-		const member: IMember = {
-			user_id: this.interaction.user_id,
-			guild_id: this.rawInteraction.guild_id!,
-			roles: this.rawInteraction.member.roles,
-			permissions: Permissions.toKeys(this.rawInteraction.member.permissions)
-		};
-		return member;
+		return convertApiMemberToZMember({
+			userId: this.interaction.user_id,
+			guildId: this.rawInteraction.guild_id!,
+			apiMember: this.rawInteraction.member
+		});
 	}
 
 	get message(): APIMessage | null {
@@ -76,14 +79,35 @@ export class MInteraction<T extends AnyInteraction = AnyInteraction> extends Bas
 		return this.baseDeferReply({ ephemeral });
 	}
 
-	async reply(message: SendableMessage): Promise<APIMessage | null> {
+	async reply(message: SendableMessage): Promise<null> {
 		try {
-			const response = await this.baseReply(message);
-			return response;
+			await this.baseReply(message);
 		} catch (_err) {
 			this.client.emit('error', _err as Error);
 			return null;
 		}
+		return null;
+	}
+
+	async replyWithResponse(message: BaseSendableMessage): Promise<IInteractionResponse | null> {
+		try {
+			const response = await this.baseReply({ ...message, withResponse: true })!;
+			if (!response) throw new Error('No response from baseReply');
+			if ('id' in response) {
+				return {
+					message_id: response.id
+				};
+			}
+			if (!response.interaction.response_message_id) {
+				throw new Error('No response message ID found');
+			}
+			return {
+				message_id: response.interaction.response_message_id
+			};
+		} catch (_err) {
+			this.client.emit('error', _err as Error);
+		}
+		return null;
 	}
 
 	/**
