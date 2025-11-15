@@ -323,6 +323,20 @@ export interface InfernoOptions extends ActivityTaskOptions {
 	cost: ItemBank;
 }
 
+export interface AutoFarmStepData {
+	plantsName: string | null;
+	quantity: number;
+	upgradeType: CropUpgradeType | null;
+	payment?: boolean;
+	treeChopFeePaid?: number;
+	treeChopFeePlanned?: number;
+	patchType: IPatchData;
+	planting: boolean;
+	currentDate: number;
+	pid?: number;
+	duration: number;
+}
+
 export interface FarmingActivityTaskOptions extends ActivityTaskOptions {
 	type: 'Farming';
 	pid?: number;
@@ -330,10 +344,14 @@ export interface FarmingActivityTaskOptions extends ActivityTaskOptions {
 	quantity: number;
 	upgradeType: CropUpgradeType | null;
 	payment?: boolean;
+	treeChopFeePaid?: number;
+	treeChopFeePlanned?: number;
 	patchType: IPatchData;
 	planting: boolean;
 	currentDate: number;
 	autoFarmed: boolean;
+	autoFarmPlan?: AutoFarmStepData[];
+	autoFarmCombined?: boolean;
 }
 
 export interface BirdhouseActivityTaskOptions extends ActivityTaskOptions {
