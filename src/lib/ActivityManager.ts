@@ -14,8 +14,8 @@ class SActivityManager {
 		await prisma.activity.deleteMany({ where: { user_id: BigInt(userID), completed: false } });
 	}
 
-	async startTrip<T extends ActivityTaskData>(tripData: Omit<T, 'finishDate' | 'id'>) {
-		return addSubTaskToActivityTask(tripData);
+	async startTrip<T extends ActivityTaskData>(tripData: Omit<T, 'finishDate' | 'id'>): Promise<void> {
+		await addSubTaskToActivityTask(tripData);
 	}
 
 	convertStoredActivityToFlatActivity(activity: Activity): ActivityTaskData {
