@@ -87,10 +87,17 @@ export interface FishInSpot {
 	tertiary?: { chance: number; id: number };
 }
 
+export interface MoonKeyHalfCatchRate {
+	numerator: number;
+	denominator: number;
+}
+
 export interface Fish {
 	name: string;
 	alias?: string[];
 	subfishes?: FishInSpot[];
+	moonKeyHalfEligible?: boolean;
+	moonKeyHalfCatchRate?: MoonKeyHalfCatchRate;
 	petChance?: number;
 	clueScrollChance?: number;
 	lostTicks?: number;

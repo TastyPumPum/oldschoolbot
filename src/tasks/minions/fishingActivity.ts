@@ -1,6 +1,7 @@
 import { Emoji, Events } from '@oldschoolgg/toolkit';
 import { EItem } from 'oldschooljs';
 
+import { QuestID } from '@/lib/minions/data/quests.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 
@@ -26,8 +27,8 @@ export const fishingTask: MinionTask = {
 				typeof fishID === 'number'
 					? fishID
 					: typeof fishID === 'string'
-					? Number.parseInt(fishID, 10)
-					: Number.NaN;
+						? Number.parseInt(fishID, 10)
+						: Number.NaN;
 			if (!Number.isNaN(numericFishID)) {
 				fish = Fishing.Fishes.find(f => f.subfishes?.some(sub => sub.id === numericFishID));
 				if (fish?.subfishes) {
@@ -65,7 +66,8 @@ export const fishingTask: MinionTask = {
 			flakeExtra,
 			rng,
 			usedBarbarianCutEat,
-			isPowerfishing: powerfish
+			isPowerfishing: powerfish,
+			hasFinishedCOTS: user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)
 		});
 
 		const updateResult = await result.updateBank.transact(user);
