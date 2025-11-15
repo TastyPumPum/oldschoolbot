@@ -1,26 +1,31 @@
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
-import { handleTripFinish } from '@/lib/util/handleTripFinish.js';
+import { handleTripFinish as defaultHandleTripFinish } from '@/lib/util/handleTripFinish.js';
 import { handleCombinedAutoFarm } from './combinedAutoFarmActivity.js';
 import { executeFarmingStep } from './farmingStep.js';
 
 export const farmingTask: MinionTask = {
 	type: 'Farming',
-	async run(data: FarmingActivityTaskOptions) {
-		const user = await mUserFetch(data.userID);
+	async run(data: FarmingActivityTaskOptions, options) {
+		const user = options?.user ?? (await mUserFetch(data.userID));
+		const handleTripFinish = options?.handleTripFinish ?? defaultHandleTripFinish;
+		const channelID = data.channelID ?? (data as { channelId?: string }).channelId;
+		if (!channelID) {
+			throw new Error('Farming task completed without a channel id.');
+		}
 		if (data.autoFarmCombined && data.autoFarmPlan?.length) {
-			await handleCombinedAutoFarm({ user, taskData: data });
+			await handleCombinedAutoFarm({ user, taskData: data, handleTripFinish });
 			return;
 		}
-		const result = await executeFarmingStep({ user, channelID: data.channelID, data });
+		const result = await executeFarmingStep({ user, channelID, data });
 		if (!result) {
 			return;
 		}
 		const message = result.attachment ? { content: result.message, files: [result.attachment] } : result.message;
 		await handleTripFinish({
 			user,
-			channelId: data.channelID,
+			channelId: channelID,
 			message,
 			data,
 			loot: result.loot ?? null
@@ -49,7 +54,7 @@ export const farmingTask: MinionTask = {
 				plantsName: nextStep.plantsName,
 				patchType: nextStep.patchType,
 				userID: user.id,
-				channelID: data.channelID,
+				channelID,
 				quantity: nextStep.quantity,
 				upgradeType: nextStep.upgradeType,
 				payment: nextStep.payment,

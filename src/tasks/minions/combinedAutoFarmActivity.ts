@@ -5,7 +5,7 @@ import { Bank, toKMB } from 'oldschooljs';
 import { BitField } from '@/lib/constants.js';
 import { skillEmoji } from '@/lib/data/emojis.js';
 import type { FarmingActivityTaskOptions } from '@/lib/types/minions.js';
-import { handleTripFinish } from '@/lib/util/handleTripFinish.js';
+import { handleTripFinish as defaultHandleTripFinish } from '@/lib/util/handleTripFinish.js';
 import { makeAutoContractButton } from '@/lib/util/interactions.js';
 import { canRunAutoContract } from '@/mahoji/lib/abstracted_commands/farmingContractCommand.js';
 import {
@@ -17,6 +17,7 @@ import {
 interface HandleCombinedAutoFarmOptions {
 	user: MUser;
 	taskData: FarmingActivityTaskOptions;
+	handleTripFinish?: typeof defaultHandleTripFinish;
 }
 
 interface BuildAggregateMessageArgs {
@@ -186,7 +187,11 @@ function buildAggregateMessage({ summaries, totalLoot, user }: BuildAggregateMes
 
 	return lines.join('\n\n').replace(/:minion:\s+:minion:\s*/gi, ':minion: ');
 }
-export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedAutoFarmOptions) {
+export async function handleCombinedAutoFarm({
+	user,
+	taskData,
+	handleTripFinish = defaultHandleTripFinish
+}: HandleCombinedAutoFarmOptions) {
 	const plan = taskData.autoFarmPlan;
 	const steps =
 		plan && plan.length > 0
@@ -207,6 +212,11 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 					}
 				];
 
+	const baseChannelId = taskData.channelID ?? (taskData as { channelId?: string }).channelId;
+	if (!baseChannelId) {
+		throw new Error('Farming auto farm task missing channel id.');
+	}
+
 	const messages: string[] = [];
 	const attachments: FarmingStepAttachment[] = [];
 	const totalLoot = new Bank();
@@ -216,6 +226,7 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 	for (const step of steps) {
 		const stepData: FarmingActivityTaskOptions = {
 			...taskData,
+			channelID: taskData.channelID ?? baseChannelId,
 			plantsName: step.plantsName,
 			quantity: step.quantity,
 			upgradeType: step.upgradeType,
@@ -231,7 +242,7 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 			autoFarmCombined: false
 		};
 
-		const result = await executeFarmingStep({ user, channelID: taskData.channelID, data: stepData });
+		const result = await executeFarmingStep({ user, channelID: baseChannelId, data: stepData });
 		if (!result) {
 			break;
 		}
@@ -283,7 +294,7 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 
 	await handleTripFinish({
 		user,
-		channelId: taskData.channelID,
+		channelId: baseChannelId,
 		message,
 		data: taskData,
 		loot
