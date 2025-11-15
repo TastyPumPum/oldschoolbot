@@ -138,7 +138,7 @@ export const fishCommand = defineCommand({
 			flakesToRemove: result.flakesBeingUsed,
 			blessingExtra: result.blessingExtra,
 			flakeExtra: result.flakeExtra,
-			powerfish: Boolean(options.powerfish),
+			powerfish: result.isPowerfishing,
 			spiritFlakes: result.isUsingSpiritFlakes,
 			spiritFlakePreference: result.spiritFlakePreference,
 			usedBarbarianCutEat: result.usedBarbarianCutEat,

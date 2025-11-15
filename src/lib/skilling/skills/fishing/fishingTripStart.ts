@@ -399,10 +399,13 @@ export function calcFishingTripStart({
 	let featherPacksToOpen = 0;
 	if (baitIsFeather && baitUsed > 0) {
 		const directFeatherUsage = Math.min(availableFeathers, baitUsed);
-		let remainingFeathersNeeded = baitUsed - directFeatherUsage;
+		const remainingFeathersNeeded = baitUsed - directFeatherUsage;
 		if (remainingFeathersNeeded > 0) {
 			featherPacksToOpen = Math.ceil(remainingFeathersNeeded / FEATHER_PACK_SIZE);
 			if (featherPacksToOpen > availableFeatherPacks) {
+				if (fish.bait === undefined) {
+					return `You need bait to fish ${fish.name}!`;
+				}
 				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
 			}
 		}
