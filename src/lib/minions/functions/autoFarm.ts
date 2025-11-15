@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle, type SendableMessage, SpecialResponse } from '@oldschoolgg/discord';
+import { ButtonBuilder, ButtonStyle, SpecialResponse } from '@oldschoolgg/discord';
 import { Emoji, formatDuration } from '@oldschoolgg/toolkit';
 import type { CropUpgradeType } from '@prisma/client';
 import { Bank } from 'oldschooljs';
@@ -139,7 +139,6 @@ export async function autoFarm(
 	interaction: MInteraction
 ) {
 	const farmingLevel = user.skillsAsLevels.farming;
-	const channelID = interaction.channelId ?? user.id;
 
 	const autoFarmFilter = user.autoFarmFilter ?? AutoFarmFilterEnum.AllFarm;
 	const preferContract = Boolean(
@@ -316,7 +315,7 @@ export async function autoFarm(
 		const checkPatchesButton = new ButtonBuilder()
 			.setCustomId(InteractionID.Commands.CheckPatches)
 			.setLabel('Check Patches')
-			.setEmoji(Emoji.Stopwatch)
+			.setEmoji({ name: Emoji.Stopwatch })
 			.setStyle(ButtonStyle.Secondary);
 
 		const components: ButtonBuilder[] = [checkPatchesButton];
@@ -362,13 +361,12 @@ export async function autoFarm(
 		return errorString;
 	}
 
+	const channelId = interaction.channelId ?? user.id;
 	await addSubTaskToActivityTask({
 		userID: user.id,
-		channelID: channelID.toString(),
 		type: 'Farming',
 		duration: totalDuration,
-		currentDate: firstStep.currentDate,
-
+		channelId,
 		// ✅ activity-specific payload goes here
 		data: {
 			plantsName: firstStep.plantsName,
@@ -381,7 +379,8 @@ export async function autoFarm(
 			planting: firstStep.planting,
 			autoFarmed: true,
 			autoFarmPlan,
-			autoFarmCombined: true
+			autoFarmCombined: true,
+			currentDate: firstStep.currentDate
 		}
 	});
 

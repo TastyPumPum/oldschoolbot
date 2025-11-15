@@ -49,7 +49,7 @@ export const farmingTask: MinionTask = {
 				plantsName: nextStep.plantsName,
 				patchType: nextStep.patchType,
 				userID: user.id,
-				channelID: data.channelID,
+				channelID: data.channelId,
 				quantity: nextStep.quantity,
 				upgradeType: nextStep.upgradeType,
 				payment: nextStep.payment,
