@@ -1,4 +1,12 @@
-import type { ArrayItemsResolved, Bank, Item, ItemBank, MonsterKillOptions, SimpleMonster } from 'oldschooljs';
+import type {
+	ArrayItemsResolved,
+	Bank,
+	EMonster,
+	Item,
+	ItemBank,
+	MonsterKillOptions,
+	SimpleMonster
+} from 'oldschooljs';
 import type { OffenceGearStat } from 'oldschooljs/gear';
 
 import type { GearSetupType, XpGainSource } from '@/prisma/main.js';
@@ -7,7 +15,7 @@ import type { QuestID } from '@/lib/minions/data/quests.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { POHBoosts } from '@/lib/poh/index.js';
 import type { MinigameName } from '@/lib/settings/minigames.js';
-import type { LevelRequirements, SkillNameType } from '@/lib/skilling/types.js';
+import type { LevelRequirements, Ore, SkillNameType } from '@/lib/skilling/types.js';
 import type { GearRequirements } from '@/lib/structures/Gear.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
 import type { MUserStats } from '@/lib/structures/MUserStats.js';
@@ -107,7 +115,7 @@ export interface KillableMonster {
 	}[];
 	requiredQuests?: QuestID[];
 	deathProps?: Omit<Parameters<typeof calculateSimpleMonsterDeathChance>['0'], 'currentKC'>;
-	diaryRequirement?: [DiaryID, DiaryTierName];
+	diaryRequirement?: Parameters<MUser['hasDiary']>[0];
 	wildySlayerCave?: boolean;
 }
 /*
@@ -170,7 +178,7 @@ export interface DiaryTier {
 	minigameReqs?: Partial<Record<MinigameName, number>>;
 	lapsReqs?: Record<string, number>;
 	qp?: number;
-	monsterScores?: Record<string, number>;
+	monsterScores?: Partial<Record<EMonster, number>>;
 	customReq?: (user: MUser, summary: boolean, stats: MUserStats) => [true] | [false, string];
 }
 export enum DiaryID {
@@ -186,4 +194,12 @@ export enum DiaryID {
 	Morytania = 9,
 	Varrock = 10,
 	Wilderness = 11
+}
+
+export interface Star extends Ore {
+	size: number;
+	level: number;
+	chance: number;
+	dustAvailable: number;
+	additionalDustPercent: number;
 }

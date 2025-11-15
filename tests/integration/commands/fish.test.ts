@@ -46,23 +46,23 @@ describe('Fish Command', async () => {
 		expect(res).toContain('is now fishing Shrimps/Anchovies');
 	});
 
-	it('should catch insufficient feathers', async () => {
+	it('should fail to do barb fish when has no feathers', async () => {
 		const user = await createTestUser();
 		await user.update({
-			bank: new Bank().add('Feather', 0),
 			skills_fishing: 999_999,
 			skills_agility: 999_999,
 			skills_strength: 999_999
 		});
+
+		await user.setBank(new Bank());
 		await user.equip('skilling', [EItem.PEARL_BARBARIAN_ROD]);
-		const res = await user.runCommand(fishCommand, { name: 'Barbarian fishing' });
+		const res = await user.runCommand('fish', { name: 'Barbarian fishing' });
 		expect(res).toEqual('You need Feather to fish Barbarian fishing!');
 	});
 
-	it('should boost', async () => {
+	it('should do barb fishing when has feathers', async () => {
 		const user = await createTestUser();
 		await user.update({
-			bank: new Bank().add('Feather', 100),
 			skills_fishing: 999_999,
 			skills_agility: 999_999,
 			skills_strength: 999_999
@@ -108,6 +108,7 @@ describe('Fish Command', async () => {
 
 	it('should use fishing bait', async () => {
 		const user = await createTestUser();
+		// @ts-expect-error
 		await user.update({ skills_fishing: 100_000, bank: new Bank({ 'Fishing bait': 100 }) });
 		const res = await user.runCommand(fishCommand, { name: 'Sardine/Herring', quantity: 50 });
 		expect(res).toContain('is now fishing Sardine/Herring');

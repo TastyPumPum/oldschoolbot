@@ -9,7 +9,7 @@ export const fishingTask: MinionTask = {
 	async run(data: FishingActivityTaskOptions, { handleTripFinish, user, rng }) {
 		const {
 			fishID,
-			channelID,
+			channelId,
 			Qty,
 			loot = [],
 			blessingExtra = 0,
@@ -78,6 +78,6 @@ export const fishingTask: MinionTask = {
 			);
 		}
 
-		handleTripFinish(user, channelID, message, undefined, data, result.updateBank.itemLootBank);
+		handleTripFinish(user, channelId, message, data, result.updateBank.itemLootBank);
 	}
 };

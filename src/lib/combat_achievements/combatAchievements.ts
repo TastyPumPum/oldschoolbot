@@ -12,7 +12,6 @@ import { masterCombatAchievements } from '@/lib/combat_achievements/master.js';
 import { mediumCombatAchievements } from '@/lib/combat_achievements/medium.js';
 import type { Requirements } from '@/lib/structures/Requirements.js';
 import type { ActivityTaskData, TOAOptions } from '@/lib/types/minions.js';
-import type { TripFinishEffect } from '@/lib/util/handleTripFinish.js';
 import { assert } from '@/lib/util/logError.js';
 import { formatList } from '@/lib/util/smallUtils.js';
 
@@ -66,7 +65,9 @@ interface CARootItem {
 	taskPoints: number;
 	rewardThreshold: number;
 }
-export type CATier = 'easy' | 'medium' | 'hard' | 'elite' | 'master' | 'grandmaster';
+
+export const caTiers = ['easy', 'medium', 'hard', 'elite', 'master', 'grandmaster'] as const;
+export type CATier = (typeof caTiers)[number];
 type CARoot = Record<CATier, CARootItem>;
 
 const easy: CARootItem = {
@@ -163,7 +164,15 @@ assert(uniqueArr(entries.flatMap(i => i[1].tasks.map(t => t.name))).length === n
 assert(sumArr(Object.values(CombatAchievements).map(i => i.length)) === allCATaskIDs.length);
 const indexesWithRng = entries.flatMap(i => i[1].tasks.filter(t => 'rng' in t));
 
-export const combatAchievementTripEffect = async ({ data, messages, user }: Parameters<TripFinishEffect['fn']>[0]) => {
+export const combatAchievementTripEffect = async ({
+	data,
+	messages,
+	user
+}: {
+	data: ActivityTaskData;
+	user: MUser;
+	messages: string[];
+}) => {
 	const dataCopy = clone(data);
 
 	let quantity = 1;

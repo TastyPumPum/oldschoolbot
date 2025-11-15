@@ -3,7 +3,6 @@ import { calcWhatPercent, formatDuration, reduceNumByPercent, Time } from '@olds
 import { Bank, itemID, Monsters } from 'oldschooljs';
 
 import { newChatHeadImage } from '@/lib/canvas/chatHeadImage.js';
-import { getUsersCurrentSlayerInfo } from '@/lib/slayer/slayerUtil.js';
 import type { FightCavesActivityTaskOptions } from '@/lib/types/minions.js';
 
 export const fightCavesCost = new Bank({
@@ -93,13 +92,13 @@ function checkGear(user: MUser): string | undefined {
 	}
 }
 
-export async function fightCavesCommand(user: MUser, channelID: string): CommandResponse {
+export async function fightCavesCommand(user: MUser, channelId: string): CommandResponse {
 	const gearFailure = checkGear(user);
 	if (gearFailure) {
 		return {
 			files: [
 				{
-					attachment: await newChatHeadImage({ content: gearFailure, head: 'mejJal' }),
+					buffer: await newChatHeadImage({ content: gearFailure, head: 'mejJal' }),
 					name: 'fightcaves.jpg'
 				}
 			]
@@ -124,7 +123,7 @@ export async function fightCavesCommand(user: MUser, channelID: string): Command
 	await user.removeItemsFromBank(fightCavesCost);
 
 	// Add slayer
-	const usersTask = await getUsersCurrentSlayerInfo(user.id);
+	const usersTask = await user.fetchSlayerInfo();
 	const isOnTask =
 		usersTask.currentTask !== null &&
 		usersTask.currentTask !== undefined &&
@@ -144,7 +143,7 @@ export async function fightCavesCommand(user: MUser, channelID: string): Command
 
 	await ActivityManager.startTrip<FightCavesActivityTaskOptions>({
 		userID: user.id,
-		channelID,
+		channelId,
 		quantity: 1,
 		duration,
 		type: 'FightCaves',
@@ -169,7 +168,7 @@ export async function fightCavesCommand(user: MUser, channelID: string): Command
 **Removed from your bank:** ${fightCavesCost}`,
 		files: [
 			{
-				attachment: await newChatHeadImage({
+				buffer: await newChatHeadImage({
 					content: `You're on your own now JalYt, prepare to fight for your life! I think you have ${totalDeathChance}% chance of survival.`,
 					head: 'mejJal'
 				}),

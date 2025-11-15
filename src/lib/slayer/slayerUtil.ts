@@ -2,12 +2,10 @@ import { randFloat, randInt, roll } from '@oldschoolgg/rng';
 import { notEmpty, stringMatches } from '@oldschoolgg/toolkit';
 import { Bank, type Monster, Monsters, resolveItems } from 'oldschooljs';
 
-import { CombatAchievements } from '@/lib/combat_achievements/combatAchievements.js';
+import { caTiers } from '@/lib/combat_achievements/combatAchievements.js';
 import type { PvMMethod } from '@/lib/constants.js';
-import { LumbridgeDraynorDiary, userhasDiaryTier } from '@/lib/diaries.js';
 import { CombatOptionsEnum } from '@/lib/minions/data/combatConstants.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
-import { getNewUser } from '@/lib/settings/settings.js';
 import { autoslayModes } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop, SlayerTaskUnlocksEnum } from '@/lib/slayer/slayerUnlocks.js';
@@ -84,7 +82,7 @@ export function determineCombatBoosts(params: DetermineBoostParams): PvMMethod[]
 	return boostMethods;
 }
 
-export function calculateSlayerPoints(currentStreak: number, master: SlayerMaster, hasKourendElite: boolean) {
+export function calculateSlayerPoints(currentStreak: number, master: SlayerMaster, hasKourendElite: boolean): number {
 	const streaks = [1000, 250, 100, 50, 10];
 	const multiplier = [50, 35, 25, 15, 5];
 
@@ -184,13 +182,13 @@ function userCanUseTask(user: MUser, task: AssignableSlayerTask, master: SlayerM
 	return true;
 }
 
-export async function assignNewSlayerTask(_user: MUser, master: SlayerMaster) {
+export async function assignNewSlayerTask(user: MUser, master: SlayerMaster) {
 	// assignedTask is the task object, currentTask is the database row.
-	const baseTasks = [...master.tasks].filter(t => userCanUseTask(_user, t, master, false));
+	const baseTasks = [...master.tasks].filter(t => userCanUseTask(user, t, master, false));
 	let bossTask = false;
 	let wildyBossTask = false;
 	if (
-		_user.user.slayer_unlocks.includes(SlayerTaskUnlocksEnum.LikeABoss) &&
+		user.hasSlayerUnlock(SlayerTaskUnlocksEnum.LikeABoss) &&
 		(master.name.toLowerCase() === 'konar quo maten' ||
 			master.name.toLowerCase() === 'duradel' ||
 			master.name.toLowerCase() === 'nieve' ||
@@ -200,21 +198,21 @@ export async function assignNewSlayerTask(_user: MUser, master: SlayerMaster) {
 		bossTask = true;
 	}
 
-	if (_user.user.slayer_unlocks.includes(SlayerTaskUnlocksEnum.LikeABoss) && master.id === 8 && roll(25)) {
+	if (user.hasSlayerUnlock(SlayerTaskUnlocksEnum.LikeABoss) && master.id === 8 && roll(25)) {
 		wildyBossTask = true;
 	}
 
 	let assignedTask: AssignableSlayerTask | null = null;
 
 	if (bossTask) {
-		const baseBossTasks = bossTasks.filter(t => userCanUseTask(_user, t, master, true));
+		const baseBossTasks = bossTasks.filter(t => userCanUseTask(user, t, master, true));
 		if (baseBossTasks.length > 0) {
 			assignedTask = weightedPick(baseBossTasks);
 		}
 	}
 
 	if (wildyBossTask) {
-		const baseWildyBossTasks = wildernessBossTasks.filter(t => userCanUseTask(_user, t, master, true));
+		const baseWildyBossTasks = wildernessBossTasks.filter(t => userCanUseTask(user, t, master, true));
 		if (baseWildyBossTasks.length > 0) {
 			assignedTask = weightedPick(baseWildyBossTasks);
 		}
@@ -224,21 +222,26 @@ export async function assignNewSlayerTask(_user: MUser, master: SlayerMaster) {
 		assignedTask = weightedPick(baseTasks);
 	}
 
-	const newUser = await getNewUser(_user.id);
-
 	let maxQuantity = assignedTask?.amount[1];
-	if (bossTask && _user.user.slayer_unlocks.includes(SlayerTaskUnlocksEnum.LikeABoss)) {
-		for (const tier of Object.keys(CombatAchievements) as (keyof typeof CombatAchievements)[]) {
-			if (_user.hasCompletedCATier(tier)) {
+	if (bossTask && user.hasSlayerUnlock(SlayerTaskUnlocksEnum.LikeABoss)) {
+		for (const tier of caTiers) {
+			if (user.hasCompletedCATier(tier)) {
 				maxQuantity += 5;
 			}
 		}
 	}
 
 	const quantity = randInt(assignedTask?.amount[0], maxQuantity);
+
+	// New user row must exist
+	await prisma.newUser.upsert({
+		where: { id: user.id },
+		create: { id: user.id },
+		update: {}
+	});
 	const currentTask = await prisma.slayerTask.create({
 		data: {
-			user_id: newUser.id,
+			user_id: user.id,
 			quantity,
 			quantity_remaining: quantity,
 			slayer_master_id: master.id,
@@ -246,7 +249,7 @@ export async function assignNewSlayerTask(_user: MUser, master: SlayerMaster) {
 			skipped: false
 		}
 	});
-	await _user.update({
+	await user.update({
 		slayer_last_task: assignedTask?.monster.id
 	});
 
@@ -256,7 +259,7 @@ export async function assignNewSlayerTask(_user: MUser, master: SlayerMaster) {
 export async function calcMaxBlockedTasks(user: MUser) {
 	const qps = user.QP;
 	let blocks = 0;
-	const [hasLumbyDiary] = await userhasDiaryTier(user, LumbridgeDraynorDiary.elite);
+	const hasLumbyDiary = user.hasDiary('lumbridge&draynor.elite');
 	if (hasLumbyDiary) {
 		blocks += 1;
 	}
@@ -313,7 +316,7 @@ export function getCommonTaskName(task: Monster) {
 
 export type CurrentSlayerInfo = Awaited<ReturnType<typeof getUsersCurrentSlayerInfo>>;
 export async function getUsersCurrentSlayerInfo(id: string) {
-	const [currentTask, partialUser] = await prisma.$transaction([
+	let [currentTask, partialUser, statsWithStreaks] = await prisma.$transaction([
 		prisma.slayerTask.findFirst({
 			where: {
 				user_id: id,
@@ -330,8 +333,24 @@ export async function getUsersCurrentSlayerInfo(id: string) {
 			select: {
 				slayer_points: true
 			}
+		}),
+		prisma.userStats.findFirst({
+			where: {
+				user_id: BigInt(id)
+			},
+			select: {
+				slayer_task_streak: true,
+				slayer_wildy_task_streak: true
+			}
 		})
 	]);
+
+	if (statsWithStreaks === null) {
+		statsWithStreaks = {
+			slayer_task_streak: 0,
+			slayer_wildy_task_streak: 0
+		};
+	}
 
 	const slayerPoints = partialUser?.slayer_points ?? 0;
 
@@ -340,7 +359,8 @@ export async function getUsersCurrentSlayerInfo(id: string) {
 			currentTask: null,
 			assignedTask: null,
 			slayerMaster: null,
-			slayerPoints
+			slayerPoints,
+			statsWithStreaks
 		};
 	}
 
@@ -361,7 +381,8 @@ export async function getUsersCurrentSlayerInfo(id: string) {
 			currentTask: null,
 			assignedTask: null,
 			slayerMaster: null,
-			slayerPoints
+			slayerPoints,
+			statsWithStreaks
 		};
 	}
 
@@ -369,7 +390,8 @@ export async function getUsersCurrentSlayerInfo(id: string) {
 		currentTask,
 		assignedTask,
 		slayerMaster,
-		slayerPoints
+		slayerPoints,
+		statsWithStreaks
 	};
 }
 

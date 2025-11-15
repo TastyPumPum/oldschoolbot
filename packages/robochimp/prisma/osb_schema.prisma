@@ -419,8 +419,6 @@ model User {
   farmingPatches_mushroom   Json? @map("farmingPatches.mushroom") @db.Json
   farmingPatches_belladonna Json? @map("farmingPatches.belladonna") @db.Json
 
-  cached_networth_value BigInt?
-
   username             String? @db.VarChar(32)
   username_with_badges String? @db.VarChar()
 
@@ -1113,14 +1111,6 @@ model GiftBox {
   items Json @default("{}") @db.Json
 
   @@map("gift_box")
-}
-
-model ItemMetadata {
-  id Int @id
-
-  name String?
-
-  @@map("item_metadata")
 }
 
 enum UserEventType {

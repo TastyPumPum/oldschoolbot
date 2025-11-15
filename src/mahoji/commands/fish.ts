@@ -1,7 +1,6 @@
 import { formatDuration, stringSearch } from '@oldschoolgg/toolkit';
 import { Monsters } from 'oldschooljs';
 
-import { userhasDiaryTier, WildernessDiary } from '@/lib/diaries.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import { anglerItemsArr } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
@@ -21,7 +20,7 @@ export const fishCommand = defineCommand({
 			name: 'name',
 			description: 'The thing you want to fish.',
 			required: true,
-			autocomplete: async (value: string) => {
+			autocomplete: async ({ value }: StringAutoComplete) => {
 				return Fishing.Fishes.filter(i =>
 					!value ? true : i.name.toLowerCase().includes(value.toLowerCase())
 				).map(i => ({
@@ -50,7 +49,7 @@ export const fishCommand = defineCommand({
 			required: false
 		}
 	],
-	run: async ({ options, user, channelID }) => {
+	run: async ({ options, user, channelId }) => {
 		const spot = Fishing.Fishes.find(fish => stringSearch(fish.name, options.name));
 		if (!spot) {
 			return 'Thats not a valid spot you can fish at.';
@@ -112,10 +111,12 @@ export const fishCommand = defineCommand({
 			}
 		}
 
+
+
 		await ActivityManager.startTrip<FishingActivityTaskOptions>({
 			fishID: spot.name,
 			userID: user.id,
-			channelID,
+			channelId,
 			quantity: result.quantity,
 			Qty: result.catches,
 			loot: result.loot,

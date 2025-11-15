@@ -1,9 +1,9 @@
-import { Time } from '@oldschoolgg/toolkit';
-import { ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ButtonBuilder, ButtonStyle } from '@oldschoolgg/discord';
+import { objectValues, Time } from '@oldschoolgg/toolkit';
 import { Items } from 'oldschooljs';
 
 import { activity_type_enum } from '@/prisma/main/enums.js';
-import type { Activity, Prisma } from '@/prisma/main.js';
+import type { Activity } from '@/prisma/main.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import type { PvMMethod } from '@/lib/constants.js';
 import { findTripBuyable } from '@/lib/data/buyables/tripBuyables.js';
@@ -13,6 +13,7 @@ import { runCommand } from '@/lib/settings/settings.js';
 import { courses } from '@/lib/skilling/skills/agility.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
 import type {
+	ActivityTaskData,
 	ActivityTaskOptionsWithQuantity,
 	AgilityActivityTaskOptions,
 	AlchingActivityTaskOptions,
@@ -41,6 +42,7 @@ import type {
 	HerbloreActivityTaskOptions,
 	HunterActivityTaskOptions,
 	MahoganyHomesActivityTaskOptions,
+	MinigameActivityTaskOptionsWithNoChanges,
 	MiningActivityTaskOptions,
 	MonsterActivityTaskOptions,
 	MotherlodeMiningActivityTaskOptions,
@@ -68,6 +70,7 @@ import type {
 	ZalcanoActivityTaskOptions
 } from '@/lib/types/minions.js';
 import { giantsFoundryAlloys } from '@/mahoji/lib/abstracted_commands/giantsFoundryCommand.js';
+import puroOptions from '@/mahoji/lib/abstracted_commands/puroPuroCommand.js';
 
 const taskCanBeRepeated = (activity: Activity, user: MUser) => {
 	if (activity.type === activity_type_enum.ClueCompletion) {
@@ -91,8 +94,20 @@ const taskCanBeRepeated = (activity: Activity, user: MUser) => {
 		] as activity_type_enum[]
 	).includes(activity.type);
 };
+type ActivityMap = {
+	[K in ActivityTaskData as K['type']]: K;
+};
 
-const tripHandlers = {
+type MockedCommandOptions = {
+	[key: string]: string | number | boolean | undefined | MockedCommandOptions;
+};
+
+const tripHandlers: {
+	[K in keyof ActivityMap]: {
+		commandName: string;
+		args: (data: ActivityMap[K]) => MockedCommandOptions;
+	};
+} = {
 	[activity_type_enum.ClueCompletion]: {
 		commandName: 'clue',
 		args: (data: ClueActivityTaskOptions) => ({
@@ -180,7 +195,9 @@ const tripHandlers = {
 	},
 	[activity_type_enum.AgilityArena]: {
 		commandName: 'minigames',
-		args: (data: ActivityTaskOptionsWithQuantity) => ({ agility_arena: { start: { quantity: data.quantity } } })
+		args: (data: MinigameActivityTaskOptionsWithNoChanges) => ({
+			agility_arena: { start: { quantity: data.quantity } }
+		})
 	},
 	[activity_type_enum.Alching]: {
 		commandName: 'activities',
@@ -496,7 +513,7 @@ const tripHandlers = {
 	},
 	[activity_type_enum.Wintertodt]: {
 		commandName: 'k',
-		args: (data: ActivityTaskOptionsWithQuantity) => ({
+		args: (data: MinigameActivityTaskOptionsWithNoChanges) => ({
 			name: 'wintertodt',
 			quantity: data.quantity
 		})
@@ -529,9 +546,16 @@ const tripHandlers = {
 	},
 	[activity_type_enum.PuroPuro]: {
 		commandName: 'activities',
-		args: (data: PuroPuroActivityTaskOptions) => ({
-			puro_puro: { implingTier: data.implingTier || '', dark_lure: data.darkLure }
-		})
+		args: (data: PuroPuroActivityTaskOptions) => {
+			const implingName =
+				(data.implingTier !== null
+					? puroOptions.find(option => option.tier === data.implingTier)?.name
+					: null) ?? puroOptions[0].name;
+
+			return {
+				puro_puro: { impling: implingName, dark_lure: data.darkLure }
+			};
+		}
 	},
 	[activity_type_enum.Questing]: {
 		commandName: 'activities',
@@ -707,13 +731,13 @@ const tripHandlers = {
 	}
 } as const;
 
-for (const type of Object.values(activity_type_enum)) {
+for (const type of objectValues(activity_type_enum)) {
 	if (!tripHandlers[type]) {
 		throw new Error(`Missing trip handler for ${type}`);
 	}
 }
 
-export async function fetchRepeatTrips(user: MUser) {
+export async function fetchRepeatTrips(user: MUser): Promise<Activity[]> {
 	const res: Activity[] = await prisma.activity.findMany({
 		where: {
 			user_id: BigInt(user.id),
@@ -726,13 +750,11 @@ export async function fetchRepeatTrips(user: MUser) {
 		},
 		take: 20
 	});
-	const filtered: {
-		type: activity_type_enum;
-		data: Prisma.JsonValue;
-	}[] = [];
+	const filtered: Activity[] = [];
 	for (const trip of res) {
 		if (!taskCanBeRepeated(trip, user)) continue;
-		if (trip.type === activity_type_enum.Farming && !(trip.data as any as FarmingActivityTaskOptions).autoFarmed) {
+		const data = ActivityManager.convertStoredActivityToFlatActivity(trip);
+		if (data.type === activity_type_enum.Farming && data.autoFarmed) {
 			continue;
 		}
 		if (!filtered.some(i => i.type === trip.type)) {
@@ -744,8 +766,9 @@ export async function fetchRepeatTrips(user: MUser) {
 
 export async function makeRepeatTripButtons(user: MUser) {
 	const trips = await fetchRepeatTrips(user);
+	const limit = Math.min((await user.fetchPerkTier()) + 1, 5);
+
 	const buttons: ButtonBuilder[] = [];
-	const limit = Math.min(user.perkTier() + 1, 5);
 	for (const trip of trips.slice(0, limit)) {
 		buttons.push(
 			new ButtonBuilder()
@@ -757,21 +780,19 @@ export async function makeRepeatTripButtons(user: MUser) {
 	return buttons;
 }
 
-export async function repeatTrip(
-	user: MUser,
-	interaction: MInteraction,
-	data: { data: Prisma.JsonValue; type: activity_type_enum }
-): CommandResponse {
-	if (!data || !data.data || !data.type) {
+export async function repeatTrip(user: MUser, interaction: MInteraction, activity: Activity): CommandResponse {
+	if (!activity || !activity.data || !activity.type) {
 		return { content: "Couldn't find any trip to repeat.", ephemeral: true };
 	}
-	const handler = tripHandlers[data.type];
+	const handler = tripHandlers[activity.type];
+	const args: ActivityTaskData = ActivityManager.convertStoredActivityToFlatActivity(activity);
 	return runCommand({
 		commandName: handler.commandName,
 		isContinue: true,
-		args: handler.args(data.data as any),
+		args: handler.args(args as any) as CommandOptions,
 		interaction,
 		user,
-		continueDeltaMillis: interaction.createdAt.getTime() - (interaction.message?.createdTimestamp ?? 0)
+		continueDeltaMillis: 0
+		// TODO: continueDeltaMillis: interaction.createdAt.getTime() - (interaction.message?.createdTimestamp ?? 0)
 	});
 }
