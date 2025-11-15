@@ -14,6 +14,10 @@ const harpoonBoosts = [
 
 const harpoonFishSpots = new Set(['Tuna/Swordfish', 'Shark']);
 
+const FEATHER_ID = Items.getId('Feather');
+const FEATHER_PACK_ID = Items.getId('Feather pack');
+const FEATHER_PACK_SIZE = 100;
+
 function isHarpoonFishSpot(fish: Fish) {
 	return harpoonFishSpots.has(fish.name);
 }
@@ -281,6 +285,11 @@ export function calcFishingTripStart({
 	let isUsingSpiritFlakes = wantsToUseFlakes;
 	let isPowerfishing = powerfish;
 
+	const baitIsFeather = fish.bait === FEATHER_ID;
+	const availableFeathers = baitIsFeather ? gearBank.bank.amount(FEATHER_ID) : 0;
+	const availableFeatherPacks = baitIsFeather ? gearBank.bank.amount(FEATHER_PACK_ID) : 0;
+	const totalFeatherSupply = baitIsFeather ? availableFeathers + availableFeatherPacks * FEATHER_PACK_SIZE : 0;
+
 	if (['Minnow', 'Karambwanji'].includes(fish.name)) {
 		isPowerfishing = false;
 	}
@@ -341,16 +350,25 @@ export function calcFishingTripStart({
 		gearBank.skillsAsLevels.fishing >= 99 &&
 		gearBank.skillsAsLevels.cooking >= 80;
 
-	const initialBait = fish.bait ? gearBank.bank.amount(fish.bait) : 0;
+	const initialBait = fish.bait ? (baitIsFeather ? totalFeatherSupply : gearBank.bank.amount(fish.bait)) : 0;
 
 	if (fish.bait) {
-		const baseCost = new Bank().add(fish.bait);
-		const maxCanDo = gearBank.bank.fits(baseCost);
-		if (maxCanDo === 0) {
-			return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
-		}
-		if (!useBarbarianCutEat) {
-			quantity = Math.min(quantity, maxCanDo);
+		if (baitIsFeather) {
+			if (totalFeatherSupply === 0) {
+				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
+			}
+			if (!useBarbarianCutEat) {
+				quantity = Math.min(quantity, totalFeatherSupply);
+			}
+		} else {
+			const baseCost = new Bank().add(fish.bait);
+			const maxCanDo = gearBank.bank.fits(baseCost);
+			if (maxCanDo === 0) {
+				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
+			}
+			if (!useBarbarianCutEat) {
+				quantity = Math.min(quantity, maxCanDo);
+			}
 		}
 	}
 
@@ -378,6 +396,18 @@ export function calcFishingTripStart({
 
 	const duration = Time.Second * 0.6 * ticksElapsed;
 
+	let featherPacksToOpen = 0;
+	if (baitIsFeather && baitUsed > 0) {
+		const directFeatherUsage = Math.min(availableFeathers, baitUsed);
+		let remainingFeathersNeeded = baitUsed - directFeatherUsage;
+		if (remainingFeathersNeeded > 0) {
+			featherPacksToOpen = Math.ceil(remainingFeathersNeeded / FEATHER_PACK_SIZE);
+			if (featherPacksToOpen > availableFeatherPacks) {
+				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
+			}
+		}
+	}
+
 	const suppliesToRemove = new Bank();
 	if (fish.bait && baitUsed > 0) {
 		suppliesToRemove.add(fish.bait, baitUsed);
@@ -400,6 +430,7 @@ export function calcFishingTripStart({
 		suppliesToRemove,
 		blessingExtra,
 		flakeExtra,
-		usedBarbarianCutEat: useBarbarianCutEat
+		usedBarbarianCutEat: useBarbarianCutEat,
+		featherPacksToOpen: featherPacksToOpen > 0 ? featherPacksToOpen : undefined
 	};
 }
