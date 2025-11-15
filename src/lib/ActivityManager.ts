@@ -100,7 +100,7 @@ class SActivityManager {
 					},
 					{
 						all_user_ids: {
-							has: BigInt(userID)
+							has: userID
 						}
 					}
 				],
@@ -121,7 +121,7 @@ class SActivityManager {
 					},
 					{
 						all_user_ids: {
-							hasSome: userIDs.map(id => BigInt(typeof id === 'string' ? id : id.id))
+							hasSome: userIDs.map(id => (typeof id === 'string' ? id : id.id.toString()))
 						}
 					}
 				],
@@ -141,7 +141,7 @@ class SActivityManager {
 					},
 					{
 						all_user_ids: {
-							has: BigInt(userID)
+							has: userID
 						}
 					}
 				]

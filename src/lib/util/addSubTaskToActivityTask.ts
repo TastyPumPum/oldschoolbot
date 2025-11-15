@@ -18,7 +18,7 @@ export default async function addSubTaskToActivityTask(
 	const existingActivities = await prisma.activity.count({
 		where: {
 			all_user_ids: {
-				hasSome: userIds.map(i => BigInt(i))
+				hasSome: userIds
 			},
 			completed: false
 		}
@@ -55,7 +55,7 @@ export default async function addSubTaskToActivityTask(
 		group_activity: isGroupActivity(taskToAdd),
 		channel_id: BigInt(taskToAdd.channelId),
 		duration,
-		all_user_ids: userIds.map(i => BigInt(i))
+		all_user_ids: userIds
 	};
 	try {
 		await prisma.activity.create({
