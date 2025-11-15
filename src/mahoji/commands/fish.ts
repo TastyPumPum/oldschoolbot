@@ -111,8 +111,6 @@ export const fishCommand = defineCommand({
 			}
 		}
 
-
-
 		await ActivityManager.startTrip<FishingActivityTaskOptions>({
 			fishID: spot.name,
 			userID: user.id,
