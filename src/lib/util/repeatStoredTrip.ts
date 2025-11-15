@@ -368,12 +368,15 @@ const tripHandlers: {
 	},
 	[activity_type_enum.Fishing]: {
 		commandName: 'fish',
-		args: (data: FishingActivityTaskOptions) => ({
-			name: data.fishID,
-			quantity: data.iQty,
-			powerfish: data.powerfish ?? false,
-			spirit_flakes: data.spiritFlakePreference ?? data.spiritFlakes ?? false
-		})
+		args: (data: FishingActivityTaskOptions) => {
+			const name = typeof data.fishID === 'number' ? Items.itemNameFromId(data.fishID) : data.fishID;
+			return {
+				name,
+				quantity: data.iQty,
+				powerfish: data.powerfish ?? false,
+				spirit_flakes: data.spiritFlakePreference ?? data.spiritFlakes ?? false
+			};
+		}
 	},
 	[activity_type_enum.FishingTrawler]: {
 		commandName: 'minigames',
