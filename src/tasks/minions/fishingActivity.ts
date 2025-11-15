@@ -14,7 +14,8 @@ export const fishingTask: MinionTask = {
 			loot = [],
 			blessingExtra = 0,
 			flakeExtra = 0,
-			usedBarbarianCutEat = false
+			usedBarbarianCutEat = false,
+			powerfish = false
 		} = data;
 
 		const fish = Fishing.Fishes.find(f => f.name === fishID);
@@ -31,7 +32,8 @@ export const fishingTask: MinionTask = {
 			blessingExtra,
 			flakeExtra,
 			rng,
-			usedBarbarianCutEat
+			usedBarbarianCutEat,
+			isPowerfishing: powerfish
 		});
 
 		const updateResult = await result.updateBank.transact(user);

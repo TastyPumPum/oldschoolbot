@@ -405,7 +405,8 @@ describe('calcFishingTripStart', () => {
 			loot: start.loot,
 			gearBank,
 			rng: createDeterministicRNG(321),
-			usedBarbarianCutEat: start.usedBarbarianCutEat
+			usedBarbarianCutEat: start.usedBarbarianCutEat,
+			isPowerfishing: start.isPowerfishing
 		});
 
 		const fishingXP = result.updateBank.xpBank.amount('fishing');
@@ -543,7 +544,8 @@ describe('calcFishingTripResult', () => {
 				rng: new SeedableRNG(123),
 				blessingExtra: tripStart.blessingExtra,
 				flakeExtra: tripStart.flakeExtra,
-				usedBarbarianCutEat: tripStart.usedBarbarianCutEat
+				usedBarbarianCutEat: tripStart.usedBarbarianCutEat,
+				isPowerfishing: tripStart.isPowerfishing
 			});
 
 			return { tripStart, result };
@@ -595,7 +597,8 @@ describe('calcFishingTripResult', () => {
 			rng: new SeedableRNG(5),
 			blessingExtra: start.blessingExtra,
 			flakeExtra: start.flakeExtra,
-			usedBarbarianCutEat: start.usedBarbarianCutEat
+			usedBarbarianCutEat: start.usedBarbarianCutEat,
+			isPowerfishing: start.isPowerfishing
 		});
 
 		expect(result.blessingExtra).toBe(start.blessingExtra);
@@ -643,7 +646,8 @@ describe('calcFishingTripResult', () => {
 			loot: start.loot,
 			gearBank: finishingGear,
 			rng: createDeterministicRNG(99),
-			usedBarbarianCutEat: start.usedBarbarianCutEat
+			usedBarbarianCutEat: start.usedBarbarianCutEat,
+			isPowerfishing: start.isPowerfishing
 		});
 
 		expect(result.updateBank.xpBank.amount('cooking')).toBe(0);

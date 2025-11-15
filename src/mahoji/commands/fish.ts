@@ -1,10 +1,12 @@
 import { formatDuration, stringSearch } from '@oldschoolgg/toolkit';
-import { Monsters } from 'oldschooljs';
+import { Bank, Monsters } from 'oldschooljs';
 
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import { anglerItemsArr } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 import { bankToStrShortNames, formatSkillRequirements } from '@/lib/util/smallUtils.js';
+
+const FEATHER_PACK_SIZE = 100;
 
 export const fishCommand = defineCommand({
 	name: 'fish',
@@ -98,6 +100,21 @@ export const fishCommand = defineCommand({
 
 		if (typeof result === 'string') {
 			return result;
+		}
+
+		if (result.featherPacksToOpen && result.featherPacksToOpen > 0) {
+			const packsToOpen = result.featherPacksToOpen;
+			try {
+				await user.transactItems({
+					itemsToRemove: new Bank().add('Feather pack', packsToOpen),
+					itemsToAdd: new Bank().add('Feather', packsToOpen * FEATHER_PACK_SIZE)
+				});
+			} catch (err) {
+				if (err instanceof Error) {
+					return err.message;
+				}
+				throw err;
+			}
 		}
 
 		if (result.suppliesToRemove.length > 0) {

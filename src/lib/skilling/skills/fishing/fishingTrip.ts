@@ -18,7 +18,8 @@ export function calcFishingTripResult({
 	rng,
 	blessingExtra = 0,
 	flakeExtra = 0,
-	usedBarbarianCutEat = false
+	usedBarbarianCutEat = false,
+	isPowerfishing = false
 }: {
 	fish: Fish;
 	duration: number;
@@ -29,6 +30,7 @@ export function calcFishingTripResult({
 	blessingExtra?: number;
 	flakeExtra?: number;
 	usedBarbarianCutEat?: boolean;
+	isPowerfishing?: boolean;
 }) {
 	const rngProvider = rng ?? MathRNG;
 
@@ -61,13 +63,16 @@ export function calcFishingTripResult({
 	for (let i = 0; i < fish.subfishes!.length; i++) {
 		const subfish = fish.subfishes![i];
 		const quantity = catches[i] ?? 0;
-		const lootQty = loot[i] ?? 0;
+		const rawLootQty = loot[i] ?? 0;
 
-		if (quantity === 0 && lootQty === 0) continue;
+		if (quantity === 0 && rawLootQty === 0) continue;
 		if (!canHandleSubfish(subfish.id)) continue;
 
 		fishingXP += quantity * subfish.xp;
-		updateBank.itemLootBank.add(subfish.id, lootQty);
+		const totalLoot = isPowerfishing ? 0 : Math.max(quantity, rawLootQty);
+		if (totalLoot > 0) {
+			updateBank.itemLootBank.add(subfish.id, totalLoot);
+		}
 
 		if (subfish.bonusXP) {
 			for (const [skillName, xpPerCatch] of Object.entries(subfish.bonusXP) as [SkillNameType, number][]) {
