@@ -40,16 +40,18 @@ export async function runCommand({
 	commandName,
 	args,
 	interaction,
-	ignoreUserIsBusy
+	ignoreUserIsBusy,
+	isContinue
 }: RunCommandArgs): CommandResponse {
 	const command = globalClient.allCommands.find(c => c.name === commandName)!;
 
 	const rawCommandHandlerInner = await getRawCommandHandlerInner();
+	const shouldIgnoreBusy = ignoreUserIsBusy ?? (isContinue ? true : undefined);
 	const response: Awaited<CommandResponse> = await rawCommandHandlerInner({
 		interaction,
 		command,
 		options: args,
-		ignoreUserIsBusy,
+		ignoreUserIsBusy: shouldIgnoreBusy,
 		rng: cryptoRng
 	});
 	return response;

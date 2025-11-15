@@ -269,9 +269,11 @@ export async function handleCombinedAutoFarm({ user, taskData }: HandleCombinedA
 		const autoContractDisabled = user.bitfield.includes(BitField.DisableAutoFarmContractButton);
 		if (!autoContractDisabled) {
 			const canAutoContractNow = await canRunAutoContract(user);
-			extraComponents = [
-				canAutoContractNow ? makeAutoContractButton() : makeAutoContractButton({ blocked: true })
-			];
+			const autoContractButton = makeAutoContractButton();
+			if (!canAutoContractNow) {
+				autoContractButton.setDisabled(true);
+			}
+			extraComponents = [autoContractButton];
 		}
 	}
 
