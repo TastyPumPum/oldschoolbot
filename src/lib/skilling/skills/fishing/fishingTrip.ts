@@ -12,8 +12,8 @@ import { calcAnglerBoostPercent, calcLeapingExpectedCookingXP, calcMinnowQuantit
 export function calcFishingTripResult({
 	fish,
 	duration,
-	catches,
-	loot,
+	catches = [],
+	loot = [],
 	gearBank,
 	rng,
 	blessingExtra = 0,
@@ -23,8 +23,8 @@ export function calcFishingTripResult({
 }: {
 	fish: Fish;
 	duration: number;
-	catches: number[];
-	loot: number[];
+	catches?: number[];
+	loot?: number[];
 	gearBank: GearBank;
 	rng?: RNGProvider;
 	blessingExtra?: number;
@@ -56,14 +56,18 @@ export function calcFishingTripResult({
 		return true;
 	};
 
+	const subfishCount = fish.subfishes?.length ?? 0;
+	const catchesArray = catches.length > 0 ? catches : new Array(subfishCount).fill(0);
+	const lootArray = loot.length > 0 ? loot : new Array(subfishCount).fill(0);
+
 	let fishingXP = 0;
 	const bonusXP: Partial<Record<SkillNameType, number>> = {};
-	const totalCatches = catches.reduce((total, val) => total + val, 0);
+	const totalCatches = catchesArray.reduce((total, val) => total + val, 0);
 
 	for (let i = 0; i < fish.subfishes!.length; i++) {
 		const subfish = fish.subfishes![i];
-		const quantity = catches[i] ?? 0;
-		const rawLootQty = loot[i] ?? 0;
+		const quantity = catchesArray[i] ?? 0;
+		const rawLootQty = lootArray[i] ?? 0;
 
 		if (quantity === 0 && rawLootQty === 0) continue;
 		if (!canHandleSubfish(subfish.id)) continue;

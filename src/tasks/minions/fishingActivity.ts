@@ -11,23 +11,55 @@ export const fishingTask: MinionTask = {
 			fishID,
 			channelId,
 			Qty,
-			loot = [],
+			loot,
 			blessingExtra = 0,
 			flakeExtra = 0,
 			usedBarbarianCutEat = false,
-			powerfish = false
+			powerfish = false,
+			quantity = 0
 		} = data;
 
-		const fish = Fishing.Fishes.find(f => f.name === fishID);
+		let fish = Fishing.Fishes.find(f => f.name === fishID);
+		let legacySubfishIndex: number | null = null;
+		if (!fish) {
+			const numericFishID =
+				typeof fishID === 'number'
+					? fishID
+					: typeof fishID === 'string'
+					? Number.parseInt(fishID, 10)
+					: Number.NaN;
+			if (!Number.isNaN(numericFishID)) {
+				fish = Fishing.Fishes.find(f => f.subfishes?.some(sub => sub.id === numericFishID));
+				if (fish?.subfishes) {
+					legacySubfishIndex = fish.subfishes.findIndex(sub => sub.id === numericFishID);
+				}
+			}
+		}
 		if (!fish || !fish.subfishes) {
 			throw new Error(`Invalid fishing spot received: ${fishID}`);
+		}
+
+		const subfishCount = fish.subfishes.length;
+		const catches = Array.isArray(Qty) ? [...Qty] : new Array(subfishCount).fill(0);
+		const lootArray = Array.isArray(loot) && loot.length > 0 ? [...loot] : new Array(subfishCount).fill(0);
+
+		if (legacySubfishIndex !== null) {
+			catches[legacySubfishIndex] = (catches[legacySubfishIndex] ?? 0) + quantity;
+			lootArray[legacySubfishIndex] = (lootArray[legacySubfishIndex] ?? 0) + quantity;
+		}
+
+		for (let i = catches.length; i < subfishCount; i++) {
+			catches[i] = 0;
+		}
+		for (let i = lootArray.length; i < subfishCount; i++) {
+			lootArray[i] = 0;
 		}
 
 		const result = Fishing.util.calcFishingTripResult({
 			fish,
 			duration: data.duration,
-			catches: Qty,
-			loot,
+			catches,
+			loot: lootArray,
 			gearBank: user.gearBank,
 			blessingExtra,
 			flakeExtra,
