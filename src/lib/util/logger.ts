@@ -98,6 +98,7 @@ function logError(args: string | Error | RichErrorLogArgs, ctx?: LogContext): vo
 	if (err?.requestBody?.json) {
 		err.requestBody.json = String(err.requestBody.json).slice(0, 500);
 	}
+
 	if (!globalConfig.isProduction) {
 		console.error(err);
 	}
