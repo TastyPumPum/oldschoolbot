@@ -370,11 +370,18 @@ const tripHandlers: {
 	[activity_type_enum.Fishing]: {
 		commandName: 'fish',
 		args: (data: FishingActivityTaskOptions) => {
-			const fish = Fishing.Fishes.find(f => f.id === (data.fishID as number));
+			const name = (() => {
+				if (typeof data.fishID === 'number') {
+					const spot = Fishing.Fishes.find(fish => fish.subfishes?.some(sub => sub.id === data.fishID));
+					return spot?.name ?? Items.itemNameFromId(data.fishID);
+				}
+				return data.fishID;
+			})();
 			return {
-				name: fish ? fish.name : Items.itemNameFromId(data.fishID),
+				name,
 				quantity: data.iQty,
-				flakes: data.flakesQuantity !== undefined
+				powerfish: data.powerfish ?? false,
+				spirit_flakes: data.spiritFlakePreference ?? data.spiritFlakes ?? false
 			};
 		}
 	},
