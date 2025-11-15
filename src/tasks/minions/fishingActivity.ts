@@ -42,8 +42,24 @@ export const fishingTask: MinionTask = {
 		}
 
 		const subfishCount = fish.subfishes.length;
-		const catches = Array.isArray(Qty) ? [...Qty] : new Array(subfishCount).fill(0);
-		const lootArray = Array.isArray(loot) && loot.length > 0 ? [...loot] : new Array(subfishCount).fill(0);
+		const normalizeNumericArray = (input: unknown[] | undefined, length: number) => {
+			const normalized: number[] = new Array(length).fill(0);
+			if (!Array.isArray(input)) {
+				return normalized;
+			}
+
+			for (let i = 0; i < length; i++) {
+				const value = input[i];
+				normalized[i] = typeof value === 'number' ? value : Number(value ?? 0);
+				if (!Number.isFinite(normalized[i])) {
+					normalized[i] = 0;
+				}
+			}
+			return normalized;
+		};
+
+		const catches = normalizeNumericArray(Qty, subfishCount);
+		const lootArray = normalizeNumericArray(Array.isArray(loot) ? loot : undefined, subfishCount);
 
 		if (legacySubfishIndex !== null) {
 			catches[legacySubfishIndex] = (catches[legacySubfishIndex] ?? 0) + quantity;
