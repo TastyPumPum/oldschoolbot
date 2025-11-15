@@ -1,10 +1,18 @@
 import { type RNGProvider, SeedableRNG } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
-import { Bank, toKMB } from 'oldschooljs';
+import { Bank, EItem, toKMB } from 'oldschooljs';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import * as addSkillingClueToLootModule from '../../src/lib/minions/functions/addSkillingClueToLoot.js';
 import { Fishing } from '../../src/lib/skilling/skills/fishing/fishing.js';
 import { calcFishingTripStart } from '../../src/lib/skilling/skills/fishing/fishingTripStart.js';
+import {
+	calcAnglerBoostPercent,
+	calcLeapingExpectedBait,
+	calcLeapingExpectedCookingXP,
+	calcMinnowQuantityRange,
+	calcRadasBlessingBoost
+} from '../../src/lib/skilling/skills/fishing/fishingUtil.js';
 import { makeGearBank } from './utils.js';
 
 interface SimpleRNG {
@@ -511,9 +519,157 @@ describe('calcFishingTripStart', () => {
 		expect(out.quantity).toBeGreaterThanOrEqual(1);
 		expect(out.quantity).toBeLessThan(10);
 	});
+
+	test('dark crab elite diary boost adjusts probabilities and records the diary bonus', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Dark crab')!;
+		const rngQueue = Array.from({ length: 800 }, () => 0.05);
+		const rng = new SequenceRNG(rngQueue);
+
+		const base = calcFishingTripStart({
+			gearBank: makeGearBank({ bank: new Bank().add('Dark fishing bait', 500) }),
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 200,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+
+		const elite = calcFishingTripStart({
+			gearBank: makeGearBank({ bank: new Bank().add('Dark fishing bait', 500) }),
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 200,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: true,
+			rng
+		});
+
+		expect(typeof base).toBe('object');
+		expect(typeof elite).toBe('object');
+		if (typeof base === 'string' || typeof elite === 'string') {
+			throw new Error('Expected successful trip calculations for dark crab');
+		}
+
+		expect(elite.quantity).toBeGreaterThanOrEqual(base.quantity);
+		expect(elite.boosts).toContain('Increased dark crab catch rate from Elite Wilderness Diary');
+	});
+
+	test('fishing cape halves barbarian fishing banking time', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
+		const rngQueue = Array.from({ length: 5_000 }, () => 0.05);
+
+		const withoutCape = makeGearBank({ bank: new Bank().add('Feather', 5_000) });
+		const withCape = makeGearBank({ bank: new Bank().add('Feather', 5_000) });
+		withCape.gear.skilling.equip('Fishing cape');
+
+		const base = calcFishingTripStart({
+			gearBank: withoutCape,
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 500,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+
+		const boosted = calcFishingTripStart({
+			gearBank: withCape,
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 500,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+
+		expect(typeof base).toBe('object');
+		expect(typeof boosted).toBe('object');
+		if (typeof base === 'string' || typeof boosted === 'string') {
+			throw new Error('Expected trip data for barbarian fishing cape comparison');
+		}
+
+		expect(boosted.duration).toBeLessThan(base.duration);
+	});
+
+	test('powerfishing tuna uses the accelerated roll timing', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Tuna/Swordfish')!;
+		const rngQueue = Array.from({ length: 3_000 }, () => 0.2);
+
+		const passive = calcFishingTripStart({
+			gearBank: makeGearBank(),
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 400,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+
+		const aggressive = calcFishingTripStart({
+			gearBank: makeGearBank(),
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 400,
+			wantsToUseFlakes: false,
+			powerfish: true,
+			hasWildyEliteDiary: false,
+			rng: new SequenceRNG(rngQueue)
+		});
+
+		expect(typeof passive).toBe('object');
+		expect(typeof aggressive).toBe('object');
+		if (typeof passive === 'string' || typeof aggressive === 'string') {
+			throw new Error('Expected trip data for tuna powerfishing comparison');
+		}
+
+		expect(aggressive.isPowerfishing).toBe(true);
+		expect(aggressive.duration).toBeLessThan(passive.duration);
+	});
+
+	test('returns informative error when lacking feathers for feather bait spots', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Trout/Salmon')!;
+		const res = calcFishingTripStart({
+			gearBank: makeGearBank({ bank: new Bank() }),
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 10,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof res).toBe('string');
+		expect((res as string).includes('Feather')).toBe(true);
+	});
+
+	test('returns informative error when lacking other bait types', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Dark crab')!;
+		const res = calcFishingTripStart({
+			gearBank: makeGearBank({ bank: new Bank() }),
+			fish,
+			maxTripLength: 30 * Time.Minute,
+			quantityInput: 10,
+			wantsToUseFlakes: false,
+			powerfish: false,
+			hasWildyEliteDiary: false
+		});
+
+		expect(typeof res).toBe('string');
+		expect((res as string).includes('Dark fishing bait')).toBe(true);
+	});
 });
 
 describe('calcFishingTripResult', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	test('seeded RNG produces deterministic trip results', () => {
 		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
 
@@ -651,5 +807,256 @@ describe('calcFishingTripResult', () => {
 		});
 
 		expect(result.updateBank.xpBank.amount('cooking')).toBe(0);
+	});
+
+	test('skips zero entries and subfishes that the player cannot handle', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Barbarian fishing')!;
+		const gearBank = makeGearBank({
+			bank: new Bank().add('Feather', 500),
+			skillsAsLevels: { fishing: 80, agility: 20, strength: 20, cooking: 1 }
+		});
+		const noLuckRNG: RNGProvider = {
+			rand: () => 1,
+			randFloat: (_min, max) => max,
+			randInt: (_min, max) => max,
+			roll: () => false,
+			shuffle: <T>(array: T[]) => array,
+			pick: <T>(array: T[]) => array[0],
+			percentChance: () => false
+		};
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: Time.Minute,
+			catches: [0, 5, 7],
+			loot: [0, 5, 7],
+			gearBank,
+			rng: noLuckRNG,
+			usedBarbarianCutEat: false,
+			isPowerfishing: false
+		});
+
+		expect(result.totalCatches).toBe(12);
+		expect(result.updateBank.itemLootBank.amount(fish.subfishes![0].id)).toBe(0);
+		expect(result.updateBank.itemLootBank.amount(fish.subfishes![1].id)).toBe(0);
+		expect(result.updateBank.itemLootBank.amount(fish.subfishes![2].id)).toBe(0);
+		expect(result.updateBank.xpBank.amount('fishing')).toBe(0);
+		expect(result.updateBank.xpBank.amount('agility')).toBe(0);
+		expect(result.updateBank.xpBank.amount('strength')).toBe(0);
+		expect(result.bonusXpPerHour).toEqual({});
+	});
+
+	test('awards tertiary loot, pets, angler bonus, and clue scrolls when applicable', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Shark')!;
+		const gearBank = makeGearBank();
+		gearBank.gear.skilling.equip('Angler hat');
+		gearBank.gear.skilling.equip('Angler top');
+		gearBank.gear.skilling.equip('Angler waders');
+		gearBank.gear.skilling.equip('Angler boots');
+		gearBank.gear.skilling.equip("Rada's blessing 4");
+
+		const luckyRNG: RNGProvider = {
+			rand: () => 0,
+			randFloat: (min, _max) => min,
+			randInt: (min, _max) => min,
+			roll: () => true,
+			shuffle: <T>(array: T[]) => array,
+			pick: <T>(array: T[]) => array[0],
+			percentChance: () => true
+		};
+
+		const clueSpy = vi.spyOn(addSkillingClueToLootModule, 'default');
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: Time.Hour,
+			catches: [3],
+			loot: [3],
+			gearBank,
+			rng: luckyRNG,
+			blessingExtra: 2,
+			flakeExtra: 1,
+			usedBarbarianCutEat: false,
+			isPowerfishing: false
+		});
+
+		expect(result.messages.some(msg => msg.includes('Bonus XP'))).toBe(true);
+		expect(result.messages.some(msg => msg.includes("Rada's blessing"))).toBe(true);
+		expect(result.messages.some(msg => msg.includes('Spirit flakes'))).toBe(true);
+		expect(result.updateBank.itemLootBank.amount(EItem.BIG_SHARK)).toBeGreaterThanOrEqual(1);
+		expect(result.updateBank.itemLootBank.amount('Heron')).toBe(3);
+		expect(clueSpy).toHaveBeenCalledOnce();
+	});
+
+	test('powerfishing drops loot while still granting experience', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		const gearBank = makeGearBank({ bank: new Bank().add('Fishing bait', 10) });
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: Time.Minute,
+			catches: [3, 2],
+			loot: [3, 2],
+			gearBank,
+			usedBarbarianCutEat: false,
+			isPowerfishing: true
+		});
+
+		expect(result.updateBank.itemLootBank.amount(EItem.RAW_SARDINE)).toBe(0);
+		expect(result.updateBank.itemLootBank.amount(EItem.RAW_HERRING)).toBe(0);
+		expect(result.updateBank.xpBank.amount('fishing')).toBeGreaterThan(0);
+	});
+
+	test('minnow catches are converted into the expected ranged quantities', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Minnow')!;
+		const gearBank = makeGearBank({ skillsAsLevels: { fishing: 96 } });
+		const rng: RNGProvider = {
+			rand: () => 0,
+			randFloat: (min, _max) => min,
+			randInt: (_min, max) => max,
+			roll: () => false,
+			shuffle: <T>(array: T[]) => array,
+			pick: <T>(array: T[]) => array[0],
+			percentChance: () => false
+		};
+
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: Time.Minute,
+			catches: [4],
+			loot: [0],
+			gearBank,
+			rng,
+			usedBarbarianCutEat: false,
+			isPowerfishing: false
+		});
+
+		const minnowAmount = result.updateBank.itemLootBank.amount(EItem.MINNOW);
+		expect(minnowAmount).toBeGreaterThanOrEqual(44);
+		expect(minnowAmount).toBeLessThanOrEqual(52);
+	});
+
+	test('karambwanji catches scale with fishing level', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Karambwanji')!;
+		const gearBank = makeGearBank({ skillsAsLevels: { fishing: 99 } });
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: Time.Minute,
+			catches: [2],
+			loot: [2],
+			gearBank,
+			rng: new SeedableRNG(1),
+			usedBarbarianCutEat: false,
+			isPowerfishing: false
+		});
+
+		expect(result.updateBank.itemLootBank.amount(EItem.RAW_KARAMBWANJI)).toBe(40);
+	});
+
+	test('zero duration trips report zero hourly rates', () => {
+		const fish = Fishing.Fishes.find(f => f.name === 'Sardine/Herring')!;
+		const gearBank = makeGearBank();
+		const result = Fishing.util.calcFishingTripResult({
+			fish,
+			duration: 0,
+			catches: [5, 0],
+			loot: [5, 0],
+			gearBank,
+			rng: new SeedableRNG(1),
+			usedBarbarianCutEat: false,
+			isPowerfishing: false
+		});
+
+		expect(result.xpPerHour).toBe(toKMB(0));
+		expect(result.bonusXpPerHour).toEqual({});
+	});
+});
+
+describe('fishing util helpers', () => {
+	test('calcRadasBlessingBoost recognises equipped blessings and defaults when none are worn', () => {
+		const blessed = makeGearBank();
+		blessed.gear.skilling.equip("Rada's blessing 2");
+		const none = makeGearBank();
+
+		expect(calcRadasBlessingBoost(blessed)).toEqual({ blessingEquipped: true, blessingChance: 4 });
+		expect(calcRadasBlessingBoost(none)).toEqual({ blessingEquipped: false, blessingChance: 0 });
+	});
+
+	test('calcMinnowQuantityRange picks the correct bracket for varying fishing levels', () => {
+		const high = makeGearBank({ skillsAsLevels: { fishing: 96 } });
+		const mid = makeGearBank({ skillsAsLevels: { fishing: 85 } });
+		const low = makeGearBank({ skillsAsLevels: { fishing: 10 } });
+
+		expect(calcMinnowQuantityRange(high)).toEqual([11, 13]);
+		expect(calcMinnowQuantityRange(mid)).toEqual([10, 11]);
+		expect(calcMinnowQuantityRange(low)).toEqual([10, 10]);
+	});
+
+	test('calcAnglerBoostPercent totals the equipped set bonuses', () => {
+		const fullSet = makeGearBank();
+		fullSet.gear.skilling.equip('Angler hat');
+		fullSet.gear.skilling.equip('Angler top');
+		fullSet.gear.skilling.equip('Angler waders');
+		fullSet.gear.skilling.equip('Angler boots');
+
+		const partial = makeGearBank();
+		partial.gear.skilling.equip('Angler hat');
+		partial.gear.skilling.equip('Angler top');
+
+		expect(calcAnglerBoostPercent(fullSet)).toBe(2.5);
+		expect(calcAnglerBoostPercent(partial)).toBe(1.2);
+	});
+
+	test('calcLeapingExpectedCookingXP handles zero quantity and missing configurations', () => {
+		expect(
+			calcLeapingExpectedCookingXP({
+				id: EItem.LEAPING_TROUT,
+				quantity: 0,
+				cookingLevel: 70
+			})
+		).toBe(0);
+		expect(
+			calcLeapingExpectedCookingXP({
+				id: 123456,
+				quantity: 5,
+				cookingLevel: 70
+			})
+		).toBe(0);
+	});
+
+	test('calcLeapingExpectedCookingXP rounds fractional successes correctly with and without RNG', () => {
+		const withoutRNG = calcLeapingExpectedCookingXP({
+			id: EItem.LEAPING_TROUT,
+			quantity: 1,
+			cookingLevel: 75
+		});
+		const withRNG = calcLeapingExpectedCookingXP({
+			id: EItem.LEAPING_TROUT,
+			quantity: 1,
+			cookingLevel: 70,
+			xpPerSuccess: 20,
+			rng: {
+				rand: () => 0,
+				randFloat: () => 0,
+				randInt: () => 0,
+				roll: () => false,
+				shuffle: <T>(array: T[]) => array,
+				pick: <T>(array: T[]) => array[0],
+				percentChance: () => false
+			}
+		});
+
+		expect(withoutRNG).toBe(10);
+		expect(withRNG).toBe(20);
+	});
+
+	test('calcLeapingExpectedBait respects quantity and configuration presence', () => {
+		expect(calcLeapingExpectedBait(EItem.LEAPING_TROUT, 0, 70)).toBe(0);
+		expect(calcLeapingExpectedBait(123456, 10, 70)).toBe(0);
+
+		const level = 70;
+		const chance = Math.min(level * 0.0067, 1);
+		const expected = 10 * chance * 1.5;
+		expect(calcLeapingExpectedBait(EItem.LEAPING_TROUT, 10, level)).toBeCloseTo(expected);
 	});
 });
