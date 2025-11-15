@@ -4,6 +4,7 @@ import { EItem } from 'oldschooljs';
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
+import { rollForMoonKeyHalf } from '@/lib/util/minionUtils.js';
 
 export const fishingTask: MinionTask = {
 	type: 'Fishing',
@@ -66,9 +67,20 @@ export const fishingTask: MinionTask = {
 			flakeExtra,
 			rng,
 			usedBarbarianCutEat,
-			isPowerfishing: powerfish,
-			hasFinishedCOTS: user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)
+			isPowerfishing: powerfish
 		});
+
+		if (fish.moonKeyHalfEligible !== false) {
+			const perCatchRate = fish.moonKeyHalfCatchRate;
+			rollForMoonKeyHalf({
+				rng,
+				user: user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun),
+				duration: data.duration,
+				loot: result.updateBank.itemLootBank,
+				quantity: perCatchRate ? result.totalCatches : undefined,
+				perCatchRate
+			});
+		}
 
 		const updateResult = await result.updateBank.transact(user);
 		if (typeof updateResult === 'string') {

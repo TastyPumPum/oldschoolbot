@@ -6,7 +6,6 @@ import addSkillingClueToLoot from '@/lib/minions/functions/addSkillingClueToLoot
 import type { Fish, SkillNameType } from '@/lib/skilling/types.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
 import { UpdateBank } from '@/lib/structures/UpdateBank.js';
-import { rollForMoonKeyHalf } from '@/lib/util/minionUtils.js';
 import { skillingPetDropRate } from '@/lib/util.js';
 import { calcAnglerBoostPercent, calcLeapingExpectedCookingXP, calcMinnowQuantityRange } from './fishingUtil.js';
 
@@ -20,8 +19,7 @@ export function calcFishingTripResult({
 	blessingExtra = 0,
 	flakeExtra = 0,
 	usedBarbarianCutEat = false,
-	isPowerfishing = false,
-	hasFinishedCOTS = false
+	isPowerfishing = false
 }: {
 	fish: Fish;
 	duration: number;
@@ -33,7 +31,6 @@ export function calcFishingTripResult({
 	flakeExtra?: number;
 	usedBarbarianCutEat?: boolean;
 	isPowerfishing?: boolean;
-	hasFinishedCOTS?: boolean;
 }) {
 	const rngProvider = rng ?? MathRNG;
 
@@ -168,18 +165,6 @@ export function calcFishingTripResult({
 				updateBank.itemLootBank.add('Heron');
 			}
 		}
-	}
-
-	if (fish.moonKeyHalfEligible !== false) {
-		const perCatchRate = fish.moonKeyHalfCatchRate;
-		rollForMoonKeyHalf({
-			rng: rngProvider,
-			user: hasFinishedCOTS,
-			duration,
-			loot: updateBank.itemLootBank,
-			quantity: perCatchRate ? totalCatches : undefined,
-			perCatchRate
-		});
 	}
 
 	const xpPerHour = duration === 0 ? 0 : Math.floor((fishingXP * Time.Hour) / duration);
