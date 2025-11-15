@@ -4,15 +4,18 @@ import { Items } from 'oldschooljs';
 
 import { AutoFarmFilterEnum } from '@/prisma/main/enums.js';
 import { choicesOf } from '@/discord/index.js';
-import TitheFarmBuyables from '@/lib/data/buyables/titheFarmBuyables.js';
-import { superCompostables } from '@/lib/data/filterables.js';
 import { autoFarm } from '@/lib/minions/functions/autoFarm.js';
+import {
+	compostBinPlantNameAutoComplete,
+	farmingPlantNameAutoComplete,
+	titheFarmBuyRewardAutoComplete
+} from '@/lib/skilling/skills/farming/autocompletes.js';
 import {
 	getPlantsForPatch,
 	getPrimarySeedForPlant,
 	parsePreferredSeeds,
 	serializePreferredSeeds
-} from '@/lib/minions/functions/autoFarmPreferences.js';
+} from '@/lib/skilling/skills/farming/autoFarm/preferences.js';
 import { CompostTiers, Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { FarmingSeedPreference } from '@/lib/skilling/skills/farming/utils/types.js';
@@ -117,11 +120,7 @@ export const farmingCommand = defineCommand({
 					name: 'plant_name',
 					description: 'The plant you want to plant.',
 					required: true,
-					autocomplete: async ({ value, user }: StringAutoComplete) => {
-						return Farming.Plants.filter(i => user.skillsAsLevels.farming >= i.level)
-							.filter(i => (!value ? true : i.name.toLowerCase().includes(value.toLowerCase())))
-							.map(i => ({ name: i.name, value: i.name }));
-					}
+					autocomplete: farmingPlantNameAutoComplete
 				},
 				{
 					type: 'Integer',
@@ -236,11 +235,7 @@ export const farmingCommand = defineCommand({
 					name: 'buy_reward',
 					description: 'Buy a Tithe Farm reward.',
 					required: false,
-					autocomplete: async ({ value }: StringAutoComplete) => {
-						return TitheFarmBuyables.filter(i =>
-							!value ? true : i.name.toLowerCase().includes(value.toLowerCase())
-						).map(i => ({ name: i.name, value: i.name }));
-					}
+					autocomplete: titheFarmBuyRewardAutoComplete
 				}
 			]
 		},
@@ -255,11 +250,7 @@ export const farmingCommand = defineCommand({
 					name: 'plant_name',
 					description: 'The plant you want to put in the Compost Bins.',
 					required: true,
-					autocomplete: async ({ value }: StringAutoComplete) => {
-						return superCompostables
-							.filter(i => (!value ? true : i.toLowerCase().includes(value.toLowerCase())))
-							.map(i => ({ name: i, value: i }));
-					}
+					autocomplete: compostBinPlantNameAutoComplete
 				},
 				{
 					type: 'Integer',
