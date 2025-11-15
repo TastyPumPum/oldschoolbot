@@ -4,7 +4,13 @@ import type { CropUpgradeType } from '@prisma/client';
 import { Bank } from 'oldschooljs';
 
 import { AutoFarmFilterEnum, activity_type_enum } from '@/prisma/main/enums.js';
+import { InteractionID } from '@/lib/InteractionID.js';
 import { allFarm, replant } from '@/lib/minions/functions/autoFarmFilters.js';
+import {
+	getPlantsForPatch,
+	parsePreferredSeeds,
+	resolveSeedForPatch
+} from '@/lib/skilling/skills/farming/autoFarm/preferences.js';
 import { plants } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type {
@@ -17,7 +23,6 @@ import type { AutoFarmStepData } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
-import { getPlantsForPatch, parsePreferredSeeds, resolveSeedForPatch } from './autoFarmPreferences.js';
 import { prepareFarmingStep } from './farmingTripHelpers.js';
 
 interface PlannedAutoFarmStep {
@@ -309,7 +314,7 @@ export async function autoFarm(
 		}
 
 		const checkPatchesButton = new ButtonBuilder()
-			.setCustomId('CHECK_PATCHES')
+			.setCustomId(InteractionID.Commands.CheckPatches)
 			.setLabel('Check Patches')
 			.setEmoji(Emoji.Stopwatch)
 			.setStyle(ButtonStyle.Secondary);
