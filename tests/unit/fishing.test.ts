@@ -7,6 +7,7 @@ import * as addSkillingClueToLootModule from '../../src/lib/minions/functions/ad
 import { Fishing } from '../../src/lib/skilling/skills/fishing/fishing.js';
 import { calcFishingTripStart } from '../../src/lib/skilling/skills/fishing/fishingTripStart.js';
 import {
+	calcAnglerBonusXP,
 	calcAnglerBoostPercent,
 	calcLeapingExpectedBait,
 	calcLeapingExpectedCookingXP,
@@ -1005,6 +1006,32 @@ describe('fishing util helpers', () => {
 
 		expect(calcAnglerBoostPercent(fullSet)).toBe(2.5);
 		expect(calcAnglerBoostPercent(partial)).toBe(1.2);
+	});
+
+	test('calcAnglerBoostPercent only counts pieces in the skilling gear', () => {
+		const gearBank = makeGearBank();
+		gearBank.gear.melee.equip('Angler hat');
+		expect(calcAnglerBoostPercent(gearBank)).toBe(0);
+
+		gearBank.gear.skilling.equip('Angler hat');
+		expect(calcAnglerBoostPercent(gearBank)).toBe(0.4);
+	});
+
+	test('calcAnglerBonusXP returns the expected bonus and respects rounding', () => {
+		const gearBank = makeGearBank();
+		gearBank.gear.skilling.equip('Angler top');
+
+		const baseResult = calcAnglerBonusXP({ gearBank, xp: 200 });
+		expect(baseResult.percent).toBe(0.8);
+		expect(baseResult.bonusXP).toBeCloseTo(1.6);
+		expect(baseResult.totalXP).toBeCloseTo(201.6);
+
+		const ceilResult = calcAnglerBonusXP({ gearBank, xp: 200, roundingMethod: 'ceil' });
+		expect(ceilResult.bonusXP).toBe(2);
+		expect(ceilResult.totalXP).toBe(202);
+
+		const floorResult = calcAnglerBonusXP({ gearBank, xp: 200, roundingMethod: 'floor' });
+		expect(floorResult.bonusXP).toBe(1);
 	});
 
 	test('calcLeapingExpectedCookingXP handles zero quantity and missing configurations', () => {

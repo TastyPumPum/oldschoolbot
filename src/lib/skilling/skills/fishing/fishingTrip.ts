@@ -7,7 +7,7 @@ import type { Fish, SkillNameType } from '@/lib/skilling/types.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
 import { UpdateBank } from '@/lib/structures/UpdateBank.js';
 import { skillingPetDropRate } from '@/lib/util.js';
-import { calcAnglerBoostPercent, calcLeapingExpectedCookingXP, calcMinnowQuantityRange } from './fishingUtil.js';
+import { calcAnglerBonusXP, calcLeapingExpectedCookingXP, calcMinnowQuantityRange } from './fishingUtil.js';
 
 export function calcFishingTripResult({
 	fish,
@@ -116,11 +116,17 @@ export function calcFishingTripResult({
 		}
 	}
 
-	const anglerBoost = calcAnglerBoostPercent(gearBank);
-	if (anglerBoost > 0) {
-		const bonusXP = (fishingXP * anglerBoost) / 100;
-		fishingXP += bonusXP;
-		messages.push(`**Bonus XP:** ${bonusXP.toFixed(1)} (+${anglerBoost.toFixed(1)}%) XP for angler`);
+	const {
+		percent: anglerBoost,
+		bonusXP: anglerBonusXP,
+		totalXP: fishingXPWithAngler
+	} = calcAnglerBonusXP({
+		gearBank,
+		xp: fishingXP
+	});
+	if (anglerBonusXP > 0) {
+		fishingXP = fishingXPWithAngler;
+		messages.push(`**Bonus XP:** ${anglerBonusXP.toFixed(1)} (+${anglerBoost.toFixed(1)}%) XP for angler`);
 	}
 
 	if (blessingExtra > 0) {

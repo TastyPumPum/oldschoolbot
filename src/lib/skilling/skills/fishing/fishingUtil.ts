@@ -84,12 +84,41 @@ function calcMinnowQuantityRange(gearBank: GearBank): [number, number] {
 }
 
 function calcAnglerBoostPercent(gearBank: GearBank) {
-	const equippedPieces = anglerItemsArr.filter(item => gearBank.hasEquipped(item.id));
+	const equippedPieces = anglerItemsArr.filter(item => gearBank.gear.skilling.hasEquipped(item.id));
 	if (equippedPieces.length === anglerItemsArr.length) {
 		return 2.5;
 	}
 	const boostPercent = equippedPieces.reduce((total, item) => total + item.boost, 0);
 	return round(boostPercent, 1);
+}
+
+type AnglerBonusRounding = 'none' | 'ceil' | 'floor';
+
+function calcAnglerBonusXP({
+	gearBank,
+	xp,
+	roundingMethod = 'none'
+}: {
+	gearBank: GearBank;
+	xp: number;
+	roundingMethod?: AnglerBonusRounding;
+}) {
+	const percent = calcAnglerBoostPercent(gearBank);
+	if (percent <= 0 || xp <= 0) {
+		return { percent, bonusXP: 0, totalXP: xp };
+	}
+	let bonusXP = (xp * percent) / 100;
+	switch (roundingMethod) {
+		case 'ceil':
+			bonusXP = Math.ceil(bonusXP);
+			break;
+		case 'floor':
+			bonusXP = Math.floor(bonusXP);
+			break;
+		default:
+			break;
+	}
+	return { percent, bonusXP, totalXP: xp + bonusXP };
 }
 
 function calcLeapingExpectedCookingXP({
@@ -145,6 +174,7 @@ export {
 	calcRadasBlessingBoost,
 	calcMinnowQuantityRange,
 	calcAnglerBoostPercent,
+	calcAnglerBonusXP,
 	anglerItems,
 	anglerItemsArr,
 	calcLeapingExpectedCookingXP,
