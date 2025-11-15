@@ -129,7 +129,8 @@ const fishes: Fish[] = [
 		clueScrollChance: 461_808,
 		lostTicks: 0.1,
 		bankingTime: 30,
-		ticksPerRoll: 5
+		ticksPerRoll: 5,
+		moonKeyHalfCatchRate: { numerator: 1, denominator: 4100 }
 	},
 	{
 		name: 'Pike',
@@ -173,7 +174,8 @@ const fishes: Fish[] = [
 		clueScrollChance: 257_770,
 		lostTicks: 0.1,
 		bankingTime: 25,
-		ticksPerRoll: 6
+		ticksPerRoll: 6,
+		moonKeyHalfCatchRate: { numerator: 3, denominator: 5000 }
 	},
 	{
 		name: 'Cave eel',
@@ -208,7 +210,8 @@ const fishes: Fish[] = [
 		clueScrollChance: 116_129,
 		lostTicks: 0.1,
 		bankingTime: 25,
-		ticksPerRoll: 6
+		ticksPerRoll: 6,
+		moonKeyHalfCatchRate: { numerator: 3, denominator: 5000 }
 	},
 	{
 		name: 'Monkfish',
@@ -265,7 +268,8 @@ const fishes: Fish[] = [
 		clueScrollChance: 82_243,
 		lostTicks: 0.1,
 		bankingTime: 25,
-		ticksPerRoll: 6
+		ticksPerRoll: 6,
+		moonKeyHalfCatchRate: { numerator: 1, denominator: 580 }
 	},
 	{
 		name: 'Infernal eel',

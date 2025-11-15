@@ -1,8 +1,10 @@
 import { Emoji, Events } from '@oldschoolgg/toolkit';
 import { EItem } from 'oldschooljs';
 
+import { QuestID } from '@/lib/minions/data/quests.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
+import { rollForMoonKeyHalf } from '@/lib/util/minionUtils.js';
 
 export const fishingTask: MinionTask = {
 	type: 'Fishing',
@@ -26,8 +28,8 @@ export const fishingTask: MinionTask = {
 				typeof fishID === 'number'
 					? fishID
 					: typeof fishID === 'string'
-					? Number.parseInt(fishID, 10)
-					: Number.NaN;
+						? Number.parseInt(fishID, 10)
+						: Number.NaN;
 			if (!Number.isNaN(numericFishID)) {
 				fish = Fishing.Fishes.find(f => f.subfishes?.some(sub => sub.id === numericFishID));
 				if (fish?.subfishes) {
@@ -40,8 +42,24 @@ export const fishingTask: MinionTask = {
 		}
 
 		const subfishCount = fish.subfishes.length;
-		const catches = Array.isArray(Qty) ? [...Qty] : new Array(subfishCount).fill(0);
-		const lootArray = Array.isArray(loot) && loot.length > 0 ? [...loot] : new Array(subfishCount).fill(0);
+		const normalizeNumericArray = (input: unknown[] | undefined, length: number) => {
+			const normalized: number[] = new Array(length).fill(0);
+			if (!Array.isArray(input)) {
+				return normalized;
+			}
+
+			for (let i = 0; i < length; i++) {
+				const value = input[i];
+				normalized[i] = typeof value === 'number' ? value : Number(value ?? 0);
+				if (!Number.isFinite(normalized[i])) {
+					normalized[i] = 0;
+				}
+			}
+			return normalized;
+		};
+
+		const catches = normalizeNumericArray(Qty, subfishCount);
+		const lootArray = normalizeNumericArray(Array.isArray(loot) ? loot : undefined, subfishCount);
 
 		if (legacySubfishIndex !== null) {
 			catches[legacySubfishIndex] = (catches[legacySubfishIndex] ?? 0) + quantity;
@@ -67,6 +85,18 @@ export const fishingTask: MinionTask = {
 			usedBarbarianCutEat,
 			isPowerfishing: powerfish
 		});
+
+		if (fish.moonKeyHalfEligible !== false) {
+			const perCatchRate = fish.moonKeyHalfCatchRate;
+			rollForMoonKeyHalf({
+				rng,
+				user: user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun),
+				duration: data.duration,
+				loot: result.updateBank.itemLootBank,
+				quantity: perCatchRate ? result.totalCatches : undefined,
+				perCatchRate
+			});
+		}
 
 		const updateResult = await result.updateBank.transact(user);
 		if (typeof updateResult === 'string') {
