@@ -11,6 +11,7 @@ import { SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import { autocompleteMonsters } from '@/lib/minions/data/killableMonsters/index.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { courses } from '@/lib/skilling/skills/agility.js';
+import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
 import type {
 	ActivityTaskData,
@@ -369,7 +370,13 @@ const tripHandlers: {
 	[activity_type_enum.Fishing]: {
 		commandName: 'fish',
 		args: (data: FishingActivityTaskOptions) => {
-			const name = typeof data.fishID === 'number' ? Items.itemNameFromId(data.fishID) : data.fishID;
+			const name = (() => {
+				if (typeof data.fishID === 'number') {
+					const spot = Fishing.Fishes.find(fish => fish.subfishes?.some(sub => sub.id === data.fishID));
+					return spot?.name ?? Items.itemNameFromId(data.fishID);
+				}
+				return data.fishID;
+			})();
 			return {
 				name,
 				quantity: data.iQty,

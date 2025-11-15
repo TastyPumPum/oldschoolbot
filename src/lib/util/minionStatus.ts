@@ -150,10 +150,20 @@ export function minionStatus(user: MUser, currentTask: ActivityTaskData | null) 
 		case 'Fishing': {
 			const data = currentTask as FishingActivityTaskOptions;
 
-			const fish =
-				typeof data.fishID === 'number'
-					? Fishing.Fishes.find(fish => fish.id === data.fishID)
-					: Fishing.Fishes.find(fish => fish.name === data.fishID);
+			let fish = typeof data.fishID === 'string' ? Fishing.Fishes.find(f => f.name === data.fishID) : undefined;
+			if (!fish) {
+				const numericFishID =
+					typeof data.fishID === 'number'
+						? data.fishID
+						: typeof data.fishID === 'string'
+							? Number.parseInt(data.fishID, 10)
+							: Number.NaN;
+				if (Number.isFinite(numericFishID)) {
+					fish = Fishing.Fishes.find(
+						f => f.id === numericFishID || f.subfishes?.some(sub => sub.id === numericFishID)
+					);
+				}
+			}
 			const fishName =
 				fish?.name ?? (typeof data.fishID === 'number' ? Items.itemNameFromId(data.fishID) : data.fishID);
 
