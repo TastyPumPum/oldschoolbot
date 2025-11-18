@@ -126,7 +126,9 @@ export function calcFishingTripResult({
 	});
 	if (anglerBonusXP > 0) {
 		fishingXP = fishingXPWithAngler;
-		messages.push(`**Bonus XP:** ${anglerBonusXP.toFixed(1)} (+${anglerBoost.toFixed(1)}%) XP for angler`);
+		messages.push(
+			`**Bonus XP:** ${anglerBonusXP.toFixed(1)} (+${anglerBoost.toFixed(1)}%) XP for Angler outfit pieces`
+		);
 	}
 
 	if (blessingExtra > 0) {
