@@ -10,15 +10,14 @@ SET ${u.cl_array} = (
 WHERE ${u.id} = '${userID}';`,
 	sumOfAllCLItems: (clItems: number[]) =>
 		`NULLIF(${clItems.map(i => `COALESCE(("collectionLogBank"->>'${i}')::int, 0)`).join(' + ')}, 0)`,
-	updateUserLastCommandDate: ({ userId }: { userId: string }) => {
+	updateUserLastCommandDate: async ({ userId }: { userId: string }) => {
 		if (Number.isNaN(Number(userId))) {
 			throw new Error(`Invalid userId passed to updateUserLastCommandDate: ${userId}`);
 		}
-		return prisma.$executeRawUnsafe(`
-SET LOCAL synchronous_commit = OFF;
-UPDATE USERS
-SET last_command_date = now()
-WHERE id = '${userId}'`);
+		await prisma.$transaction(async tx => {
+			await tx.$executeRaw`SET LOCAL synchronous_commit = OFF`;
+			await tx.$executeRaw`UPDATE users SET last_command_date = now() WHERE id = ${userId}`;
+		});
 	}
 };
 
@@ -42,7 +41,7 @@ export async function countUsersWithItemInCl(itemID: number, ironmenOnly: boolea
 				   WHERE ("collectionLogBank"->>'${itemID}') IS NOT NULL
 				   AND ("collectionLogBank"->>'${itemID}')::int >= 1
 				   ${ironmenOnly ? 'AND "minion.ironman" = true' : ''};`;
-	const res = await prisma.$queryRawUnsafe<{ count: bigint }[]>(query);
+	const res = await prisma.$queryRawUnsafe<{ count: number }[]>(query);
 	const count = Number(res[0].count);
 	if (Number.isNaN(count)) {
 		throw new Error(`countUsersWithItemInCl produced invalid number '${count}' for ${itemID}`);

@@ -165,12 +165,12 @@ AND ("gear.melee" IS NOT NULL OR
 				>(`SELECT (blowpipe->>'scales')::int AS scales, (blowpipe->>'dartID')::int AS dart, (blowpipe->>'dartQuantity')::int AS qty
 FROM users
 WHERE blowpipe iS NOT NULL and (blowpipe->>'dartQuantity')::int != 0;`),
-				prisma.$queryRawUnsafe<{ sum: number }[]>('SELECT SUM("GP") FROM users;'),
+				prisma.$queryRaw<{ sum: number }[]>`SELECT COALESCE(SUM("GP"), 0)::double precision AS sum FROM users;`,
 				prisma.$queryRawUnsafe<{ banks: ItemBank }[]>(`SELECT
-				json_object_agg(itemID, itemQTY)::jsonb as banks
-			 from (
-				select key as itemID, sum(value::bigint) as itemQTY
-				from users
+json_object_agg(itemID, itemQTY)::jsonb as banks
+ from (
+select key as itemID, sum(value::bigint) as itemQTY
+from users
 				cross join json_each_text(bank)
 				group by key
 			 ) s;`)
@@ -824,8 +824,8 @@ ${META_CONSTANTS.RENDERED_STR}`
 			if (!item) return 'Invalid item.';
 			const isIron = false;
 			const ownedResult = await prisma.$queryRawUnsafe<
-				{ qty: bigint }[]
-			>(`SELECT SUM((bank->>'${item.id}')::int) as qty
+				{ qty: number }[]
+			>(`SELECT COALESCE(SUM((bank->>'${item.id}')::int), 0)::double precision as qty
 FROM users
 WHERE bank->>'${item.id}' IS NOT NULL;`);
 			return `There are ${ownedResult[0].qty.toLocaleString()} ${item.name} owned by everyone.

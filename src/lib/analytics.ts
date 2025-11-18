@@ -34,18 +34,20 @@ async function calculateMinionTaskCounts() {
 export async function analyticsTick() {
 	Logging.logDebug('Running analyticsTick');
 	const [{ has_bought_count, total_gp, ironman_count, total_sacrificed_value }]: {
-		has_bought_count: bigint;
-		total_sacrificed_value: bigint;
-		ironman_count: bigint;
-		total_gp: bigint;
+		has_bought_count: number;
+		total_sacrificed_value: number;
+		ironman_count: number;
+		total_gp: number;
 	}[] = await prisma.$queryRaw`
 SELECT
-    COUNT(*) FILTER (WHERE "minion.hasBought" = true) AS has_bought_count,
-    SUM("sacrificedValue")::bigint AS total_sacrificed_value,
-    COUNT(*) FILTER (WHERE "minion.ironman" = true) AS ironman_count,
-    SUM("GP")::bigint AS total_gp
+COUNT(*) FILTER (WHERE "minion.hasBought" = true)::int AS has_bought_count,
+COALESCE(SUM("sacrificedValue"), 0)::double precision AS total_sacrificed_value,
+COUNT(*) FILTER (WHERE "minion.ironman" = true)::int AS ironman_count,
+COALESCE(SUM("GP"), 0)::double precision AS total_gp
 FROM users;
 `;
+	const totalSacrificed = BigInt(Math.round(total_sacrificed_value));
+	const totalGP = BigInt(Math.round(total_gp));
 
 	const taskCounts = await calculateMinionTaskCounts();
 	const currentClientSettings = await prisma.clientStorage.upsert({
@@ -84,8 +86,8 @@ FROM users;
 			skillingTasksCount: taskCounts.Skilling,
 			ironMinionsCount: Number(ironman_count),
 			minionsCount: Number(has_bought_count),
-			totalSacrificed: total_sacrificed_value,
-			totalGP: total_gp,
+			totalSacrificed: totalSacrificed,
+			totalGP: totalGP,
 			dicingBank: currentClientSettings.economyStats_dicingBank,
 			duelTaxBank: currentClientSettings.economyStats_duelTaxBank,
 			dailiesAmount: currentClientSettings.economyStats_dailiesAmount,

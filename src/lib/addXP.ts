@@ -20,12 +20,10 @@ ${ironman ? 'AND "minion.ironman" = true' : ''};`;
 async function howManyMaxed() {
 	const [normies, irons]: number[] = (
 		await prisma.$transaction([
-			prisma.$queryRawUnsafe<{ count: bigint }[]>(makeQuery(false)),
-			prisma.$queryRawUnsafe<{ count: bigint }[]>(makeQuery(true))
+			prisma.$queryRawUnsafe<{ count: number }[]>(makeQuery(false)),
+			prisma.$queryRawUnsafe<{ count: number }[]>(makeQuery(true))
 		])
-	)
-		.map(i => i[0].count)
-		.map(i => Number(i));
+	).map(i => Number(i[0].count));
 
 	return {
 		normies,
@@ -117,25 +115,25 @@ export async function addXP(user: MUser, params: AddXpParams): Promise<string> {
 		const skillNameCased = toTitleCase(params.skillName);
 		const [usersWith] = await prisma.$queryRawUnsafe<
 			{
-				count: string;
+				count: number;
 			}[]
 		>(`SELECT COUNT(*)::int FROM users WHERE "skills.${params.skillName}" >= ${MAX_LEVEL_XP};`);
 
 		let str = `${skill.emoji} **${user.badgedUsername}'s** minion, ${
 			user.minionName
 		}, just achieved level 99 in ${skillNameCased}! They are the ${formatOrdinal(
-			Number.parseInt(usersWith.count) + 1
+			Number(usersWith.count) + 1
 		)} to get 99 ${skillNameCased}.`;
 
 		if (user.isIronman) {
 			const [ironmenWith] = await prisma.$queryRawUnsafe<
 				{
-					count: string;
+					count: number;
 				}[]
 			>(
 				`SELECT COUNT(*)::int FROM users WHERE "minion.ironman" = true AND "skills.${params.skillName}" >= ${MAX_LEVEL_XP};`
 			);
-			str += ` They are the ${formatOrdinal(Number.parseInt(ironmenWith.count) + 1)} Ironman to get 99.`;
+			str += ` They are the ${formatOrdinal(Number(ironmenWith.count) + 1)} Ironman to get 99.`;
 		}
 		globalClient.emit(Events.ServerNotification, str);
 	}

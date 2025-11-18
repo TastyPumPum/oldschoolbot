@@ -56,7 +56,7 @@ OR (group_activity = true AND data::jsonb ? 'users' AND data->>'users'::text LIK
 async function minionStats(user: MUser) {
 	const { id } = user;
 	const [[totalActivities], [firstActivity], countsPerActivity, [_totalDuration]] = await Promise.all([
-		prisma.$queryRawUnsafe<{ count: bigint }[]>(`SELECT count(id)
+		prisma.$queryRawUnsafe<{ count: number }[]>(`SELECT count(id)::int AS count
 FROM activity
 WHERE user_id = ${id}
 ${whereInMassClause(id)};`),
@@ -65,16 +65,16 @@ FROM activity
 WHERE user_id = ${id}
 ORDER BY id ASC
 LIMIT 1;`),
-		prisma.$queryRawUnsafe<{ type: string; qty: bigint }[]>(`
-SELECT type, count(type) as qty
+		prisma.$queryRawUnsafe<{ type: string; qty: number }[]>(`
+SELECT type, COUNT(type)::int as qty
 FROM activity
 WHERE user_id = ${id}
 ${whereInMassClause(id)}
 GROUP BY type
 ORDER BY qty DESC
 LIMIT 15;`),
-		prisma.$queryRawUnsafe<{ sum: bigint }[]>(`
-SELECT sum(duration)
+		prisma.$queryRawUnsafe<{ sum: number }[]>(`
+SELECT COALESCE(SUM(duration), 0)::double precision AS sum
 FROM activity
 WHERE user_id = ${id}
 ${whereInMassClause(id)};`)
@@ -161,10 +161,10 @@ async function executeXPGainsQuery(
 	ironmanOnly: boolean
 ): Promise<XPRecord[]> {
 	const query = `
-        SELECT
-            x.user_id::text AS user,
-            sum(x.xp) AS total_xp,
-            max(x.date) AS lastDate
+SELECT
+x.user_id::text AS user,
+COALESCE(SUM(x.xp), 0)::double precision AS total_xp,
+max(x.date) AS lastDate
         FROM
             xp_gains AS x
         INNER JOIN

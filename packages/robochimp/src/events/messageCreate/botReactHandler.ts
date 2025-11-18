@@ -15,7 +15,7 @@ export async function botReactHandler(msg: IMessage) {
 		if (!u) return;
 		const combinedCLPercent = ((u.osbClPercent ?? 0) + (u.bsoClPercent ?? 0)) / 2;
 		const clPercentRank = (
-			await roboChimpClient.$queryRaw<{ count: number }[]>`SELECT COUNT(*)
+			await roboChimpClient.$queryRaw<{ count: number }[]>`SELECT COUNT(*)::int
 FROM public.user
 WHERE ((osb_cl_percent + bso_cl_percent) / 2) >= ${combinedCLPercent};`
 		)[0].count;

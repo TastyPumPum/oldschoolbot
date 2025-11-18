@@ -109,7 +109,7 @@ function baseDuration(_attempts: number) {
 async function timesMadeToZuk(userID: string) {
 	const timesMadeToZuk = Number(
 		(
-			await prisma.$queryRawUnsafe<{ count: bigint }[]>(`SELECT COUNT(*)::int
+			await prisma.$queryRawUnsafe<{ count: number }[]>(`SELECT COUNT(*)::int
 FROM activity
 WHERE type = 'Inferno'
 AND user_id = ${userID}

@@ -176,15 +176,15 @@ GROUP BY user_id`;
 	 */
 	async function commandsInOnlyOneServer() {
 		const result = await prismaClient.$queryRawUnsafe<
-			{ user_id: string; guild_id: bigint; commands_used: number }[]
+			{ user_id: string; guild_id: string; commands_used: number }[]
 		>(`SELECT
-  user_id::text,
-   MAX(guild_id) AS guild_id,
-   COUNT(id)::int as commands_used
+user_id::text,
+ MAX(guild_id)::text AS guild_id,
+ COUNT(id)::int as commands_used
 FROM
-  command_usage
+command_usage
 WHERE
-  date >= NOW() - INTERVAL '14 days'
+date >= NOW() - INTERVAL '14 days'
 GROUP BY
   user_id
 HAVING
@@ -222,11 +222,11 @@ ORDER BY
 	async function getContinueCommandToActivityRatio() {
 		const sql = `
 WITH continue_commands AS (
-    SELECT
-        user_id,
-        COUNT(*) AS continue_count
-    FROM
-        command_usage
+SELECT
+user_id,
+COUNT(*)::int AS continue_count
+FROM
+command_usage
     WHERE
         date >= NOW() - INTERVAL '1 week'
         AND is_continue = TRUE
@@ -235,9 +235,9 @@ WITH continue_commands AS (
         user_id
 ),
 total_activities AS (
-    SELECT
-        user_id,
-        COUNT(*) AS activity_count
+SELECT
+user_id,
+COUNT(*)::int AS activity_count
     FROM
         activity
     WHERE
@@ -279,20 +279,20 @@ LIMIT 30;
 
 	async function continueDelta() {
 		const sql = `WITH AggregatedData AS (
-    SELECT user_id,
-           floor(continue_delta_millis / 1000) AS seconds,
-           COUNT(*) AS frequency
-    FROM command_usage
-    WHERE is_continue = true
-      AND continue_delta_millis IS NOT NULL
-    GROUP BY user_id, seconds
+SELECT user_id,
+       floor(continue_delta_millis / 1000) AS seconds,
+       COUNT(*)::int AS frequency
+FROM command_usage
+WHERE is_continue = true
+  AND continue_delta_millis IS NOT NULL
+GROUP BY user_id, seconds
 ),
 RankedData AS (
-    SELECT user_id,
-           COUNT(*) AS unique_seconds,
-           SUM(frequency) AS total_entries
-    FROM AggregatedData
-    GROUP BY user_id
+SELECT user_id,
+       COUNT(*)::int AS unique_seconds,
+       COALESCE(SUM(frequency), 0)::int AS total_entries
+FROM AggregatedData
+GROUP BY user_id
 ),
 SuspiciousData AS (
     SELECT user_id::text,
@@ -310,7 +310,7 @@ ORDER BY uniqueness_ratio ASC;`;
 			await prismaClient.$queryRawUnsafe<
 				{
 					user_id: string;
-					unique_seconds: bigint;
+					unique_seconds: number;
 					total_entries: number;
 				}[]
 			>(sql);
