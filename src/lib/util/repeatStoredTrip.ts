@@ -11,7 +11,11 @@ import { SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import { autocompleteMonsters } from '@/lib/minions/data/killableMonsters/index.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { courses } from '@/lib/skilling/skills/agility.js';
-import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
+import {
+	ensureValidStoredFishingTripIdentifier,
+	FISHING_REWORK_MESSAGE,
+	FishingStoredTripError
+} from '@/lib/skilling/skills/fishing/fishingRework.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
 import type {
 	ActivityTaskData,
@@ -370,18 +374,10 @@ const tripHandlers: {
 	[activity_type_enum.Fishing]: {
 		commandName: 'fish',
 		args: (data: FishingActivityTaskOptions) => {
-			const name = (() => {
-				const numericFishID = Number.parseInt(String(data.fishID), 10);
-
-				if (!Number.isNaN(numericFishID)) {
-					const spot = Fishing.Fishes.find(fish => fish.subfishes?.some(sub => sub.id === numericFishID));
-					return spot?.name ?? Items.itemNameFromId(numericFishID) ?? String(data.fishID);
-				}
-				return String(data.fishID);
-			})();
+			const fish = ensureValidStoredFishingTripIdentifier(data);
 
 			return {
-				name,
+				name: fish.name,
 				quantity: data.iQty,
 				powerfish: data.powerfish ?? false,
 				spirit_flakes: data.spiritFlakePreference ?? data.spiritFlakes ?? false
@@ -799,10 +795,19 @@ export async function repeatTrip(user: MUser, interaction: MInteraction, activit
 	}
 	const handler = tripHandlers[activity.type];
 	const args: ActivityTaskData = ActivityManager.convertStoredActivityToFlatActivity(activity);
+	let commandArgs: CommandOptions;
+	try {
+		commandArgs = handler.args(args as any) as CommandOptions;
+	} catch (err) {
+		if (err instanceof FishingStoredTripError) {
+			return { content: FISHING_REWORK_MESSAGE, ephemeral: true };
+		}
+		throw err;
+	}
 	return runCommand({
 		commandName: handler.commandName,
 		isContinue: true,
-		args: handler.args(args as any) as CommandOptions,
+		args: commandArgs,
 		interaction,
 		user,
 		continueDeltaMillis: 0
