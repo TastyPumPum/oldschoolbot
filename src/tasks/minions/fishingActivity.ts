@@ -14,12 +14,25 @@ export const fishingTask: MinionTask = {
 			channelId,
 			Qty,
 			loot,
-			blessingExtra = 0,
-			flakeExtra = 0,
+			blessingExtra: storedBlessingExtra,
+			flakeExtra: storedFlakeExtra,
+			blessingQuantity,
+			flakesQuantity,
 			usedBarbarianCutEat = false,
 			powerfish = false,
 			quantity = 0
 		} = data;
+
+		const coerceNumber = (value: unknown): number | undefined => {
+			if (value === null || value === undefined) {
+				return undefined;
+			}
+			const num = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+			return Number.isFinite(num) ? num : undefined;
+		};
+
+		const blessingExtra = coerceNumber(storedBlessingExtra) ?? coerceNumber(blessingQuantity) ?? 0;
+		const flakeExtra = coerceNumber(storedFlakeExtra) ?? coerceNumber(flakesQuantity) ?? 0;
 
 		let fish = Fishing.Fishes.find(f => f.name === fishID);
 		let legacySubfishIndex: number | null = null;
@@ -62,8 +75,15 @@ export const fishingTask: MinionTask = {
 		const lootArray = normalizeNumericArray(Array.isArray(loot) ? loot : undefined, subfishCount);
 
 		if (legacySubfishIndex !== null) {
-			catches[legacySubfishIndex] = (catches[legacySubfishIndex] ?? 0) + quantity;
-			lootArray[legacySubfishIndex] = (lootArray[legacySubfishIndex] ?? 0) + quantity;
+			const idx = legacySubfishIndex;
+
+			// Backwards compat: old tasks used a single quantity instead of per-subfish arrays.
+			const baseCatch = (catches[idx] ?? 0) + quantity;
+			catches[idx] = baseCatch;
+
+			const baseLoot = (lootArray[idx] ?? 0) + quantity;
+			const legacyExtras = blessingExtra + flakeExtra;
+			lootArray[idx] = baseLoot + legacyExtras;
 		}
 
 		for (let i = catches.length; i < subfishCount; i++) {

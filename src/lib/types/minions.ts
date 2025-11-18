@@ -162,10 +162,12 @@ export interface FishingActivityTaskOptions extends ActivityTaskOptions {
 	Qty: number[];
 	loot?: number[];
 	flakesToRemove?: number;
+	flakesQuantity?: number;
 	powerfish?: boolean;
 	spiritFlakes?: boolean;
 	spiritFlakePreference?: boolean;
 	blessingExtra?: number;
+	blessingQuantity?: number;
 	flakeExtra?: number;
 	usedBarbarianCutEat?: boolean;
 	iQty?: number;

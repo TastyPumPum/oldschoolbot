@@ -371,12 +371,15 @@ const tripHandlers: {
 		commandName: 'fish',
 		args: (data: FishingActivityTaskOptions) => {
 			const name = (() => {
-				if (typeof data.fishID === 'number') {
-					const spot = Fishing.Fishes.find(fish => fish.subfishes?.some(sub => sub.id === data.fishID));
-					return spot?.name ?? Items.itemNameFromId(data.fishID);
+				const numericFishID = Number.parseInt(String(data.fishID), 10);
+
+				if (!Number.isNaN(numericFishID)) {
+					const spot = Fishing.Fishes.find(fish => fish.subfishes?.some(sub => sub.id === numericFishID));
+					return spot?.name ?? Items.itemNameFromId(numericFishID) ?? String(data.fishID);
 				}
-				return data.fishID;
+				return String(data.fishID);
 			})();
+
 			return {
 				name,
 				quantity: data.iQty,
