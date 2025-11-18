@@ -280,7 +280,8 @@ function determineFishingTime({
 		flakesUsed,
 		baitUsed,
 		blessingExtra,
-		flakeExtra
+		flakeExtra,
+		extraCatchRolls
 	};
 }
 
