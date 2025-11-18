@@ -142,6 +142,6 @@ export const fishingTask: MinionTask = {
 			);
 		}
 
-		handleTripFinish(user, channelId, message, data, result.updateBank.itemLootBank);
+		return handleTripFinish(user, channelId, message, data, result.updateBank.itemLootBank);
 	}
 };
