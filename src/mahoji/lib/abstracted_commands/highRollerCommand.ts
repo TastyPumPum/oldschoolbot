@@ -1,13 +1,12 @@
-import { Time } from '@oldschoolgg/toolkit';
 import {
-	ActionRowBuilder,
-	type AttachmentBuilder,
 	ButtonBuilder,
-	type ButtonInteraction,
+	type ButtonMInteraction,
 	ButtonStyle,
-	ComponentType,
-	type Message
-} from 'discord.js';
+	createInteractionCollector,
+	type SendableFile,
+	type SendableMessage
+} from '@oldschoolgg/discord';
+import { Time } from '@oldschoolgg/toolkit';
 import { Bank, type Item, Items, toKMB } from 'oldschooljs';
 
 import { drawHighRollerImage } from '@/lib/canvas/highRollerImage.js';
@@ -113,26 +112,11 @@ function formatRollResults(rolls: RollResult[]): string {
 	return lines.join('\n');
 }
 
-// Edit the message we sent for this interaction if possible; otherwise reply.
-type SafeEditOptions =
-	| string
-	| { content?: string; components?: any[]; allowedMentions?: any; files?: AttachmentBuilder[] };
-
-function normalizeSafeEditOptions(options: SafeEditOptions) {
-	if (typeof options === 'string') {
-		return { content: options };
+async function safeEdit(interaction: MInteraction, options: SendableMessage) {
+	if (!interaction.deferred && !interaction.replied) {
+		return interaction.reply(options);
 	}
-	const { content, components, allowedMentions, files } = options;
-	return { content, components, allowedMentions, files };
-}
-
-async function safeEdit(interaction: MInteraction, options: SafeEditOptions) {
-	const msg = (interaction.interactionResponse as Message | null) ?? null;
-	const normalized = normalizeSafeEditOptions(options);
-	if (msg) {
-		return msg.edit(normalized as any);
-	}
-	return interaction.reply(normalized as any);
+	return interaction.baseEditReply(options);
 }
 
 async function collectDirectInvites({
@@ -160,54 +144,52 @@ async function collectDirectInvites({
 		return null;
 	}
 	const mentionList = uniqueInviteIDs.map(id => `<@${id}>`).join(', ');
-	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+	const row: ButtonBuilder[] = [
 		new ButtonBuilder().setCustomId('HR_CONFIRM').setLabel('Confirm').setStyle(ButtonStyle.Success),
 		new ButtonBuilder().setCustomId('HR_DECLINE').setLabel('Decline').setStyle(ButtonStyle.Secondary)
-	);
+	];
 	await interaction.reply({
 		content: `${host.badgedUsername} has challenged ${mentionList} to a High Roller Pot for **${stakeDisplay}** each (Payout: ${payoutDescription}). Click Confirm to join.`,
-		components: [row],
+		components: row,
 		allowedMentions: { users: uniqueInviteIDs }
 	});
 	const confirmed = new Set<string>();
 	const declined = new Set<string>();
-	const message = interaction.interactionResponse as Message | null;
-	if (!message) {
-		return null;
-	}
-	const collector = message.createMessageComponentCollector({
-		componentType: ComponentType.Button,
-		time: Time.Second * 30
+	const collector = createInteractionCollector({
+		interaction,
+		timeoutMs: Time.Second * 30,
+		maxCollected: Infinity
 	});
 	return new Promise(resolve => {
-		collector.on('collect', async (button: ButtonInteraction) => {
-			if (!uniqueInviteIDs.includes(button.user.id)) {
+		collector.on('collect', async (button: ButtonMInteraction) => {
+			if (!uniqueInviteIDs.includes(button.userId)) {
 				await button.reply({ content: `You weren't invited to this gamble.`, ephemeral: true });
 				return;
 			}
 			if (button.customId === 'HR_DECLINE') {
-				declined.add(button.user.id);
-				await button.deferUpdate();
+				declined.add(button.userId);
+				await button.silentButtonAck();
 				collector.stop('declined');
 				return;
 			}
-			if (confirmed.has(button.user.id)) {
+			if (confirmed.has(button.userId)) {
 				await button.reply({ content: `You've already confirmed.`, ephemeral: true });
 				return;
 			}
-			confirmed.add(button.user.id);
-			await button.deferUpdate();
-			await message?.edit({
+			confirmed.add(button.userId);
+			await button.silentButtonAck();
+			await interaction.reply({
 				content: `${host.badgedUsername} is waiting on confirmations... (${confirmed.size}/${uniqueInviteIDs.length} ready)\nPayout: ${payoutDescription}`,
-				components: [row]
+				components: row,
+				allowedMentions: { users: [] }
 			});
 			if (confirmed.size === uniqueInviteIDs.length) {
 				collector.stop('confirmed');
 			}
 		});
 		collector.on('end', async (_collected, reason) => {
-			await message?.edit({ components: [] });
 			if (reason === 'confirmed') {
+				await interaction.reply({ components: [] });
 				resolve([host.id, ...uniqueInviteIDs]);
 				return;
 			}
@@ -215,7 +197,7 @@ async function collectDirectInvites({
 			const declinedMentions = [...declined, ...missing]
 				.filter((value, index, array) => array.indexOf(value) === index)
 				.map(id => `<@${id}>`);
-			await message?.edit({
+			await interaction.reply({
 				content: declinedMentions.length
 					? `The gamble was cancelled because ${declinedMentions.join(', ')} didn't confirm in time.`
 					: `The gamble was cancelled because not everyone confirmed in time.`,
@@ -240,30 +222,40 @@ async function collectOpenLobby({
 	payoutDescription: string;
 }): Promise<string[] | null> {
 	const joined = new Set<string>([host.id]);
-	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+	const row: ButtonBuilder[] = [
 		new ButtonBuilder().setCustomId('HR_JOIN').setLabel('Join gamble').setStyle(ButtonStyle.Success),
 		new ButtonBuilder().setCustomId('HR_LEAVE').setLabel('Leave').setStyle(ButtonStyle.Secondary),
 		new ButtonBuilder().setCustomId('HR_FORCE_START').setLabel('Force start').setStyle(ButtonStyle.Primary)
-	);
+	];
 	await interaction.reply({
 		content: `${host.badgedUsername} opened a High Roller Pot for **${stakeDisplay}** each (Payout: ${payoutDescription}). Click Join to participate! (30s)`,
-		components: [row],
+		components: row,
 		allowedMentions: { users: [] }
 	});
-	const message = interaction.interactionResponse as Message | null;
-	if (!message) {
-		return null;
-	}
-	const collector = message.createMessageComponentCollector({
-		componentType: ComponentType.Button,
-		time: Time.Second * 30
+
+	const getParticipantListMessage = () =>
+		`${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nPayout: ${payoutDescription}\nParticipants (${joined.size}): ${[
+			...joined
+		]
+			.map(id => `<@${id}>`)
+			.join(', ')}`;
+
+	const updateParticipantsMessage = async () =>
+		interaction.reply({
+			content: getParticipantListMessage(),
+			components: row,
+			allowedMentions: { users: [] }
+		});
+
+	const collector = createInteractionCollector({
+		interaction,
+		timeoutMs: Time.Second * 30,
+		maxCollected: Infinity
 	});
-	collector.on('end', async () => {
-		await message?.edit({ components: [] });
-	});
+
 	return new Promise(resolve => {
-		collector.on('collect', async (button: ButtonInteraction) => {
-			const mUser = await mUserFetch(button.user.id);
+		collector.on('collect', async (button: ButtonMInteraction) => {
+			const mUser = await mUserFetch(button.userId);
 			if (button.customId === 'HR_JOIN') {
 				if (joined.has(mUser.id)) {
 					await button.reply({ content: `You're already in this gamble.`, ephemeral: true });
@@ -286,20 +278,13 @@ async function collectOpenLobby({
 					return;
 				}
 				joined.add(mUser.id);
-				await button.deferUpdate();
-				await message?.edit({
-					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nPayout: ${payoutDescription}\nParticipants (${joined.size}): ${[
-						...joined
-					]
-						.map(id => `<@${id}>`)
-						.join(', ')}`,
-					components: [row],
-					allowedMentions: { users: [] }
-				});
+				await button.silentButtonAck();
+				await updateParticipantsMessage();
 				return;
 			}
+
 			if (button.customId === 'HR_FORCE_START') {
-				if (button.user.id !== host.id) {
+				if (button.userId !== host.id) {
 					await button.reply({ content: `Only the host can force start this gamble.`, ephemeral: true });
 					return;
 				}
@@ -310,10 +295,11 @@ async function collectOpenLobby({
 					});
 					return;
 				}
-				await button.deferUpdate();
+				await button.silentButtonAck();
 				collector.stop('force_start');
 				return;
 			}
+
 			if (button.customId === 'HR_LEAVE') {
 				if (mUser.id === host.id) {
 					await button.reply({ content: `The host cannot leave this gamble.`, ephemeral: true });
@@ -324,34 +310,31 @@ async function collectOpenLobby({
 					return;
 				}
 				joined.delete(mUser.id);
-				await button.deferUpdate();
-				await message?.edit({
-					content: `${host.badgedUsername}'s High Roller Pot (**${stakeDisplay}**)\nPayout: ${payoutDescription}\nParticipants (${joined.size}): ${[
-						...joined
-					]
-						.map(id => `<@${id}>`)
-						.join(', ')}`,
-					components: [row],
-					allowedMentions: { users: [] }
-				});
+				await button.silentButtonAck();
+				await updateParticipantsMessage();
 			}
 		});
-		collector.on('end', (_collected, reason) => {
+
+		collector.on('end', async (_collected, reason) => {
 			const participants = [...joined];
 			if (participants.length < MIN_PARTICIPANTS) {
-				message?.edit({
+				await interaction.reply({
 					content: `Not enough participants joined the High Roller Pot.`,
 					components: []
 				});
 				resolve(null);
 				return;
 			}
+
 			if (reason === 'force_start') {
-				message?.edit({
+				await interaction.reply({
 					content: `${host.badgedUsername} force-started the High Roller Pot with ${participants.length} participants.`,
 					components: []
 				});
+			} else {
+				await interaction.reply({ components: [] });
 			}
+
 			resolve(participants);
 		});
 	});
@@ -542,7 +525,7 @@ export async function highRollerCommand({
 
 	rollResults.sort((a, b) => b.value - a.value);
 
-	let highRollerImage: AttachmentBuilder | null = null;
+	let highRollerImage: SendableFile | null = null;
 	try {
 		highRollerImage = await drawHighRollerImage({
 			rolls: rollResults.map((result, index) => ({

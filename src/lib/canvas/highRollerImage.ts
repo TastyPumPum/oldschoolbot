@@ -1,4 +1,4 @@
-import { AttachmentBuilder } from 'discord.js';
+import type { SendableFile } from '@oldschoolgg/discord';
 import { toKMB } from 'oldschooljs';
 
 import { OSRSCanvas } from '@/lib/canvas/OSRSCanvas.js';
@@ -11,11 +11,7 @@ export type HighRollerImageEntry = {
 	value: number;
 };
 
-export async function drawHighRollerImage({
-	rolls
-}: {
-	rolls: HighRollerImageEntry[];
-}): Promise<AttachmentBuilder | null> {
+export async function drawHighRollerImage({ rolls }: { rolls: HighRollerImageEntry[] }): Promise<SendableFile | null> {
 	if (rolls.length === 0) {
 		return null;
 	}
@@ -77,7 +73,7 @@ export async function drawHighRollerImage({
 
 	const scale = rolls.length > MAX_VISIBLE_ROLLS ? 1.5 : 2;
 	const buffer = await canvas.toScaledOutput(scale);
-	return new AttachmentBuilder(buffer, { name: 'high-roller-results.png' });
+	return { name: 'high-roller-results.png', buffer };
 }
 
 function truncate(text: string, maxLength: number): string {
