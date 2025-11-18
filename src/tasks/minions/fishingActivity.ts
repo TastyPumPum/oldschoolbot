@@ -3,6 +3,7 @@ import { EItem } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
+import { FISHING_REWORK_MESSAGE, findFishingSpotForStoredTrip } from '@/lib/skilling/skills/fishing/fishingRework.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 import { rollForMoonKeyHalf } from '@/lib/util/minionUtils.js';
 
@@ -10,7 +11,6 @@ export const fishingTask: MinionTask = {
 	type: 'Fishing',
 	async run(data: FishingActivityTaskOptions, { handleTripFinish, user, rng }) {
 		const {
-			fishID,
 			channelId,
 			Qty,
 			loot,
@@ -19,8 +19,7 @@ export const fishingTask: MinionTask = {
 			blessingQuantity,
 			flakesQuantity,
 			usedBarbarianCutEat = false,
-			powerfish = false,
-			quantity = 0
+			powerfish = false
 		} = data;
 
 		const coerceNumber = (value: unknown): number | undefined => {
@@ -34,30 +33,23 @@ export const fishingTask: MinionTask = {
 		const blessingExtra = coerceNumber(storedBlessingExtra) ?? coerceNumber(blessingQuantity) ?? 0;
 		const flakeExtra = coerceNumber(storedFlakeExtra) ?? coerceNumber(flakesQuantity) ?? 0;
 
-		let fish = Fishing.Fishes.find(f => f.name === fishID);
-		let legacySubfishIndex: number | null = null;
-		if (!fish) {
-			const numericFishID =
-				typeof fishID === 'number'
-					? fishID
-					: typeof fishID === 'string'
-						? Number.parseInt(fishID, 10)
-						: Number.NaN;
-			if (!Number.isNaN(numericFishID)) {
-				fish = Fishing.Fishes.find(f => f.subfishes?.some(sub => sub.id === numericFishID));
-				if (fish?.subfishes) {
-					legacySubfishIndex = fish.subfishes.findIndex(sub => sub.id === numericFishID);
-				}
-			}
-		}
+		const fish = findFishingSpotForStoredTrip(data.fishID);
 		if (!fish || !fish.subfishes) {
-			throw new Error(`Invalid fishing spot received: ${fishID}`);
+			return handleTripFinish(user, channelId, FISHING_REWORK_MESSAGE, data);
+		}
+
+		if (!Array.isArray(Qty) || Qty.length !== fish.subfishes.length) {
+			return handleTripFinish(user, channelId, FISHING_REWORK_MESSAGE, data);
+		}
+
+		if (loot !== undefined && (!Array.isArray(loot) || loot.length !== fish.subfishes.length)) {
+			return handleTripFinish(user, channelId, FISHING_REWORK_MESSAGE, data);
 		}
 
 		const subfishCount = fish.subfishes.length;
-		const normalizeNumericArray = (input: unknown[] | undefined, length: number) => {
+		const normalizeNumericArray = (input: number[] | undefined, length: number) => {
 			const normalized: number[] = new Array(length).fill(0);
-			if (!Array.isArray(input)) {
+			if (!input) {
 				return normalized;
 			}
 
@@ -72,19 +64,7 @@ export const fishingTask: MinionTask = {
 		};
 
 		const catches = normalizeNumericArray(Qty, subfishCount);
-		const lootArray = normalizeNumericArray(Array.isArray(loot) ? loot : undefined, subfishCount);
-
-		if (legacySubfishIndex !== null) {
-			const idx = legacySubfishIndex;
-
-			// Backwards compat: old tasks used a single quantity instead of per-subfish arrays.
-			const baseCatch = (catches[idx] ?? 0) + quantity;
-			catches[idx] = baseCatch;
-
-			const baseLoot = (lootArray[idx] ?? 0) + quantity;
-			const legacyExtras = blessingExtra + flakeExtra;
-			lootArray[idx] = baseLoot + legacyExtras;
-		}
+		const lootArray = normalizeNumericArray(loot, subfishCount);
 
 		for (let i = catches.length; i < subfishCount; i++) {
 			catches[i] = 0;

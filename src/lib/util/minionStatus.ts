@@ -15,7 +15,7 @@ import { LeapingFish } from '@/lib/skilling/skills/cooking/leapingFish.js';
 import Crafting from '@/lib/skilling/skills/crafting/index.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import Firemaking from '@/lib/skilling/skills/firemaking.js';
-import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
+import { findFishingSpotForStoredTrip } from '@/lib/skilling/skills/fishing/fishingRework.js';
 import { zeroTimeFletchables } from '@/lib/skilling/skills/fletching/fletchables/index.js';
 import Herblore from '@/lib/skilling/skills/herblore/herblore.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
@@ -149,23 +149,8 @@ export function minionStatus(user: MUser, currentTask: ActivityTaskData | null) 
 
 		case 'Fishing': {
 			const data = currentTask as FishingActivityTaskOptions;
-
-			let fish = typeof data.fishID === 'string' ? Fishing.Fishes.find(f => f.name === data.fishID) : undefined;
-			if (!fish) {
-				const numericFishID =
-					typeof data.fishID === 'number'
-						? data.fishID
-						: typeof data.fishID === 'string'
-							? Number.parseInt(data.fishID, 10)
-							: Number.NaN;
-				if (Number.isFinite(numericFishID)) {
-					fish = Fishing.Fishes.find(
-						f => f.id === numericFishID || f.subfishes?.some(sub => sub.id === numericFishID)
-					);
-				}
-			}
-			const fishName =
-				fish?.name ?? (typeof data.fishID === 'number' ? Items.itemNameFromId(data.fishID) : data.fishID);
+			const fish = findFishingSpotForStoredTrip(data.fishID);
+			const fishName = fish?.name ?? data.fishID;
 
 			return `${name} is currently fishing ${data.quantity}x ${fishName}. ${formattedDuration} Your ${
 				Emoji.Fishing
