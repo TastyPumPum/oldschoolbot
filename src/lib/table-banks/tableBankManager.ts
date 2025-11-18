@@ -9,10 +9,6 @@ function toPairs(b?: Bank): Array<[number, bigint]> {
 	return out;
 }
 
-function bigintToSQLLiteral(value: bigint) {
-	return Prisma.raw(value.toString());
-}
-
 export class TableBankManager {
 	static async getOrCreateBankId(
 		userId: string,
@@ -47,9 +43,7 @@ export class TableBankManager {
 
 		await prisma.$transaction(async tx => {
 			if (adds.length) {
-				const vAdd = Prisma.join(
-					adds.map(([id, q]) => Prisma.sql`(${bankId}, ${id}::int, ${bigintToSQLLiteral(q)}::bigint)`)
-				);
+				const vAdd = Prisma.join(adds.map(([id, q]) => Prisma.sql`(${bankId}, ${id}::int, ${q}::bigint)`));
 				const addSql = Prisma.sql`
           INSERT INTO table_bank_item (bank_id, item_id, quantity)
           VALUES ${vAdd}
@@ -60,9 +54,7 @@ export class TableBankManager {
 			}
 
 			if (rems.length) {
-				const vRem = Prisma.join(
-					rems.map(([id, q]) => Prisma.sql`(${id}::int, ${bigintToSQLLiteral(q)}::bigint)`)
-				);
+				const vRem = Prisma.join(rems.map(([id, q]) => Prisma.sql`(${id}::int, ${q}::bigint)`));
 
 				const subtractSql = Prisma.sql`
           WITH d(item_id, qty) AS (VALUES ${vRem})
