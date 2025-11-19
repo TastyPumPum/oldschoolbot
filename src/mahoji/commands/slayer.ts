@@ -196,7 +196,6 @@ export const slayerCommand = defineCommand({
 					type: 'String',
 					name: 'mode',
 					description: 'Which autoslay mode do you want?',
-					required: false,
 					choices: autoslayChoices
 				},
 				{
@@ -267,15 +266,13 @@ export const slayerCommand = defineCommand({
 					type: 'String',
 					name: 'master',
 					description: 'Which Slayer master?',
-					required: false,
-					autocomplete: async (value: string) => slayerMasterAutocomplete(value)
+					autocomplete: async ({ value }: StringAutoComplete) => slayerMasterAutocomplete(value ?? '')
 				},
 				{
 					type: 'String',
 					name: 'monster',
 					description: 'Which monster?',
-					required: false,
-					autocomplete: async (value: string) => slayerMonsterAutocomplete(value)
+					autocomplete: async ({ value }: StringAutoComplete) => slayerMonsterAutocomplete(value ?? '')
 				}
 			]
 		},
@@ -301,7 +298,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'unlock',
 					description: 'Unlock tasks, extensions, cosmetics, etc',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -332,7 +328,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'unblock',
 					description: 'Unblock a task',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -359,7 +354,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'buy',
 					description: 'Purchase something with points',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -385,7 +379,6 @@ export const slayerCommand = defineCommand({
 							type: 'Integer',
 							name: 'quantity',
 							description: 'The quantity to purchase, if applicable.',
-							required: false,
 							min_value: 1
 						}
 					]
@@ -400,13 +393,11 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'show_all_rewards',
 					description: 'Show all rewards',
-					required: false,
 					options: [
 						{
 							type: 'String',
 							name: 'type',
 							description: 'What type of rewards to show?',
-							required: false,
 							choices: choicesOf(['all', 'buyables', 'unlocks'])
 						}
 					]
@@ -415,7 +406,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'disable',
 					description: 'Disable unlocks, extensions, etc. They will need to be repurchased.',
-					required: false,
 					options: [
 						{
 							type: 'String',
