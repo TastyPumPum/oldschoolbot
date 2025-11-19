@@ -5,7 +5,7 @@ import { Bank, toKMB } from 'oldschooljs';
 import type { CommandResponse } from '@/discord/commands/commandTypes.js';
 import { bankImageTask } from '@/lib/canvas/bankImage.js';
 import { BitFieldData, PerkTier } from '@/lib/constants.js';
-import backgroundImages, { type BankBackground } from '@/lib/minions/data/bankBackgrounds.js';
+import type { BankBackground } from '@/lib/minions/data/bankBackgrounds.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
 import { bankBgCommand } from './bankBgCommand.js';
 import { getBankBackgroundEligibility } from './bankBgHelpers.js';
@@ -63,7 +63,7 @@ async function getPreviewImage(background: BankBackground) {
 	const { image } = await bankImageTask.generateBankImage({
 		title: `${background.name} Preview`,
 		bank: PREVIEW_BANK.clone(),
-		flags: { background: background.id },
+		flags: { background: background.id, compact: 1, wide: 1 },
 		showValue: false
 	});
 	previewCache.set(background.id, image);
@@ -75,7 +75,7 @@ function buildComponents({
 	backgroundCount,
 	isApplyDisabled
 }: {
-	buttonIds: Record<'prev' | 'next' | 'apply', string>;
+	buttonIds: Record<'prev' | 'next' | 'apply' | 'close', string>;
 	backgroundCount: number;
 	isApplyDisabled: boolean;
 }) {
@@ -91,7 +91,8 @@ function buildComponents({
 			.setCustomId(buttonIds.apply)
 			.setLabel('Apply background')
 			.setStyle(ButtonStyle.Success)
-			.setDisabled(isApplyDisabled)
+			.setDisabled(isApplyDisabled),
+		new ButtonBuilder().setCustomId(buttonIds.close).setLabel('Close').setStyle(ButtonStyle.Secondary)
 	]);
 	return rows;
 }
@@ -137,44 +138,49 @@ function buildStatusText({ isCurrent, lockReason }: { isCurrent: boolean; lockRe
 
 async function sendBankBgResponse(interaction: MInteraction, response: Awaited<CommandResponse>) {
 	if (!response) return;
-	if (response === SpecialResponse.RespondedManually || response === SpecialResponse.SilentErrorResponse) {
+	if (
+		response === SpecialResponse.PaginatedMessageResponse ||
+		response === SpecialResponse.RespondedManually ||
+		response === SpecialResponse.SilentErrorResponse
+	) {
 		return;
 	}
 	if (!interaction.deferred && !interaction.replied) {
 		await interaction.reply(response);
 		return;
 	}
-	// Fallback: just reply again (wrapper should handle follow-up vs edit internally)
-	await interaction.reply(response);
+	await interaction.followUp(response);
 }
 
-export async function bankBgGalleryCommand(user: MUser, interaction: MInteraction, showAll = false) {
+async function safeDeferMessageUpdate(interaction: MInteraction) {
+	if (!interaction.deferred && !interaction.replied) {
+		await interaction.deferredMessageUpdate();
+	}
+}
+
+async function replyOrFollowUp(interaction: MInteraction, options: BaseReplySendableMessage) {
+	if (!interaction.deferred && !interaction.replied) {
+		return interaction.reply(options);
+	}
+	return interaction.followUp(options);
+}
+
+export async function bankBgGalleryCommand(user: MUser, interaction: MInteraction) {
 	const userPerkTier = await user.fetchPerkTier();
 	const storeUnlocks = new Set(user.user.store_bitfield);
-
-	// Prefer the runtime task backgrounds; if they’re empty (e.g. test bot), fall back to static data.
-	const taskBackgrounds = bankImageTask.backgroundImages;
-	const allBackgrounds: BankBackground[] =
-		taskBackgrounds && taskBackgrounds.length > 0 ? taskBackgrounds : backgroundImages;
-
-	const backgrounds = allBackgrounds.filter(
-		bg =>
-			showAll ||
-			user.isModOrAdmin() ||
-			bg.available ||
-			(bg.storeBitField ? storeUnlocks.has(bg.storeBitField) : false)
+	const backgrounds = bankImageTask.backgroundImages.filter(
+		bg => user.isModOrAdmin() || bg.available || (bg.storeBitField ? storeUnlocks.has(bg.storeBitField) : false)
 	);
-
 	if (backgrounds.length === 0) {
 		return 'There are no bank backgrounds available to browse right now.';
 	}
-
 	let currentIndex = 0;
 	const prefix = `BANKBG_GALLERY_${interaction.id}`;
 	const buttonIds = {
 		prev: `${prefix}_PREV`,
 		next: `${prefix}_NEXT`,
-		apply: `${prefix}_APPLY`
+		apply: `${prefix}_APPLY`,
+		close: `${prefix}_CLOSE`
 	};
 
 	const buildPage = async (): Promise<BaseSendableMessage> => {
@@ -243,7 +249,7 @@ export async function bankBgGalleryCommand(user: MUser, interaction: MInteractio
 		};
 	};
 
-	await interaction.defer();
+	await interaction.defer({ ephemeral: true });
 	const initialResponse = await interaction.replyWithResponse(await buildPage());
 	if (!initialResponse) {
 		return 'Something went wrong while opening the gallery. Please try again.';
@@ -263,43 +269,48 @@ export async function bankBgGalleryCommand(user: MUser, interaction: MInteractio
 		const id = buttonInteraction.customId ?? '';
 		if (id === buttonIds.prev) {
 			currentIndex = (currentIndex - 1 + backgrounds.length) % backgrounds.length;
-			await buttonInteraction.deferredMessageUpdate();
+			await safeDeferMessageUpdate(buttonInteraction);
 			await interaction.reply(await buildPage());
 			return;
 		}
 		if (id === buttonIds.next) {
 			currentIndex = (currentIndex + 1) % backgrounds.length;
-			await buttonInteraction.deferredMessageUpdate();
+			await safeDeferMessageUpdate(buttonInteraction);
 			await interaction.reply(await buildPage());
 			return;
 		}
+		if (id === buttonIds.close) {
+			await safeDeferMessageUpdate(buttonInteraction);
+			collector.stop('closed');
+			return;
+		}
 		if (id === buttonIds.apply) {
+			await safeDeferMessageUpdate(buttonInteraction);
 			const background = backgrounds[currentIndex];
 			if (user.user.bankBackground === background.id) {
-				await buttonInteraction.reply({
-					content: 'This is already your bank background.'
+				await replyOrFollowUp(buttonInteraction, {
+					content: 'This is already your bank background.',
+					ephemeral: true
 				});
 				return;
 			}
 			const eligibility = await getBankBackgroundEligibility({ user, background, perkTier: userPerkTier });
 			if (!eligibility.canUse && eligibility.failure) {
-				await buttonInteraction.reply({ content: eligibility.failure.response });
+				await replyOrFollowUp(buttonInteraction, {
+					content: eligibility.failure.response,
+					ephemeral: true
+				});
 				return;
 			}
 			const response = await bankBgCommand(buttonInteraction, user, background.name);
 			await sendBankBgResponse(buttonInteraction, response);
 			await user.sync();
-			await buttonInteraction.deferredMessageUpdate();
 			await interaction.reply(await buildPage());
 		}
 	});
 
 	collector.on('end', async () => {
-		try {
-			await interaction.reply({ components: [] });
-		} catch {
-			// ignore if we can't reply (already cleaned up / interaction expired)
-		}
+		await interaction.reply({ components: [] });
 	});
 
 	return SpecialResponse.PaginatedMessageResponse;

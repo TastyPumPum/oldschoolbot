@@ -1,6 +1,6 @@
 import { Bank, resolveItems, toKMB } from 'oldschooljs';
 
-import { BitFieldData, type PerkTier } from '@/lib/constants.js';
+import { BitFieldData, PerkTier } from '@/lib/constants.js';
 import type { BankBackground } from '@/lib/minions/data/bankBackgrounds.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
 

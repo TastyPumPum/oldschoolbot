@@ -190,15 +190,7 @@ export const minionCommand = defineCommand({
 		{
 			type: 'Subcommand',
 			name: 'bankbg_gallery',
-			description: 'Browse all bank backgrounds with live previews.',
-			options: [
-				{
-					type: 'Boolean',
-					name: 'show_all',
-					description: 'Show all backgrounds, including ones you cannot currently use.',
-					required: false
-				}
-			]
+			description: 'Browse all bank backgrounds with live previews.'
 		},
 		{
 			type: 'Subcommand',
@@ -446,7 +438,7 @@ export const minionCommand = defineCommand({
 		}
 
 		if (options.bankbg_gallery) {
-			return bankBgGalleryCommand(user, interaction, options.bankbg_gallery.show_all ?? false);
+			return bankBgGalleryCommand(user, interaction);
 		}
 
 		if (options.bankbg) {
