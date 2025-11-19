@@ -48,24 +48,50 @@ async function autoSkipSlayerTasks({
 	master: SlayerMaster;
 	assignment: AssignedTaskResult;
 }) {
+	const buffer = user.getSlayerAutoSkipBuffer();
 	if (user.perkTier() < PerkTier.Two) {
-		return { assignment, skipped: 0, pointsUsed: 0, outOfPoints: false, exhaustedTaskPool: false } as const;
+		return {
+			assignment,
+			skipped: 0,
+			pointsUsed: 0,
+			outOfPoints: false,
+			exhaustedTaskPool: false,
+			bufferPrevented: false,
+			bufferAmount: buffer
+		} as const;
 	}
 	const masterKey = master.aliases[0];
 	const skipSettings = user.getSlayerSkipSettings();
 	const masterSkips = skipSettings[masterKey];
 	if (!masterSkips || masterSkips.length === 0) {
-		return { assignment, skipped: 0, pointsUsed: 0, outOfPoints: false, exhaustedTaskPool: false } as const;
+		return {
+			assignment,
+			skipped: 0,
+			pointsUsed: 0,
+			outOfPoints: false,
+			exhaustedTaskPool: false,
+			bufferPrevented: false,
+			bufferAmount: buffer
+		} as const;
 	}
 
 	const assignableIDs = getAssignableSlayerTaskIDs(user, master);
 	if (assignableIDs.length > 0 && assignableIDs.every(id => masterSkips.includes(id))) {
-		return { assignment, skipped: 0, pointsUsed: 0, outOfPoints: false, exhaustedTaskPool: true } as const;
+		return {
+			assignment,
+			skipped: 0,
+			pointsUsed: 0,
+			outOfPoints: false,
+			exhaustedTaskPool: true,
+			bufferPrevented: false,
+			bufferAmount: buffer
+		} as const;
 	}
 
 	let skipped = 0;
 	let pointsUsed = 0;
 	let outOfPoints = false;
+	let bufferPrevented = false;
 	let currentAssignment = assignment;
 
 	for (let i = 0; i < MAX_AUTO_SLAYER_SKIPS; i++) {
@@ -76,13 +102,25 @@ async function autoSkipSlayerTasks({
 			outOfPoints = true;
 			break;
 		}
+		if (user.user.slayer_points - SLAYER_TASK_SKIP_COST < buffer) {
+			bufferPrevented = true;
+			break;
+		}
 		await skipSlayerTaskWithPoints(user, currentAssignment.currentTask.id);
 		skipped++;
 		pointsUsed += SLAYER_TASK_SKIP_COST;
 		currentAssignment = await assignNewSlayerTask(user, master);
 	}
 
-	return { assignment: currentAssignment, skipped, pointsUsed, outOfPoints, exhaustedTaskPool: false } as const;
+	return {
+		assignment: currentAssignment,
+		skipped,
+		pointsUsed,
+		outOfPoints,
+		exhaustedTaskPool: false,
+		bufferPrevented,
+		bufferAmount: buffer
+	} as const;
 }
 
 function getAlternateMonsterList(assignedTask: AssignableSlayerTask | null) {
@@ -334,6 +372,9 @@ export async function slayerNewTaskCommand({
 		if (autoSkipResult.outOfPoints) {
 			resultMessage += `\nYou ran out of Slayer points, so I stopped skipping.`;
 		}
+	}
+	if (autoSkipResult.bufferPrevented) {
+		resultMessage += `\nYour task wasn't auto-skipped because you have ${user.user.slayer_points.toLocaleString()} Slayer points and a buffer of ${autoSkipResult.bufferAmount.toLocaleString()}.`;
 	}
 	if (showButtons) {
 		return {

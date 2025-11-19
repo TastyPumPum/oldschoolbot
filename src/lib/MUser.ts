@@ -318,6 +318,16 @@ export class MUserClass {
 		});
 	}
 
+	getSlayerAutoSkipBuffer() {
+		return this.user.slayer_auto_skip_buffer ?? 0;
+	}
+
+	async setSlayerAutoSkipBuffer(buffer: number) {
+		await this.update({
+			slayer_auto_skip_buffer: buffer
+		});
+	}
+
 	async updateSlayerSkipSettings(masterID: string, monsterIDs: number[] | null) {
 		const current = this.getSlayerSkipSettings();
 		if (monsterIDs === null || monsterIDs.length === 0) {

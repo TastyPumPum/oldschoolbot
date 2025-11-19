@@ -94,6 +94,20 @@ function formatSkipList(settings: SlayerSkipSettings): string {
 	return lines.join('\n');
 }
 
+async function setSlayerAutoSkipBufferCommand(user: MUser, amount: number) {
+	if (user.perkTier() < PerkTier.Two) {
+		return patronMsg(PerkTier.Two);
+	}
+	if (amount < 0) {
+		return 'Your buffer must be 0 or greater.';
+	}
+	await user.setSlayerAutoSkipBuffer(amount);
+	if (amount === 0) {
+		return 'Auto-skip Slayer point buffer cleared.';
+	}
+	return `Set your auto-skip Slayer point buffer to ${amount.toLocaleString()} points.`;
+}
+
 async function handleSlayerSkipListCommand({
 	user,
 	action,
@@ -261,6 +275,19 @@ export const slayerCommand = defineCommand({
 					description: 'Which monster?',
 					required: false,
 					autocomplete: async (value: string) => slayerMonsterAutocomplete(value)
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'skip_buffer',
+			description: 'Set a Slayer point buffer for auto-skipping tasks (Tier 2+ patrons).',
+			options: [
+				{
+					type: 'Integer',
+					name: 'amount',
+					description: 'Minimum Slayer points to keep when auto-skipping tasks.',
+					required: true
 				}
 			]
 		},
@@ -460,6 +487,9 @@ export const slayerCommand = defineCommand({
 				master: options.skip_list.master,
 				monster: options.skip_list.monster
 			});
+		}
+		if (options.skip_buffer) {
+			return setSlayerAutoSkipBufferCommand(user, options.skip_buffer.amount);
 		}
 		if (options.rewards) {
 			if (options.rewards.my_unlocks) {
