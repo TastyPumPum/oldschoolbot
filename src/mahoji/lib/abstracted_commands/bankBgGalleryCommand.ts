@@ -138,18 +138,15 @@ function buildStatusText({ isCurrent, lockReason }: { isCurrent: boolean; lockRe
 
 async function sendBankBgResponse(interaction: MInteraction, response: Awaited<CommandResponse>) {
 	if (!response) return;
-	if (
-		response === SpecialResponse.PaginatedMessageResponse ||
-		response === SpecialResponse.RespondedManually ||
-		response === SpecialResponse.SilentErrorResponse
-	) {
+	if (response === SpecialResponse.RespondedManually || response === SpecialResponse.SilentErrorResponse) {
 		return;
 	}
 	if (!interaction.deferred && !interaction.replied) {
 		await interaction.reply(response);
 		return;
 	}
-	await interaction.followUp(response);
+	// Fallback: just reply again (wrapper should handle follow-up vs edit internally)
+	await interaction.reply(response);
 }
 
 export async function bankBgGalleryCommand(user: MUser, interaction: MInteraction) {
@@ -288,12 +285,17 @@ export async function bankBgGalleryCommand(user: MUser, interaction: MInteractio
 			const response = await bankBgCommand(buttonInteraction, user, background.name);
 			await sendBankBgResponse(buttonInteraction, response);
 			await user.sync();
+			await buttonInteraction.deferredMessageUpdate();
 			await interaction.reply(await buildPage());
 		}
 	});
 
 	collector.on('end', async () => {
-		await interaction.reply({ components: [] });
+		try {
+			await interaction.reply({ components: [] });
+		} catch {
+			// ignore if we can't reply (already cleaned up / interaction expired)
+		}
 	});
 
 	return SpecialResponse.PaginatedMessageResponse;
