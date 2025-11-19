@@ -280,7 +280,7 @@ export const slayerCommand = defineCommand({
 							name: 'unlockable',
 							description: 'Unlockable to purchase',
 							required: true,
-							autocomplete: async (value: string, user: MUser) => {
+							autocomplete: async ({ value, user }: StringAutoComplete) => {
 								const slayerUnlocks = SlayerRewardsShop.filter(
 									r => !r.item && !user.user.slayer_unlocks.includes(r.id)
 								);
@@ -311,7 +311,7 @@ export const slayerCommand = defineCommand({
 							name: 'assignment',
 							description: 'Assignment to unblock',
 							required: true,
-							autocomplete: async (value: string, user: MUser) => {
+							autocomplete: async ({ value, user }: StringAutoComplete) => {
 								if (user.user.slayer_blocked_ids.length === 0) {
 									return [{ name: "You don't have any monsters blocked", value: '' }];
 								}
@@ -338,7 +338,7 @@ export const slayerCommand = defineCommand({
 							name: 'item',
 							description: 'Item to purchase',
 							required: true,
-							autocomplete: async (value: string) => {
+							autocomplete: async ({ value }: StringAutoComplete) => {
 								return SlayerRewardsShop.filter(
 									r =>
 										r.item &&
@@ -394,7 +394,7 @@ export const slayerCommand = defineCommand({
 							name: 'unlockable',
 							description: 'Slayer unlock to disable',
 							required: true,
-							autocomplete: async (value: string, user: MUser) => {
+							autocomplete: async ({ value, user }: StringAutoComplete) => {
 								return SlayerRewardsShop.filter(
 									r =>
 										!r.item &&
