@@ -1,8 +1,13 @@
+import { PerkTier, stringMatches, toTitleCase } from '@oldschoolgg/toolkit';
 import { Monsters } from 'oldschooljs';
 
-import { choicesOf } from '@/discord/index.js';
+import { choicesOf } from '@/lib/discord/index.js';
+import type { MUser } from '@/lib/MUser.js';
 import { autoslayChoices, slayerMasterChoices } from '@/lib/slayer/constants.js';
+import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
+import { getCommonTaskName } from '@/lib/slayer/slayerUtil.js';
+import type { SlayerMaster, SlayerSkipSettings } from '@/lib/slayer/types.js';
 import { autoSlayCommand } from '@/mahoji/lib/abstracted_commands/autoSlayCommand.js';
 import {
 	slayerShopBuyCommand,
@@ -16,6 +21,152 @@ import {
 	slayerStatusCommand,
 	slayerUnblockCommand
 } from '@/mahoji/lib/abstracted_commands/slayerTaskCommand.js';
+import { patronMsg } from '@/mahoji/mahojiSettings.js';
+
+const MAX_AUTOCOMPLETE_RESULTS = 25;
+
+const slayerMonsterChoices = Array.from(
+	new Map(
+		slayerMasters
+			.flatMap(master => master.tasks.map(task => [task.monster.id, getCommonTaskName(task.monster)] as const))
+			.map(([id, name]) => [id, name])
+	).entries()
+).map(([, name]) => ({ name, value: name }));
+slayerMonsterChoices.sort((a, b) => a.name.localeCompare(b.name));
+
+function getMasterKey(master: SlayerMaster): string {
+	return master.aliases[0];
+}
+
+function resolveSlayerMaster(input: string | undefined): SlayerMaster | null {
+	if (!input) return null;
+	return (
+		slayerMasters.find(m => stringMatches(m.name, input) || m.aliases.some(alias => stringMatches(alias, input))) ??
+		null
+	);
+}
+
+function findTaskForMaster(master: SlayerMaster, monsterInput: string | undefined) {
+	if (!monsterInput) return null;
+	const task = master.tasks.find(taskOption => {
+		if (stringMatches(taskOption.monster.name, monsterInput)) return true;
+		if (stringMatches(getCommonTaskName(taskOption.monster), monsterInput)) return true;
+		if (taskOption.monster.aliases?.some(alias => stringMatches(alias, monsterInput))) return true;
+		return stringMatches(taskOption.monster.id.toString(), monsterInput);
+	});
+	if (!task) return null;
+	return {
+		task,
+		monsterID: task.monster.id,
+		monsterName: getCommonTaskName(task.monster)
+	};
+}
+
+function getMasterSkipEntry(masterKey: string, monsterIDs: number[]) {
+	const master =
+		slayerMasters.find(
+			m => getMasterKey(m) === masterKey || m.aliases.some(alias => stringMatches(alias, masterKey))
+		) ?? null;
+	const masterName = master?.name ?? toTitleCase(masterKey);
+	const monsterNames = monsterIDs
+		.map(id => {
+			const taskFromMaster = master?.tasks.find(t => t.monster.id === id);
+			if (taskFromMaster) {
+				return getCommonTaskName(taskFromMaster.monster);
+			}
+			return Monsters.get(id)?.name ?? `Monster ${id}`;
+		})
+		.filter(Boolean);
+	return { masterName, monsterNames };
+}
+
+function formatSkipList(settings: SlayerSkipSettings): string {
+	const entries = Object.entries(settings);
+	const populatedEntries = entries.filter(([, monsterIDs]) => monsterIDs.length > 0);
+	if (populatedEntries.length === 0) {
+		return "You don't have any Slayer skip entries yet.";
+	}
+	const lines: string[] = [];
+	for (const [key, monsterIDs] of populatedEntries) {
+		const { masterName, monsterNames } = getMasterSkipEntry(key, monsterIDs);
+		lines.push(`${masterName}: ${monsterNames.join(', ')}`);
+	}
+	return lines.join('\n');
+}
+
+async function handleSlayerSkipListCommand({
+	user,
+	action,
+	master: masterInput,
+	monster: monsterInput
+}: {
+	user: MUser;
+	action: 'add' | 'remove' | 'list';
+	master?: string | null;
+	monster?: string | null;
+}) {
+	if (user.perkTier() < PerkTier.Two) {
+		return patronMsg(PerkTier.Two);
+	}
+
+	if (action === 'list') {
+		return formatSkipList(user.getSlayerSkipSettings());
+	}
+
+	if (!masterInput) {
+		return 'You need to specify a Slayer master.';
+	}
+	if (!monsterInput) {
+		return 'You need to specify a monster.';
+	}
+
+	const master = resolveSlayerMaster(masterInput);
+	if (!master) {
+		return `Invalid Slayer master: ${masterInput}`;
+	}
+
+	const resolvedTask = findTaskForMaster(master, monsterInput);
+	if (!resolvedTask) {
+		return `${master.name} doesn't assign ${monsterInput}.`;
+	}
+
+	const masterKey = getMasterKey(master);
+	const currentSettings = user.getSlayerSkipSettings();
+	const currentMonsters = new Set(currentSettings[masterKey] ?? []);
+
+	if (action === 'add') {
+		currentMonsters.add(resolvedTask.monsterID);
+		await user.updateSlayerSkipSettings(masterKey, [...currentMonsters]);
+		const updatedSettings = user.getSlayerSkipSettings();
+		const { masterName, monsterNames } = getMasterSkipEntry(masterKey, updatedSettings[masterKey] ?? []);
+		const listSummary = monsterNames.length > 0 ? monsterNames.join(', ') : 'None';
+		return `Added ${resolvedTask.monsterName} to ${master.name}'s skip list.\nCurrent skip list for ${masterName}: ${listSummary}`;
+	}
+
+	if (!currentMonsters.has(resolvedTask.monsterID)) {
+		return `${resolvedTask.monsterName} wasn't on your ${master.name} skip list.`;
+	}
+
+	currentMonsters.delete(resolvedTask.monsterID);
+	await user.updateSlayerSkipSettings(masterKey, [...currentMonsters]);
+	return `Removed ${resolvedTask.monsterName} from ${master.name}'s skip list.`;
+}
+
+async function slayerMasterAutocomplete(value: string) {
+	return slayerMasters
+		.filter(
+			master =>
+				!value || stringMatches(master.name, value) || master.aliases.some(alias => stringMatches(alias, value))
+		)
+		.slice(0, MAX_AUTOCOMPLETE_RESULTS)
+		.map(master => ({ name: master.name, value: getMasterKey(master) }));
+}
+
+async function slayerMonsterAutocomplete(value: string) {
+	return slayerMonsterChoices
+		.filter(choice => !value || stringMatches(choice.name, value))
+		.slice(0, MAX_AUTOCOMPLETE_RESULTS);
+}
 
 export const slayerCommand = defineCommand({
 	name: 'slayer',
@@ -78,6 +229,38 @@ export const slayerCommand = defineCommand({
 					name: 'new',
 					description: 'Get a new task (if applicable)',
 					required: false
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'skip_list',
+			description: 'Manage your Slayer skip list (Tier 2+ patrons).',
+			options: [
+				{
+					type: 'String',
+					name: 'action',
+					description: 'What do you want to do?',
+					required: true,
+					choices: [
+						{ name: 'Add', value: 'add' },
+						{ name: 'Remove', value: 'remove' },
+						{ name: 'List', value: 'list' }
+					]
+				},
+				{
+					type: 'String',
+					name: 'master',
+					description: 'Which Slayer master?',
+					required: false,
+					autocomplete: async (value: string) => slayerMasterAutocomplete(value)
+				},
+				{
+					type: 'String',
+					name: 'monster',
+					description: 'Which monster?',
+					required: false,
+					autocomplete: async (value: string) => slayerMonsterAutocomplete(value)
 				}
 			]
 		},
@@ -269,6 +452,14 @@ export const slayerCommand = defineCommand({
 					interaction
 				});
 			}
+		}
+		if (options.skip_list) {
+			return handleSlayerSkipListCommand({
+				user,
+				action: options.skip_list.action,
+				master: options.skip_list.master,
+				monster: options.skip_list.monster
+			});
 		}
 		if (options.rewards) {
 			if (options.rewards.my_unlocks) {

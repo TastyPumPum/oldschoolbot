@@ -1,8 +1,8 @@
 import { randInt } from '@oldschoolgg/rng';
-import { notEmpty, removeFromArr, stringMatches } from '@oldschoolgg/toolkit';
+import { notEmpty, PerkTier, removeFromArr, stringMatches } from '@oldschoolgg/toolkit';
 import { EItem, Monsters } from 'oldschooljs';
 
-import type { SafeUserUpdateInput } from '@/lib/MUser.js';
+import type { MUser } from '@/lib/MUser.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { slayerActionButtons } from '@/lib/slayer/slayerButtons.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
@@ -10,11 +10,80 @@ import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
 import {
 	assignNewSlayerTask,
 	calcMaxBlockedTasks,
+	getAssignableSlayerTaskIDs,
 	getCommonTaskName,
 	getUsersCurrentSlayerInfo,
 	userCanUseMaster
 } from '@/lib/slayer/slayerUtil.js';
-import type { AssignableSlayerTask } from '@/lib/slayer/types.js';
+import type { AssignableSlayerTask, SlayerMaster } from '@/lib/slayer/types.js';
+
+const SLAYER_TASK_SKIP_COST = 30;
+const MAX_AUTO_SLAYER_SKIPS = 20;
+
+type AssignedTaskResult = Awaited<ReturnType<typeof assignNewSlayerTask>>;
+
+async function skipSlayerTaskWithPoints(user: MUser, currentTaskID: number) {
+	await user.update({
+		slayer_points: {
+			decrement: SLAYER_TASK_SKIP_COST
+		}
+	});
+	await prisma.slayerTask.update({
+		where: {
+			id: currentTaskID
+		},
+		data: {
+			skipped: true,
+			quantity_remaining: 0
+		}
+	});
+}
+
+async function autoSkipSlayerTasks({
+	user,
+	master,
+	assignment
+}: {
+	user: MUser;
+	master: SlayerMaster;
+	assignment: AssignedTaskResult;
+}) {
+	if (user.perkTier() < PerkTier.Two) {
+		return { assignment, skipped: 0, pointsUsed: 0, outOfPoints: false, exhaustedTaskPool: false } as const;
+	}
+	const masterKey = master.aliases[0];
+	const skipSettings = user.getSlayerSkipSettings();
+	const masterSkips = skipSettings[masterKey];
+	if (!masterSkips || masterSkips.length === 0) {
+		return { assignment, skipped: 0, pointsUsed: 0, outOfPoints: false, exhaustedTaskPool: false } as const;
+	}
+
+	const assignableIDs = getAssignableSlayerTaskIDs(user, master);
+	if (assignableIDs.length > 0 && assignableIDs.every(id => masterSkips.includes(id))) {
+		return { assignment, skipped: 0, pointsUsed: 0, outOfPoints: false, exhaustedTaskPool: true } as const;
+	}
+
+	let skipped = 0;
+	let pointsUsed = 0;
+	let outOfPoints = false;
+	let currentAssignment = assignment;
+
+	for (let i = 0; i < MAX_AUTO_SLAYER_SKIPS; i++) {
+		if (!masterSkips.includes(currentAssignment.currentTask.monster_id)) {
+			break;
+		}
+		if (user.user.slayer_points < SLAYER_TASK_SKIP_COST) {
+			outOfPoints = true;
+			break;
+		}
+		await skipSlayerTaskWithPoints(user, currentAssignment.currentTask.id);
+		skipped++;
+		pointsUsed += SLAYER_TASK_SKIP_COST;
+		currentAssignment = await assignNewSlayerTask(user, master);
+	}
+
+	return { assignment: currentAssignment, skipped, pointsUsed, outOfPoints, exhaustedTaskPool: false } as const;
+}
 
 function getAlternateMonsterList(assignedTask: AssignableSlayerTask | null) {
 	if (assignedTask) {
@@ -201,7 +270,36 @@ export async function slayerNewTaskCommand({
 		return resultMessage;
 	}
 
-	const newSlayerTask = await assignNewSlayerTask(user, slayerMaster);
+	if (user.perkTier() >= PerkTier.Two) {
+		const skipSettings = user.getSlayerSkipSettings();
+		const masterSkips = skipSettings[slayerMaster.aliases[0]] ?? [];
+		if (masterSkips.length > 0) {
+			const assignableIDs = getAssignableSlayerTaskIDs(user, slayerMaster);
+			if (assignableIDs.length > 0 && assignableIDs.every(id => masterSkips.includes(id))) {
+				return `All tasks for ${slayerMaster.name} are in your skip list. Remove at least one with /slayer skip_list.`;
+			}
+		}
+	}
+
+	let newSlayerTask = await assignNewSlayerTask(user, slayerMaster);
+	const autoSkipResult = await autoSkipSlayerTasks({
+		user,
+		master: slayerMaster,
+		assignment: newSlayerTask
+	});
+	if (autoSkipResult.exhaustedTaskPool) {
+		await prisma.slayerTask.update({
+			where: {
+				id: newSlayerTask.currentTask.id
+			},
+			data: {
+				skipped: true,
+				quantity_remaining: 0
+			}
+		});
+		return `All tasks for ${slayerMaster.name} are in your skip list. Remove at least one with /slayer skip_list.`;
+	}
+	newSlayerTask = autoSkipResult.assignment;
 	const myUnlocks = user.user.slayer_unlocks ?? [];
 	const extendReward = SlayerRewardsShop.find(srs => srs.extendID?.includes(newSlayerTask.currentTask.monster_id));
 	if (extendReward && myUnlocks.includes(extendReward.id)) {
@@ -231,6 +329,12 @@ export async function slayerNewTaskCommand({
 	resultMessage += `${slayerMaster.name} has assigned you to kill ${
 		newSlayerTask.currentTask.quantity
 	}x ${commonName}${getAlternateMonsterList(newSlayerTask.assignedTask)}.`;
+	if (autoSkipResult.skipped > 0) {
+		resultMessage += `\nYou auto-skipped ${autoSkipResult.skipped} task(s) and spent ${autoSkipResult.pointsUsed} Slayer points.`;
+		if (autoSkipResult.outOfPoints) {
+			resultMessage += `\nYou ran out of Slayer points, so I stopped skipping.`;
+		}
+	}
 	if (showButtons) {
 		return {
 			content: resultMessage,
@@ -274,30 +378,41 @@ export async function slayerSkipTaskCommand({
 		return `You cannot have more than ${maxBlocks} slayer blocks!\n\nUse:\n\`/slayer rewards unblock assignment:kalphite\`\n to remove a blocked monster.\n\`/slayer manage command:list_blocks\` for your list of blocked monsters.`;
 	}
 	const slayerPoints = user.user.slayer_points;
-	const cost = block ? 100 : 30;
+	const cost = block ? 100 : SLAYER_TASK_SKIP_COST;
 	if (slayerPoints < cost) {
 		return `You need ${cost} points to ${block ? 'block' : 'cancel'}, you only have: ${slayerPoints.toLocaleString()}.`;
 	}
-	const updateData: SafeUserUpdateInput = {
-		slayer_points: {
-			decrement: cost
-		}
-	};
-	if (block) {
-		updateData.slayer_blocked_ids = [...removeFromArr(myBlockList, currentTask.monster_id), currentTask.monster_id];
-	}
 	try {
-		await user.update(updateData);
-		await prisma.slayerTask.update({
-			where: {
-				id: currentTask.id
-			},
-			data: {
-				skipped: true,
-				quantity_remaining: 0
+		if (block) {
+			await user.update({
+				slayer_points: {
+					decrement: cost
+				},
+				slayer_blocked_ids: [...removeFromArr(myBlockList, currentTask.monster_id), currentTask.monster_id]
+			});
+			await prisma.slayerTask.update({
+				where: {
+					id: currentTask.id
+				},
+				data: {
+					skipped: true,
+					quantity_remaining: 0
+				}
+			});
+			const resultMessage = `Your task has been blocked. You now have ${user.user.slayer_points.toLocaleString()} slayer points.`;
+			if (newTask) {
+				return slayerNewTaskCommand({
+					user,
+					interaction,
+					extraContent: resultMessage,
+					showButtons: true
+				});
 			}
-		});
-		const resultMessage = `Your task has been ${block ? 'blocked' : 'skipped'}. You now have ${user.user.slayer_points.toLocaleString()} slayer points.`;
+			return resultMessage;
+		}
+
+		await skipSlayerTaskWithPoints(user, currentTask.id);
+		const resultMessage = `Your task has been skipped. You now have ${user.user.slayer_points.toLocaleString()} slayer points.`;
 
 		if (newTask) {
 			return slayerNewTaskCommand({

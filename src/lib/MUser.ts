@@ -70,6 +70,7 @@ import type { DetailedFarmingContract } from '@/lib/skilling/skills/farming/util
 import birdhouses, { type Birdhouse } from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
 import type { SlayerTaskUnlocksEnum } from '@/lib/slayer/slayerUnlocks.js';
 import { getUsersCurrentSlayerInfo, hasSlayerUnlock } from '@/lib/slayer/slayerUtil.js';
+import type { SlayerSkipSettings } from '@/lib/slayer/types.js';
 import type { BankSortMethod } from '@/lib/sorts.js';
 import { ChargeBank } from '@/lib/structures/Bank.js';
 import { defaultGear, Gear } from '@/lib/structures/Gear.js';
@@ -148,6 +149,7 @@ export async function rawUserUpdate(userId: string, data: Prisma.UserUpdateInput
 const USER_DEFAULTS = {
 	slayer_unlocks: [],
 	slayer_blocked_ids: [],
+	slayer_skip_settings: {},
 	badges: [],
 	bitfield: [],
 	temp_cl: {},
@@ -304,6 +306,26 @@ export class MUserClass {
 		const newUser = await rawUserUpdate(this.id, arg);
 		this._updateRawUser(newUser);
 		return this;
+	}
+
+	getSlayerSkipSettings(): SlayerSkipSettings {
+		return (this.user.slayer_skip_settings ?? {}) as SlayerSkipSettings;
+	}
+
+	async setSlayerSkipSettings(settings: SlayerSkipSettings) {
+		await this.update({
+			slayer_skip_settings: settings
+		});
+	}
+
+	async updateSlayerSkipSettings(masterID: string, monsterIDs: number[] | null) {
+		const current = this.getSlayerSkipSettings();
+		if (monsterIDs === null || monsterIDs.length === 0) {
+			delete current[masterID];
+		} else {
+			current[masterID] = [...new Set(monsterIDs)];
+		}
+		await this.setSlayerSkipSettings(current);
 	}
 
 	get combatLevel() {
