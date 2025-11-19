@@ -114,7 +114,9 @@ export class TestUser extends MUserClass {
 
 	async bankMatch(bankToMatch: Bank, ignoreRandomEventItems = true) {
 		await this.sync();
-		const bankToCheck = ignoreRandomEventItems ? this.bank.clone().remove(EItem.MYSTERY_BOX, 999) : this.bank;
+		const bankToCheck = ignoreRandomEventItems
+			? this.bank.clone().remove(EItem.MYSTERY_BOX, 999).remove(EItem.BOOK_OF_KNOWLEDGE, 999)
+			: this.bank;
 		if (!bankToCheck.equals(bankToMatch)) {
 			throw new Error(
 				`Expected bank to match, CURRENT[${this.bank.toString()}] EXPECTED[${bankToMatch.toString()}]`

@@ -2,6 +2,7 @@ import { PerkTier } from '@oldschoolgg/toolkit';
 import { EMonster, Monsters } from 'oldschooljs';
 import { describe, expect, test, vi } from 'vitest';
 
+import { MUserClass } from '@/lib/MUser.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { getAssignableSlayerTaskIDs } from '@/lib/slayer/slayerUtil.js';
 import { patronMsg } from '@/lib/util/smallUtils.js';
@@ -61,7 +62,7 @@ describe('Slayer Tasks', async () => {
 
 	test('Patron skip list management', async () => {
 		const user = await createTestUser();
-		vi.spyOn(user, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
+		vi.spyOn(MUserClass.prototype, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
 
 		const addRes = await user.runCommand(slayerCommand, {
 			skip_list: { action: 'add', master: 'turael', monster: 'Birds' }
@@ -85,7 +86,7 @@ describe('Slayer Tasks', async () => {
 
 	test('Auto-skips tasks when on skip list', async () => {
 		const user = await createTestUser();
-		vi.spyOn(user, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
+		vi.spyOn(MUserClass.prototype, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
 		await user.update({ slayer_points: 90 });
 		const restoreRandom = mockMathRandom(0.1);
 
@@ -107,7 +108,7 @@ describe('Slayer Tasks', async () => {
 
 	test('Auto-skip stops when out of points', async () => {
 		const user = await createTestUser();
-		vi.spyOn(user, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
+		vi.spyOn(MUserClass.prototype, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
 		await user.update({ slayer_points: 30 });
 		const restoreRandom = mockMathRandom(0.1);
 
@@ -132,7 +133,7 @@ describe('Slayer Tasks', async () => {
 
 	test('All tasks skipped message', async () => {
 		const user = await createTestUser();
-		vi.spyOn(user, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
+		vi.spyOn(MUserClass.prototype, 'fetchPerkTier').mockResolvedValue(PerkTier.Two);
 		const turael = slayerMasters.find(m => m.name === 'Turael')!;
 		const assignable = getAssignableSlayerTaskIDs(user, turael);
 		await user.updateSlayerSkipSettings(turael.aliases[0], assignable);
