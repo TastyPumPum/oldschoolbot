@@ -299,6 +299,7 @@ model User {
   slayer_unlocks         Int[]     @default([]) @map("slayer.unlocks")
   slayer_blocked_ids     Int[]     @default([]) @map("slayer.blocked_ids")
   slayer_last_task       Int       @default(0) @map("slayer.last_task")
+  slayer_skip_settings   Json?     @map("slayer_skip_settings")
   badges                 Int[]     @default([])
   bitfield               Int[]     @default([])
   temp_cl                Json      @default("{}") @db.Json
