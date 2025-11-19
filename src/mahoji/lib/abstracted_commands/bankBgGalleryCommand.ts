@@ -91,7 +91,7 @@ function buildComponents({
 			.setCustomId(buttonIds.apply)
 			.setLabel('Apply background')
 			.setStyle(ButtonStyle.Success)
-			.setDisabled(isApplyDisabled),
+			.setDisabled(isApplyDisabled)
 	]);
 	return rows;
 }
