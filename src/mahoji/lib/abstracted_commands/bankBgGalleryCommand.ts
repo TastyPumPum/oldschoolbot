@@ -149,11 +149,15 @@ async function sendBankBgResponse(interaction: MInteraction, response: Awaited<C
 	await interaction.reply(response);
 }
 
-export async function bankBgGalleryCommand(user: MUser, interaction: MInteraction) {
+export async function bankBgGalleryCommand(user: MUser, interaction: MInteraction, showAll = false) {
 	const userPerkTier = await user.fetchPerkTier();
 	const storeUnlocks = new Set(user.user.store_bitfield);
 	const backgrounds = bankImageTask.backgroundImages.filter(
-		bg => user.isModOrAdmin() || bg.available || (bg.storeBitField ? storeUnlocks.has(bg.storeBitField) : false)
+		bg =>
+			showAll ||
+			user.isModOrAdmin() ||
+			bg.available ||
+			(bg.storeBitField ? storeUnlocks.has(bg.storeBitField) : false)
 	);
 	if (backgrounds.length === 0) {
 		return 'There are no bank backgrounds available to browse right now.';
