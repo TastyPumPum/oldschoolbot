@@ -7,6 +7,7 @@ import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
 import { getCommonTaskName } from '@/lib/slayer/slayerUtil.js';
 import type { SlayerMaster, SlayerSkipSettings } from '@/lib/slayer/types.js';
+import { patronMsg } from '@/lib/util/smallUtils.js';
 import { autoSlayCommand } from '@/mahoji/lib/abstracted_commands/autoSlayCommand.js';
 import {
 	slayerShopBuyCommand,
@@ -20,7 +21,6 @@ import {
 	slayerStatusCommand,
 	slayerUnblockCommand
 } from '@/mahoji/lib/abstracted_commands/slayerTaskCommand.js';
-import { patronMsg } from '@/lib/util/smallUtils.js';
 
 const MAX_AUTOCOMPLETE_RESULTS = 25;
 
@@ -317,9 +317,9 @@ export const slayerCommand = defineCommand({
 										!value
 											? true
 											: r.name.toLowerCase().includes(value) ||
-											r.aliases?.some(alias =>
-												alias.toLowerCase().includes(value.toLowerCase())
-											)
+												r.aliases?.some(alias =>
+													alias.toLowerCase().includes(value.toLowerCase())
+												)
 									)
 									.map(m => {
 										return { name: m.name, value: m.name };
@@ -373,9 +373,9 @@ export const slayerCommand = defineCommand({
 										(!value
 											? true
 											: r.name.toLowerCase().includes(value) ||
-											r.aliases?.some(alias =>
-												alias.toLowerCase().includes(value.toLowerCase())
-											))
+												r.aliases?.some(alias =>
+													alias.toLowerCase().includes(value.toLowerCase())
+												))
 								).map(m => {
 									return { name: m.name, value: m.name };
 								});
@@ -431,9 +431,9 @@ export const slayerCommand = defineCommand({
 										(!value
 											? true
 											: r.name.toLowerCase().includes(value) ||
-											r.aliases?.some(alias =>
-												alias.toLowerCase().includes(value.toLowerCase())
-											))
+												r.aliases?.some(alias =>
+													alias.toLowerCase().includes(value.toLowerCase())
+												))
 								).map(m => {
 									return { name: m.name, value: m.name };
 								});
