@@ -1,8 +1,7 @@
 import { PerkTier, stringMatches, toTitleCase } from '@oldschoolgg/toolkit';
 import { Monsters } from 'oldschooljs';
 
-import { choicesOf } from '@/lib/discord/index.js';
-import type { MUser } from '@/lib/MUser.js';
+import { choicesOf } from '@/discord/index.js';
 import { autoslayChoices, slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
@@ -21,7 +20,7 @@ import {
 	slayerStatusCommand,
 	slayerUnblockCommand
 } from '@/mahoji/lib/abstracted_commands/slayerTaskCommand.js';
-import { patronMsg } from '@/mahoji/mahojiSettings.js';
+import { patronMsg } from '@/lib/util/smallUtils.js';
 
 const MAX_AUTOCOMPLETE_RESULTS = 25;
 
@@ -95,7 +94,8 @@ function formatSkipList(settings: SlayerSkipSettings): string {
 }
 
 async function setSlayerAutoSkipBufferCommand(user: MUser, amount: number) {
-	if (user.perkTier() < PerkTier.Two) {
+	const perkTier = await user.fetchPerkTier();
+	if (perkTier < PerkTier.Two) {
 		return patronMsg(PerkTier.Two);
 	}
 	if (amount < 0) {
@@ -119,7 +119,8 @@ async function handleSlayerSkipListCommand({
 	master?: string | null;
 	monster?: string | null;
 }) {
-	if (user.perkTier() < PerkTier.Two) {
+	const perkTier = await user.fetchPerkTier();
+	if (perkTier < PerkTier.Two) {
 		return patronMsg(PerkTier.Two);
 	}
 
@@ -316,9 +317,9 @@ export const slayerCommand = defineCommand({
 										!value
 											? true
 											: r.name.toLowerCase().includes(value) ||
-												r.aliases?.some(alias =>
-													alias.toLowerCase().includes(value.toLowerCase())
-												)
+											r.aliases?.some(alias =>
+												alias.toLowerCase().includes(value.toLowerCase())
+											)
 									)
 									.map(m => {
 										return { name: m.name, value: m.name };
@@ -372,9 +373,9 @@ export const slayerCommand = defineCommand({
 										(!value
 											? true
 											: r.name.toLowerCase().includes(value) ||
-												r.aliases?.some(alias =>
-													alias.toLowerCase().includes(value.toLowerCase())
-												))
+											r.aliases?.some(alias =>
+												alias.toLowerCase().includes(value.toLowerCase())
+											))
 								).map(m => {
 									return { name: m.name, value: m.name };
 								});
@@ -430,9 +431,9 @@ export const slayerCommand = defineCommand({
 										(!value
 											? true
 											: r.name.toLowerCase().includes(value) ||
-												r.aliases?.some(alias =>
-													alias.toLowerCase().includes(value.toLowerCase())
-												))
+											r.aliases?.some(alias =>
+												alias.toLowerCase().includes(value.toLowerCase())
+											))
 								).map(m => {
 									return { name: m.name, value: m.name };
 								});
