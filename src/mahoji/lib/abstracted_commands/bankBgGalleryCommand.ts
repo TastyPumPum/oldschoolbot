@@ -285,7 +285,6 @@ export async function bankBgGalleryCommand(user: MUser, interaction: MInteractio
 			return;
 		}
 		if (id === buttonIds.apply) {
-			await safeDeferMessageUpdate(buttonInteraction);
 			const background = backgrounds[currentIndex];
 			if (user.user.bankBackground === background.id) {
 				await replyOrFollowUp(buttonInteraction, {
