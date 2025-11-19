@@ -110,6 +110,10 @@ async function autoSkipSlayerTasks({
 		skipped++;
 		pointsUsed += SLAYER_TASK_SKIP_COST;
 		currentAssignment = await assignNewSlayerTask(user, master);
+		if (user.user.slayer_points < SLAYER_TASK_SKIP_COST) {
+			outOfPoints = true;
+			break;
+		}
 	}
 
 	return {
@@ -161,15 +165,17 @@ export async function slayerStatusCommand(mahojiUser: MUser) {
 	const slayer_streaks = await mahojiUser.fetchStats();
 
 	return (
-		`${currentTask
-			? `\nYour current task from ${slayerMaster.name} is to kill **${getCommonTaskName(
-				assignedTask.monster
-			)}**${getAlternateMonsterList(
-				assignedTask
-			)}. You have ${currentTask.quantity_remaining.toLocaleString()} kills remaining.`
-			: ''
+		`${
+			currentTask
+				? `\nYour current task from ${slayerMaster.name} is to kill **${getCommonTaskName(
+						assignedTask.monster
+					)}**${getAlternateMonsterList(
+						assignedTask
+					)}. You have ${currentTask.quantity_remaining.toLocaleString()} kills remaining.`
+				: ''
 		}` +
-		`\nYou have ${slayerPoints.toLocaleString()} slayer points, and have completed ${slayer_streaks.slayer_task_streak
+		`\nYou have ${slayerPoints.toLocaleString()} slayer points, and have completed ${
+			slayer_streaks.slayer_task_streak
 		} tasks in a row and ${slayer_streaks.slayer_wildy_task_streak} wilderness tasks in a row.`
 	);
 }
@@ -212,22 +218,22 @@ export async function slayerNewTaskCommand({
 			? (slayerMasters.find(m => m.aliases.some(alias => stringMatches(alias, slayerMasterOverride))) ?? null)
 			: slayerMasterOverride
 				? (slayerMasters
-					.filter(m => userCanUseMaster(user, m))
-					.find(m => m.aliases.some(alias => stringMatches(alias, slayerMasterOverride))) ?? null)
+						.filter(m => userCanUseMaster(user, m))
+						.find(m => m.aliases.some(alias => stringMatches(alias, slayerMasterOverride))) ?? null)
 				: rememberedSlayerMaster
 					? (slayerMasters
-						.filter(m => userCanUseMaster(user, m))
-						.find(m => m.aliases.some(alias => stringMatches(alias, rememberedSlayerMaster))) ??
+							.filter(m => userCanUseMaster(user, m))
+							.find(m => m.aliases.some(alias => stringMatches(alias, rememberedSlayerMaster))) ??
 						proposedDefaultMaster)
 					: proposedDefaultMaster;
 
 	// Contains (if matched) the requested Slayer Master regardless of requirements.
 	const matchedSlayerMaster = slayerMasterOverride
 		? (slayerMasters.find(
-			m =>
-				stringMatches(m.name, slayerMasterOverride) ||
-				m.aliases.some(alias => stringMatches(alias, slayerMasterOverride))
-		) ?? null)
+				m =>
+					stringMatches(m.name, slayerMasterOverride) ||
+					m.aliases.some(alias => stringMatches(alias, slayerMasterOverride))
+			) ?? null)
 		: null;
 
 	// Special handling for Turael skip
@@ -237,8 +243,9 @@ export async function slayerNewTaskCommand({
 		}
 		const isUsingKrystilia = Boolean(currentTask?.slayer_master_id === 8);
 		const taskStreakKey = isUsingKrystilia ? 'slayer_wildy_task_streak' : 'slayer_task_streak';
-		const warning = `Really cancel task? This will reset your${isUsingKrystilia ? ' wilderness' : ''
-			} streak to 0 and give you a new ${slayerMaster.name} task.`;
+		const warning = `Really cancel task? This will reset your${
+			isUsingKrystilia ? ' wilderness' : ''
+		} streak to 0 and give you a new ${slayerMaster.name} task.`;
 
 		await interaction.confirmation(warning);
 		await prisma.slayerTask.update({
@@ -362,8 +369,9 @@ export async function slayerNewTaskCommand({
 			"don't kill any regular TzHaar first.";
 	}
 
-	resultMessage += `${slayerMaster.name} has assigned you to kill ${newSlayerTask.currentTask.quantity
-		}x ${commonName}${getAlternateMonsterList(newSlayerTask.assignedTask)}.`;
+	resultMessage += `${slayerMaster.name} has assigned you to kill ${
+		newSlayerTask.currentTask.quantity
+	}x ${commonName}${getAlternateMonsterList(newSlayerTask.assignedTask)}.`;
 	if (autoSkipResult.skipped > 0) {
 		resultMessage += `\nYou auto-skipped ${autoSkipResult.skipped} task(s) and spent ${autoSkipResult.pointsUsed} Slayer points.`;
 		if (autoSkipResult.outOfPoints) {
