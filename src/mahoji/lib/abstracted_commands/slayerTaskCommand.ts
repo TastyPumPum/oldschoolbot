@@ -110,6 +110,10 @@ async function autoSkipSlayerTasks({
 		skipped++;
 		pointsUsed += SLAYER_TASK_SKIP_COST;
 		currentAssignment = await assignNewSlayerTask(user, master);
+		if (user.user.slayer_points < SLAYER_TASK_SKIP_COST) {
+			outOfPoints = true;
+			break;
+		}
 	}
 
 	return {
