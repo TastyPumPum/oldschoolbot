@@ -23,7 +23,7 @@ describe('Payment conflicts', async () => {
 		return payees;
 	}
 
-	test.concurrent(
+	test(
 		'GE Simulation (Payee)',
 		{
 			timeout: Time.Minute * 2

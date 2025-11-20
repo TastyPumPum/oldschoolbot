@@ -2,6 +2,7 @@ import { randInt } from '@oldschoolgg/rng';
 import { notEmpty, PerkTier, removeFromArr, stringMatches } from '@oldschoolgg/toolkit';
 import { EItem, Monsters } from 'oldschooljs';
 
+import type { SafeUserUpdateInput } from '@/lib/MUser.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { slayerActionButtons } from '@/lib/slayer/slayerButtons.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
