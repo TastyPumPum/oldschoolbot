@@ -1,13 +1,13 @@
 import { PerkTier, stringMatches, toTitleCase } from '@oldschoolgg/toolkit';
 import { Monsters } from 'oldschooljs';
 
-import { choicesOf } from '@/lib/discord/index.js';
-import type { MUser } from '@/lib/MUser.js';
+import { choicesOf } from '@/discord/index.js';
 import { autoslayChoices, slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
 import { getCommonTaskName } from '@/lib/slayer/slayerUtil.js';
 import type { SlayerMaster, SlayerSkipSettings } from '@/lib/slayer/types.js';
+import { patronMsg } from '@/lib/util/smallUtils.js';
 import { autoSlayCommand } from '@/mahoji/lib/abstracted_commands/autoSlayCommand.js';
 import {
 	slayerShopBuyCommand,
@@ -21,7 +21,6 @@ import {
 	slayerStatusCommand,
 	slayerUnblockCommand
 } from '@/mahoji/lib/abstracted_commands/slayerTaskCommand.js';
-import { patronMsg } from '@/mahoji/mahojiSettings.js';
 
 const MAX_AUTOCOMPLETE_RESULTS = 25;
 
@@ -94,6 +93,21 @@ function formatSkipList(settings: SlayerSkipSettings): string {
 	return lines.join('\n');
 }
 
+async function setSlayerAutoSkipBufferCommand(user: MUser, amount: number) {
+	const perkTier = await user.fetchPerkTier();
+	if (perkTier < PerkTier.Two) {
+		return patronMsg(PerkTier.Two);
+	}
+	if (amount < 0) {
+		return 'Your buffer must be 0 or greater.';
+	}
+	await user.setSlayerAutoSkipBuffer(amount);
+	if (amount === 0) {
+		return 'Auto-skip Slayer point buffer cleared.';
+	}
+	return `Set your auto-skip Slayer point buffer to ${amount.toLocaleString()} points.`;
+}
+
 async function handleSlayerSkipListCommand({
 	user,
 	action,
@@ -105,7 +119,8 @@ async function handleSlayerSkipListCommand({
 	master?: string | null;
 	monster?: string | null;
 }) {
-	if (user.perkTier() < PerkTier.Two) {
+	const perkTier = await user.fetchPerkTier();
+	if (perkTier < PerkTier.Two) {
 		return patronMsg(PerkTier.Two);
 	}
 
@@ -181,7 +196,6 @@ export const slayerCommand = defineCommand({
 					type: 'String',
 					name: 'mode',
 					description: 'Which autoslay mode do you want?',
-					required: false,
 					choices: autoslayChoices
 				},
 				{
@@ -252,15 +266,26 @@ export const slayerCommand = defineCommand({
 					type: 'String',
 					name: 'master',
 					description: 'Which Slayer master?',
-					required: false,
-					autocomplete: async (value: string) => slayerMasterAutocomplete(value)
+					autocomplete: async ({ value }: StringAutoComplete) => slayerMasterAutocomplete(value ?? '')
 				},
 				{
 					type: 'String',
 					name: 'monster',
 					description: 'Which monster?',
-					required: false,
-					autocomplete: async (value: string) => slayerMonsterAutocomplete(value)
+					autocomplete: async ({ value }: StringAutoComplete) => slayerMonsterAutocomplete(value ?? '')
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'skip_buffer',
+			description: 'Set a Slayer point buffer for auto-skipping tasks (Tier 2+ patrons).',
+			options: [
+				{
+					type: 'Integer',
+					name: 'amount',
+					description: 'Minimum Slayer points to keep when auto-skipping tasks.',
+					required: true
 				}
 			]
 		},
@@ -273,7 +298,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'unlock',
 					description: 'Unlock tasks, extensions, cosmetics, etc',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -304,7 +328,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'unblock',
 					description: 'Unblock a task',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -331,7 +354,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'buy',
 					description: 'Purchase something with points',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -357,7 +379,6 @@ export const slayerCommand = defineCommand({
 							type: 'Integer',
 							name: 'quantity',
 							description: 'The quantity to purchase, if applicable.',
-							required: false,
 							min_value: 1
 						}
 					]
@@ -372,13 +393,11 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'show_all_rewards',
 					description: 'Show all rewards',
-					required: false,
 					options: [
 						{
 							type: 'String',
 							name: 'type',
 							description: 'What type of rewards to show?',
-							required: false,
 							choices: choicesOf(['all', 'buyables', 'unlocks'])
 						}
 					]
@@ -387,7 +406,6 @@ export const slayerCommand = defineCommand({
 					type: 'Subcommand',
 					name: 'disable',
 					description: 'Disable unlocks, extensions, etc. They will need to be repurchased.',
-					required: false,
 					options: [
 						{
 							type: 'String',
@@ -460,6 +478,9 @@ export const slayerCommand = defineCommand({
 				master: options.skip_list.master,
 				monster: options.skip_list.monster
 			});
+		}
+		if (options.skip_buffer) {
+			return setSlayerAutoSkipBufferCommand(user, options.skip_buffer.amount);
 		}
 		if (options.rewards) {
 			if (options.rewards.my_unlocks) {
