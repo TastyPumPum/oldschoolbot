@@ -161,7 +161,6 @@ After becoming an ironman:
 	await prisma.bingo.updateMany({ where: { creator_id: user.id }, data: { creator_id: DELETED_USER_ID } });
 
 	// Delete tables with foreign keys first:
-	await prisma.bingo.deleteMany({ where: { creator_id: user.id } });
 	await prisma.historicalData.deleteMany({ where: { user_id: user.id } });
 	await prisma.botItemSell.deleteMany({ where: { user_id: user.id } });
 	await prisma.pinnedTrip.deleteMany({ where: { user_id: user.id } });
