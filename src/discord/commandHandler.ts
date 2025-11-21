@@ -35,9 +35,7 @@ export async function rawCommandHandlerInner({
 
 	RawSQL.updateUserLastCommandDate({ userId: interaction.userId }).catch(console.error);
 
-	if (user.user.completed_achievement_diaries.length === 0) {
-		user.syncCompletedAchievementDiaries().catch(console.error);
-	}
+	await user.maybeSyncCompletedAchievementDiaries().catch(console.error);
 
 	const shouldIgnoreBusy = ignoreUserIsBusy || busyImmuneCommands.includes(command.name);
 

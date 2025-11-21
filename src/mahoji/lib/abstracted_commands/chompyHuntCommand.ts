@@ -38,6 +38,8 @@ export async function chompyHuntCommand(user: MUser, channelId: string) {
 		return 'You need an Ogre bow equipped in your range outfit, and Ogre arrows to hunt Chompy birds!';
 	}
 
+	await user.maybeSyncCompletedAchievementDiaries({ force: true });
+
 	const tripLength = await user.calcMaxTripLength('BigChompyBirdHunting');
 
 	const boosts: string[] = [];

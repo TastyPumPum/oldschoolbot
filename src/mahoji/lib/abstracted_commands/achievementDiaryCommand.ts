@@ -40,7 +40,7 @@ export async function achievementDiaryCommand(user: MUser, diaryName: string) {
 		d => stringMatches(d.name, diaryName) || d.alias?.some(a => stringMatches(a, diaryName))
 	);
 	const [stats, minigameScores] = await Promise.all([user.fetchMStats(), user.fetchMinigames()]);
-	await user.syncCompletedAchievementDiaries({ stats, minigameScores });
+	await user.maybeSyncCompletedAchievementDiaries({ preFetchedData: { stats, minigameScores }, force: true });
 	if (!diary) {
 		let str = 'Your Achievement Diaries\n\n';
 		for (const dir of diaries) {

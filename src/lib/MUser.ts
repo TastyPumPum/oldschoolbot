@@ -15,6 +15,7 @@ import {
 	isObject,
 	type PerkTier,
 	sumArr,
+	Time,
 	UserError,
 	uniqueArr
 } from '@oldschoolgg/toolkit';
@@ -201,12 +202,17 @@ type QueuedUpdateFnReturnValue =
 type QueuedUpdateFnReturn = Promise<QueuedUpdateFnReturnValue> | QueuedUpdateFnReturnValue;
 type QueuedUpdateFn = (user: MUserClass) => QueuedUpdateFnReturn;
 
+const DIARY_SYNC_INTERVAL = Time.Hour * 6;
+
 export type GearColumns = `gear_${GearSetupType}`;
 export type SafeUserUpdateInput = Partial<{ blowpipe: BlowpipeData } & Record<GearColumns, GearSetup>> &
 	Omit<Prisma.UserUncheckedUpdateInput, 'id' | 'bank' | 'collectionLogBank' | 'blowpipe' | GearColumns>;
 export class MUserClass {
 	user!: Readonly<User>;
 	id: string;
+
+	private static diarySyncTimestamps = new Map<string, number>();
+	private static diarySyncPromises = new Map<string, Promise<void>>();
 
 	skillsAsXP!: Required<Skills>;
 	skillsAsLevels!: Required<Skills>;
@@ -1235,6 +1241,29 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 		return res;
 	}
 
+	async maybeSyncCompletedAchievementDiaries(options?: {
+		preFetchedData?: { stats: MUserStats; minigameScores: Minigame };
+		force?: boolean;
+	}) {
+		const lastSync = MUserClass.diarySyncTimestamps.get(this.id) ?? 0;
+		const shouldSync =
+			options?.force ||
+			this.user.completed_achievement_diaries.length === 0 ||
+			Date.now() - lastSync > DIARY_SYNC_INTERVAL;
+
+		if (!shouldSync) return;
+
+		const existingPromise = MUserClass.diarySyncPromises.get(this.id);
+		if (existingPromise) return existingPromise;
+
+		const syncPromise = this.syncCompletedAchievementDiaries(options?.preFetchedData).finally(() =>
+			MUserClass.diarySyncPromises.delete(this.id)
+		);
+
+		MUserClass.diarySyncPromises.set(this.id, syncPromise);
+		await syncPromise;
+	}
+
 	hasSlayerUnlock(unlock: SlayerTaskUnlocksEnum): boolean {
 		return this.user.slayer_unlocks.includes(unlock);
 	}
@@ -1291,9 +1320,20 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 				}
 			}
 		}
-		await this.update({
-			completed_achievement_diaries: completedKeys
-		});
+		const existing = this.user.completed_achievement_diaries;
+		const hasChanges =
+			existing.length !== completedKeys.length || existing.some((key, index) => key !== completedKeys[index]);
+
+		if (hasChanges) {
+			await this.update({
+				completed_achievement_diaries: completedKeys
+			});
+			MUserClass.diarySyncTimestamps.set(this.id, Date.now());
+			return;
+		}
+
+		this._updateRawUser({ ...this.user, completed_achievement_diaries: completedKeys } as User);
+		MUserClass.diarySyncTimestamps.set(this.id, Date.now());
 	}
 
 	async giveBotMessagePet(petToGive: Pet) {
@@ -1419,7 +1459,9 @@ async function srcMUserFetch(userID: string, updates?: Prisma.UserUpdateInput) {
 	if (!user) {
 		return srcMUserFetch(userID, {});
 	}
-	return new MUserClass(user);
+	const mUser = new MUserClass(user);
+	await mUser.maybeSyncCompletedAchievementDiaries().catch(console.error);
+	return mUser;
 }
 
 global.mUserFetch = srcMUserFetch;
