@@ -203,6 +203,7 @@ type QueuedUpdateFnReturn = Promise<QueuedUpdateFnReturnValue> | QueuedUpdateFnR
 type QueuedUpdateFn = (user: MUserClass) => QueuedUpdateFnReturn;
 
 const DIARY_SYNC_INTERVAL = Time.Hour * 6;
+const BASE_TOTAL_LEVEL = 32;
 
 export type GearColumns = `gear_${GearSetupType}`;
 export type SafeUserUpdateInput = Partial<{ blowpipe: BlowpipeData } & Record<GearColumns, GearSetup>> &
@@ -1246,10 +1247,10 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 		force?: boolean;
 	}) {
 		const lastSync = MUserClass.diarySyncTimestamps.get(this.id) ?? 0;
+		const isBaseAccount = this.totalLevel <= BASE_TOTAL_LEVEL;
+		const hasNoDiaries = this.user.completed_achievement_diaries.length === 0;
 		const shouldSync =
-			options?.force ||
-			this.user.completed_achievement_diaries.length === 0 ||
-			Date.now() - lastSync > DIARY_SYNC_INTERVAL;
+			options?.force || (!isBaseAccount && hasNoDiaries) || Date.now() - lastSync > DIARY_SYNC_INTERVAL;
 
 		if (!shouldSync) return;
 
