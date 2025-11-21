@@ -171,7 +171,10 @@ After becoming an ironman:
 		where: { id: user.id }
 	});
 	await prisma.user.create({
-		data: createOptions
+		data: {
+			...createOptions,
+			completed_achievement_diaries: []
+		}
 	});
 	await prisma.slayerTask.deleteMany({ where: { user_id: user.id } });
 	await prisma.playerOwnedHouse.deleteMany({ where: { user_id: user.id } });

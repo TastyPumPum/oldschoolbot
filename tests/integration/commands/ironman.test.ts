@@ -102,6 +102,10 @@ describe('Ironman Command', () => {
 		const userId = mockedId();
 		const { testBingo } = await createUserWithEverything(userId);
 		const userBeingReset = await mUserFetch(userId);
+		await global.prisma!.user.update({
+			where: { id: userId },
+			data: { completed_achievement_diaries: ['ardy.easy'] }
+		});
 		await userBeingReset.addItemsToBank({
 			items: new Bank().add('Dragon scimitar').add('Twisted bow').add('Coins', 1_000_000_000),
 			collectionLog: true
@@ -124,6 +128,7 @@ describe('Ironman Command', () => {
 		expect(user.cl.equals(new Bank())).toEqual(true);
 		const tableBankCl = await user.fetchCL();
 		expect(tableBankCl).toHaveLength(0);
+		expect(user.completed_achievement_diaries.length).toEqual(0);
 
 		expect(await global.prisma!.activity.count({ where: { user_id: BigInt(userId) } })).toEqual(0);
 		expect(await global.prisma!.botItemSell.count({ where: { user_id: userId } })).toEqual(0);
