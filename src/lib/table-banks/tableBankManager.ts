@@ -2,6 +2,10 @@ import { Bank } from 'oldschooljs';
 
 import { Prisma, type TableBankType } from '@/prisma/main.js';
 
+function bigintValue(value: bigint): Prisma.Sql {
+	return Prisma.raw(`${value.toString()}::bigint`);
+}
+
 function toPairs(b?: Bank): Array<[number, bigint]> {
 	if (!b) return [];
 	const out: Array<[number, bigint]> = [];
@@ -43,7 +47,7 @@ export class TableBankManager {
 
 		await prisma.$transaction(async tx => {
 			if (adds.length) {
-				const vAdd = Prisma.join(adds.map(([id, q]) => Prisma.sql`(${bankId}, ${id}::int, ${q}::bigint)`));
+				const vAdd = Prisma.join(adds.map(([id, q]) => Prisma.sql`(${bankId}, ${id}::int, ${bigintValue(q)})`));
 				const addSql = Prisma.sql`
           INSERT INTO table_bank_item (bank_id, item_id, quantity)
           VALUES ${vAdd}
@@ -54,7 +58,7 @@ export class TableBankManager {
 			}
 
 			if (rems.length) {
-				const vRem = Prisma.join(rems.map(([id, q]) => Prisma.sql`(${id}::int, ${q}::bigint)`));
+				const vRem = Prisma.join(rems.map(([id, q]) => Prisma.sql`(${id}::int, ${bigintValue(q)})`));
 
 				const subtractSql = Prisma.sql`
           WITH d(item_id, qty) AS (VALUES ${vRem})
