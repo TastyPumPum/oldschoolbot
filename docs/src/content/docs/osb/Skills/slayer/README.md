@@ -78,6 +78,16 @@ If you are a Tier 1 patron or higher, you will see an **Auto Slay** button at th
   - Gain half XP with hard diary, full XP with elite diary
   - Must be charged with death runes: [[/minion charge item\:Ash sanctifier]]
 
+## Patron Slayer Skip Lists (Tier 2+)
+
+Tier 2+ patrons can automatically skip unwanted tasks on a per-master basis.
+
+- Add a monster to a master's skip list: [[/slayer skip_list action\:add master\:Duradel monster\:"Dust devils"]]
+- Remove a monster from a skip list: [[/slayer skip_list action\:remove master\:Duradel monster\:"Dust devils"]]
+- View your skip lists: [[/slayer skip_list action\:list]]
+
+When you request a new task, the bot will auto-skip anything on your list while you have Slayer points. Each skip still costs 30 Slayer points, and the bot will try up to 20 automatic skips before stopping. You'll be told how many tasks were skipped and if you ran out of points.
+
 ---
 
 ## Recommended block/skip list
