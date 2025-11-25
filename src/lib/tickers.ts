@@ -13,6 +13,7 @@ import { GrandExchange } from '@/lib/grandExchange.js';
 import { MUserClass } from '@/lib/MUser.js';
 import { cacheGEPrices } from '@/lib/marketPrices.js';
 import { collectMetrics } from '@/lib/metrics.js';
+import { distributePatronPrismPaints } from '@/lib/patronPrism.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName, FarmingPatchSettingsKey } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
@@ -242,6 +243,16 @@ LIMIT 10;`);
 		interval: Time.Hour * 8.44,
 		cb: async () => {
 			globalClient.setPresence({ text: '/help' });
+		}
+	},
+	{
+		name: 'Patron Prism Distribution',
+		timer: null,
+		startupWait: Time.Minute * 15,
+		interval: Time.Hour,
+		productionOnly: true,
+		cb: async () => {
+			await distributePatronPrismPaints();
 		}
 	},
 	{
