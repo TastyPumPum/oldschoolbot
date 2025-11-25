@@ -1032,7 +1032,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -1879,7 +1880,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -6034,7 +6036,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -14267,7 +14270,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -24371,7 +24375,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -27809,7 +27814,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -30792,7 +30798,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -38721,6 +38728,22 @@
 		"price": 1000
 	},
 	{
+		"id": 72464,
+		"name": "Patron Prism paint can",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 100000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": true
+		}
+	},
+	{
 		"id": 62122,
 		"name": "Pavlova",
 		"tradeable": true,
@@ -40465,7 +40488,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -43734,7 +43758,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -44712,7 +44737,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -46144,7 +46170,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -53125,7 +53152,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -55180,7 +55208,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{
@@ -57588,7 +57617,8 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": false
 		}
 	},
 	{

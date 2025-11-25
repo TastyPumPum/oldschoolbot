@@ -5,11 +5,21 @@ import { type CanvasImage, createCanvas } from '@/lib/canvas/canvasUtil.js';
 import { OSRSCanvas } from '@/lib/canvas/OSRSCanvas.js';
 import { paintColors } from '../customItems/paintCans.js';
 
+export type PaintStyle = {
+	type: 'patron-prism';
+	coreColor: [number, number, number];
+	ringStops: Array<{
+		color: [number, number, number, number?];
+		at: number;
+	}>;
+};
+
 export interface PaintColor {
 	name: string;
 	rgb: [number, number, number];
 	itemId: number;
 	paintCanItem: Item;
+	style?: PaintStyle;
 }
 
 export const paintColorsMap = new Map(paintColors.map(i => [i.itemId, i]));
@@ -62,8 +72,52 @@ export const applyPaintToItemIcon = async (
 	return canvas;
 };
 
+function toRGBA(color: [number, number, number, number?]) {
+	const [r, g, b, a = 1] = color;
+	return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+async function applyPatronPrismPaint(img: CanvasImage | Canvas, style: Extract<PaintStyle, { type: 'patron-prism' }>) {
+	const base = await applyPaintToItemIcon(img, style.coreColor, 8);
+	const width = img.width;
+	const height = img.height;
+	const canvas = createCanvas(width, height);
+	const ctx = canvas.getContext('2d');
+
+	ctx.drawImage(base, 0, 0);
+
+	const overlay = createCanvas(width, height);
+	const oCtx = overlay.getContext('2d');
+	const cx = width / 2;
+	const cy = height / 2;
+	const outerRadius = Math.min(width, height) / 2;
+	const innerRadius = outerRadius * 0.38;
+	const gradient = oCtx.createRadialGradient(cx, cy, innerRadius, cx, cy, outerRadius);
+	for (const stop of [...style.ringStops].sort((a, b) => a.at - b.at)) {
+		gradient.addColorStop(stop.at, toRGBA(stop.color));
+	}
+	oCtx.fillStyle = gradient;
+	oCtx.fillRect(0, 0, width, height);
+
+	ctx.globalCompositeOperation = 'lighter';
+	ctx.drawImage(overlay, 0, 0);
+	ctx.globalCompositeOperation = 'source-over';
+
+	const centerShade = ctx.createRadialGradient(cx, cy, 0, cx, cy, outerRadius);
+	centerShade.addColorStop(0, 'rgba(8, 6, 12, 0.4)');
+	centerShade.addColorStop(0.55, 'rgba(8, 6, 12, 0.15)');
+	centerShade.addColorStop(1, 'rgba(8, 6, 12, 0)');
+	ctx.fillStyle = centerShade;
+	ctx.fillRect(0, 0, width, height);
+
+	return canvas;
+}
+
 export async function getPaintedItemImage(paintColor: PaintColor, itemID: number) {
 	const resultingImage = await OSRSCanvas.getItemImage({ itemID });
+	if (paintColor.style?.type === 'patron-prism') {
+		return applyPatronPrismPaint(resultingImage, paintColor.style);
+	}
 	return applyPaintToItemIcon(resultingImage, paintColor.rgb);
 }
 

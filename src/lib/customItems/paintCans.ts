@@ -18,7 +18,24 @@ export const paintColors: PaintColor[] = [
 	{ itemId: 72_460, name: 'Ruby Red', rgb: [255, 0, 0], paintCanItem: null as any as Item },
 	{ itemId: 72_461, name: 'Silver Light', rgb: [255, 255, 255], paintCanItem: null as any as Item },
 	{ itemId: 72_462, name: 'Drakan Dark', rgb: [0, 0, 0], paintCanItem: null as any as Item },
-	{ itemId: 72_463, name: 'Inversion', rgb: [1, 2, 3], paintCanItem: null as any as Item }
+	{ itemId: 72_463, name: 'Inversion', rgb: [1, 2, 3], paintCanItem: null as any as Item },
+	{
+		itemId: 72_464,
+		name: 'Patron Prism',
+		rgb: [76, 62, 102],
+		style: {
+			type: 'patron-prism',
+			coreColor: [76, 62, 102],
+			ringStops: [
+				{ color: [96, 74, 180, 0.78], at: 0.32 },
+				{ color: [190, 100, 205, 0.86], at: 0.48 },
+				{ color: [242, 200, 110, 0.95], at: 0.68 },
+				{ color: [80, 205, 195, 0.95], at: 0.88 },
+				{ color: [96, 74, 180, 0.8], at: 1 }
+			]
+		},
+		paintCanItem: null as any as Item
+	}
 ];
 
 for (const paintColor of paintColors) {
@@ -28,7 +45,8 @@ for (const paintColor of paintColors) {
 		'Coal',
 		{
 			customItemData: {
-				cantDropFromMysteryBoxes: true
+				cantDropFromMysteryBoxes: true,
+				isSuperUntradeable: paintColor.name === 'Patron Prism'
 			}
 		},
 		100_000
