@@ -58,6 +58,7 @@ export function pickRumourCreature(tier: RumourTier, hunterLevel: number, state:
 	const candidates = Hunter.Creatures.filter(creature => {
 		if (blocked.has(creature.id)) return false;
 		if (tierInfo.maxLevel && creature.level > tierInfo.maxLevel) return false;
+		if (creature.level > hunterLevel) return false;
 		return true;
 	});
 
