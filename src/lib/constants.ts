@@ -344,7 +344,8 @@ const globalConfigSchema = z.object({
 	moderatorLogsChannels: z.string().default(''),
 	supportServerID: z.string(),
 	minimumLoggedPerfDuration: z.number().default(400),
-	guildIdsToCache: z.array(z.string())
+	guildIdsToCache: z.array(z.string()),
+	patronSoundtracksEnabled: z.coerce.boolean().default(true)
 });
 
 dotenv.config({ path: path.resolve(process.cwd(), process.env.TEST ? '.env.test' : '.env') });
@@ -378,7 +379,8 @@ export const globalConfig = globalConfigSchema.parse({
 
 	moderatorLogsChannels: isProduction ? '830145040495411210' : GENERAL_CHANNEL_ID,
 	supportServerID: isProduction ? '342983479501389826' : OLDSCHOOLGG_TESTING_SERVER_ID,
-	guildIdsToCache: [guildId.OldschoolGG, guildId.TestServer, ...emojiServers]
+	guildIdsToCache: [guildId.OldschoolGG, guildId.TestServer, ...emojiServers],
+	patronSoundtracksEnabled: process.env.PATRON_SOUNDTRACKS_ENABLED ?? 'true'
 });
 
 if ((process.env.NODE_ENV === 'production') !== globalConfig.isProduction) {

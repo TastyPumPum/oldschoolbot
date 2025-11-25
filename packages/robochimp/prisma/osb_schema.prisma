@@ -1381,6 +1381,7 @@ enum command_name_enum {
   slayertask
   smelt
   smith
+  soundtrack
   soulwars
   stats
   steal

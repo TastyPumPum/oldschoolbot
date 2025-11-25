@@ -72,6 +72,7 @@ import { simulateCommand } from '@/mahoji/commands/simulate.js';
 import { slayerCommand } from '@/mahoji/commands/slayer.js';
 import { smeltingCommand } from '@/mahoji/commands/smelt.js';
 import { smithCommand } from '@/mahoji/commands/smith.js';
+import { soundtrackCommand } from '@/mahoji/commands/soundtrack.js';
 import { statsCommand } from '@/mahoji/commands/stats.js';
 import { stealCommand } from '@/mahoji/commands/steal.js';
 import { testPotatoCommand } from '@/mahoji/commands/testpotato.js';
@@ -129,6 +130,7 @@ export const allCommandsDONTIMPORT: AnyCommand[] = [
 	minigamesCommand,
 	minionCommand,
 	simulateCommand,
+	soundtrackCommand,
 	sellCommand,
 	sacrificeCommand,
 	rollCommand,

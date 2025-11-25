@@ -39,6 +39,7 @@
 	},
 	"dependencies": {
 		"@discordjs/rest": "^2.6.0",
+		"@discordjs/voice": "^0.19.0",
 		"@discordjs/ws": "^2.0.3",
 		"@electric-sql/pglite": "^0.3.10",
 		"@oldschoolgg/collectionlog": "workspace:*",
@@ -53,6 +54,7 @@
 		"@sapphire/snowflake": "^3.5.3",
 		"@sapphire/time-utilities": "^1.6.0",
 		"@sapphire/timer-manager": "^1.0.2",
+		"@snazzah/davey": "^0.1.8",
 		"@vladfrangu/async_event_emitter": "^2.4.7",
 		"bufferutil": "^4.0.9",
 		"dotenv": "^16.5.0",
@@ -61,6 +63,7 @@
 		"lru-cache": "^10.3.0",
 		"luxon": "^3.7.2",
 		"oldschooljs": "workspace:*",
+		"opusscript": "^0.0.8",
 		"p-queue": "8.1.1",
 		"pg": "^8.16.3",
 		"pglite-prisma-adapter": "^0.6.1",

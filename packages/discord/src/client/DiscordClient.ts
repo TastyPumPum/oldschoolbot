@@ -20,6 +20,8 @@ import {
 	type GatewayReadyDispatchData,
 	type GatewaySendPayload,
 	type GatewayUpdatePresence,
+	type GatewayVoiceServerUpdateDispatchData,
+	type GatewayVoiceStateUpdateDispatchData,
 	InteractionResponseType,
 	MessageReferenceType,
 	PresenceUpdateStatus,
@@ -50,6 +52,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 	private mainServerId: string;
 
 	public isReady = false;
+	public botUserId: string | null = null;
 	public applicationCommands: APIApplicationCommand[] | null = null;
 	public application: APIApplication | null = null;
 	public rest: REST;
@@ -93,6 +96,14 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 					}
 					break;
 				}
+				case GatewayDispatchEvents.VoiceServerUpdate: {
+					this.emit('voiceServerUpdate', packet.d as GatewayVoiceServerUpdateDispatchData);
+					break;
+				}
+				case GatewayDispatchEvents.VoiceStateUpdate: {
+					this.emit('voiceStateUpdate', packet.d as GatewayVoiceStateUpdateDispatchData);
+					break;
+				}
 				case GatewayDispatchEvents.InteractionCreate: {
 					this.emit('interactionCreate', packet.d);
 					break;
@@ -128,6 +139,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 	}
 
 	private async onReady(_d: GatewayReadyDispatchData) {
+		this.botUserId = _d.user.id;
 		const application: APIApplication = (await this.rest.get(Routes.currentApplication())) as APIApplication;
 		this.application = application;
 		await this.fetchCommands();
@@ -380,6 +392,22 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 	private async sendPacket(packet: GatewaySendPayload) {
 		const shardIds = await this.ws.getShardIds();
 		return Promise.all(shardIds.map(shardId => this.ws.send(shardId, packet)));
+	}
+
+	private async sendPacketToGuild(guildId: string, packet: GatewaySendPayload) {
+		const shardIds = await this.ws.getShardIds();
+		const shardCount = shardIds.length;
+		const shardIndex = shardCount === 0 ? 0 : Number((BigInt(guildId) >> 22n) % BigInt(shardCount));
+		const targetShard = shardIds[shardIndex] ?? shardIds[0] ?? 0;
+		await this.ws.send(targetShard, packet);
+	}
+
+	async sendGatewayPayload(packet: GatewaySendPayload, guildId?: string): Promise<void> {
+		if (guildId) {
+			await this.sendPacketToGuild(guildId, packet);
+			return;
+		}
+		await this.sendPacket(packet);
 	}
 
 	async respondToAutocompleteInteraction(
