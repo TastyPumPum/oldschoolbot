@@ -39,7 +39,9 @@
 	},
 	"dependencies": {
 		"@discordjs/rest": "^2.6.0",
+		"@discordjs/voice": "^0.17.0",
 		"@discordjs/ws": "^2.0.3",
+		"opusscript": "^0.0.8",
 		"@electric-sql/pglite": "^0.3.10",
 		"@oldschoolgg/collectionlog": "workspace:*",
 		"@oldschoolgg/discord": "workspace:*",

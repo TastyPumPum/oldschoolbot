@@ -38,6 +38,9 @@ item/
 
 tmp
 
+# Patron soundtrack assets (large/binary)
+assets/soundtracks/*.ogg
+
 wiki.xml
 
 *.tsbuildinfo

@@ -11,7 +11,9 @@ import { BitField, CONSTANTS, PerkTier } from '@/lib/constants.js';
 import { handleGrowablePetGrowth } from '@/lib/growablePets.js';
 import { handlePassiveImplings } from '@/lib/implings.js';
 import { MUserClass } from '@/lib/MUser.js';
+import { maybePlayPatronSoundtrack } from '@/lib/patronSoundtrack/patronSoundtrack.js';
 import { triggerRandomEvent } from '@/lib/randomEvents.js';
+import { Logging } from '@/lib/structures/Logging.js';
 import type { ActivityTaskData } from '@/lib/types/minions.js';
 import { displayCluesAndPets } from '@/lib/util/displayCluesAndPets.js';
 import {
@@ -323,4 +325,13 @@ export async function handleTripFinish(
 	}
 
 	await globalClient.sendMessageOrWebhook(channelId, message);
+
+	const guildId = await Cache.getChannel(channelId)
+		.then(channel => channel.guild_id)
+		.catch(() => null);
+	if (guildId) {
+		void maybePlayPatronSoundtrack({ user, guildId, duration: data.duration }).catch(err =>
+			Logging.logError(err as Error)
+		);
+	}
 }

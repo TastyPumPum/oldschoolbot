@@ -5,11 +5,13 @@ import { interactionHandler } from '@/discord/interactionHandler.js';
 import { OldSchoolBotClient } from '@/discord/OldSchoolBotClient.js';
 import { Channel, globalConfig } from '@/lib/constants.js';
 import { onMessage } from '@/lib/events.js';
+import { initVoiceManager } from '@/lib/voice/voiceManager.js';
 import { onStartup } from '@/mahoji/lib/events.js';
 
 const client = new OldSchoolBotClient({
 	intents: [
 		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.GuildMessageReactions,
 		GatewayIntentBits.DirectMessages,
@@ -34,6 +36,7 @@ declare global {
 }
 
 global.globalClient = client;
+initVoiceManager(client);
 client.on('messageCreate', async msg => {
 	try {
 		const [isUserBlacklisted, isGuildBlacklisted] = await Promise.all([

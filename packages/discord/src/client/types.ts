@@ -15,6 +15,8 @@ import {
 	type GatewayIntentBits,
 	type GatewayMessageCreateDispatchData,
 	type GatewayPresenceUpdateData,
+	type GatewayVoiceServerUpdateDispatchData,
+	type GatewayVoiceStateUpdateDispatchData,
 	MessageFlags,
 	type PresenceUpdateStatus,
 	type RESTPostAPIChannelMessageJSONBody
@@ -108,6 +110,8 @@ export interface DiscordClientEventsMap {
 	error: [error: Error];
 	messageCreate: [message: IMessage];
 	rawMessageCreate: [message: GatewayMessageCreateDispatchData];
+	voiceStateUpdate: [state: GatewayVoiceStateUpdateDispatchData];
+	voiceServerUpdate: [state: GatewayVoiceServerUpdateDispatchData];
 }
 
 export type UserUsernameFetcher = (userId: string) => Promise<string>;
