@@ -63,9 +63,9 @@ export class MoonKeyChestOpenable extends Openable {
 		return loot;
 	}
 
-	public get table() {
+	public get table(): LootTable {
 		return MoonKeyChestMainTable;
 	}
 }
 
-export const MoonKeyChest = new MoonKeyChestOpenable();
+export const MoonKeyChest: MoonKeyChestOpenable = new MoonKeyChestOpenable();
