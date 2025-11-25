@@ -23,6 +23,7 @@ import {
 	LarransChest,
 	LootTable,
 	MasterMimicTable,
+	MoonKeyChest,
 	MuddyChest,
 	MysteryBox,
 	NestBoxEmpty,
@@ -85,24 +86,6 @@ const FrozenCacheTable = new LootTable()
 	.add('Silver ore', 101, 2)
 	.add('Spirit seed', 1, 2)
 	.add('Rune sword');
-
-const MoonKeyChestMainTable = new LootTable()
-	.add('Dragonstone', 1, 20)
-	.add('Dragon platelegs', 2, 10)
-	.add('Nature rune', 500, 10)
-	.add('Huasca seed', 6, 10)
-	.add('Rune platebody', 6, 10)
-	.add('Watermelon seed', 100, 10)
-	.add('Sun-kissed bones', 100, 10)
-	.add('Raw monkfish', 300, 10)
-	.add('Uncut diamond', 50, 10)
-	.add('Gold ore', 500, 1)
-	.add('Coal', 1, 1)
-	.add('Cabbage', 28, 1)
-	.add('Crystal key', 1, 1)
-	.add('Moon key', 1, 1)
-	.add('Onyx bolts', 150, 1)
-	.add('Spinach roll', 1, 1);
 
 interface OpenArgs {
 	quantity: number;
@@ -479,29 +462,8 @@ export const allOpenables: UnifiedOpenable[] = [
 		id: itemID('Moon key'),
 		openedItem: Items.getOrThrow('Moon key'),
 		aliases: ['moon key chest', 'moon key'],
-		output: async ({ quantity }) => {
-			const loot = new Bank();
-			for (let i = 0; i < quantity; i++) {
-				loot.add('Sunfire splinters', 250);
-				if (roll(5000)) {
-					loot.add('Uncut onyx');
-					continue;
-				}
-				if (roll(500)) {
-					loot.add('Helmet of the moon');
-					continue;
-				}
-				loot.add(MoonKeyChestMainTable.roll());
-			}
-			return { bank: loot };
-		},
-		allItems: Array.from(
-			new Set(
-				resolveItems(['Sunfire splinters', 'Uncut onyx', 'Helmet of the moon']).concat(
-					MoonKeyChestMainTable.allItems
-				)
-			)
-		)
+		output: async ({ quantity }) => ({ bank: MoonKeyChest.open(quantity, {}) }),
+		allItems: MoonKeyChest.allItems
 	},
 	{
 		name: 'Builders supply crate',
