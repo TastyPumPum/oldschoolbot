@@ -402,11 +402,12 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 		await this.ws.send(targetShard, packet);
 	}
 
-	async sendGatewayPayload(packet: GatewaySendPayload, guildId?: string) {
+	async sendGatewayPayload(packet: GatewaySendPayload, guildId?: string): Promise<void> {
 		if (guildId) {
-			return this.sendPacketToGuild(guildId, packet);
+			await this.sendPacketToGuild(guildId, packet);
+			return;
 		}
-		return this.sendPacket(packet);
+		await this.sendPacket(packet);
 	}
 
 	async respondToAutocompleteInteraction(
