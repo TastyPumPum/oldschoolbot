@@ -44,6 +44,6 @@ export async function distributePatronPrismPaints() {
 	await ClientSettings.update({ patron_prism_last_distributed: new Date() });
 
 	if (recipients > 0) {
-		Logging.log(`Distributed ${totalGiven} Patron Prism paint cans to ${recipients} patrons.`);
+		Logging.logDebug(`Distributed ${totalGiven} Patron Prism paint cans to ${recipients} patrons.`);
 	}
 }
