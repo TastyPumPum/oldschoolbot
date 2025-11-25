@@ -78,7 +78,7 @@ export const hunterRumoursCommand = defineCommand({
 			return formatRumourState(state);
 		}
 
-		if (!tier) {
+		if ((action === 'assign' || action === 'abandon') && !tier) {
 			return 'You need to provide a rumour tier for that action.';
 		}
 
