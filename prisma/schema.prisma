@@ -745,6 +745,8 @@ model UserStats {
   sacrificed_bank Json @default("{}") @db.JsonB
   openable_scores Json @default("{}")
 
+  hunter_rumours Json @default("{}") @db.Json
+
   gp_luckypick BigInt @default(0)
   gp_dice      BigInt @default(0)
   gp_slots     BigInt @default(0)

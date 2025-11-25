@@ -68,6 +68,17 @@ import { type MinigameName, type MinigameScore, Minigames } from '@/lib/settings
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { DetailedFarmingContract } from '@/lib/skilling/skills/farming/utils/types.js';
 import birdhouses, { type Birdhouse } from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
+import {
+	assignRumour,
+	clearRumour,
+	defaultHunterRumourState,
+	HunterRumourState,
+	hunterRumourTierInfo,
+	isRumourTierUnlocked,
+	pickRumourCreature,
+	RumourTier,
+	updateRumourProgress
+} from '@/lib/skilling/skills/hunter/rumours.js';
 import type { SlayerTaskUnlocksEnum } from '@/lib/slayer/slayerUnlocks.js';
 import { getUsersCurrentSlayerInfo, hasSlayerUnlock } from '@/lib/slayer/slayerUtil.js';
 import type { BankSortMethod } from '@/lib/sorts.js';
@@ -695,6 +706,72 @@ RETURNING (creature_scores->>'${creatureID}')::int AS new_kc;
 `;
 		const res = await prisma.$queryRawUnsafe<{ new_kc: number }[]>(query);
 		return { newKC: res[0]?.new_kc ?? 0 };
+	}
+
+	async getHunterRumourState(): Promise<HunterRumourState> {
+		const stats = await fetchUserStats(this.id);
+		const stored = stats.hunter_rumours as HunterRumourState | null;
+		const defaults = defaultHunterRumourState();
+
+		if (!stored) return defaults;
+
+		return {
+			backToBack: stored.backToBack ?? defaults.backToBack,
+			blockedCreatureIds: stored.blockedCreatureIds ?? defaults.blockedCreatureIds,
+			assignments: stored.assignments ?? defaults.assignments
+		} satisfies HunterRumourState;
+	}
+
+	async updateHunterRumourState(
+		updater: (state: HunterRumourState) => HunterRumourState
+	): Promise<HunterRumourState> {
+		const current = await this.getHunterRumourState();
+		const next = updater(current);
+
+		await prisma.userStats.update({
+			data: {
+				hunter_rumours: next as Prisma.InputJsonValue
+			},
+			where: {
+				user_id: BigInt(this.id)
+			}
+		});
+
+		return next;
+	}
+
+	async requestHunterRumour(tier: RumourTier) {
+		const hunterLevel = this.skillsAsLevels.hunter;
+
+		if (!isRumourTierUnlocked(tier, hunterLevel)) {
+			throw new UserError(
+				`${this.minionName} needs ${
+					hunterRumourTierInfo[tier].levelRequirement
+				} Hunter to take on ${tier.toLowerCase()} rumours.`
+			);
+		}
+
+		return this.updateHunterRumourState(state => {
+			const creature = pickRumourCreature(tier, hunterLevel, state);
+			if (!creature) {
+				throw new UserError(
+					`No available creatures for ${tier.toLowerCase()} rumours. Clear blocks or finish other rumours first.`
+				);
+			}
+
+			return assignRumour(tier, creature.id, state);
+		});
+	}
+
+	async abandonHunterRumour(tier: RumourTier) {
+		return this.updateHunterRumourState(state => clearRumour(tier, state));
+	}
+
+	async toggleHunterRumourBackToBack() {
+		return this.updateHunterRumourState(state => ({
+			...state,
+			backToBack: !state.backToBack
+		}));
 	}
 
 	getBlowpipe(): IBlowpipeData {

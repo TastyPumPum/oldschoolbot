@@ -39,6 +39,7 @@ import { giveawayCommand } from '@/mahoji/commands/giveaway.js';
 import { gpCommand } from '@/mahoji/commands/gp.js';
 import { helpCommand } from '@/mahoji/commands/help.js';
 import { huntCommand } from '@/mahoji/commands/hunt.js';
+import { hunterRumoursCommand } from '@/mahoji/commands/hunterrumours.js';
 import { inviteCommand } from '@/mahoji/commands/invite.js';
 import { minionKCommand } from '@/mahoji/commands/k.js';
 import { kcCommand } from '@/mahoji/commands/kc.js';
@@ -117,6 +118,7 @@ export const allCommandsDONTIMPORT: AnyCommand[] = [
 	giveawayCommand,
 	helpCommand,
 	huntCommand,
+	hunterRumoursCommand,
 	giftCommand,
 	inviteCommand,
 	kcCommand,

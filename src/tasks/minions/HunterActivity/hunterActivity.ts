@@ -6,6 +6,14 @@ import { hasWildyHuntGearEquipped } from '@/lib/gear/functions/hasWildyHuntGearE
 import { trackLoot } from '@/lib/lootTrack.js';
 import { calcLootXPHunting, generateHerbiTable } from '@/lib/skilling/functions/calcsHunter.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
+import {
+	assignRumour,
+	completeRumour,
+	hunterRumourTierInfo,
+	pickRumourCreature,
+	type RumourTier,
+	updateRumourProgress
+} from '@/lib/skilling/skills/hunter/rumours.js';
 import type { HunterActivityTaskOptions } from '@/lib/types/minions.js';
 import { PeakTier } from '@/lib/util/peaks.js';
 import { skillingPetDropRate } from '@/lib/util.js';
@@ -24,6 +32,8 @@ const riskDeathNumbers = [
 		extraChance: 80
 	}
 ];
+
+const HUNTER_RUMOUR_PART_CHANCE = 128;
 
 export const hunterTask: MinionTask = {
 	type: 'Hunter',
@@ -44,6 +54,16 @@ export const hunterTask: MinionTask = {
 			Logging.logError(`Invalid creature ID provided: ${creatureID}`);
 			return;
 		}
+
+		const rumourState = await user.getHunterRumourState();
+		const activeRumour = Object.values(rumourState.assignments).find(
+			assignment => assignment?.creatureID === creature.id && !assignment.completed
+		);
+		const rumourTier = activeRumour?.tier as RumourTier | undefined;
+		let rumourXPBonus = 0;
+		let rumourMessage = '';
+		let rumourNextTarget: string | null = null;
+		let rumourProgress = activeRumour?.progress ?? 0;
 
 		const crystalImpling = creature.name === 'Crystal impling';
 
@@ -138,6 +158,50 @@ export const hunterTask: MinionTask = {
 
 		const loot = new Bank();
 		const actualQty = successfulQuantity - pkedQuantity;
+
+		if (rumourTier && actualQty > 0) {
+			const foundRarePart = (() => {
+				for (let i = 0; i < actualQty; i++) {
+					if (rng.roll(HUNTER_RUMOUR_PART_CHANCE)) {
+						return true;
+					}
+				}
+				return false;
+			})();
+
+			const tierInfo = hunterRumourTierInfo[rumourTier];
+
+			const updatedState = await user.updateHunterRumourState(state => {
+				const progressed = updateRumourProgress(rumourTier, actualQty, state);
+
+				if (!foundRarePart) {
+					return progressed;
+				}
+
+				const completed = completeRumour(rumourTier, progressed, { completedAt: Date.now() });
+				if (!completed.backToBack) {
+					return completed;
+				}
+
+				const nextCreature = pickRumourCreature(rumourTier, currentLevel, completed);
+				if (!nextCreature) {
+					return completed;
+				}
+
+				rumourNextTarget = nextCreature.name;
+				return assignRumour(rumourTier, nextCreature.id, completed);
+			});
+
+			rumourProgress = updatedState.assignments[rumourTier]?.progress ?? rumourProgress;
+
+			if (foundRarePart) {
+				rumourXPBonus = (currentLevel + 5) * tierInfo.modifier;
+				rumourMessage = `\nCompleted a ${rumourTier.toLowerCase()} rumour for ${creature.name}.`;
+			} else if (activeRumour) {
+				rumourMessage = `\nRumour progress: ${rumourProgress} successful catches.`;
+			}
+		}
+
 		for (let i = 0; i < actualQty; i++) {
 			loot.add(creatureTable.roll());
 		}
@@ -163,6 +227,15 @@ export const hunterTask: MinionTask = {
 			collectionLog: true,
 			itemsToAdd: loot
 		});
+
+		if (rumourXPBonus > 0) {
+			xpReceived += rumourXPBonus;
+			rumourMessage += ` Bonus Hunter XP: ${rumourXPBonus.toLocaleString()}.`;
+			if (rumourNextTarget) {
+				rumourMessage += ` New rumour target: ${rumourNextTarget}.`;
+			}
+		}
+
 		xpStr += await user.addXP({
 			skillName: 'hunter',
 			amount: xpReceived,
@@ -175,7 +248,7 @@ export const hunterTask: MinionTask = {
 				: ` ${quantity}x times, due to clever creatures you missed out on ${
 						quantity - successfulQuantity
 					}x catches. `
-		}${xpStr}\n\nYou received: ${loot}.${magicSecStr.length > 1 ? magicSecStr : ''}`;
+		}${xpStr}${rumourMessage}\n\nYou received: ${loot}.${magicSecStr.length > 1 ? magicSecStr : ''}`;
 
 		if (gotPked && !died) {
 			str += `\n${pkStr}`;
