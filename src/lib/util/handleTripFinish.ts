@@ -13,7 +13,6 @@ import { handlePassiveImplings } from '@/lib/implings.js';
 import { MUserClass } from '@/lib/MUser.js';
 import { maybePlayPatronSoundtrack } from '@/lib/patronSoundtrack/patronSoundtrack.js';
 import { triggerRandomEvent } from '@/lib/randomEvents.js';
-import { Logging } from '@/lib/structures/Logging.js';
 import type { ActivityTaskData } from '@/lib/types/minions.js';
 import { displayCluesAndPets } from '@/lib/util/displayCluesAndPets.js';
 import {

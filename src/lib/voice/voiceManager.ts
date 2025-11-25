@@ -1,14 +1,19 @@
 import type { DiscordGatewayAdapterCreator, DiscordGatewayAdapterLibraryMethods } from '@discordjs/voice';
-import type { GatewayGuildCreateDispatchData, GatewayVoiceStateUpdateDispatchData } from 'discord-api-types/v10';
+import type { GatewayGuildCreateDispatchData } from '@oldschoolgg/discord';
 
 import type { OldSchoolBotClient } from '@/discord/OldSchoolBotClient.js';
-import { Logging } from '@/lib/structures/Logging.js';
 
 const adapters = new Map<string, Set<DiscordGatewayAdapterLibraryMethods>>();
 const voiceStates = new Map<string, Map<string, string>>();
 let client: OldSchoolBotClient | null = null;
 
-function updateVoiceStateCache(state: GatewayVoiceStateUpdateDispatchData) {
+type VoiceStateWithGuildId = {
+	guild_id: string;
+	channel_id: string | null;
+	user_id: string;
+};
+
+function updateVoiceStateCache(state: VoiceStateWithGuildId) {
 	if (!state.guild_id) return;
 	const guildStates = voiceStates.get(state.guild_id) ?? new Map<string, string>();
 	if (state.channel_id) {
@@ -34,13 +39,26 @@ export function initVoiceManager(botClient: OldSchoolBotClient) {
 	client.on('guildCreate', (payload: GatewayGuildCreateDispatchData) => {
 		if (!payload.voice_states) return;
 		for (const state of payload.voice_states) {
-			updateVoiceStateCache({ ...state, guild_id: state.guild_id ?? payload.id });
+			updateVoiceStateCache({
+				guild_id: payload.id,
+				channel_id: state.channel_id ?? null,
+				user_id: state.user_id
+			});
 		}
 	});
 
 	client.on('voiceStateUpdate', payload => {
-		updateVoiceStateCache(payload);
-		if (!payload.guild_id || !client?.botUserId) return;
+		if (!payload.guild_id) return;
+
+		// Keep our cache in sync
+		updateVoiceStateCache({
+			guild_id: payload.guild_id,
+			channel_id: payload.channel_id ?? null,
+			user_id: payload.user_id
+		});
+
+		// Only forward updates for the bot itself to the adapters
+		if (!client?.botUserId) return;
 		if (payload.user_id !== client.botUserId) return;
 		const guildAdapters = adapters.get(payload.guild_id);
 		if (!guildAdapters) return;

@@ -35,8 +35,8 @@ export const soundtrackCommand = defineCommand({
 		}
 
 		const perkTier = await user.fetchPerkTier();
-		if (perkTier < PerkTier.One) {
-			return patronMsg(PerkTier.One);
+		if (perkTier < PerkTier.Three) {
+			return patronMsg(PerkTier.Three);
 		}
 
 		const theme = options.theme as (typeof PATRON_SOUNDTRACK_THEMES)[number] | undefined;
