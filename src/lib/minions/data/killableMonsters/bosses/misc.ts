@@ -27,11 +27,11 @@ export const miscBossKillables: KillableMonster[] = [
 		itemInBankBoosts: {
 			mage: [
 				{
-					[itemID("Tumeken's shadow")]: 15,
-					[itemID('Sanguinesti staff')]: 11,
-					[itemID('Harmonised nightmare staff')]: 10,
-					[itemID('Trident of the swamp')]: 6,
-					[itemID('Trident of the seas')]: 4
+					[itemID("Tumeken's shadow")]: 13,
+					[itemID('Sanguinesti staff')]: 9,
+					[itemID('Harmonised nightmare staff')]: 8,
+					[itemID('Trident of the swamp')]: 5,
+					[itemID('Trident of the seas')]: 3
 				},
 				{
 					[itemID('Ancestral hat')]: 2,
@@ -46,138 +46,138 @@ export const miscBossKillables: KillableMonster[] = [
 					[itemID("Ahrim's robeskirt")]: 1
 				},
 				{
-					[itemID('Occult necklace')]: 3,
-					[itemID('Amulet of fury')]: 2,
+					[itemID('Occult necklace')]: 2,
+					[itemID('Amulet of fury')]: 1,
 					[itemID('Amulet of glory')]: 1
 				},
 				{
-					[itemID('Imbued saradomin cape')]: 3,
-					[itemID('Imbued guthix cape')]: 3,
-					[itemID('Imbued zamorak cape')]: 3,
-					[itemID('Saradomin cape')]: 2,
-					[itemID('Guthix cape')]: 2,
-					[itemID('Zamorak cape')]: 2
+					[itemID('Imbued saradomin cape')]: 2,
+					[itemID('Imbued guthix cape')]: 2,
+					[itemID('Imbued zamorak cape')]: 2,
+					[itemID('Saradomin cape')]: 1,
+					[itemID('Guthix cape')]: 1,
+					[itemID('Zamorak cape')]: 1
 				},
 				{
-					[itemID('Tormented bracelet')]: 3,
-					[itemID('Barrows gloves')]: 2
+					[itemID('Tormented bracelet')]: 2,
+					[itemID('Barrows gloves')]: 1
 				},
 				{
-					[itemID('Eternal boots')]: 2,
+					[itemID('Eternal boots')]: 1,
 					[itemID('Infinity boots')]: 1,
 					[itemID('Wizard boots')]: 1
 				},
 				{
-					[itemID('Magus ring')]: 3,
-					[itemID('Seers ring (i)')]: 2,
+					[itemID('Magus ring')]: 2,
+					[itemID('Seers ring (i)')]: 1,
 					[itemID('Seers ring')]: 1
 				},
 				{
-					[itemID('Falador shield 3')]: 5
+					[itemID('Falador shield 3')]: 3
 				}
 			],
 			range: [
 				{
-					[itemID('Twisted bow')]: 12,
-					[itemID('Bow of faerdhinen (c)')]: 9,
-					[itemID('Toxic blowpipe')]: 6,
-					[itemID('Magic shortbow (i)')]: 3
+					[itemID('Twisted bow')]: 7,
+					[itemID('Bow of faerdhinen (c)')]: 5,
+					[itemID('Toxic blowpipe')]: 3,
+					[itemID('Magic shortbow (i)')]: 2
 				},
 				{
-					[itemID('Zaryte crossbow')]: 10
+					[itemID('Zaryte crossbow')]: 5
 				},
 				{
-					[itemID('Masori mask (f)')]: 2,
+					[itemID('Masori mask (f)')]: 1,
 					[itemID('Masori mask')]: 1,
 					[itemID('Armadyl helmet')]: 1
 				},
 				{
-					[itemID('Masori body (f)')]: 2,
+					[itemID('Masori body (f)')]: 1,
 					[itemID('Masori body')]: 1,
 					[itemID('Armadyl chestplate')]: 1
 				},
 				{
-					[itemID('Masori chaps (f)')]: 2,
+					[itemID('Masori chaps (f)')]: 1,
 					[itemID('Masori chaps')]: 1,
 					[itemID('Armadyl chainskirt')]: 1
 				},
 				{
-					[itemID('Necklace of anguish')]: 4,
-					[itemID('Amulet of fury')]: 3,
-					[itemID('Amulet of glory')]: 2
+					[itemID('Necklace of anguish')]: 3,
+					[itemID('Amulet of fury')]: 2,
+					[itemID('Amulet of glory')]: 1
 				},
 				{
-					[itemID("Dizana's quiver")]: 3,
+					[itemID("Dizana's quiver")]: 2,
 					[itemID("Ava's assembler")]: 2,
 					[itemID("Ava's accumulator")]: 1
 				},
 				{
-					[itemID('Zaryte vambraces')]: 3,
+					[itemID('Zaryte vambraces')]: 2,
 					[itemID('Barrows gloves')]: 2,
 					[itemID("Black d'hide vambraces")]: 1
 				},
 				{
-					[itemID('Pegasian boots')]: 2,
+					[itemID('Pegasian boots')]: 1,
 					[itemID('Ranger boots')]: 1,
 					[itemID('Snakeskin boots')]: 1
 				},
 				{
-					[itemID('Venator ring')]: 3,
-					[itemID('Archers ring (i)')]: 2,
+					[itemID('Venator ring')]: 2,
+					[itemID('Archers ring (i)')]: 1,
 					[itemID('Archers ring')]: 1
 				},
 				{
-					[itemID('Falador shield 3')]: 5
+					[itemID('Falador shield 3')]: 3
 				}
 			],
 			melee: [
 				{
-					[itemID("Dharok's greataxe")]: 5,
+					[itemID("Dharok's greataxe")]: 3,
 					[itemID('Abyssal tentacle')]: 1
 				},
 				{
-					[itemID('Voidwaker')]: 7,
-					[itemID('Dragon claws')]: 5,
-					[itemID('Elder maul')]: 4,
-					[itemID('Dragon dagger')]: 2
+					[itemID('Voidwaker')]: 4,
+					[itemID('Dragon claws')]: 3,
+					[itemID('Elder maul')]: 3,
+					[itemID('Dragon dagger')]: 1
 				},
 				{
-					[itemID("Dharok's helm")]: 2,
+					[itemID("Dharok's helm")]: 1,
 					[itemID('Helm of neitiznot')]: 1
 				},
 				{
-					[itemID("Dharok's platebody")]: 2,
+					[itemID("Dharok's platebody")]: 1,
 					[itemID('Fighter torso')]: 1
 				},
 				{
-					[itemID("Dharok's platelegs")]: 2,
+					[itemID("Dharok's platelegs")]: 1,
 					[itemID('Bandos tassets')]: 1
 				},
 				{
-					[itemID('Infernal cape')]: 4,
+					[itemID('Infernal cape')]: 3,
 					[itemID('Fire max cape')]: 2,
 					[itemID('Fire cape')]: 2
 				},
 				{
-					[itemID('Amulet of rancour')]: 4,
-					[itemID('Amulet of torture')]: 3,
-					[itemID('Amulet of fury')]: 2
+					[itemID('Amulet of rancour')]: 3,
+					[itemID('Amulet of torture')]: 2,
+					[itemID('Amulet of fury')]: 1
 				},
 				{
-					[itemID('Ferocious gloves')]: 3,
-					[itemID('Barrows gloves')]: 2
+					[itemID('Ferocious gloves')]: 2,
+					[itemID('Barrows gloves')]: 1
 				},
 				{
-					[itemID('Primordial boots')]: 2,
+					[itemID('Primordial boots')]: 1,
 					[itemID('Dragon boots')]: 1
 				},
 				{
-					[itemID('Bellator ring')]: 2,
-					[itemID('Berserker ring (i)')]: 2,
+					[itemID('Bellator ring')]: 1,
+					[itemID('Berserker ring (i)')]: 1,
 					[itemID('Berserker ring')]: 1
 				},
 				{
-					[itemID('Falador shield 3')]: 5
+					[itemID('Falador shield 3')]: 3
 				}
 			]
 		},
