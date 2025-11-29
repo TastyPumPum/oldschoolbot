@@ -24,12 +24,14 @@ export const miscBossKillables: KillableMonster[] = [
 		qpRequired: 0,
 		itemInBankBoosts: [
 			{
-				[itemID('Barrows gloves')]: 5
+				[itemID('Barrows gloves')]: 5,
+				[itemID('Tormented bracelet')]: 6
 			},
 			{
 				[itemID('Berserker ring')]: 5,
 				[itemID('Berserker ring (i)')]: 7,
-				[itemID('Twisted bow')]: 10
+				[itemID('Twisted bow')]: 10,
+				[itemID("Tumeken's shadow")]: 20
 			}
 		],
 		levelRequirements: {
