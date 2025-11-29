@@ -34,21 +34,21 @@ export const miscBossKillables: KillableMonster[] = [
 					[itemID('Trident of the seas')]: 4
 				},
 				{
-					[itemID('Ancestral hat')]: 1,
+					[itemID('Ancestral hat')]: 2,
 					[itemID("Ahrim's hood")]: 1
 				},
 				{
-					[itemID('Ancestral robe top')]: 1,
+					[itemID('Ancestral robe top')]: 2,
 					[itemID("Ahrim's robetop")]: 1
 				},
 				{
-					[itemID('Ancestral robe bottom')]: 1,
+					[itemID('Ancestral robe bottom')]: 2,
 					[itemID("Ahrim's robeskirt")]: 1
 				},
 				{
-					[itemID('Occult necklace')]: 4,
-					[itemID('Amulet of fury')]: 3,
-					[itemID('Amulet of glory')]: 2
+					[itemID('Occult necklace')]: 3,
+					[itemID('Amulet of fury')]: 2,
+					[itemID('Amulet of glory')]: 1
 				},
 				{
 					[itemID('Imbued saradomin cape')]: 3,
@@ -56,8 +56,7 @@ export const miscBossKillables: KillableMonster[] = [
 					[itemID('Imbued zamorak cape')]: 3,
 					[itemID('Saradomin cape')]: 2,
 					[itemID('Guthix cape')]: 2,
-					[itemID('Zamorak cape')]: 2,
-					[itemID('God cape')]: 2
+					[itemID('Zamorak cape')]: 2
 				},
 				{
 					[itemID('Tormented bracelet')]: 3,
@@ -72,40 +71,45 @@ export const miscBossKillables: KillableMonster[] = [
 					[itemID('Magus ring')]: 3,
 					[itemID('Seers ring (i)')]: 2,
 					[itemID('Seers ring')]: 1
+				},
+				{
+					[itemID('Falador shield 3')]: 5
 				}
 			],
 			range: [
 				{
 					[itemID('Twisted bow')]: 12,
-					[itemID('Zaryte crossbow')]: 10,
 					[itemID('Bow of faerdhinen (c)')]: 9,
 					[itemID('Toxic blowpipe')]: 6,
 					[itemID('Magic shortbow (i)')]: 3
 				},
 				{
+					[itemID('Zaryte crossbow')]: 10
+				},
+				{
+					[itemID('Masori mask (f)')]: 2,
 					[itemID('Masori mask')]: 1,
-					[itemID('Masori mask (f)')]: 1,
 					[itemID('Armadyl helmet')]: 1
 				},
 				{
+					[itemID('Masori body (f)')]: 2,
 					[itemID('Masori body')]: 1,
-					[itemID('Masori body (f)')]: 1,
 					[itemID('Armadyl chestplate')]: 1
 				},
 				{
+					[itemID('Masori chaps (f)')]: 2,
 					[itemID('Masori chaps')]: 1,
-					[itemID('Masori chaps (f)')]: 1,
 					[itemID('Armadyl chainskirt')]: 1
 				},
 				{
-					[itemID('Necklace of anguish')]: 5,
+					[itemID('Necklace of anguish')]: 4,
 					[itemID('Amulet of fury')]: 3,
 					[itemID('Amulet of glory')]: 2
 				},
 				{
-					[itemID("Dizana's quiver")]: 4,
-					[itemID("Ava's assembler")]: 3,
-					[itemID("Ava's accumulator")]: 2
+					[itemID("Dizana's quiver")]: 3,
+					[itemID("Ava's assembler")]: 2,
+					[itemID("Ava's accumulator")]: 1
 				},
 				{
 					[itemID('Zaryte vambraces')]: 3,
@@ -119,32 +123,40 @@ export const miscBossKillables: KillableMonster[] = [
 				},
 				{
 					[itemID('Venator ring')]: 3,
-					[itemID("Archer's ring (i)")]: 2,
-					[itemID("Archer's ring")]: 1
+					[itemID('Archers ring (i)')]: 2,
+					[itemID('Archers ring')]: 1
+				},
+				{
+					[itemID('Falador shield 3')]: 5
 				}
 			],
 			melee: [
 				{
-					[itemID('Voidwaker')]: 7,
-					[itemID("Dharok's greataxe")]: 6,
-					[itemID('Abyssal tentacle')]: 4
+					[itemID("Dharok's greataxe")]: 5,
+					[itemID('Abyssal tentacle')]: 1
 				},
 				{
-					[itemID("Dharok's helm")]: 1,
+					[itemID('Voidwaker')]: 7,
+					[itemID('Dragon claws')]: 5,
+					[itemID('Elder maul')]: 4,
+					[itemID('Dragon dagger')]: 2
+				},
+				{
+					[itemID("Dharok's helm")]: 2,
 					[itemID('Helm of neitiznot')]: 1
 				},
 				{
-					[itemID("Dharok's platebody")]: 1,
+					[itemID("Dharok's platebody")]: 2,
 					[itemID('Fighter torso')]: 1
 				},
 				{
-					[itemID("Dharok's platelegs")]: 1,
+					[itemID("Dharok's platelegs")]: 2,
 					[itemID('Bandos tassets')]: 1
 				},
 				{
 					[itemID('Infernal cape')]: 4,
-					[itemID('Fire max cape')]: 3,
-					[itemID('Fire cape')]: 3
+					[itemID('Fire max cape')]: 2,
+					[itemID('Fire cape')]: 2
 				},
 				{
 					[itemID('Amulet of rancour')]: 4,
@@ -163,6 +175,9 @@ export const miscBossKillables: KillableMonster[] = [
 					[itemID('Bellator ring')]: 2,
 					[itemID('Berserker ring (i)')]: 2,
 					[itemID('Berserker ring')]: 1
+				},
+				{
+					[itemID('Falador shield 3')]: 5
 				}
 			]
 		},
