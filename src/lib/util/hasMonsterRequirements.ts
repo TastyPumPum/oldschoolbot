@@ -3,6 +3,7 @@ import { objectEntries, Time } from '@oldschoolgg/toolkit';
 import { Items } from 'oldschooljs';
 
 import { quests } from '@/lib/minions/data/quests.js';
+import { getAttackStylesContext } from '@/lib/minions/functions/index.js';
 import type { Consumable, KillableMonster } from '@/lib/minions/types.js';
 import { formatItemReqs, formatList, hasSkillReqs, readableStatName } from '@/lib/util/smallUtils.js';
 import { getItemCostFromConsumables } from '@/mahoji/lib/abstracted_commands/minionKill/handleConsumables.js';
@@ -86,9 +87,10 @@ export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
 		}
 	}
 
-	if (monster.itemsRequired) {
-		const itemsRequiredStr = formatItemReqs(monster.itemsRequired);
-		for (const item of monster.itemsRequired) {
+	const checkItemsRequired = (itemsRequired: typeof monster.itemsRequired) => {
+		if (!itemsRequired) return null;
+		const itemsRequiredStr = formatItemReqs(itemsRequired);
+		for (const item of itemsRequired) {
 			if (Array.isArray(item)) {
 				if (!item.some(itemReq => user.hasEquippedOrInBank(itemReq as number))) {
 					return [false, `You need these items to kill ${monster.name}: ${itemsRequiredStr}`];
@@ -100,7 +102,33 @@ export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
 				];
 			}
 		}
+		return null;
+	};
+
+	const primaryStyle = getAttackStylesContext(user.getAttackStyles()).primaryStyle;
+	let itemsRequiredResult = null;
+
+	if (monster.itemsRequiredPerStyle) {
+		itemsRequiredResult = checkItemsRequired(monster.itemsRequiredPerStyle[primaryStyle]);
+		if (itemsRequiredResult) {
+			const alternativeStyle = (['melee', 'range', 'mage'] as const).find(
+				style => style !== primaryStyle && !checkItemsRequired(monster.itemsRequiredPerStyle?.[style])
+			);
+
+			if (alternativeStyle) {
+				return [
+					false,
+					`You need different gear to kill ${monster.name} with your current attack style. Try switching to ${alternativeStyle}.`
+				];
+			}
+		}
 	}
+
+	if (!itemsRequiredResult && monster.itemsRequired) {
+		itemsRequiredResult = checkItemsRequired(monster.itemsRequired);
+	}
+
+	if (itemsRequiredResult) return itemsRequiredResult;
 
 	if (monster.levelRequirements) {
 		const [hasReqs, str] = hasSkillReqs(user, monster.levelRequirements);
