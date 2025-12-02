@@ -88,11 +88,6 @@ export async function minionKillCommand(
 
 	if (!monster) return invalidMonsterMsg;
 
-	const [hasReqs, reason] = user.hasMonsterRequirements(monster);
-	if (!hasReqs) {
-		return typeof reason === 'string' ? reason : "You don't have the requirements to fight this monster";
-	}
-
 	const slayerInfo = await user.fetchSlayerInfo();
 
 	if (slayerInfo.assignedTask === null && onTask) return 'You are no longer on a slayer task for this monster!';
@@ -111,13 +106,22 @@ export async function minionKillCommand(
 	let attackStyles = user.getAttackStyles();
 	const efficiencyMessages: string[] = [];
 
-	if (efficientKillRequested && monster.id === Monsters.GiantMole.id) {
+	let efficientGiantMole = efficientKillRequested && monster.id === Monsters.GiantMole.id;
+
+	if (efficientGiantMole) {
 		const efficientStyles = calculateDefaultEfficientAttackStyles(user, monster);
 		if (efficientStyles) {
 			attackStyles = efficientStyles;
 			const { primaryStyle } = getAttackStylesContext(attackStyles);
 			efficiencyMessages.push(`Using ${primaryStyle} setup for efficient Giant Mole.`);
+		} else {
+			efficientGiantMole = false;
 		}
+	}
+
+	const [hasReqs, reason] = user.hasMonsterRequirements(monster, attackStyles);
+	if (!hasReqs) {
+		return typeof reason === 'string' ? reason : "You don't have the requirements to fight this monster";
 	}
 
 	const result = newMinionKillCommand({
@@ -192,7 +196,8 @@ export async function minionKillCommand(
 		hasWildySupplies,
 		isInWilderness: result.isInWilderness === true ? true : undefined,
 		attackStyles: result.attackStyles,
-		onTask: slayerInfo.assignedTask !== null
+		onTask: slayerInfo.assignedTask !== null,
+		efficientGiantMole: efficientGiantMole ? true : undefined
 	});
 	let response = `${minionName} is now killing ${result.quantity}x ${monster.name}, it'll take around ${formatDuration(
 		result.duration

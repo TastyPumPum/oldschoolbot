@@ -3,7 +3,7 @@ import { objectEntries, Time } from '@oldschoolgg/toolkit';
 import { Items } from 'oldschooljs';
 
 import { quests } from '@/lib/minions/data/quests.js';
-import { getAttackStylesContext } from '@/lib/minions/functions/index.js';
+import { type AttackStyles, getAttackStylesContext } from '@/lib/minions/functions/index.js';
 import type { Consumable, KillableMonster } from '@/lib/minions/types.js';
 import { formatItemReqs, formatList, hasSkillReqs, readableStatName } from '@/lib/util/smallUtils.js';
 import { getItemCostFromConsumables } from '@/mahoji/lib/abstracted_commands/minionKill/handleConsumables.js';
@@ -49,7 +49,7 @@ function formatItemCosts(consumable: Consumable, timeToFinish: number) {
 	return str.join('');
 }
 
-export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
+export function hasMonsterRequirements(user: MUser, monster: KillableMonster, attackStyles?: AttackStyles[]) {
 	if (monster.qpRequired && user.QP < monster.qpRequired) {
 		return [
 			false,
@@ -105,7 +105,7 @@ export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
 		return null;
 	};
 
-	const primaryStyle = getAttackStylesContext(user.getAttackStyles()).primaryStyle;
+	const primaryStyle = getAttackStylesContext(attackStyles ?? user.getAttackStyles()).primaryStyle;
 	let itemsRequiredResult = null;
 
 	if (monster.itemsRequiredPerStyle) {
