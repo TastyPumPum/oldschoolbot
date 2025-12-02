@@ -9,6 +9,23 @@ import { BOT_TYPE } from '@/lib/constants.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { tearDownScript } from './scriptUtil.js';
 
+function formatItemInBankBoosts(monster: (typeof killableMonsters)[number]) {
+	const boosts = monster.itemInBankBoosts;
+	if (!boosts) return [];
+
+	if (Array.isArray(boosts)) {
+		return boosts.map(group => new Bank(group).toNamedBank());
+	}
+
+	const formatted: Record<string, ReturnType<Bank['toNamedBank']>[]> = {};
+	for (const [style, groups] of Object.entries(boosts)) {
+		if (!groups) continue;
+		formatted[style] = groups.map(group => new Bank(group).toNamedBank());
+	}
+
+	return formatted;
+}
+
 function createMonstersJson() {
 	const stopwatch = new Stopwatch();
 	const monstersJsonFile = [];
@@ -30,7 +47,7 @@ function createMonstersJson() {
 					typeof i === 'number' ? Items.itemNameFromId(i) : i.map(id => Items.itemNameFromId(id))
 				) ?? [],
 			qp_required: monster.qpRequired ?? 0,
-			item_in_bank_boosts: monster.itemInBankBoosts?.map(group => new Bank(group).toNamedBank()) ?? [],
+			item_in_bank_boosts: formatItemInBankBoosts(monster),
 
 			can_barrage: monster.canBarrage ?? false,
 			can_chin: monster.canChinning ?? false,
