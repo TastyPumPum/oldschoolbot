@@ -199,12 +199,16 @@ writeRootJson(
 			};
 
 			if (m.itemInBankBoosts) {
-				obj.itemInBankBoosts = Object.fromEntries(
-					Object.entries(m.itemInBankBoosts).map(([style, banks]) => [
-						style,
-						(banks ?? []).map((bank: any) => Object.entries(bank))
-					])
-				);
+				if (Array.isArray(m.itemInBankBoosts)) {
+					obj.itemInBankBoosts = m.itemInBankBoosts.map((bank: any) => Object.entries(bank));
+				} else {
+					obj.itemInBankBoosts = Object.fromEntries(
+						Object.entries(m.itemInBankBoosts).map(([style, banks]) => [
+							style,
+							Array.isArray(banks) ? banks.map((bank: any) => Object.entries(bank)) : []
+						])
+					);
+				}
 			}
 			if (m.equippedItemBoosts) {
 				obj.equippedItemBoosts = m.equippedItemBoosts?.map(eb => [
