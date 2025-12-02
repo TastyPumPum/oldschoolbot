@@ -40,13 +40,13 @@ describe('Default attack style handling', () => {
 			bank: baseBank.clone(),
 			skills_prayer: convertLVLtoXP(50)
 		});
-		mageUser.user.attack_style = ['magic'] as any;
+		(mageUser.user as any).attack_style = ['magic'];
 
 		const meleeUser = mockMUser({
 			bank: baseBank.clone(),
 			skills_prayer: convertLVLtoXP(50)
 		});
-		meleeUser.user.attack_style = ['attack'] as any;
+		(meleeUser.user as any).attack_style = ['attack'];
 
 		expect(hasMonsterRequirements(mageUser, giantMole)[0]).toBe(true);
 

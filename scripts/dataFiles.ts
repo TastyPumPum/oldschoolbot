@@ -199,7 +199,12 @@ writeRootJson(
 			};
 
 			if (m.itemInBankBoosts) {
-				obj.itemInBankBoosts = m.itemInBankBoosts?.map(ib => Object.entries(ib));
+				obj.itemInBankBoosts = Object.fromEntries(
+					Object.entries(m.itemInBankBoosts).map(([style, banks]) => [
+						style,
+						(banks ?? []).map((bank: any) => Object.entries(bank))
+					])
+				);
 			}
 			if (m.equippedItemBoosts) {
 				obj.equippedItemBoosts = m.equippedItemBoosts?.map(eb => [
