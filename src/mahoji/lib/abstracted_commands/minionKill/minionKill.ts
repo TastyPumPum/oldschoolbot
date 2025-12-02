@@ -3,8 +3,11 @@ import { Monsters } from 'oldschooljs';
 
 import { colosseumCommand } from '@/lib/colosseum.js';
 import type { PvMMethod } from '@/lib/constants.js';
+import type { PrimaryGearSetupType } from '@/lib/gear/types.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { revenantMonsters } from '@/lib/minions/data/killableMonsters/revs.js';
+import { type AttackStyles, getAttackStylesContext } from '@/lib/minions/functions/index.js';
+import type { KillableMonster } from '@/lib/minions/types.js';
 import type { MonsterActivityTaskOptions } from '@/lib/types/minions.js';
 import findMonster from '@/lib/util/findMonster.js';
 import { generateDailyPeakIntervals } from '@/lib/util/peaks.js';
@@ -15,8 +18,33 @@ import { getPOH } from '@/mahoji/lib/abstracted_commands/pohCommand.js';
 import { temporossCommand } from '@/mahoji/lib/abstracted_commands/temporossCommand.js';
 import { wintertodtCommand } from '@/mahoji/lib/abstracted_commands/wintertodtCommand.js';
 import { zalcanoCommand } from '@/mahoji/lib/abstracted_commands/zalcanoCommand.js';
+import { resolveAvailableItemBoosts } from '@/mahoji/mahojiSettings.js';
 
 const invalidMonsterMsg = "That isn't a valid monster.\n\nFor example, `/k name:zulrah quantity:5`";
+const efficientKillSuffix = /\(efficient\)/gi;
+
+function calculateDefaultEfficientAttackStyles(user: MUser, monster: KillableMonster): AttackStyles[] | null {
+	const styleOptions: { style: PrimaryGearSetupType; attackStyles: AttackStyles[] }[] = [
+		{ style: 'mage', attackStyles: ['magic'] },
+		{ style: 'range', attackStyles: ['ranged'] },
+		{ style: 'melee', attackStyles: ['attack'] }
+	];
+
+	let bestStyle: { attackStyles: AttackStyles[]; boost: number } | null = null;
+	for (const { style, attackStyles } of styleOptions) {
+		const availableBoosts = resolveAvailableItemBoosts(user.gearBank, monster, false, style);
+		const totalBoost = availableBoosts.items().reduce((total, [, boostAmount]) => total + boostAmount, 0);
+		if (!bestStyle || totalBoost > bestStyle.boost) {
+			bestStyle = { attackStyles, boost: totalBoost };
+		}
+	}
+
+	if (!bestStyle || bestStyle.boost === 0) {
+		return null;
+	}
+
+	return bestStyle.attackStyles;
+}
 
 export async function minionKillCommand(
 	user: MUser,
@@ -36,6 +64,11 @@ export async function minionKillCommand(
 	const { minionName } = user;
 
 	if (!name) return invalidMonsterMsg;
+
+	const efficientKillRequested = /(efficient)/i.test(name);
+	if (efficientKillRequested) {
+		name = name.replace(efficientKillSuffix, '').trim();
+	}
 
 	if (stringMatches(name, 'colosseum')) return colosseumCommand(user, channelId);
 	if (stringMatches(name, 'nex')) return nexCommand(interaction, user, channelId, solo);
@@ -75,9 +108,21 @@ export async function minionKillCommand(
 		kcForBonus = kcs.BRANDA + kcs.ELDRIC + kcs.ROYAL_TITANS;
 	}
 
+	let attackStyles = user.getAttackStyles();
+	const efficiencyMessages: string[] = [];
+
+	if (efficientKillRequested && monster.id === Monsters.GiantMole.id) {
+		const efficientStyles = calculateDefaultEfficientAttackStyles(user, monster);
+		if (efficientStyles) {
+			attackStyles = efficientStyles;
+			const { primaryStyle } = getAttackStylesContext(attackStyles);
+			efficiencyMessages.push(`Using ${primaryStyle} setup for efficient Giant Mole.`);
+		}
+	}
+
 	const result = newMinionKillCommand({
 		gearBank: user.gearBank,
-		attackStyles: user.getAttackStyles(),
+		attackStyles,
 		currentSlayerTask: slayerInfo,
 		monster,
 		isTryingToUseWildy: wilderness ?? false,
@@ -152,6 +197,10 @@ export async function minionKillCommand(
 	let response = `${minionName} is now killing ${result.quantity}x ${monster.name}, it'll take around ${formatDuration(
 		result.duration
 	)} to finish. Attack styles used: ${result.attackStyles.join(', ')}.`;
+
+	if (efficiencyMessages.length > 0) {
+		result.messages.unshift(...efficiencyMessages);
+	}
 
 	if (result.messages.length > 0) {
 		response += `\n\n${result.messages.join(', ')}`;
