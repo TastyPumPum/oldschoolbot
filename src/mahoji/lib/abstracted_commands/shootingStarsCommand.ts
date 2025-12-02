@@ -294,6 +294,14 @@ export async function handleTriggerShootingStar(user: MUser, data: ActivityTaskD
 	const star = shootingStarTable.roll();
 	if (!star) return;
 
+	// Remove any stale or already-mined stars so the newest one is always used when the button is clicked.
+	await prisma.shootingStars.deleteMany({
+		where: {
+			user_id: user.id,
+			OR: [{ has_been_mined: true }, { expires_at: { lt: new Date() } }]
+		}
+	});
+
 	// Got a star
 	await prisma.shootingStars.create({
 		data: {

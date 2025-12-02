@@ -433,20 +433,19 @@ async function globalButtonInteractionHandler({
 		case InteractionID.Commands.DoShootingStar: {
 			const validStar = await prisma.shootingStars.findFirst({
 				where: {
-					user_id: user.id
+					user_id: user.id,
+					has_been_mined: false,
+					expires_at: {
+						gt: new Date()
+					}
+				},
+				orderBy: {
+					expires_at: 'desc'
 				}
 			});
-			let errorMessage: string | null = null;
 			if (!validStar) {
-				errorMessage = 'You do not have any shooting stars to mine.';
-			} else if (validStar.expires_at.getTime() < Date.now()) {
-				errorMessage = 'This shooting star has expired.';
-			} else if (validStar.has_been_mined) {
-				errorMessage = 'You have already mined this shooting star.';
-			}
-			if (errorMessage || !validStar) {
 				return {
-					content: errorMessage!,
+					content: 'You do not have any shooting stars to mine.',
 					ephemeral: true
 				};
 			}
