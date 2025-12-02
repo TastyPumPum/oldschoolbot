@@ -144,6 +144,7 @@ export interface MonsterActivityTaskOptions extends ActivityTaskOptions {
 	isInWilderness?: boolean;
 	attackStyles?: AttackStyles[];
 	onTask?: boolean;
+	efficientGiantMole?: boolean;
 }
 
 export interface ClueActivityTaskOptions extends ActivityTaskOptions {

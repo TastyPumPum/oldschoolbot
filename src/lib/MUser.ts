@@ -399,8 +399,8 @@ export class MUserClass {
 		return `${this.badgesString} ${this.usernameOrMention}`.trim();
 	}
 
-	hasMonsterRequirements(monster: KillableMonster) {
-		return hasMonsterRequirements(this, monster);
+	hasMonsterRequirements(monster: KillableMonster, attackStyles?: AttackStyles[]) {
+		return hasMonsterRequirements(this, monster, attackStyles);
 	}
 
 	toString() {

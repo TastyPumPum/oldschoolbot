@@ -1,6 +1,6 @@
 import { ButtonBuilder, ButtonStyle } from '@oldschoolgg/discord';
 import { objectValues, Time } from '@oldschoolgg/toolkit';
-import { Items } from 'oldschooljs';
+import { Items, Monsters } from 'oldschooljs';
 
 import { activity_type_enum } from '@/prisma/main/enums.js';
 import type { Activity } from '@/prisma/main.js';
@@ -482,8 +482,13 @@ const tripHandlers: {
 			if (data.chinning) method = 'chinning';
 			else if (data.bob === SlayerActivityConstants.IceBarrage) method = 'barrage';
 			else if (data.bob === SlayerActivityConstants.IceBurst) method = 'burst';
+			const isEfficientGiantMole = Boolean(data.efficientGiantMole && data.mi === Monsters.GiantMole.id);
+			let name = autocompleteMonsters.find(i => i.id === data.mi)?.name ?? data.mi.toString();
+			if (isEfficientGiantMole) {
+				name += ' (efficient)';
+			}
 			return {
-				name: autocompleteMonsters.find(i => i.id === data.mi)?.name ?? data.mi.toString(),
+				name,
 				quantity: data.iQty,
 				method,
 				wilderness: data.isInWilderness,
