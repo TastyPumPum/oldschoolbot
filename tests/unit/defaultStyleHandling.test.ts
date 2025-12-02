@@ -34,7 +34,11 @@ describe('Default attack style handling', () => {
 	});
 
 	test('style-specific requirements', () => {
-		const baseBank = new Bank().add('Prayer potion(4)', 10);
+		const baseBank = new Bank()
+			.add('Prayer potion(4)', 10)
+			.add("Ahrim's hood")
+			.add("Ahrim's robetop")
+			.add("Ahrim's robeskirt");
 
 		const mageUser = mockMUser({
 			bank: baseBank.clone(),
