@@ -3297,7 +3297,9 @@
 		"wildy": false,
 		"difficulty_rating": 3,
 		"items_required_per_style": {
-			"melee": ["Dharok's greataxe", "Dharok's helm", "Dharok's platebody", "Dharok's platelegs"]
+			"melee": ["Dharok's greataxe", "Dharok's helm", "Dharok's platebody", "Dharok's platelegs"],
+			"range": ["Armadyl chainskirt", "Armadyl chestplate", "Armadyl helmet"],
+			"mage": ["Ahrim's hood", "Ahrim's robeskirt", "Ahrim's robetop"]
 		},
 		"notify_drops": ["Baby mole"],
 		"qp_required": 0,
@@ -3409,8 +3411,7 @@
 			],
 			"melee": [
 				{
-					"4718": 3,
-					"12006": 1
+					"4718": 3
 				},
 				{
 					"1215": 1,
@@ -3419,16 +3420,13 @@
 					"27690": 4
 				},
 				{
-					"4716": 1,
-					"10828": 1
+					"4716": 1
 				},
 				{
-					"4720": 1,
-					"10551": 1
+					"4720": 1
 				},
 				{
-					"4722": 1,
-					"11834": 1
+					"4722": 1
 				},
 				{
 					"6570": 2,

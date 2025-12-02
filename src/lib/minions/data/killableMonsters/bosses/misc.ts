@@ -20,7 +20,9 @@ export const miscBossKillables: KillableMonster[] = [
 		wildy: false,
 		difficultyRating: 3,
 		itemsRequiredPerStyle: {
-			melee: resolveItems(["Dharok's helm", "Dharok's platebody", "Dharok's platelegs", "Dharok's greataxe"])
+			melee: resolveItems(["Dharok's helm", "Dharok's platebody", "Dharok's platelegs", "Dharok's greataxe"]),
+			range: resolveItems(['Armadyl helmet', 'Armadyl chestplate', 'Armadyl chainskirt']),
+			mage: resolveItems(["Ahrim's hood", "Ahrim's robetop", "Ahrim's robeskirt"])
 		},
 		notifyDrops: resolveItems(['Baby mole']),
 		qpRequired: 0,
@@ -132,8 +134,7 @@ export const miscBossKillables: KillableMonster[] = [
 			],
 			melee: [
 				{
-					[itemID("Dharok's greataxe")]: 3,
-					[itemID('Abyssal tentacle')]: 1
+					[itemID("Dharok's greataxe")]: 3
 				},
 				{
 					[itemID('Voidwaker')]: 4,
@@ -142,16 +143,13 @@ export const miscBossKillables: KillableMonster[] = [
 					[itemID('Dragon dagger')]: 1
 				},
 				{
-					[itemID("Dharok's helm")]: 1,
-					[itemID('Helm of neitiznot')]: 1
+					[itemID("Dharok's helm")]: 1
 				},
 				{
-					[itemID("Dharok's platebody")]: 1,
-					[itemID('Fighter torso')]: 1
+					[itemID("Dharok's platebody")]: 1
 				},
 				{
-					[itemID("Dharok's platelegs")]: 1,
-					[itemID('Bandos tassets')]: 1
+					[itemID("Dharok's platelegs")]: 1
 				},
 				{
 					[itemID('Infernal cape')]: 3,

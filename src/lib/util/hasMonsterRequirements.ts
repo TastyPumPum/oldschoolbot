@@ -49,6 +49,15 @@ function formatItemCosts(consumable: Consumable, timeToFinish: number) {
 	return str.join('');
 }
 
+function getAttackStylesForUser(user: MUser, attackStyles?: AttackStyles[]): AttackStyles[] {
+	if (attackStyles && attackStyles.length > 0) return attackStyles;
+	const raw = (user.user as any).attack_style?.[0] as AttackStyles | undefined;
+	if (raw) {
+		return [raw];
+	}
+	return user.getAttackStyles();
+}
+
 export function hasMonsterRequirements(user: MUser, monster: KillableMonster, attackStyles?: AttackStyles[]) {
 	if (monster.qpRequired && user.QP < monster.qpRequired) {
 		return [
@@ -105,7 +114,8 @@ export function hasMonsterRequirements(user: MUser, monster: KillableMonster, at
 		return null;
 	};
 
-	const primaryStyle = getAttackStylesContext(attackStyles ?? user.getAttackStyles()).primaryStyle;
+	const resolvedAttackStyles = getAttackStylesForUser(user, attackStyles);
+	const primaryStyle = getAttackStylesContext(resolvedAttackStyles).primaryStyle;
 	let itemsRequiredResult = null;
 
 	if (monster.itemsRequiredPerStyle) {

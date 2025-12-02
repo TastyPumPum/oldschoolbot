@@ -1,6 +1,6 @@
 {
-	"hash": "19c7e4501bd07b9489bbaedf72d6a54c",
-	"date": "2025-12-02T09:56:20.909Z",
+	"hash": "3ed82a6bde75e2520253990e719a4e88",
+	"date": "2025-12-02T13:26:26.281Z",
 	"data": [
 		{
 			"id": 2,
@@ -2288,7 +2288,6 @@
 				],
 				"melee": [
 					{
-						"Abyssal tentacle": 1,
 						"Dharok's greataxe": 3
 					},
 					{
@@ -2298,15 +2297,12 @@
 						"Voidwaker": 4
 					},
 					{
-						"Dharok's helm": 1,
-						"Helm of neitiznot": 1
+						"Dharok's helm": 1
 					},
 					{
-						"Dharok's platebody": 1,
-						"Fighter torso": 1
+						"Dharok's platebody": 1
 					},
 					{
-						"Bandos tassets": 1,
 						"Dharok's platelegs": 1
 					},
 					{
