@@ -19,23 +19,171 @@ export const miscBossKillables: KillableMonster[] = [
 		emoji: '<:Baby_mole:324127375858204672>',
 		wildy: false,
 		difficultyRating: 3,
-		itemsRequired: resolveItems(["Dharok's helm", "Dharok's platebody", "Dharok's platelegs", "Dharok's greataxe"]),
+		itemsRequiredPerStyle: {
+			melee: resolveItems(["Dharok's helm", "Dharok's platebody", "Dharok's platelegs", "Dharok's greataxe"]),
+			range: resolveItems(['Armadyl helmet', 'Armadyl chestplate', 'Armadyl chainskirt']),
+			mage: resolveItems(["Ahrim's hood", "Ahrim's robetop", "Ahrim's robeskirt"])
+		},
 		notifyDrops: resolveItems(['Baby mole']),
 		qpRequired: 0,
-		itemInBankBoosts: [
-			{
-				[itemID('Barrows gloves')]: 5
-			},
-			{
-				[itemID('Berserker ring')]: 5,
-				[itemID('Berserker ring (i)')]: 7,
-				[itemID('Twisted bow')]: 10
-			}
-		],
+		itemInBankBoosts: {
+			mage: [
+				{
+					[itemID("Tumeken's shadow")]: 13,
+					[itemID('Sanguinesti staff')]: 9,
+					[itemID('Harmonised nightmare staff')]: 8,
+					[itemID('Trident of the swamp')]: 5,
+					[itemID('Trident of the seas')]: 3
+				},
+				{
+					[itemID('Ancestral hat')]: 2,
+					[itemID("Ahrim's hood")]: 1
+				},
+				{
+					[itemID('Ancestral robe top')]: 2,
+					[itemID("Ahrim's robetop")]: 1
+				},
+				{
+					[itemID('Ancestral robe bottom')]: 2,
+					[itemID("Ahrim's robeskirt")]: 1
+				},
+				{
+					[itemID('Occult necklace')]: 2,
+					[itemID('Amulet of fury')]: 1,
+					[itemID('Amulet of glory')]: 1
+				},
+				{
+					[itemID('Imbued saradomin cape')]: 2,
+					[itemID('Imbued guthix cape')]: 2,
+					[itemID('Imbued zamorak cape')]: 2,
+					[itemID('Saradomin cape')]: 1,
+					[itemID('Guthix cape')]: 1,
+					[itemID('Zamorak cape')]: 1
+				},
+				{
+					[itemID('Tormented bracelet')]: 2,
+					[itemID('Barrows gloves')]: 1
+				},
+				{
+					[itemID('Eternal boots')]: 1,
+					[itemID('Infinity boots')]: 1,
+					[itemID('Wizard boots')]: 1
+				},
+				{
+					[itemID('Magus ring')]: 2,
+					[itemID('Seers ring (i)')]: 1,
+					[itemID('Seers ring')]: 1
+				},
+				{
+					[itemID('Falador shield 3')]: 3
+				}
+			],
+			range: [
+				{
+					[itemID('Twisted bow')]: 7,
+					[itemID('Bow of faerdhinen (c)')]: 5,
+					[itemID('Toxic blowpipe')]: 3,
+					[itemID('Magic shortbow (i)')]: 2
+				},
+				{
+					[itemID('Zaryte crossbow')]: 5
+				},
+				{
+					[itemID('Masori mask (f)')]: 1,
+					[itemID('Masori mask')]: 1,
+					[itemID('Armadyl helmet')]: 1
+				},
+				{
+					[itemID('Masori body (f)')]: 1,
+					[itemID('Masori body')]: 1,
+					[itemID('Armadyl chestplate')]: 1
+				},
+				{
+					[itemID('Masori chaps (f)')]: 1,
+					[itemID('Masori chaps')]: 1,
+					[itemID('Armadyl chainskirt')]: 1
+				},
+				{
+					[itemID('Necklace of anguish')]: 3,
+					[itemID('Amulet of fury')]: 2,
+					[itemID('Amulet of glory')]: 1
+				},
+				{
+					[itemID("Dizana's quiver")]: 2,
+					[itemID("Ava's assembler")]: 2,
+					[itemID("Ava's accumulator")]: 1
+				},
+				{
+					[itemID('Zaryte vambraces')]: 2,
+					[itemID('Barrows gloves')]: 2,
+					[itemID("Black d'hide vambraces")]: 1
+				},
+				{
+					[itemID('Pegasian boots')]: 1,
+					[itemID('Ranger boots')]: 1,
+					[itemID('Snakeskin boots')]: 1
+				},
+				{
+					[itemID('Venator ring')]: 2,
+					[itemID('Archers ring (i)')]: 1,
+					[itemID('Archers ring')]: 1
+				},
+				{
+					[itemID('Falador shield 3')]: 3
+				}
+			],
+			melee: [
+				{
+					[itemID("Dharok's greataxe")]: 3
+				},
+				{
+					[itemID('Voidwaker')]: 4,
+					[itemID('Dragon claws')]: 3,
+					[itemID('Elder maul')]: 3,
+					[itemID('Dragon dagger')]: 1
+				},
+				{
+					[itemID("Dharok's helm")]: 1
+				},
+				{
+					[itemID("Dharok's platebody")]: 1
+				},
+				{
+					[itemID("Dharok's platelegs")]: 1
+				},
+				{
+					[itemID('Infernal cape')]: 3,
+					[itemID('Fire max cape')]: 2,
+					[itemID('Fire cape')]: 2
+				},
+				{
+					[itemID('Amulet of rancour')]: 3,
+					[itemID('Amulet of torture')]: 2,
+					[itemID('Amulet of fury')]: 1
+				},
+				{
+					[itemID('Ferocious gloves')]: 2,
+					[itemID('Barrows gloves')]: 1
+				},
+				{
+					[itemID('Primordial boots')]: 1,
+					[itemID('Dragon boots')]: 1
+				},
+				{
+					[itemID('Bellator ring')]: 1,
+					[itemID('Berserker ring (i)')]: 1,
+					[itemID('Berserker ring')]: 1
+				},
+				{
+					[itemID('Falador shield 3')]: 3
+				}
+			]
+		},
 		levelRequirements: {
 			prayer: 43
 		},
-		defaultAttackStyles: ['attack'],
+		attackStylesUsed: [GearStat.AttackMagic, GearStat.AttackRanged, GearStat.AttackCrush],
+		defaultAttackStyles: ['magic', 'ranged', 'attack'],
 		combatXpMultiplier: 1.075,
 		itemCost: {
 			itemCost: new Bank().add('Prayer potion(4)'),

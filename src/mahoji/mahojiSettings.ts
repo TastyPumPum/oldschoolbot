@@ -1,6 +1,7 @@
 import { evalMathExpression } from '@oldschoolgg/toolkit';
 import { Bank, type ItemBank } from 'oldschooljs';
 
+import type { PrimaryGearSetupType } from '@/lib/gear/types.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
 import type { Rune } from '@/lib/skilling/skills/runecraft.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
@@ -23,10 +24,26 @@ export function mahojiParseNumber({
 	return parsed;
 }
 
-export function resolveAvailableItemBoosts(gearBank: GearBank, monster: KillableMonster, isInWilderness = false): Bank {
+export function resolveAvailableItemBoosts(
+	gearBank: GearBank,
+	monster: KillableMonster,
+	isInWilderness = false,
+	primaryStyle?: PrimaryGearSetupType
+): Bank {
 	const boosts = new Bank();
-	if (monster.itemInBankBoosts) {
-		for (const boostSet of monster.itemInBankBoosts) {
+	const itemBoosts = monster.itemInBankBoosts;
+	if (itemBoosts) {
+		let boostSets: ItemBank[] = [];
+
+		if (Array.isArray(itemBoosts)) {
+			boostSets = itemBoosts;
+		} else if (primaryStyle && itemBoosts[primaryStyle]) {
+			boostSets = itemBoosts[primaryStyle] ?? [];
+		} else {
+			boostSets = Object.values(itemBoosts).flatMap(set => set ?? []);
+		}
+
+		for (const boostSet of boostSets) {
 			let highestBoostAmount = 0;
 			let highestBoostItem = 0;
 

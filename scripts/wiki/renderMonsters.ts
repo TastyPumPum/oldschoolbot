@@ -151,12 +151,26 @@ function renderMonstersMarkdown() {
 				bankBoosts.addLine(
 					'These boosts are applied from just being in your bank, and do not need to be equipped (but can also be equipped). The best boost you can use will automatically be used.'
 				);
-				for (const set of monster.itemInBankBoosts) {
-					bankBoosts.addLine('You can have one of the following boosts:');
-					for (const [item, boostPercent] of new Bank(set).items().sort(sorts.quantity)) {
-						bankBoosts.addLine(`- ${boostPercent}% boost for [[${escapeItemName(item.name)}]]`);
+
+				if (Array.isArray(monster.itemInBankBoosts)) {
+					for (const set of monster.itemInBankBoosts) {
+						bankBoosts.addLine('You can have one of the following boosts:');
+						for (const [item, boostPercent] of new Bank(set).items().sort(sorts.quantity)) {
+							bankBoosts.addLine(`- ${boostPercent}% boost for [[${escapeItemName(item.name)}]]`);
+						}
+						bankBoosts.addLine('---');
 					}
-					bankBoosts.addLine('---');
+				} else {
+					for (const [style, boosts] of Object.entries(monster.itemInBankBoosts)) {
+						if (!boosts) continue;
+						bankBoosts.addLine(`You can have one of the following boosts for ${style}:`);
+						for (const set of boosts) {
+							for (const [item, boostPercent] of new Bank(set).items().sort(sorts.quantity)) {
+								bankBoosts.addLine(`- ${boostPercent}% boost for [[${escapeItemName(item.name)}]]`);
+							}
+							bankBoosts.addLine('---');
+						}
+					}
 				}
 				boostsMarkdown.add(bankBoosts);
 			}
@@ -216,6 +230,7 @@ function renderMonstersMarkdown() {
 			return boostsMarkdown.toString();
 		});
 		const tabs = new Tabs([infoTab, costsTab, requirementsTab, boostsTab]);
+
 		monstermd.add(tabs);
 		monstermd.addLine('---');
 		markdown.add(monstermd);
