@@ -11,6 +11,7 @@ import type { OffenceGearStat } from 'oldschooljs/gear';
 
 import type { GearSetupType, XpGainSource } from '@/prisma/main.js';
 import type { ClueTier } from '@/lib/clues/clueTiers.js';
+import type { PrimaryGearSetupType } from '@/lib/gear/types.js';
 import type { QuestID } from '@/lib/minions/data/quests.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { POHBoosts } from '@/lib/poh/index.js';
@@ -31,6 +32,8 @@ export type KillableMonsterEffect = (opts: {
 	loot: Bank;
 	updateBank: UpdateBank;
 }) => void | { xpBank?: XPBank; loot?: Bank; messages: string[] };
+
+export type MonsterItemInBankBoosts = ItemBank[] | Partial<Record<PrimaryGearSetupType, ItemBank[]>>;
 
 export interface KillableMonster {
 	id: number;
@@ -63,7 +66,11 @@ export interface KillableMonster {
 	 * this monster. For each set, only the item with the greatest boost (that the user also possesses)
 	 * will be used as boost.
 	 */
-	itemInBankBoosts?: ItemBank[];
+	itemInBankBoosts?: MonsterItemInBankBoosts;
+	/**
+	 * Items required per attack style; the requirements for the user's primary style are checked.
+	 */
+	itemsRequiredPerStyle?: Partial<Record<PrimaryGearSetupType, ArrayItemsResolved>>;
 	/**
 	 * Whether or not this monster can be groupkilled.
 	 */
