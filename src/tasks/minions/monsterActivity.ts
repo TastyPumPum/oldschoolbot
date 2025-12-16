@@ -10,6 +10,14 @@ import { addMonsterXPRaw } from '@/lib/minions/functions/addMonsterXPRaw.js';
 import announceLoot from '@/lib/minions/functions/announceLoot.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
+import {
+	getSlayerBraceletChargesFromUser,
+	parseSlayerJewelleryConfig,
+	resolveSlayerJewelleryChoice,
+	type SlayerBraceletCharges,
+	type SlayerJewelleryConfig,
+	simulateSlayerBraceletEffects
+} from '@/lib/slayer/slayerJewellery.js';
 import { SlayerTaskUnlocksEnum } from '@/lib/slayer/slayerUnlocks.js';
 import { type CurrentSlayerInfo, calculateSlayerPoints } from '@/lib/slayer/slayerUtil.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
@@ -19,8 +27,12 @@ import type { MonsterActivityTaskOptions } from '@/lib/types/minions.js';
 import { ashSanctifierEffect } from '@/lib/util/ashSanctifier.js';
 import calculateGearLostOnDeathWilderness from '@/lib/util/calculateGearLostOnDeathWilderness.js';
 import { increaseWildEvasionXp } from '@/lib/util/calcWildyPkChance.js';
+import { handleTripFinish } from '@/lib/util/handleTripFinish.js';
+import { logError } from '@/lib/util/logError.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
+import { mUserFetch } from '@/lib/util/mUserFetch.js';
 import { calculateSimpleMonsterDeathChance } from '@/lib/util/smallUtils.js';
+import type { MinionTask } from '@/lib/util/taskTypes.js';
 
 function handleSlayerTaskCompletion({
 	slayerContext,
@@ -56,16 +68,41 @@ function handleSlayerTaskCompletion({
 	return message;
 }
 
+function getSlayerKillCredit({
+	monsterID,
+	slayerTaskMonsterID,
+	slayerUnlocks
+}: {
+	monsterID: number;
+	slayerTaskMonsterID: number;
+	slayerUnlocks: SlayerTaskUnlocksEnum[];
+}) {
+	if (monsterID === EMonster.KRIL_TSUTSAROTH && slayerTaskMonsterID !== Monsters.KrilTsutsaroth.id) {
+		return 2;
+	}
+	if (monsterID === EMonster.KREEARRA && slayerTaskMonsterID !== Monsters.Kreearra.id) {
+		return 4;
+	}
+	if (monsterID === EMonster.GROTESQUE_GUARDIANS && slayerUnlocks.includes(SlayerTaskUnlocksEnum.DoubleTrouble)) {
+		return 2;
+	}
+	return 1;
+}
+
 function getSlayerContext({
 	slayerInfo,
 	monsterID,
 	quantityKilled,
-	slayerUnlocks
+	slayerUnlocks,
+	slayerBraceletCharges,
+	slayerJewelleryConfig
 }: {
 	slayerInfo: CurrentSlayerInfo;
 	monsterID: number;
 	quantityKilled: number;
 	slayerUnlocks: SlayerTaskUnlocksEnum[];
+	slayerBraceletCharges: SlayerBraceletCharges;
+	slayerJewelleryConfig: SlayerJewelleryConfig;
 }) {
 	const isOnTask =
 		slayerInfo.assignedTask !== null &&
@@ -74,37 +111,38 @@ function getSlayerContext({
 
 	const hasSuperiorsUnlocked = slayerUnlocks.includes(SlayerTaskUnlocksEnum.BiggerAndBadder);
 
-	if (!isOnTask) return { isOnTask, hasSuperiorsUnlocked };
+	if (!isOnTask) return { isOnTask, hasSuperiorsUnlocked, braceletResult: null };
 	const quantityRemaining = slayerInfo.currentTask.quantity_remaining;
 	const slayerTaskMonsterID = slayerInfo.currentTask.monster_id;
 	const slayerMaster = slayerInfo.slayerMaster;
+	const braceletChoice = resolveSlayerJewelleryChoice(
+		slayerInfo.assignedTask?.monster.name ?? null,
+		slayerJewelleryConfig
+	);
 
-	const quantitySlayed = Math.min(quantityRemaining, quantityKilled);
+	const braceletResult = simulateSlayerBraceletEffects({
+		quantityKilled,
+		quantityRemaining,
+		braceletCharges: slayerBraceletCharges,
+		braceletChoice,
+		baseKillCredit: () =>
+			getSlayerKillCredit({
+				monsterID,
+				slayerTaskMonsterID,
+				slayerUnlocks
+			})
+	});
 
-	let effectiveSlayed = quantitySlayed;
-
-	// TODO: is this even right? it looks wrong
-	if (monsterID === EMonster.KRIL_TSUTSAROTH && slayerTaskMonsterID !== Monsters.KrilTsutsaroth.id) {
-		effectiveSlayed = quantitySlayed * 2;
-	} else if (monsterID === EMonster.KREEARRA && slayerTaskMonsterID !== Monsters.Kreearra.id) {
-		effectiveSlayed = quantitySlayed * 4;
-	} else if (
-		monsterID === EMonster.GROTESQUE_GUARDIANS &&
-		slayerUnlocks.includes(SlayerTaskUnlocksEnum.DoubleTrouble)
-	) {
-		effectiveSlayed = quantitySlayed * 2;
-	}
-
-	const quantityLeft = Math.max(0, quantityRemaining - effectiveSlayed);
 	const isUsingKrystilia = slayerMaster.id === 8;
 
 	return {
 		isOnTask,
 		hasSuperiorsUnlocked,
-		quantitySlayed,
-		effectiveSlayed,
-		quantityLeft,
+		quantitySlayed: braceletResult.quantitySlayed,
+		effectiveSlayed: braceletResult.effectiveSlayed,
+		quantityLeft: braceletResult.quantityLeft,
 		isUsingKrystilia,
+		braceletResult,
 		...slayerInfo
 	};
 }
@@ -130,6 +168,8 @@ interface newOptions {
 	gearBank: GearBank;
 	slayerInfo: CurrentSlayerInfo;
 	slayerUnlocks: SlayerTaskUnlocksEnum[];
+	slayerBraceletCharges: SlayerBraceletCharges;
+	slayerJewelleryConfig: SlayerJewelleryConfig;
 	tertiaryItemPercentageChanges: ReturnType<MUser['buildTertiaryItemChanges']>;
 	attackStyles: AttackStyles[];
 	bitfield: readonly BitField[];
@@ -154,11 +194,14 @@ export function doMonsterTrip(data: newOptions) {
 		tertiaryItemPercentageChanges,
 		slayerInfo,
 		slayerUnlocks,
+		slayerBraceletCharges,
+		slayerJewelleryConfig,
 		hasKourendElite,
 		attackStyles,
 		duration,
 		bitfield
 	} = data;
+
 	const currentKC = kcBank.amount(monster.id);
 	const updateBank = new UpdateBank();
 
@@ -277,8 +320,33 @@ export function doMonsterTrip(data: newOptions) {
 		slayerInfo,
 		monsterID: monster.id,
 		quantityKilled: quantity,
-		slayerUnlocks
+		slayerUnlocks,
+		slayerBraceletCharges,
+		slayerJewelleryConfig
 	});
+
+	if (slayerContext.braceletResult) {
+		const spentSlaughter =
+			slayerBraceletCharges.slaughter - slayerContext.braceletResult.chargesRemaining.slaughter;
+		const spentExpeditious =
+			slayerBraceletCharges.expeditious - slayerContext.braceletResult.chargesRemaining.expeditious;
+
+		if (spentSlaughter > 0) {
+			updateBank.userUpdates.slayer_slaughter_charges = { decrement: spentSlaughter };
+		}
+		if (spentExpeditious > 0) {
+			updateBank.userUpdates.slayer_expeditious_charges = { decrement: spentExpeditious };
+		}
+
+		const { procs, chargesRemaining, braceletChoice } = slayerContext.braceletResult;
+		if (braceletChoice !== 'off' || procs.slaughter > 0 || procs.expeditious > 0) {
+			messages.push(
+				`Bracelet procs - Slaughter: ${procs.slaughter} (charges remaining: ${
+					chargesRemaining.slaughter
+				}), Expeditious: ${procs.expeditious} (charges remaining: ${chargesRemaining.expeditious}).`
+			);
+		}
+	}
 
 	const superiorTable = slayerContext.hasSuperiorsUnlocked && monster.superior ? monster.superior : undefined;
 	const isInCatacombs =
@@ -396,9 +464,11 @@ export function doMonsterTrip(data: newOptions) {
 			messages.push(handleSlayerTaskCompletion({ slayerContext, updateBank, hasKourendElite }));
 		} else {
 			messages.push(
-				`You killed ${slayerContext.effectiveSlayed}x of your ${
+				`You killed ${slayerContext.quantitySlayed}x of your ${
 					slayerContext.currentTask?.quantity_remaining
-				} remaining kills, you now have ${slayerContext.quantityLeft} kills remaining.`
+				} remaining kills (task count reduced by ${slayerContext.effectiveSlayed}), you now have ${
+					slayerContext.quantityLeft
+				} kills remaining.`
 			);
 		}
 	}
@@ -466,6 +536,8 @@ export const monsterTask: MinionTask = {
 			hasKourendElite: user.hasDiary('kourend&kebos.elite'),
 			slayerInfo,
 			slayerUnlocks: user.user.slayer_unlocks,
+			slayerBraceletCharges: getSlayerBraceletChargesFromUser(user.user),
+			slayerJewelleryConfig: parseSlayerJewelleryConfig(user.user.slayer_jewellery_config),
 			attackStyles,
 			hasEliteCA: user.hasCompletedCATier('elite'),
 			bitfield: user.bitfield,
