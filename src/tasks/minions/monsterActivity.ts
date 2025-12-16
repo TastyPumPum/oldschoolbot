@@ -322,25 +322,38 @@ export function doMonsterTrip(data: newOptions) {
 	});
 
 	if (slayerContext.braceletResult) {
-		const spentSlaughter =
-			slayerBraceletCharges.slaughter - slayerContext.braceletResult.chargesRemaining.slaughter;
-		const spentExpeditious =
-			slayerBraceletCharges.expeditious - slayerContext.braceletResult.chargesRemaining.expeditious;
-
-		if (spentSlaughter > 0) {
-			updateBank.userUpdates.slayer_slaughter_charges = { decrement: spentSlaughter };
-		}
-		if (spentExpeditious > 0) {
-			updateBank.userUpdates.slayer_expeditious_charges = { decrement: spentExpeditious };
-		}
-
 		const { procs, chargesRemaining, braceletChoice } = slayerContext.braceletResult;
-		if (braceletChoice !== 'off' || procs.slaughter > 0 || procs.expeditious > 0) {
-			messages.push(
-				`Bracelet procs - Slaughter: ${procs.slaughter} (charges remaining: ${
-					chargesRemaining.slaughter
-				}), Expeditious: ${procs.expeditious} (charges remaining: ${chargesRemaining.expeditious}).`
+
+		const spent = {
+			slaughter: slayerBraceletCharges.slaughter - chargesRemaining.slaughter,
+			expeditious: slayerBraceletCharges.expeditious - chargesRemaining.expeditious
+		};
+
+		if (spent.slaughter > 0) {
+			updateBank.userUpdates.slayer_slaughter_charges = { decrement: spent.slaughter };
+		}
+		if (spent.expeditious > 0) {
+			updateBank.userUpdates.slayer_expeditious_charges = { decrement: spent.expeditious };
+		}
+
+		const lines: string[] = [];
+
+		const showSlaughter = braceletChoice === 'slaughter' || procs.slaughter > 0;
+		const showExpeditious = braceletChoice === 'expeditious' || procs.expeditious > 0;
+
+		if (showSlaughter) {
+			lines.push(
+				`Slaughter: ${procs.slaughter} (charges remaining: ${chargesRemaining.slaughter.toLocaleString()})`
 			);
+		}
+		if (showExpeditious) {
+			lines.push(
+				`Expeditious: ${procs.expeditious} (charges remaining: ${chargesRemaining.expeditious.toLocaleString()})`
+			);
+		}
+
+		if (lines.length > 0) {
+			messages.push(`\nBracelet procs:\n${lines.map(l => `• ${l}`).join('\n')}`);
 		}
 	}
 
@@ -402,7 +415,7 @@ export function doMonsterTrip(data: newOptions) {
 		) {
 			loot.add('Clue hunter boots', 1);
 			loot.add('Clue hunter cloak', 1);
-			messages.push('While killing a Unicorn, you discover some strange clothing - you pick them up');
+			messages.push('\nWhile killing a Unicorn, you discover some strange clothing - you pick them up');
 		}
 		if (newSuperiorCount) {
 			// TODO: remove drop from superiors in osjs? remove the rng keys
@@ -452,7 +465,7 @@ export function doMonsterTrip(data: newOptions) {
 		updateBank.userStats.slayer_superior_count = {
 			increment: newSuperiorCount
 		};
-		messages.push(`You slayed ${newSuperiorCount}x superior monsters.`);
+		messages.push(`\nYou slayed ${newSuperiorCount}x superior monsters.`);
 	}
 
 	if (slayerContext.isOnTask) {
@@ -460,7 +473,7 @@ export function doMonsterTrip(data: newOptions) {
 			messages.push(handleSlayerTaskCompletion({ slayerContext, updateBank, hasKourendElite }));
 		} else {
 			messages.push(
-				`You killed ${slayerContext.quantitySlayed}x of your ${
+				`\nYou killed ${slayerContext.quantitySlayed}x of your ${
 					slayerContext.currentTask?.quantity_remaining
 				} remaining kills (task count reduced by ${slayerContext.effectiveSlayed}), you now have ${
 					slayerContext.quantityLeft
@@ -470,7 +483,7 @@ export function doMonsterTrip(data: newOptions) {
 	}
 
 	if (deaths > 0) {
-		messages.push(`You died ${deaths}x times.`);
+		messages.push(`\nYou died ${deaths}x times.`);
 	}
 	if (monster.effect) {
 		const effectResult = monster.effect({
