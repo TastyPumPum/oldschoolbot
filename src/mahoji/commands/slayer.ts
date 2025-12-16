@@ -327,7 +327,7 @@ export const slayerCommand = defineCommand({
 				const charges = getSlayerBraceletChargesFromUser(user.user);
 				const overrides = Object.entries(currentConfig).filter(([task]) => task !== 'all');
 				const lines = [
-					`All tasks: ${currentConfig.all ?? 'off'}`,
+					`All tasks (applies only when no task override is set): ${currentConfig.all ?? 'off'}`,
 					overrides.length
 						? overrides
 								.sort((a, b) => a[0].localeCompare(b[0]))
@@ -339,6 +339,9 @@ export const slayerCommand = defineCommand({
 								.join('\n')
 						: 'No task-specific overrides set (defaults to off).'
 				];
+				lines.push(
+					'Task-specific settings override "All tasks"; the global setting only applies when no override exists.'
+				);
 				lines.push(
 					`Charges - Slaughter: ${charges.slaughter.toLocaleString()}, Expeditious: ${charges.expeditious.toLocaleString()}`
 				);
