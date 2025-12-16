@@ -27,12 +27,8 @@ import type { MonsterActivityTaskOptions } from '@/lib/types/minions.js';
 import { ashSanctifierEffect } from '@/lib/util/ashSanctifier.js';
 import calculateGearLostOnDeathWilderness from '@/lib/util/calculateGearLostOnDeathWilderness.js';
 import { increaseWildEvasionXp } from '@/lib/util/calcWildyPkChance.js';
-import { handleTripFinish } from '@/lib/util/handleTripFinish.js';
-import { logError } from '@/lib/util/logError.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
-import { mUserFetch } from '@/lib/util/mUserFetch.js';
 import { calculateSimpleMonsterDeathChance } from '@/lib/util/smallUtils.js';
-import type { MinionTask } from '@/lib/util/taskTypes.js';
 
 function handleSlayerTaskCompletion({
 	slayerContext,
