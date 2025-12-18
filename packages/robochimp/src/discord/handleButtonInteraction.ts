@@ -4,6 +4,12 @@ import { Bank, toKMB } from 'oldschooljs';
 import { chunk } from 'remeda';
 
 import { globalConfig } from '@/constants.js';
+import {
+	bumpPitExpiry,
+	deletePitState,
+	getPitState,
+	isPitExpired
+} from '../../../../src/mahoji/lib/abstracted_commands/tzHaarPitGambleState.js';
 
 const PIT_PREFIX = 'TZHAAR_PIT|';
 const CONFIRM_ID = `${PIT_PREFIX}CONFIRM`;
@@ -30,13 +36,15 @@ function buildStatus(revealedSafe: number) {
 	)}x multiplier. Cash out unlocks after ${MIN_SAFES_TO_CASHOUT} safes.`;
 }
 
-function renderButtons(tiles: { kind: 'safe' | 'lava'; revealed: boolean }[], includeCashOut: boolean, revealAll: boolean) {
+function renderButtons(
+	tiles: { kind: 'safe' | 'lava'; revealed: boolean }[],
+	includeCashOut: boolean,
+	revealAll: boolean
+) {
 	const buttons = tiles.map((tile, index) => {
 		const isRevealed = revealAll || tile.revealed;
 
-		const b = new ButtonBuilder()
-			.setCustomId(`${TILE_PREFIX}${index}`)
-			.setStyle(ButtonStyle.Secondary);
+		const b = new ButtonBuilder().setCustomId(`${TILE_PREFIX}${index}`).setStyle(ButtonStyle.Secondary);
 
 		if (!isRevealed) {
 			b.setLabel('???');
@@ -121,26 +129,31 @@ export async function handleButtonInteraction(interaction: ButtonMInteraction) {
 		// CONFIRM / CANCEL
 		if (id === CANCEL_ID) {
 			deletePitState(messageId);
-			return interaction.update({ content: `<@${state.userId}> decided not to enter the TzHaar Pit.`, components: [] });
+			return interaction.update({
+				content: `<@${state.userId}> decided not to enter the TzHaar Pit.`,
+				components: []
+			});
 		}
 
 		if (id === CONFIRM_ID) {
 			const user = await mUserFetch(interaction.userId);
 
 			// Take GP under lock, then switch to playing
-			await user.withLock('tzhaar_pit_bet', async () => {
-				await user.sync();
-				if (user.GP < state.amount) {
-					throw new Error('Not enough GP');
-				}
-				await user.removeItemsFromBank(new Bank().add('Coins', state.amount));
-			}).catch(async () => {
-				deletePitState(messageId);
-				return interaction.update({
-					content: `${user}, you don't have enough GP to make this bet anymore.`,
-					components: []
+			await user
+				.withLock('tzhaar_pit_bet', async () => {
+					await user.sync();
+					if (user.GP < state.amount) {
+						throw new Error('Not enough GP');
+					}
+					await user.removeItemsFromBank(new Bank().add('Coins', state.amount));
+				})
+				.catch(async () => {
+					deletePitState(messageId);
+					return interaction.update({
+						content: `${user}, you don't have enough GP to make this bet anymore.`,
+						components: []
+					});
 				});
-			});
 
 			// If the above catch ran, we already returned via update (but TS can’t see it). Re-check:
 			const stillThere = getPitState(messageId);

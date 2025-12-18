@@ -10,7 +10,7 @@ import { duelCommand } from '@/mahoji/lib/abstracted_commands/duelCommand.js';
 import { hotColdCommand } from '@/mahoji/lib/abstracted_commands/hotColdCommand.js';
 import { luckyPickCommand } from '@/mahoji/lib/abstracted_commands/luckyPickCommand.js';
 import { slotsCommand } from '@/mahoji/lib/abstracted_commands/slotsCommand.js';
-import { tzHaarPitCommand } from '@/mahoji/lib/abstracted_commands/tzHaarPitCommand.js';
+import { tzHaarPitGambleCommand } from '@/mahoji/lib/abstracted_commands/tzHaarPitGambleCommand.js';
 
 export const gambleCommand = defineCommand({
 	name: 'gamble',
@@ -224,7 +224,7 @@ export const gambleCommand = defineCommand({
 		}
 
 		if (options.tzhaar_pit) {
-			return tzHaarPitCommand(user, interaction, options.tzhaar_pit.amount);
+			return tzHaarPitGambleCommand(user, interaction, options.tzhaar_pit.amount);
 		}
 
 		if (options.give_random_item) {
