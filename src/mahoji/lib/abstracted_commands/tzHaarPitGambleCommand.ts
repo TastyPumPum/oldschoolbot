@@ -3,8 +3,8 @@ import { cryptoRng } from '@oldschoolgg/rng/crypto';
 import { toKMB } from 'oldschooljs';
 import { chunk } from 'remeda';
 
+import { setPitState } from '@/mahoji/lib/abstracted_commands/tzHaarPitGambleState.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
-import { setPitState } from '@/mahoji/lib/abstracted_commands/tzHaarPitState.js';
 
 const PIT_PREFIX = 'TZHAAR_PIT|';
 
@@ -34,12 +34,16 @@ function renderConfirmButtons() {
 // Optional: show tiles (not necessary at confirm stage, but handy if you want consistent renderer later)
 function renderTilesPreview() {
 	const buttons = Array.from({ length: 11 }, (_, i) =>
-		new ButtonBuilder().setCustomId(`${PIT_PREFIX}TILE|${i}`).setStyle(ButtonStyle.Secondary).setLabel('???').setDisabled(true)
+		new ButtonBuilder()
+			.setCustomId(`${PIT_PREFIX}TILE|${i}`)
+			.setStyle(ButtonStyle.Secondary)
+			.setLabel('???')
+			.setDisabled(true)
 	);
 	return chunk(buttons, 4).map(row => [...row]) as ButtonBuilder[][];
 }
 
-export async function tzHaarPitCommand(
+export async function tzHaarPitGambleCommand(
 	user: MUser,
 	interaction: MInteraction,
 	betInput: string | undefined
