@@ -1,9 +1,9 @@
 import { ButtonBuilder, ButtonStyle, collectSingleInteraction } from '@oldschoolgg/discord';
 import { cryptoRng } from '@oldschoolgg/rng/crypto';
+import { Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 import { chunk } from 'remeda';
 
-import { Time } from '@/lib/constants.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
 const TILE_PREFIX = 'TZHAAR_PIT_TILE_';
@@ -20,12 +20,24 @@ function buildTiles(): PitTile[] {
 	return cryptoRng.shuffle([...safeTiles, ...lavaTiles]);
 }
 
+// FIX: Lowered from 0.35 to reduce +EV "one click then cash" behaviour.
+const MULT_STEP = 0.22;
+
+// FIX: Require at least 2 safe reveals before cashout.
+const MIN_SAFES_TO_CASHOUT = 2;
+
 function multiplierFor(revealedSafe: number) {
-	return 1 + revealedSafe * 0.35;
+	return 1 + revealedSafe * MULT_STEP;
+}
+
+// TS shim: your runtime interaction wrapper supports editReply, but the type here doesn't.
+type EditReplyFn = (opts: { content?: string; components?: any }) => Promise<any>;
+function getEditReply(interaction: MInteraction): EditReplyFn {
+	return (interaction as unknown as { editReply: EditReplyFn }).editReply;
 }
 
 function renderButtons(tiles: PitTile[], includeCashOut: boolean, revealAll: boolean) {
-	const buttons = tiles.map((tile, index) => {
+	const buttons: ButtonBuilder[] = tiles.map((tile, index) => {
 		const isRevealed = revealAll || tile.revealed;
 		const button = new ButtonBuilder().setCustomId(`${TILE_PREFIX}${index}`).setStyle(ButtonStyle.Secondary);
 
@@ -44,19 +56,26 @@ function renderButtons(tiles: PitTile[], includeCashOut: boolean, revealAll: boo
 		return button;
 	});
 
-	const rows = chunk(buttons, 4);
-	if (includeCashOut) {
-		rows.push([new ButtonBuilder().setLabel('Cash out').setCustomId(CASH_OUT_ID).setStyle(ButtonStyle.Primary)]);
-	}
-	return rows;
+	// TS FIX: remeda chunk types can be readonly/tuple-y; force it to ButtonBuilder[][]
+	const baseRows = chunk(buttons, 4).map(row => [...row]) as ButtonBuilder[][];
+
+	if (!includeCashOut) return baseRows;
+
+	const cashOutRow: ButtonBuilder[] = [
+		new ButtonBuilder().setLabel('Cash out').setCustomId(CASH_OUT_ID).setStyle(ButtonStyle.Primary)
+	];
+
+	return [...baseRows, cashOutRow];
 }
 
 function buildStatus(revealedSafe: number) {
 	if (revealedSafe === 0) {
-		return 'No safe tiles revealed yet. One lava tile ends the run instantly!';
+		return `No safe tiles revealed yet. One lava tile ends the run instantly! Cash out unlocks after ${MIN_SAFES_TO_CASHOUT} safes.`;
 	}
 	const multiplier = multiplierFor(revealedSafe);
-	return `You revealed ${revealedSafe} safe tile${revealedSafe === 1 ? '' : 's'} for a ${multiplier.toFixed(2)}x multiplier.`;
+	return `You revealed ${revealedSafe} safe tile${revealedSafe === 1 ? '' : 's'} for a ${multiplier.toFixed(
+		2
+	)}x multiplier. Cash out unlocks after ${MIN_SAFES_TO_CASHOUT} safes.`;
 }
 
 export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, betInput: string | undefined) {
@@ -72,7 +91,7 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 	}
 
 	await interaction.confirmation(
-		`Are you sure you want to step into the TzHaar Pit with a ${toKMB(amount)} bet? Lava tiles wipe the entire stake, but you can cash out any time.`
+		`Are you sure you want to step into the TzHaar Pit with a ${toKMB(amount)} bet? Lava tiles wipe the entire stake. Cash out unlocks after ${MIN_SAFES_TO_CASHOUT} safe tiles.`
 	);
 
 	await user.sync();
@@ -81,14 +100,16 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 	}
 	await user.removeItemsFromBank(new Bank().add('Coins', amount));
 
+	const editReply = getEditReply(interaction);
+
 	const tiles = buildTiles();
 	let revealedSafe = 0;
 	let finished = false;
-	let lostToLava = false;
 
 	const response = await interaction.replyWithResponse({
 		content: `${user}, pick a tile to begin. ${buildStatus(revealedSafe)}`,
-		components: renderButtons(tiles, true, false),
+		// Cashout locked initially:
+		components: renderButtons(tiles, false, false),
 		withResponse: true
 	});
 
@@ -105,20 +126,13 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 			timeoutMs: Time.Second * 45
 		});
 
+		// FIX: timeout is a LOSS. No refunds. No auto-cash.
 		if (!selection) {
-			const timeoutMultiplier = multiplierFor(revealedSafe);
-			const winnings = revealedSafe === 0 ? amount : Math.floor(amount * timeoutMultiplier);
-			const netChange = winnings - amount;
-			if (winnings > 0) {
-				await user.addItemsToBank({ items: new Bank().add('Coins', winnings) });
-			}
-			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', netChange);
-			await user.updateGPTrackSetting('gp_tzhaarpit', netChange);
-			await interaction.editReply({
-				content:
-					revealedSafe === 0
-						? `${user}, you didn't pick in time. Your ${toKMB(amount)} bet was refunded.`
-						: `${user}, you timed out but cashed out automatically at ${timeoutMultiplier.toFixed(2)}x for ${toKMB(winnings)}.`,
+			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', -amount);
+			await user.updateGPTrackSetting('gp_tzhaarpit', -amount);
+
+			await editReply({
+				content: `${user}, you hesitated too long and the lava rose… you lost your ${toKMB(amount)} bet.`,
 				components: renderButtons(tiles, false, true)
 			});
 			return;
@@ -126,23 +140,40 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 
 		selection.silentButtonAck();
 
+		// CASH OUT
 		if (selection.customId === CASH_OUT_ID) {
+			// Enforce minimum safes (button shouldn't appear early, but keep server-side check anyway)
+			if (revealedSafe < MIN_SAFES_TO_CASHOUT) {
+				await editReply({
+					content: `${user}, you need at least ${MIN_SAFES_TO_CASHOUT} safe tiles revealed before you can cash out. ${buildStatus(
+						revealedSafe
+					)}`,
+					components: renderButtons(tiles, false, false)
+				});
+				continue;
+			}
+
 			const multiplier = multiplierFor(revealedSafe);
 			const winnings = Math.floor(amount * multiplier);
 			const netChange = winnings - amount;
+
 			if (winnings > 0) {
 				await user.addItemsToBank({ items: new Bank().add('Coins', winnings) });
 			}
+
 			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', netChange);
 			await user.updateGPTrackSetting('gp_tzhaarpit', netChange);
-			await interaction.editReply({
+
+			await editReply({
 				content: `${user} cashed out at ${multiplier.toFixed(2)}x for ${toKMB(winnings)}!`,
 				components: renderButtons(tiles, false, true)
 			});
+
 			finished = true;
 			continue;
 		}
 
+		// TILE PICK
 		const tileIndex = Number(selection.customId?.replace(TILE_PREFIX, ''));
 		const tile = tiles[tileIndex];
 		if (!tile || tile.revealed) {
@@ -150,44 +181,53 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 		}
 
 		tile.revealed = true;
+
+		// HIT LAVA = LOSE
 		if (tile.kind === 'lava') {
-			lostToLava = true;
-			finished = true;
 			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', -amount);
 			await user.updateGPTrackSetting('gp_tzhaarpit', -amount);
-			await interaction.editReply({
+
+			await editReply({
 				content: `${user} hit a lava tile and lost their ${toKMB(amount)} bet!`,
 				components: renderButtons(tiles, false, true)
 			});
-			continue;
-		}
 
-		revealedSafe += 1;
-		const multiplier = multiplierFor(revealedSafe);
-		const safeTilesRemaining = tiles.filter(t => t.kind === 'safe' && !t.revealed).length;
-		if (safeTilesRemaining === 0) {
-			const winnings = Math.floor(amount * multiplier);
-			const netChange = winnings - amount;
-			await user.addItemsToBank({ items: new Bank().add('Coins', winnings) });
-			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', netChange);
-			await user.updateGPTrackSetting('gp_tzhaarpit', netChange);
-			await interaction.editReply({
-				content: `${user} cleared every safe tile and escaped with ${toKMB(winnings)} at ${multiplier.toFixed(2)}x!`,
-				components: renderButtons(tiles, false, true)
-			});
 			finished = true;
 			continue;
 		}
 
-		await interaction.editReply({
-			content: `${user}, ${buildStatus(revealedSafe)} Pick another tile or cash out!`,
-			components: renderButtons(tiles, true, false)
+		// SAFE TILE
+		revealedSafe += 1;
+		const multiplier = multiplierFor(revealedSafe);
+
+		const safeTilesRemaining = tiles.filter(t => t.kind === 'safe' && !t.revealed).length;
+
+		// All safes cleared = auto win
+		if (safeTilesRemaining === 0) {
+			const winnings = Math.floor(amount * multiplier);
+			const netChange = winnings - amount;
+
+			await user.addItemsToBank({ items: new Bank().add('Coins', winnings) });
+			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', netChange);
+			await user.updateGPTrackSetting('gp_tzhaarpit', netChange);
+
+			await editReply({
+				content: `${user} cleared every safe tile and escaped with ${toKMB(winnings)} at ${multiplier.toFixed(2)}x!`,
+				components: renderButtons(tiles, false, true)
+			});
+
+			finished = true;
+			continue;
+		}
+
+		// Show cashout button only once unlocked
+		const canCashOut = revealedSafe >= MIN_SAFES_TO_CASHOUT;
+
+		await editReply({
+			content: `${user}, ${buildStatus(revealedSafe)} Pick another tile${canCashOut ? ' or cash out' : ''}!`,
+			components: renderButtons(tiles, canCashOut, false)
 		});
 	}
 
-	if (!lostToLava && !tiles.some(t => t.revealed && t.kind === 'lava')) {
-		return `${user} left the pit.`;
-	}
-
-	return null;
+	return ' ';
 }
