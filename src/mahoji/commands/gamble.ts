@@ -224,8 +224,7 @@ export const gambleCommand = defineCommand({
 		}
 
 		if (options.tzhaar_pit) {
-			await tzHaarPitCommand(user, interaction, options.tzhaar_pit.amount);
-			return { defer: false };
+			return tzHaarPitCommand(user, interaction, options.tzhaar_pit.amount);
 		}
 
 		if (options.give_random_item) {

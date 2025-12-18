@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle, collectSingleInteraction } from '@oldschoolgg/discord';
+import { ButtonBuilder, ButtonStyle, collectSingleInteraction, SpecialResponse } from '@oldschoolgg/discord';
 import { cryptoRng } from '@oldschoolgg/rng/crypto';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
@@ -78,7 +78,11 @@ function buildStatus(revealedSafe: number) {
 	)}x multiplier. Cash out unlocks after ${MIN_SAFES_TO_CASHOUT} safes.`;
 }
 
-export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, betInput: string | undefined) {
+export async function tzHaarPitCommand(
+	user: MUser,
+	interaction: MInteraction,
+	betInput: string | undefined
+): Promise<string | SpecialResponse> {
 	const amount = mahojiParseNumber({ input: betInput, min: 1_000_000, max: 1_000_000_000 });
 	if (!amount) {
 		return 'Your bet must be between 1,000,000 and 1,000,000,000.';
@@ -135,7 +139,7 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 				content: `${user}, you hesitated too long and the lava rose… you lost your ${toKMB(amount)} bet.`,
 				components: renderButtons(tiles, false, true)
 			});
-			return;
+			return SpecialResponse.RespondedManually;
 		}
 
 		selection.silentButtonAck();
@@ -229,5 +233,5 @@ export async function tzHaarPitCommand(user: MUser, interaction: MInteraction, b
 		});
 	}
 
-	return ' ';
+	return SpecialResponse.RespondedManually;
 }
