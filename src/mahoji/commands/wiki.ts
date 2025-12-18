@@ -1,8 +1,6 @@
 import { EmbedBuilder } from '@oldschoolgg/discord';
 import { fetch } from 'undici';
 
-import { logError } from '@/lib/util/logger.js';
-
 type WikiResponse = {
 	batchcomplete?: string;
 	continue?: {
@@ -97,7 +95,7 @@ export const wikiCommand = defineCommand({
 			};
 		} catch (err) {
 			if (err instanceof Error) {
-				logError(err, { query: options.query, type: 'wiki_command' });
+				Logging.logError(err, { query: options.query, type: 'wiki_command' });
 			}
 			return `There was an error getting results from the OSRS Wiki. You can try searching directly: https://oldschool.runescape.wiki/?search=${encodeURIComponent(
 				options.query
