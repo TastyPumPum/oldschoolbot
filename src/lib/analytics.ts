@@ -60,6 +60,7 @@ FROM users;
 			gp_dice: true,
 			gp_hotcold: true,
 			gp_luckypick: true,
+			gp_tzhaarpit: true,
 			gp_open: true,
 			gp_pickpocket: true,
 			gp_pvm: true,
@@ -98,7 +99,8 @@ FROM users;
 			gpDaily: currentClientSettings.gp_daily,
 			gpLuckypick: currentClientSettings.gp_luckypick,
 			gpSlots: currentClientSettings.gp_slots,
-			gpHotCold: currentClientSettings.gp_hotcold
+			gpHotCold: currentClientSettings.gp_hotcold,
+			gpTzHaarPit: currentClientSettings.gp_tzhaarpit
 		}
 	});
 }

@@ -31,6 +31,7 @@ async function updateClientGPTrackSetting(
 		| 'gp_pickpocket'
 		| 'gp_alch'
 		| 'gp_slots'
+		| 'gp_tzhaarpit'
 		| 'gp_dice'
 		| 'gp_open'
 		| 'gp_daily'
