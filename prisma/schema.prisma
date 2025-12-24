@@ -53,6 +53,7 @@ model Analytic {
   gpLuckypick        BigInt?
   gpSlots            BigInt?
   gpHotCold          BigInt?
+  gpTzHaarPit        BigInt?
 
   @@map("analytics_table")
 }
@@ -110,6 +111,7 @@ model ClientStorage {
   gp_luckypick                 BigInt   @default(0)
   gp_slots                     BigInt   @default(0)
   gp_hotcold                   BigInt   @default(0)
+  gp_tzhaarpit                 BigInt   @default(0)
   custom_prices                Json     @default("{}") @db.Json
   nightmare_cost               Json     @default("{}") @db.Json
   create_cost                  Json     @default("{}") @db.Json
@@ -749,6 +751,7 @@ model UserStats {
   gp_dice      BigInt @default(0)
   gp_slots     BigInt @default(0)
   gp_hotcold   BigInt @default(0)
+  gp_tzhaarpit BigInt @default(0)
 
   total_gp_traded BigInt @default(0)
 

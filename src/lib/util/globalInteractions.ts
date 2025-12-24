@@ -1,6 +1,7 @@
-import { type APIMessageComponentInteraction, SpecialResponse } from '@oldschoolgg/discord';
+import { type APIMessageComponentInteraction, ButtonBuilder, ButtonStyle, SpecialResponse } from '@oldschoolgg/discord';
 import { formatDuration, removeFromArr, stringMatches, Time, uniqueArr } from '@oldschoolgg/toolkit';
-import { Bank, type ItemBank } from 'oldschooljs';
+import { Bank, type ItemBank, toKMB } from 'oldschooljs';
+import { chunk } from 'remeda';
 
 import type { Giveaway } from '@/prisma/main.js';
 import { giveawayCache } from '@/lib/cache.js';
@@ -15,6 +16,69 @@ import { autoSlayCommand } from '@/mahoji/lib/abstracted_commands/autoSlayComman
 import { cancelGEListingCommand } from '@/mahoji/lib/abstracted_commands/cancelGEListingCommand.js';
 import { autoContract } from '@/mahoji/lib/abstracted_commands/farmingContractCommand.js';
 import { shootingStarsCommand } from '@/mahoji/lib/abstracted_commands/shootingStarsCommand.js';
+import {
+	bumpPitExpiry,
+	deletePitState,
+	getPitState,
+	isPitExpired
+} from '@/mahoji/lib/abstracted_commands/tzHaarPitGambleState.js';
+
+const PIT_PREFIX = 'TZHAAR_PIT|';
+const CONFIRM_ID = `${PIT_PREFIX}CONFIRM`;
+const CANCEL_ID = `${PIT_PREFIX}CANCEL`;
+const CASH_ID = `${PIT_PREFIX}CASH`;
+const QUIT_ID = `${PIT_PREFIX}QUIT`;
+const TILE_PREFIX = `${PIT_PREFIX}TILE|`;
+
+const PIT_MULT_STEP = 0.22;
+const PIT_MIN_SAFES_TO_CASHOUT = 2;
+
+function pitMultiplier(revealedSafe: number) {
+	return 1 + revealedSafe * PIT_MULT_STEP;
+}
+
+function renderPitStatus(revealedSafe: number) {
+	if (revealedSafe === 0) {
+		return `No safe tiles revealed yet. One lava tile ends the run instantly! Cash out unlocks after ${PIT_MIN_SAFES_TO_CASHOUT} safes.`;
+	}
+	const mult = pitMultiplier(revealedSafe);
+	return `You revealed ${revealedSafe} safe tile${revealedSafe === 1 ? '' : 's'} for a ${mult.toFixed(2)}x multiplier. Cash out unlocks after ${PIT_MIN_SAFES_TO_CASHOUT} safes.`;
+}
+
+function renderPitButtons(
+	tiles: { kind: 'safe' | 'lava'; revealed: boolean }[],
+	includeCashOut: boolean,
+	revealAll: boolean
+) {
+	const buttons = tiles.map((tile, index) => {
+		const isRevealed = revealAll || tile.revealed;
+
+		const b = new ButtonBuilder().setCustomId(`${TILE_PREFIX}${index}`).setStyle(ButtonStyle.Secondary);
+
+		if (!isRevealed) {
+			b.setLabel('???');
+		} else if (tile.kind === 'lava') {
+			b.setLabel('Lava').setStyle(ButtonStyle.Danger);
+		} else {
+			b.setLabel('Safe').setStyle(ButtonStyle.Success);
+		}
+
+		if (tile.revealed || revealAll) b.setDisabled(true);
+		return b;
+	});
+
+	const rows = chunk(buttons, 4).map(r => [...r]) as ButtonBuilder[][];
+	const controlRow: ButtonBuilder[] = [];
+
+	if (includeCashOut) {
+		controlRow.push(new ButtonBuilder().setCustomId(CASH_ID).setStyle(ButtonStyle.Primary).setLabel('Cash out'));
+	}
+
+	controlRow.push(new ButtonBuilder().setCustomId(QUIT_ID).setStyle(ButtonStyle.Secondary).setLabel('Quit'));
+
+	rows.push(controlRow);
+	return rows;
+}
 
 async function giveawayButtonHandler(user: MUser, customID: string, interaction: MInteraction): CommandResponse {
 	const split = customID.split('_');
@@ -229,6 +293,205 @@ async function globalButtonInteractionHandler({
 			content: `You're on cooldown from clicking buttons, please wait: ${formatDuration(ratelimit.timeRemainingMs, true)}.`,
 			ephemeral: true
 		};
+	}
+
+	// ===========================
+	// TZHAAR PIT (GLOBAL)
+	// ===========================
+	if (id.startsWith(PIT_PREFIX)) {
+		const messageId = interaction.message?.id ?? interaction.messageId;
+		const state = getPitState(messageId);
+		if (!state) {
+			return { content: 'This game has already ended.', ephemeral: true };
+		}
+
+		if (interaction.userId !== state.userId) {
+			return { content: "This isn't your pit run.", ephemeral: true };
+		}
+
+		// Expiry handling (lazy): if expired, treat as loss once they interact again
+		if (isPitExpired(state) && state.phase === 'playing') {
+			const amount = state.amount;
+			const user = await mUserFetch(interaction.userId);
+
+			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', -amount);
+			await user.updateGPTrackSetting('gp_tzhaarpit', -amount);
+
+			deletePitState(messageId);
+
+			await interaction.update({
+				content: `${user}, you took too long and the lava rose… you lost your ${toKMB(amount)} bet.`,
+				components: renderPitButtons(state.tiles, false, true)
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		bumpPitExpiry(state);
+
+		// CONFIRM / CANCEL
+		if (id === CANCEL_ID) {
+			deletePitState(messageId);
+			await interaction.update({
+				content: `<@${state.userId}> decided not to enter the TzHaar Pit.`,
+				components: []
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		if (id === CONFIRM_ID) {
+			const user = await mUserFetch(interaction.userId);
+
+			try {
+				await user.withLock('tzhaar_pit_bet', async () => {
+					await user.sync();
+					if (user.GP < state.amount) {
+						throw new Error('Not enough GP');
+					}
+					await user.removeItemsFromBank(new Bank().add('Coins', state.amount));
+				});
+			} catch {
+				deletePitState(messageId);
+				await interaction.update({
+					content: `${user}, you don't have enough GP to make this bet anymore.`,
+					components: []
+				});
+				return SpecialResponse.RespondedManually;
+			}
+
+			// Ensure state still exists (not deleted in catch)
+			const stillThere = getPitState(messageId);
+			if (!stillThere) {
+				return SpecialResponse.RespondedManually;
+			}
+
+			state.phase = 'playing';
+
+			await interaction.update({
+				content: `${user}, pick a tile to begin. ${renderPitStatus(0)}`,
+				components: renderPitButtons(state.tiles, false, false)
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		// QUIT (forfeits stake)
+		if (id === QUIT_ID) {
+			if (state.phase !== 'playing') {
+				deletePitState(messageId);
+				await interaction.update({ content: `<@${state.userId}> cancelled the pit run.`, components: [] });
+				return SpecialResponse.RespondedManually;
+			}
+
+			const user = await mUserFetch(interaction.userId);
+			await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', -state.amount);
+			await user.updateGPTrackSetting('gp_tzhaarpit', -state.amount);
+
+			deletePitState(messageId);
+
+			await interaction.update({
+				content: `${user} bailed out… and lost their ${toKMB(state.amount)} bet.`,
+				components: renderPitButtons(state.tiles, false, true)
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		// CASH OUT
+		if (id === CASH_ID) {
+			if (state.phase !== 'playing') {
+				return { content: 'This game is not active.', ephemeral: true };
+			}
+
+			const revealedSafe = state.tiles.filter(t => t.kind === 'safe' && t.revealed).length;
+			if (revealedSafe < PIT_MIN_SAFES_TO_CASHOUT) {
+				return {
+					content: `You need at least ${PIT_MIN_SAFES_TO_CASHOUT} safe tiles before cashing out.`,
+					ephemeral: true
+				};
+			}
+
+			const user = await mUserFetch(interaction.userId);
+			const mult = pitMultiplier(revealedSafe);
+			const winnings = Math.floor(state.amount * mult);
+			const netChange = winnings - state.amount;
+
+			await user.withLock('tzhaar_pit_settle', async () => {
+				await user.addItemsToBank({ items: new Bank().add('Coins', winnings) });
+				await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', netChange);
+				await user.updateGPTrackSetting('gp_tzhaarpit', netChange);
+			});
+
+			deletePitState(messageId);
+
+			await interaction.update({
+				content: `${user} cashed out at ${mult.toFixed(2)}x for ${toKMB(winnings)}!`,
+				components: renderPitButtons(state.tiles, false, true)
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		// TILE CLICK
+		if (id.startsWith(TILE_PREFIX)) {
+			if (state.phase !== 'playing') {
+				return { content: 'Confirm first.', ephemeral: true };
+			}
+
+			const idx = Number(id.slice(TILE_PREFIX.length));
+			const tile = state.tiles[idx];
+			if (!tile) return { content: 'Invalid tile.', ephemeral: true };
+			if (tile.revealed) return { content: 'That tile is already revealed.', ephemeral: true };
+
+			tile.revealed = true;
+
+			const user = await mUserFetch(interaction.userId);
+
+			// Lava => lose
+			if (tile.kind === 'lava') {
+				await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', -state.amount);
+				await user.updateGPTrackSetting('gp_tzhaarpit', -state.amount);
+
+				deletePitState(messageId);
+
+				await interaction.update({
+					content: `${user} hit a lava tile and lost their ${toKMB(state.amount)} bet!`,
+					components: renderPitButtons(state.tiles, false, true)
+				});
+				return SpecialResponse.RespondedManually;
+			}
+
+			// Safe
+			const revealedSafe = state.tiles.filter(t => t.kind === 'safe' && t.revealed).length;
+			const mult = pitMultiplier(revealedSafe);
+
+			const safeRemaining = state.tiles.filter(t => t.kind === 'safe' && !t.revealed).length;
+			if (safeRemaining === 0) {
+				const winnings = Math.floor(state.amount * mult);
+				const netChange = winnings - state.amount;
+
+				await user.withLock('tzhaar_pit_settle', async () => {
+					await user.addItemsToBank({ items: new Bank().add('Coins', winnings) });
+					await ClientSettings.updateClientGPTrackSetting('gp_tzhaarpit', netChange);
+					await user.updateGPTrackSetting('gp_tzhaarpit', netChange);
+				});
+
+				deletePitState(messageId);
+
+				await interaction.update({
+					content: `${user} cleared every safe tile and escaped with ${toKMB(winnings)} at ${mult.toFixed(2)}x!`,
+					components: renderPitButtons(state.tiles, false, true)
+				});
+				return SpecialResponse.RespondedManually;
+			}
+
+			const canCash = revealedSafe >= PIT_MIN_SAFES_TO_CASHOUT;
+
+			await interaction.update({
+				content: `${user}, you found a safe tile. Current multiplier: ${mult.toFixed(2)}x.\n${renderPitStatus(revealedSafe)}`,
+				components: renderPitButtons(state.tiles, canCash, false)
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		// Unknown pit button
+		return { content: 'Unknown pit action.', ephemeral: true };
 	}
 
 	const user = await mUserFetch(userID);

@@ -10,6 +10,7 @@ import { duelCommand } from '@/mahoji/lib/abstracted_commands/duelCommand.js';
 import { hotColdCommand } from '@/mahoji/lib/abstracted_commands/hotColdCommand.js';
 import { luckyPickCommand } from '@/mahoji/lib/abstracted_commands/luckyPickCommand.js';
 import { slotsCommand } from '@/mahoji/lib/abstracted_commands/slotsCommand.js';
+import { tzHaarPitGambleCommand } from '@/mahoji/lib/abstracted_commands/tzHaarPitGambleCommand.js';
 
 export const gambleCommand = defineCommand({
 	name: 'gamble',
@@ -146,6 +147,24 @@ export const gambleCommand = defineCommand({
 		},
 		/**
 		 *
+		 * TzHaar Pit
+		 *
+		 */
+		{
+			type: 'Subcommand',
+			name: 'tzhaar_pit',
+			description: 'Reveal tiles in the TzHaar Pit and cash out before you hit lava.',
+			options: [
+				{
+					type: 'String',
+					name: 'amount',
+					description: 'Amount you wish to gamble.',
+					required: true
+				}
+			]
+		},
+		/**
+		 *
 		 * Give Random Item
 		 *
 		 */
@@ -202,6 +221,10 @@ export const gambleCommand = defineCommand({
 
 		if (options.hot_cold) {
 			return hotColdCommand(interaction, user, options.hot_cold.choice, options.hot_cold.amount);
+		}
+
+		if (options.tzhaar_pit) {
+			return tzHaarPitGambleCommand(user, interaction, options.tzhaar_pit.amount);
 		}
 
 		if (options.give_random_item) {

@@ -6,6 +6,9 @@ export async function handleButtonInteraction(interaction: ButtonMInteraction) {
 	const id = interaction.customId;
 	if (!id) return;
 
+	// ===========================
+	// SUPPORT SERVER ROLE BUTTONS (KEEP GATED)
+	// ===========================
 	const member = await globalClient.fetchMember({
 		guildId: globalConfig.supportServerID,
 		userId: interaction.userId
