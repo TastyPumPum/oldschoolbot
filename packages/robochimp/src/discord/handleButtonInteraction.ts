@@ -1,5 +1,4 @@
 import type { ButtonMInteraction } from '@oldschoolgg/discord';
-import { ButtonBuilder, ButtonStyle } from '@oldschoolgg/discord';
 
 import { globalConfig } from '@/constants.js';
 
