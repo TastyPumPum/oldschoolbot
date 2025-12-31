@@ -1,7 +1,7 @@
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
-import type { CropUpgradeType } from '@prisma/client';
 import { Bank } from 'oldschooljs';
 
+import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import { calcNumOfPatches } from '@/lib/skilling/skills/farming/utils/calcsFarming.js';
 import { findPlant } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { IPatchDataDetailed } from '@/lib/skilling/skills/farming/utils/types.js';
