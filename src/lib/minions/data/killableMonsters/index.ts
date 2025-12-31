@@ -410,6 +410,12 @@ export const wikiMonsters = killableMonsters
 
 const otherMonsters = [
 	{
+		name: 'Giant Mole (efficient)',
+		aliases: ['giant mole (efficient)', 'efficient giant mole', 'efficient mole'],
+		id: Monsters.GiantMole.id,
+		emoji: '<:Baby_mole:324127375858204672>'
+	},
+	{
 		id: -1,
 		name: 'Tempoross',
 		aliases: ['temp', 'tempoross'],

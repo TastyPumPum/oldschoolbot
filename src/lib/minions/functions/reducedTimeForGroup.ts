@@ -1,3 +1,4 @@
+import { getAttackStylesContext } from '@/lib/minions/functions/index.js';
 import reducedTimeFromKC from '@/lib/minions/functions/reducedTimeFromKC.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
 import { calcPOHBoosts } from '@/lib/poh/index.js';
@@ -28,7 +29,8 @@ export default async function reducedTimeForGroup(
 		const userKc = await user.getKC(monster.id);
 		const [, userKcReduction] = reducedTimeFromKC(monster, userKc);
 		let userItemBoost = 0;
-		for (const [, boostAmount] of resolveAvailableItemBoosts(user.gearBank, monster).items()) {
+		const { primaryStyle } = getAttackStylesContext(user.getAttackStyles());
+		for (const [, boostAmount] of resolveAvailableItemBoosts(user.gearBank, monster, false, primaryStyle).items()) {
 			userItemBoost += boostAmount;
 		}
 		// 1 per user, i/15 for incentive to group (more people compounding i bonus), then add the users kc and item boost percent

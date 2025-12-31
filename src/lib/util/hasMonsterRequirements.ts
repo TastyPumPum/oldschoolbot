@@ -3,6 +3,7 @@ import { objectEntries, Time } from '@oldschoolgg/toolkit';
 import { Items } from 'oldschooljs';
 
 import { quests } from '@/lib/minions/data/quests.js';
+import { type AttackStyles, getAttackStylesContext } from '@/lib/minions/functions/index.js';
 import type { Consumable, KillableMonster } from '@/lib/minions/types.js';
 import { formatItemReqs, formatList, hasSkillReqs, readableStatName } from '@/lib/util/smallUtils.js';
 import { getItemCostFromConsumables } from '@/mahoji/lib/abstracted_commands/minionKill/handleConsumables.js';
@@ -48,7 +49,16 @@ function formatItemCosts(consumable: Consumable, timeToFinish: number) {
 	return str.join('');
 }
 
-export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
+function getAttackStylesForUser(user: MUser, attackStyles?: AttackStyles[]): AttackStyles[] {
+	if (attackStyles && attackStyles.length > 0) return attackStyles;
+	const raw = (user.user as any).attack_style?.[0] as AttackStyles | undefined;
+	if (raw) {
+		return [raw];
+	}
+	return user.getAttackStyles();
+}
+
+export function hasMonsterRequirements(user: MUser, monster: KillableMonster, attackStyles?: AttackStyles[]) {
 	if (monster.qpRequired && user.QP < monster.qpRequired) {
 		return [
 			false,
@@ -86,9 +96,10 @@ export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
 		}
 	}
 
-	if (monster.itemsRequired) {
-		const itemsRequiredStr = formatItemReqs(monster.itemsRequired);
-		for (const item of monster.itemsRequired) {
+	const checkItemsRequired = (itemsRequired: typeof monster.itemsRequired) => {
+		if (!itemsRequired) return null;
+		const itemsRequiredStr = formatItemReqs(itemsRequired);
+		for (const item of itemsRequired) {
 			if (Array.isArray(item)) {
 				if (!item.some(itemReq => user.hasEquippedOrInBank(itemReq as number))) {
 					return [false, `You need these items to kill ${monster.name}: ${itemsRequiredStr}`];
@@ -100,7 +111,34 @@ export function hasMonsterRequirements(user: MUser, monster: KillableMonster) {
 				];
 			}
 		}
+		return null;
+	};
+
+	const resolvedAttackStyles = getAttackStylesForUser(user, attackStyles);
+	const primaryStyle = getAttackStylesContext(resolvedAttackStyles).primaryStyle;
+	let itemsRequiredResult = null;
+
+	if (monster.itemsRequiredPerStyle) {
+		itemsRequiredResult = checkItemsRequired(monster.itemsRequiredPerStyle[primaryStyle]);
+		if (itemsRequiredResult) {
+			const alternativeStyle = (['melee', 'range', 'mage'] as const).find(
+				style => style !== primaryStyle && !checkItemsRequired(monster.itemsRequiredPerStyle?.[style])
+			);
+
+			if (alternativeStyle) {
+				return [
+					false,
+					`You need different gear to kill ${monster.name} with your current attack style. Try switching to ${alternativeStyle}.`
+				];
+			}
+		}
 	}
+
+	if (!itemsRequiredResult && monster.itemsRequired) {
+		itemsRequiredResult = checkItemsRequired(monster.itemsRequired);
+	}
+
+	if (itemsRequiredResult) return itemsRequiredResult;
 
 	if (monster.levelRequirements) {
 		const [hasReqs, str] = hasSkillReqs(user, monster.levelRequirements);

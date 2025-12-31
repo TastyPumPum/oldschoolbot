@@ -1,6 +1,6 @@
 {
-	"hash": "5c30cde39a793c978853119e8724e527",
-	"date": "2025-09-19T05:35:44.280Z",
+	"hash": "3ed82a6bde75e2520253990e719a4e88",
+	"date": "2025-12-02T13:26:26.281Z",
 	"data": [
 		{
 			"id": 2,
@@ -2178,18 +2178,161 @@
 			"is_slayer_only": false,
 			"can_be_pked": false,
 			"is_wildy_multi": false,
-			"items_required": ["Dharok's helm", "Dharok's platebody", "Dharok's platelegs", "Dharok's greataxe"],
+			"items_required": [],
 			"qp_required": 0,
-			"item_in_bank_boosts": [
-				{
-					"Barrows gloves": 5
-				},
-				{
-					"Berserker ring": 5,
-					"Berserker ring (i)": 7,
-					"Twisted bow": 10
-				}
-			],
+			"item_in_bank_boosts": {
+				"mage": [
+					{
+						"Harmonised nightmare staff": 8,
+						"Sanguinesti staff": 9,
+						"Trident of the seas": 3,
+						"Trident of the swamp": 5,
+						"Tumeken's shadow": 13
+					},
+					{
+						"Ahrim's hood": 1,
+						"Ancestral hat": 2
+					},
+					{
+						"Ahrim's robetop": 1,
+						"Ancestral robe top": 2
+					},
+					{
+						"Ahrim's robeskirt": 1,
+						"Ancestral robe bottom": 2
+					},
+					{
+						"Amulet of fury": 1,
+						"Amulet of glory": 1,
+						"Occult necklace": 2
+					},
+					{
+						"Guthix cape": 1,
+						"Imbued guthix cape": 2,
+						"Imbued saradomin cape": 2,
+						"Imbued zamorak cape": 2,
+						"Saradomin cape": 1,
+						"Zamorak cape": 1
+					},
+					{
+						"Barrows gloves": 1,
+						"Tormented bracelet": 2
+					},
+					{
+						"Eternal boots": 1,
+						"Infinity boots": 1,
+						"Wizard boots": 1
+					},
+					{
+						"Magus ring": 2,
+						"Seers ring": 1,
+						"Seers ring (i)": 1
+					},
+					{
+						"Falador shield 3": 3
+					}
+				],
+				"range": [
+					{
+						"Bow of faerdhinen (c)": 5,
+						"Magic shortbow (i)": 2,
+						"Toxic blowpipe": 3,
+						"Twisted bow": 7
+					},
+					{
+						"Zaryte crossbow": 5
+					},
+					{
+						"Armadyl helmet": 1,
+						"Masori mask": 1,
+						"Masori mask (f)": 1
+					},
+					{
+						"Armadyl chestplate": 1,
+						"Masori body": 1,
+						"Masori body (f)": 1
+					},
+					{
+						"Armadyl chainskirt": 1,
+						"Masori chaps": 1,
+						"Masori chaps (f)": 1
+					},
+					{
+						"Amulet of fury": 2,
+						"Amulet of glory": 1,
+						"Necklace of anguish": 3
+					},
+					{
+						"Ava's accumulator": 1,
+						"Ava's assembler": 2,
+						"Dizana's quiver": 2
+					},
+					{
+						"Barrows gloves": 2,
+						"Black d'hide vambraces": 1,
+						"Zaryte vambraces": 2
+					},
+					{
+						"Pegasian boots": 1,
+						"Ranger boots": 1,
+						"Snakeskin boots": 1
+					},
+					{
+						"Archers ring": 1,
+						"Archers ring (i)": 1,
+						"Venator ring": 2
+					},
+					{
+						"Falador shield 3": 3
+					}
+				],
+				"melee": [
+					{
+						"Dharok's greataxe": 3
+					},
+					{
+						"Dragon claws": 3,
+						"Dragon dagger": 1,
+						"Elder maul": 3,
+						"Voidwaker": 4
+					},
+					{
+						"Dharok's helm": 1
+					},
+					{
+						"Dharok's platebody": 1
+					},
+					{
+						"Dharok's platelegs": 1
+					},
+					{
+						"Fire cape": 2,
+						"Fire max cape": 2,
+						"Infernal cape": 3
+					},
+					{
+						"Amulet of fury": 1,
+						"Amulet of rancour": 3,
+						"Amulet of torture": 2
+					},
+					{
+						"Barrows gloves": 1,
+						"Ferocious gloves": 2
+					},
+					{
+						"Dragon boots": 1,
+						"Primordial boots": 1
+					},
+					{
+						"Bellator ring": 1,
+						"Berserker ring": 1,
+						"Berserker ring (i)": 1
+					},
+					{
+						"Falador shield 3": 3
+					}
+				]
+			},
 			"can_barrage": false,
 			"can_chin": false,
 			"can_cannon": false,
