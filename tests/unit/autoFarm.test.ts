@@ -3,8 +3,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, type 
 
 import './setup.js';
 
-import { autoFarm } from '../../src/lib/minions/functions/autoFarm.js';
-import { prepareFarmingStep } from '../../src/lib/minions/functions/farmingTripHelpers.js';
+import { autoFarm } from '../../src/lib/skilling/skills/farming/autoFarm/autoFarm.js';
+import { prepareFarmingStep } from '../../src/lib/skilling/skills/farming/autoFarm/farmingTripHelpers.js';
 import { resolveSeedForPatch } from '../../src/lib/skilling/skills/farming/autoFarm/preferences.js';
 import { plants } from '../../src/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName } from '../../src/lib/skilling/skills/farming/utils/farmingHelpers.js';

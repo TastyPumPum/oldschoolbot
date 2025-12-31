@@ -4,12 +4,13 @@ import { Items } from 'oldschooljs';
 
 import { AutoFarmFilterEnum } from '@/prisma/main/enums.js';
 import { choicesOf } from '@/discord/index.js';
-import { autoFarm } from '@/lib/minions/functions/autoFarm.js';
 import {
 	compostBinPlantNameAutoComplete,
 	farmingPlantNameAutoComplete,
+	farmingSeedPreferenceAutoComplete,
 	titheFarmBuyRewardAutoComplete
 } from '@/lib/skilling/skills/farming/autocompletes.js';
+import { autoFarm } from '@/lib/skilling/skills/farming/autoFarm/autoFarm.js';
 import {
 	getPlantsForPatch,
 	getPrimarySeedForPlant,
@@ -178,7 +179,8 @@ export const farmingCommand = defineCommand({
 					type: 'String',
 					name: 'seed',
 					description: "Preferred seed (item name, 'highest_available', or 'empty').",
-					required: false
+					required: false,
+					autocomplete: farmingSeedPreferenceAutoComplete
 				},
 				{
 					type: 'Boolean',

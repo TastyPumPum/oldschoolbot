@@ -4,6 +4,7 @@ import { Bank } from 'oldschooljs';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { BitField, MAX_CLUES_DROPPED } from '@/lib/constants.js';
 import { EmojiId } from '@/lib/data/emojis.js';
+import { InteractionID } from '@/lib/InteractionID.js';
 
 export function getClueScoresFromOpenables(openableScores: Bank) {
 	return openableScores.filter(item => Boolean(ClueTiers.find(ct => ct.id === item.id)));
@@ -34,6 +35,19 @@ export function deduplicateClueScrolls(bank: Bank) {
 	for (const [itemID, qty] of theirClues.items()) bank.set(itemID, qty);
 }
 
+const clueDoInteractionIdByTier: Record<string, string> = {
+	beginner: InteractionID.Commands.DoBeginnerClue,
+	easy: InteractionID.Commands.DoEasyClue,
+	medium: InteractionID.Commands.DoMediumClue,
+	hard: InteractionID.Commands.DoHardClue,
+	elite: InteractionID.Commands.DoEliteClue,
+	master: InteractionID.Commands.DoMasterClue
+};
+
+export function getDoClueInteractionId(tierName: string): string {
+	return clueDoInteractionIdByTier[tierName.toLowerCase()] ?? InteractionID.Commands.DoBeginnerClue;
+}
+
 export function buildClueButtons(loot: Bank | null, perkTier: number, user: MUser) {
 	const components: ButtonBuilder[] = [];
 	if (loot && perkTier > 1 && !user.bitfield.includes(BitField.DisableClueButtons)) {
@@ -41,7 +55,7 @@ export function buildClueButtons(loot: Bank | null, perkTier: number, user: MUse
 		components.push(
 			...clueReceived.map(clue =>
 				new ButtonBuilder()
-					.setCustomId(`DO_${clue.name.toUpperCase()}_CLUE`)
+					.setCustomId(getDoClueInteractionId(clue.name))
 					.setLabel(`Do ${clue.name} Clue`)
 					.setStyle(ButtonStyle.Secondary)
 					.setEmoji({ id: EmojiId.ClueScroll })
