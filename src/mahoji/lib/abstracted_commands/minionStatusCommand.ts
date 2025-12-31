@@ -2,8 +2,10 @@ import { ButtonBuilder, ButtonStyle } from '@oldschoolgg/discord';
 import { stripNonAlphanumeric, toTitleCase } from '@oldschoolgg/toolkit';
 
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
+import { getDoClueInteractionId } from '@/lib/clues/clueUtils.js';
 import { BitField } from '@/lib/constants.js';
 import { EmojiId } from '@/lib/data/emojis.js';
+import { InteractionID } from '@/lib/InteractionID.js';
 import { roboChimpUserFetch } from '@/lib/roboChimp.js';
 import { minionBuyButton } from '@/lib/sharedComponents.js';
 import {
@@ -83,7 +85,7 @@ export async function minionStatusCommand(
 	if (minionIsBusy) {
 		buttons.push(
 			new ButtonBuilder()
-				.setCustomId('CANCEL_TRIP')
+				.setCustomId(InteractionID.Commands.CancelTrip)
 				.setLabel('Cancel Trip')
 				.setEmoji({ id: EmojiId.Minion })
 				.setStyle(ButtonStyle.Secondary)
@@ -96,7 +98,7 @@ export async function minionStatusCommand(
 
 	buttons.push(
 		new ButtonBuilder()
-			.setCustomId('CHECK_PATCHES')
+			.setCustomId(InteractionID.Commands.CheckPatches)
 			.setLabel('Check Patches')
 			.setEmoji({ id: EmojiId.Farming })
 			.setStyle(ButtonStyle.Secondary)
@@ -127,7 +129,7 @@ export async function minionStatusCommand(
 			.slice(0, 3)) {
 			buttons.push(
 				new ButtonBuilder()
-					.setCustomId(`DO_${tier.name.toUpperCase()}_CLUE`)
+					.setCustomId(getDoClueInteractionId(tier.name))
 					.setLabel(`Do ${tier.name} Clue`)
 					.setEmoji({ id: EmojiId.ClueScroll })
 					.setStyle(ButtonStyle.Secondary)

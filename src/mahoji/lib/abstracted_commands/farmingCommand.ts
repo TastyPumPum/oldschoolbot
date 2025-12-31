@@ -3,7 +3,7 @@ import { Bank } from 'oldschooljs';
 
 import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import { superCompostables } from '@/lib/data/filterables.js';
-import { prepareFarmingStep, treeCheck } from '@/lib/minions/functions/farmingTripHelpers.js';
+import { prepareFarmingStep, treeCheck } from '@/lib/skilling/skills/farming/autoFarm/farmingTripHelpers.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import { calcNumOfPatches } from '@/lib/skilling/skills/farming/utils/calcsFarming.js';
 import type { FarmingActivityTaskOptions } from '@/lib/types/minions.js';

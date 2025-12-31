@@ -111,13 +111,49 @@ describe('farming task auto farm sequencing', () => {
 			}
 		];
 
-		const executeSpy = vi.spyOn(farmingStepModule, 'executeFarmingStep').mockImplementation(async () => {
-			const result = results.shift();
-			if (!result) {
-				throw new Error('No farming step result available');
-			}
-			return result;
+		let farmedCropId = 1000;
+		const farmedCropCreates: any[] = [];
+		const farmedCropUpdates: any[] = [];
+
+		const farmedCropCreateSpy = vi.spyOn(prisma.farmedCrop, 'create').mockImplementation(async args => {
+			farmedCropCreates.push(args);
+			farmedCropId += 1;
+			return { id: farmedCropId, ...args.data } as any;
 		});
+		const farmedCropUpdateSpy = vi.spyOn(prisma.farmedCrop, 'update').mockImplementation(async args => {
+			farmedCropUpdates.push(args);
+			return { id: args.where.id as number, ...args.data } as any;
+		});
+
+		const executeSpy = vi
+			.spyOn(farmingStepModule, 'executeFarmingStep')
+			.mockImplementation(async ({ data }: Parameters<typeof farmingStepModule.executeFarmingStep>[0]) => {
+				if (data.planting && !data.patchType.pid) {
+					const inserted = await prisma.farmedCrop.create({
+						data: {
+							user_id: user.id,
+							date_planted: new Date(data.currentDate),
+							item_id: 0,
+							quantity_planted: data.quantity,
+							was_autofarmed: data.autoFarmed,
+							paid_for_protection: data.payment ?? false,
+							upgrade_type: data.upgradeType ?? null
+						}
+					});
+					data.patchType.pid = inserted.id;
+				} else if (data.patchType.pid) {
+					await prisma.farmedCrop.update({
+						where: { id: data.patchType.pid },
+						data: { date_harvested: new Date() }
+					});
+				}
+
+				const result = results.shift();
+				if (!result) {
+					throw new Error('No farming step result available');
+				}
+				return result;
+			});
 
 		const handleTripFinishSpy = vi.spyOn(handleTripFinishModule, 'handleTripFinish').mockResolvedValue();
 		const addSubTaskSpy = vi.spyOn(addSubTaskModule, 'default').mockResolvedValue(undefined as any);
@@ -182,7 +218,11 @@ describe('farming task auto farm sequencing', () => {
 			executeSpy,
 			handleTripFinishSpy,
 			addSubTaskSpy,
-			nextTaskArgs
+			nextTaskArgs,
+			farmedCropCreateSpy,
+			farmedCropUpdateSpy,
+			farmedCropCreates,
+			farmedCropUpdates
 		};
 	}
 
@@ -240,5 +280,19 @@ describe('farming task auto farm sequencing', () => {
 		const finalLoot = finalCall?.loot;
 		expect(finalLoot?.has('Seed pack')).toBe(true);
 		expect(finalLoot?.has('Watermelon')).toBe(true);
+	});
+
+	it('records farmed crop entries for auto farm steps', async () => {
+		const { farmedCropCreateSpy, farmedCropUpdateSpy, farmedCropCreates, farmedCropUpdates } =
+			await runAutoFarmScenario({ combinedMode: true });
+
+		expect(farmedCropCreateSpy).toHaveBeenCalledTimes(1);
+		expect(farmedCropUpdateSpy).toHaveBeenCalledTimes(1);
+		expect(farmedCropCreates[0]?.data).toMatchObject({
+			user_id: expect.any(String),
+			quantity_planted: 4,
+			was_autofarmed: true
+		});
+		expect(farmedCropUpdates[0]?.where).toMatchObject({ id: expect.any(Number) });
 	});
 });

@@ -1,5 +1,7 @@
 import { ButtonBuilder, ButtonStyle, ComponentType } from '@oldschoolgg/discord';
 
+import { InteractionID } from '@/lib/InteractionID.js';
+
 const buttonSource = [
 	{
 		label: 'Wiki',
@@ -38,6 +40,6 @@ export const mahojiInformationalButtons = buttonSource.map(
 );
 
 export const minionBuyButton = new ButtonBuilder()
-	.setCustomId('BUY_MINION')
+	.setCustomId(InteractionID.Commands.BuyMinion)
 	.setLabel('Buy Minion')
 	.setStyle(ButtonStyle.Success);
