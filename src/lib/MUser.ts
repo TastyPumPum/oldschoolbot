@@ -18,6 +18,8 @@ import {
 	UserError,
 	uniqueArr
 } from '@oldschoolgg/toolkit';
+import { isValidDiscordSnowflake } from '@oldschoolgg/util';
+import { Mutex } from 'async-mutex';
 import {
 	Bank,
 	convertXPtoLVL,
@@ -36,10 +38,11 @@ import type {
 	Prisma,
 	User,
 	UserStats,
+	XpGainSource,
 	xp_gains_skill_enum
 } from '@/prisma/main.js';
 import { addXP } from '@/lib/addXP.js';
-import { modifyUserBusy } from '@/lib/cache.js';
+import { MUTEX_CACHE, modifyUserBusy } from '@/lib/cache.js';
 import { generateAllGearImage, generateGearImage } from '@/lib/canvas/generateGearImage.js';
 import type { IconPackID } from '@/lib/canvas/iconPacks.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
@@ -76,6 +79,7 @@ import { defaultGear, Gear } from '@/lib/structures/Gear.js';
 import { GearBank } from '@/lib/structures/GearBank.js';
 import { MUserStats } from '@/lib/structures/MUserStats.js';
 import type { XPBank } from '@/lib/structures/XPBank.js';
+import type { XPCounter } from '@/lib/structures/XPCounter.js';
 import type { SkillRequirements, Skills } from '@/lib/types/index.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
@@ -502,7 +506,7 @@ GROUP BY data->>'ci';`);
 		return { actualCluesBank: actualClues, clueCounts };
 	}
 
-	async incrementKC(monsterID: number, quantityToAdd = 1) {
+	async incrementKC(monsterID: number, quantityToAdd: number) {
 		if (!Number.isInteger(monsterID)) throw new Error(`Invalid monsterID: ${monsterID}`);
 		if (!Number.isInteger(quantityToAdd) || quantityToAdd < 1) {
 			throw new Error(`Invalid quantityToAdd: ${quantityToAdd}`);
@@ -622,7 +626,7 @@ RETURNING (monster_scores->>'${monsterID}')::int AS new_kc;
 		return userMinigames[minigame];
 	}
 
-	async incrementMinigameScore(minigame: MinigameName, amountToAdd = 1) {
+	async incrementMinigameScore(minigame: MinigameName, amountToAdd: number) {
 		const result = await prisma.minigame.upsert({
 			where: { user_id: this.id },
 			update: { [minigame]: { increment: amountToAdd } },
@@ -684,7 +688,7 @@ WHERE user_id = ${this.id};`;
 		return stats[0]?.creature_kc ?? 0;
 	}
 
-	async incrementCreatureScore(creatureID: number, quantityToAdd = 1): Promise<{ newKC: number }> {
+	async incrementCreatureScore(creatureID: number, quantityToAdd: number): Promise<{ newKC: number }> {
 		if (!Number.isInteger(creatureID)) throw new Error('Invalid creatureID');
 		if (!Number.isInteger(quantityToAdd) || quantityToAdd < 1) throw new Error('Invalid quantityToAdd');
 		const query = `
@@ -957,20 +961,23 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 		setupType?: GearSetupType | 'all';
 		gearSetup?: Gear;
 	}): Promise<Buffer> {
+		const gearTemplate = this.user.gear_template ?? 0;
 		if (setupType === 'all') {
 			return generateAllGearImage({
 				equippedPet: this.user.minion_equippedPet,
 				bankBgHexColor: this.user.bank_bg_hex,
 				iconPackId: this.iconPackId,
 				farmingContract: this.farmingContract(),
-				gear: this.gear
+				gear: this.gear,
+				gearTemplate
 			});
 		}
 		return generateGearImage({
 			gearSetup: setupType ? this.gear[setupType] : gearSetup!,
 			gearType: setupType,
 			petID: this.user.minion_equippedPet,
-			farmingContract: this.farmingContract()
+			farmingContract: this.farmingContract(),
+			gearTemplate
 		});
 	}
 
@@ -1025,6 +1032,22 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 		return chargeBank;
 	}
 
+	async addXPCounter({
+		xpCounter,
+		source,
+		minimal
+	}: {
+		xpCounter: XPCounter;
+		source?: XpGainSource;
+		minimal?: boolean;
+	}): Promise<string> {
+		const results = [];
+		for (const [skillName, amount] of xpCounter.entries()) {
+			results.push(await this.addXP({ skillName, amount, source, minimal }));
+		}
+		return results.join(' ');
+	}
+
 	async addXPBank(xpBank: XPBank) {
 		const results = [];
 		for (const options of xpBank.xpList) {
@@ -1034,7 +1057,7 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 	}
 
 	async checkBankBackground() {
-		if (this.bitfield.includes(BitField.isModerator)) {
+		if (this.isModOrAdmin()) {
 			return;
 		}
 		const resetBackground = async () => {
@@ -1379,12 +1402,42 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 		};
 	}
 
+	isMod(): boolean {
+		return this.bitfield.includes(BitField.isModerator);
+	}
+
+	isAdmin(): boolean {
+		return globalConfig.adminUserIDs.includes(this.id);
+	}
+
 	isModOrAdmin(): boolean {
-		return globalConfig.adminUserIDs.includes(this.id) || this.bitfield.includes(BitField.isModerator);
+		return this.isAdmin() || this.isMod();
 	}
 
 	async isBlacklisted(): Promise<boolean> {
 		return Cache.isUserBlacklisted(this.id);
+	}
+
+	private getMutex(): Mutex {
+		const cached = MUTEX_CACHE.get(this.id);
+		if (cached) return cached;
+		const mutex = new Mutex();
+		MUTEX_CACHE.set(this.id, mutex);
+		return mutex;
+	}
+
+	async withLock<T>(id: string, fn: (user: MUserClass) => Promise<T>, timeoutMs = 60_000): Promise<T> {
+		const mutex = this.getMutex();
+		let timer: NodeJS.Timeout | undefined;
+
+		const timeoutPromise = new Promise<never>((_, reject) => {
+			timer = setTimeout(() => reject(new Error(`${id} held lock for over 60s`)), timeoutMs);
+		});
+
+		const res = await Promise.race([mutex.runExclusive(() => fn(this)), timeoutPromise]);
+
+		if (timer) clearTimeout(timer);
+		return res as T;
 	}
 }
 
@@ -1395,6 +1448,9 @@ declare global {
 }
 
 async function srcMUserFetch(userID: string, updates?: Prisma.UserUpdateInput) {
+	if (!isValidDiscordSnowflake(userID)) {
+		throw new Error(`Invalid userID: ${userID}`);
+	}
 	const user =
 		updates !== undefined
 			? await prisma.user.upsert({

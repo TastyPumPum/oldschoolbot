@@ -10,10 +10,20 @@ export const httpErr = {
 	},
 	RATELIMITED: ({ message }: { message?: string } = {}): Response => {
 		return Response.json({ error: 'RATELIMITED', message }, { status: 429 });
+	},
+	FORBIDDEN: ({ message }: { message?: string } = {}): Response => {
+		return Response.json({ error: 'FORBIDDEN', message }, { status: 403 });
 	}
 };
+
 export const httpRes = {
 	JSON: (json: object): Response => {
 		return Response.json(json, { status: 200 });
 	}
 };
+
+type HonoVariables = {
+	user: RUser | null;
+};
+
+export type HonoServerGeneric = { Bindings: {}; Variables: HonoVariables };

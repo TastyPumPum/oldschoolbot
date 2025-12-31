@@ -330,13 +330,13 @@ export async function autoFarm(
 		return noCropsResponse;
 	}
 
-        if (await user.minionIsBusy()) {
-                return 'Your minion must not be busy to use this command.';
-        }
+	if (await user.minionIsBusy()) {
+		return 'Your minion must not be busy to use this command.';
+	}
 
-        if (!user.owns(totalCost)) {
-                return `You don't own ${totalCost}.`;
-        }
+	if (!user.owns(totalCost)) {
+		return `You don't own ${totalCost}.`;
+	}
 	await user.transactItems({ itemsToRemove: totalCost });
 	await ClientSettings.updateBankSetting('farming_cost_bank', totalCost);
 	await user.statsBankUpdate('farming_plant_cost_bank', totalCost);

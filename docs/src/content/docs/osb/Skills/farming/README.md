@@ -11,9 +11,9 @@ When harvesting trees, either:
 
 Other farming activities:
 
-- [Farming Contracts](farming-contracts.md)
-- [Tithe Farm](tithe-farm.md)
-- [Hespori](farmables.md#hespori)
+- [Farming Contracts](farming-contracts)
+- [Tithe Farm](tithe-farm)
+- [Hespori](farmables#hespori)
 
 ---
 
