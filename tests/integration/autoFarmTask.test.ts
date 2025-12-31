@@ -26,7 +26,7 @@ describe('farming task auto farm sequencing', () => {
 		vi.restoreAllMocks();
 	});
 
-	async function runAutoFarmScenario() {
+	async function runAutoFarmScenario({ combinedMode = false }: { combinedMode?: boolean } = {}) {
 		const user = await createTestUser();
 
 		const basePatch: IPatchData = {
@@ -144,7 +144,7 @@ describe('farming task auto farm sequencing', () => {
 			currentDate: plan[0].currentDate,
 			autoFarmed: true,
 			autoFarmPlan: plan.slice(1),
-			autoFarmCombined: false
+			autoFarmCombined: combinedMode
 		};
 
 		const runOptions: {
@@ -185,7 +185,8 @@ describe('farming task auto farm sequencing', () => {
 			user,
 			executeSpy,
 			handleTripFinishSpy,
-			addSubTaskSpy
+			addSubTaskSpy,
+			nextTaskArgs
 		};
 	}
 
@@ -216,5 +217,32 @@ describe('farming task auto farm sequencing', () => {
 		const { addSubTaskSpy } = await runAutoFarmScenario();
 
 		expect(addSubTaskSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it('combines auto farm messaging when requested', async () => {
+		const { executeSpy, handleTripFinishSpy, addSubTaskSpy, nextTaskArgs } = await runAutoFarmScenario({
+			combinedMode: true
+		});
+
+		expect(executeSpy).toHaveBeenCalledTimes(2);
+		expect(handleTripFinishSpy).toHaveBeenCalledTimes(1);
+		expect(addSubTaskSpy).toHaveBeenCalledTimes(1);
+
+		expect(nextTaskArgs?.autoFarmSummary?.steps).toHaveLength(1);
+		expect(nextTaskArgs?.autoFarmSummary?.totalXP).toBe(100);
+
+		const finalCall = handleTripFinishSpy.mock.calls[0]?.[0] as
+			| { message?: string | { content?: string }; loot?: Bank | null }
+			| undefined;
+		const messageContent =
+			typeof finalCall?.message === 'string' ? finalCall.message : (finalCall?.message?.content ?? '');
+
+		expect(messageContent).toContain('Total time spent');
+		expect(messageContent).toContain('Seed pack');
+		expect(messageContent).toContain('Watermelon');
+
+		const finalLoot = finalCall?.loot;
+		expect(finalLoot?.has('Seed pack')).toBe(true);
+		expect(finalLoot?.has('Watermelon')).toBe(true);
 	});
 });

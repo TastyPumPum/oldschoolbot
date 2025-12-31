@@ -349,6 +349,7 @@ export async function autoFarm(
 			plantsName: step.plant.name,
 			quantity: step.quantity,
 			upgradeType: step.upgradeType,
+			patchName: step.patchName,
 			payment: step.didPay,
 			treeChopFeePaid: 0,
 			treeChopFeePlanned: step.treeChopFee,
@@ -382,8 +383,10 @@ export async function autoFarm(
 		treeChopFeePlanned: firstStep.treeChopFeePlanned,
 		planting: firstStep.planting,
 		autoFarmed: true,
+		autoFarmCombined: autoFarmPlan.length > 1,
 		autoFarmPlan: remainingSteps,
-		currentDate: firstStep.currentDate
+		currentDate: firstStep.currentDate,
+		patchName: firstStep.patchName
 	} satisfies Omit<FarmingActivityTaskOptions, 'finishDate' | 'id'>;
 	await addSubTaskToActivityTask(firstTask);
 

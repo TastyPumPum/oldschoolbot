@@ -329,6 +329,7 @@ export interface AutoFarmStepData {
 	plantsName: string | null;
 	quantity: number;
 	upgradeType: CropUpgradeType | null;
+	patchName?: string;
 	payment?: boolean;
 	treeChopFeePaid?: number;
 	treeChopFeePlanned?: number;
@@ -339,12 +340,37 @@ export interface AutoFarmStepData {
 	duration: number;
 }
 
+export interface AutoFarmSummaryStep {
+	patchType: string;
+	plantsName: string;
+	quantity: number;
+	xp: number;
+	bonusXp: number;
+	weeds: number;
+	duration: number;
+	loot?: ItemBank;
+}
+
+export interface AutoFarmSummary {
+	totalXP: number;
+	totalBonusXP: number;
+	totalWeeds: number;
+	totalDuration: number;
+	totalWoodcuttingXP: number;
+	totalHerbloreXP: number;
+	totalLoot?: ItemBank;
+	contractsCompleted: number;
+	boosts: string[];
+	steps: AutoFarmSummaryStep[];
+}
+
 export interface FarmingActivityTaskOptions extends ActivityTaskOptions {
 	type: 'Farming';
 	pid?: number;
 	plantsName: string | null;
 	quantity: number;
 	upgradeType: CropUpgradeType | null;
+	patchName?: string;
 	payment?: boolean;
 	treeChopFeePaid?: number;
 	treeChopFeePlanned?: number;
@@ -354,6 +380,7 @@ export interface FarmingActivityTaskOptions extends ActivityTaskOptions {
 	autoFarmed: boolean;
 	autoFarmPlan?: AutoFarmStepData[];
 	autoFarmCombined?: boolean;
+	autoFarmSummary?: AutoFarmSummary;
 }
 
 export interface BirdhouseActivityTaskOptions extends ActivityTaskOptions {
