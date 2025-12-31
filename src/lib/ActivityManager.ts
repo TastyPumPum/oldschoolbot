@@ -14,8 +14,8 @@ class SActivityManager {
 		await prisma.activity.deleteMany({ where: { user_id: BigInt(userID), completed: false } });
 	}
 
-	async startTrip<T extends ActivityTaskData>(tripData: Omit<T, 'finishDate' | 'id'>): Promise<void> {
-		await addSubTaskToActivityTask(tripData);
+	async startTrip<T extends ActivityTaskData>(tripData: Omit<T, 'finishDate' | 'id'>) {
+		return addSubTaskToActivityTask(tripData);
 	}
 
 	convertStoredActivityToFlatActivity(activity: Activity): ActivityTaskData {
@@ -100,7 +100,7 @@ class SActivityManager {
 					},
 					{
 						all_user_ids: {
-							has: userID
+							has: BigInt(userID)
 						}
 					}
 				],
@@ -121,7 +121,7 @@ class SActivityManager {
 					},
 					{
 						all_user_ids: {
-							hasSome: userIDs.map(id => (typeof id === 'string' ? id : id.id.toString()))
+							hasSome: userIDs.map(id => BigInt(typeof id === 'string' ? id : id.id))
 						}
 					}
 				],
@@ -141,7 +141,7 @@ class SActivityManager {
 					},
 					{
 						all_user_ids: {
-							has: userID
+							has: BigInt(userID)
 						}
 					}
 				]

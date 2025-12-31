@@ -13,10 +13,6 @@ import { farmingTask } from '../../src/tasks/minions/farmingActivity.js';
 import * as farmingStepModule from '../../src/tasks/minions/farmingStep.js';
 import { createTestUser, mockClient, TEST_CHANNEL_ID } from './util.js';
 
-vi.mock('../../src/lib/util/webhook', () => ({
-	sendToChannelID: vi.fn()
-}));
-
 describe('farming task auto farm sequencing', () => {
 	beforeEach(async () => {
 		await mockClient();
@@ -124,7 +120,7 @@ describe('farming task auto farm sequencing', () => {
 		});
 
 		const handleTripFinishSpy = vi.spyOn(handleTripFinishModule, 'handleTripFinish').mockResolvedValue();
-		const addSubTaskSpy = vi.spyOn(addSubTaskModule, 'default').mockResolvedValue();
+		const addSubTaskSpy = vi.spyOn(addSubTaskModule, 'default').mockResolvedValue(undefined as any);
 
 		const taskData: FarmingActivityTaskOptions = {
 			type: 'Farming',

@@ -1,9 +1,9 @@
 import { randInt, roll } from '@oldschoolgg/rng';
 import type { IFarmingContract } from '@oldschoolgg/schemas';
 import { Emoji, Events } from '@oldschoolgg/toolkit';
-import type { CropUpgradeType } from '@prisma/client';
 import { Bank, itemID, Monsters } from 'oldschooljs';
 
+import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import chatHeadImage from '@/lib/canvas/chatHeadImage.js';
 import { combatAchievementTripEffect } from '@/lib/combat_achievements/combatAchievements.js';
 import { BitField } from '@/lib/constants.js';
@@ -409,10 +409,15 @@ async function handleTreeRemoval(options: {
 	const coinsOwedNow = Math.max(0, gpToCutTree - prePaid);
 
 	if (GP < coinsOwedNow) {
-		const { sendToChannelID } = await import('@/lib/util/webhook.js');
-		await sendToChannelID(channelID, {
-			content: `You do not have the required woodcutting level or enough GP to clear your patches, in order to be able to plant more. You still need ${coinsOwedNow} GP.`
-		});
+		try {
+			if (await globalClient.channelIsSendable(channelID)) {
+				await globalClient.sendMessage(channelID, {
+					content: `You do not have the required woodcutting level or enough GP to clear your patches, in order to be able to plant more. You still need ${coinsOwedNow} GP.`
+				});
+			}
+		} catch (err) {
+			Logging.logError(err as Error, { channel_id: channelID, type: 'send_to_channel_id' });
+		}
 		return null;
 	}
 

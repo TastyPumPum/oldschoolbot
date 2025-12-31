@@ -1,5 +1,7 @@
 import { cryptoRng } from '@oldschoolgg/rng/crypto';
 
+import '@/discord/index.js';
+
 import type { NewUser } from '@/prisma/main.js';
 
 type RawCommandHandlerInner = typeof import('@/discord/commandHandler.js')['rawCommandHandlerInner'];

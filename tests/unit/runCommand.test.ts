@@ -67,7 +67,7 @@ describe('runCommand', () => {
 			commandName: 'test-command',
 			args: {} as any,
 			user: {} as any,
-			interaction: { user: { id: '1' } } as any,
+			interaction: { user: { id: '1' }, userId: '1' } as any,
 			continueDeltaMillis: null,
 			isContinue: true
 		});
@@ -84,7 +84,7 @@ describe('runCommand', () => {
 			commandName: 'test-command',
 			args: {} as any,
 			user: {} as any,
-			interaction: { user: { id: '1' } } as any,
+			interaction: { user: { id: '1' }, userId: '1' } as any,
 			continueDeltaMillis: null,
 			ignoreUserIsBusy: true
 		});
@@ -101,7 +101,7 @@ describe('runCommand', () => {
 			commandName: 'test-command',
 			args: {} as any,
 			user: {} as any,
-			interaction: { user: { id: '1' } } as any,
+			interaction: { user: { id: '1' }, userId: '1' } as any,
 			continueDeltaMillis: null
 		});
 
