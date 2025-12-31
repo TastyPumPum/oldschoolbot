@@ -10,22 +10,23 @@ export const farmingTask: MinionTask = {
 	async run(data: FarmingActivityTaskOptions, options) {
 		const user = options?.user ?? (await mUserFetch(data.userID));
 		const handleTripFinish = options?.handleTripFinish ?? defaultHandleTripFinish;
-		const channelID = data.channelID ?? (data as { channelId?: string }).channelId;
-		if (!channelID) {
+		const legacyChannelId = (data as { channelID?: string }).channelID;
+		const channelId = data.channelId ?? legacyChannelId;
+		if (!channelId) {
 			throw new Error('Farming task completed without a channel id.');
 		}
 		if (data.autoFarmCombined && data.autoFarmPlan?.length) {
 			await handleCombinedAutoFarm({ user, taskData: data, handleTripFinish });
 			return;
 		}
-		const result = await executeFarmingStep({ user, channelID, data });
+		const result = await executeFarmingStep({ user, channelID: channelId, data });
 		if (!result) {
 			return;
 		}
 		const message = result.attachment ? { content: result.message, files: [result.attachment] } : result.message;
 		await handleTripFinish({
 			user,
-			channelId: channelID,
+			channelId,
 			message,
 			data,
 			loot: result.loot ?? null
@@ -50,11 +51,11 @@ export const farmingTask: MinionTask = {
 					nextPid = inserted.id;
 				}
 			}
-			await addSubTaskToActivityTask({
+			const nextTask = {
 				plantsName: nextStep.plantsName,
 				patchType: nextStep.patchType,
 				userID: user.id,
-				channelID: data.channelId,
+				channelId,
 				quantity: nextStep.quantity,
 				upgradeType: nextStep.upgradeType,
 				payment: nextStep.payment,
@@ -67,7 +68,8 @@ export const farmingTask: MinionTask = {
 				autoFarmed: true,
 				pid: nextPid,
 				autoFarmPlan: remainingSteps
-			});
+			} satisfies Omit<FarmingActivityTaskOptions, 'finishDate' | 'id'>;
+			await addSubTaskToActivityTask(nextTask);
 		}
 	}
 };

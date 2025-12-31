@@ -212,7 +212,8 @@ export async function handleCombinedAutoFarm({
 					}
 				];
 
-	const baseChannelId = taskData.channelID ?? (taskData as { channelId?: string }).channelId;
+	const legacyChannelId = (taskData as { channelID?: string }).channelID;
+	const baseChannelId = taskData.channelId ?? legacyChannelId;
 	if (!baseChannelId) {
 		throw new Error('Farming auto farm task missing channel id.');
 	}
@@ -226,7 +227,7 @@ export async function handleCombinedAutoFarm({
 	for (const step of steps) {
 		const stepData: FarmingActivityTaskOptions = {
 			...taskData,
-			channelID: taskData.channelID ?? baseChannelId,
+			channelId: baseChannelId,
 			plantsName: step.plantsName,
 			quantity: step.quantity,
 			upgradeType: step.upgradeType,

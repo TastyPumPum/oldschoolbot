@@ -5,6 +5,7 @@ import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmi
 import type { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getFarmingInfo.js';
 import type { Plant } from '@/lib/skilling/types.js';
 
+export type { FarmingPatchName };
 export interface IPatchData {
 	lastPlanted: string | null;
 	patchPlanted: boolean; // false -> nothing planted, true -> something planted

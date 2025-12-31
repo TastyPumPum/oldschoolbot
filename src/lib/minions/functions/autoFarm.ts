@@ -19,7 +19,7 @@ import type {
 	IPatchDataDetailed
 } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { Plant } from '@/lib/skilling/types.js';
-import type { AutoFarmStepData } from '@/lib/types/minions.js';
+import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
@@ -365,28 +365,27 @@ export async function autoFarm(
 		return errorString;
 	}
 
+	const [, ...remainingSteps] = autoFarmPlan;
+
 	const channelId = interaction.channelId ?? user.id;
-	await addSubTaskToActivityTask({
+	const firstTask = {
 		userID: user.id,
 		type: 'Farming',
-		duration: totalDuration,
+		duration: firstStep.duration,
 		channelId,
-		// ✅ activity-specific payload goes here
-		data: {
-			plantsName: firstStep.plantsName,
-			patchType: firstStep.patchType,
-			quantity: firstStep.quantity,
-			upgradeType: firstStep.upgradeType,
-			payment: firstStep.payment,
-			treeChopFeePaid: firstStep.treeChopFeePaid,
-			treeChopFeePlanned: firstStep.treeChopFeePlanned,
-			planting: firstStep.planting,
-			autoFarmed: true,
-			autoFarmPlan,
-			autoFarmCombined: true,
-			currentDate: firstStep.currentDate
-		}
-	});
+		plantsName: firstStep.plantsName,
+		patchType: firstStep.patchType,
+		quantity: firstStep.quantity,
+		upgradeType: firstStep.upgradeType,
+		payment: firstStep.payment,
+		treeChopFeePaid: firstStep.treeChopFeePaid,
+		treeChopFeePlanned: firstStep.treeChopFeePlanned,
+		planting: firstStep.planting,
+		autoFarmed: true,
+		autoFarmPlan: remainingSteps,
+		currentDate: firstStep.currentDate
+	} satisfies Omit<FarmingActivityTaskOptions, 'finishDate' | 'id'>;
+	await addSubTaskToActivityTask(firstTask);
 
 	const uniqueBoosts = [...new Set(plannedSteps.flatMap(step => step.boosts))];
 	const summaryLines: string[] = [];

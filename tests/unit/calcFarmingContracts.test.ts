@@ -19,9 +19,10 @@ describe('calcFarmingContracts', () => {
 		});
 
 		const randArrItemSpy = vi.spyOn(rng, 'randArrItem').mockImplementation(contractType => {
-			expect(contractType.every(([level]) => level <= 60)).toBe(true);
-			expect(contractType.some(([, name]) => name === 'Rosemary')).toBe(false);
-			const selection = contractType.find(([, name]) => name === 'Potato');
+			const typedContracts = contractType as [number, string, number][];
+			expect(typedContracts.every(([level]) => level <= 60)).toBe(true);
+			expect(typedContracts.some(([, name]) => name === 'Rosemary')).toBe(false);
+			const selection = typedContracts.find(([, name]) => name === 'Potato');
 			if (!selection) {
 				throw new Error('Expected Potato to remain as a candidate');
 			}
@@ -91,7 +92,9 @@ describe('calcFarmingContracts', () => {
 		const randIntSpy = vi.spyOn(rng, 'randInt').mockReturnValue(2);
 		vi.spyOn(rng, 'roll').mockReturnValue(false);
 		const everySpy = vi.spyOn(LootTable.prototype, 'every');
-		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(new Bank());
+		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(
+			new Bank() as unknown as ReturnType<(typeof LootTable.prototype)['roll']>
+		);
 
 		const run = (tier: number) => {
 			everySpy.mockClear();
@@ -108,7 +111,9 @@ describe('calcFarmingContracts', () => {
 		vi.spyOn(rng, 'randInt').mockReturnValue(3);
 		vi.spyOn(rng, 'roll').mockReturnValue(true);
 		const everySpy = vi.spyOn(LootTable.prototype, 'every');
-		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(new Bank());
+		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(
+			new Bank() as unknown as ReturnType<(typeof LootTable.prototype)['roll']>
+		);
 
 		openSeedPack(2);
 
@@ -123,7 +128,9 @@ describe('calcFarmingContracts', () => {
 		randIntSpy.mockImplementationOnce(() => 1).mockImplementationOnce(() => 4);
 		vi.spyOn(rng, 'roll').mockReturnValue(false);
 		const everySpy = vi.spyOn(LootTable.prototype, 'every');
-		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(new Bank());
+		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(
+			new Bank() as unknown as ReturnType<(typeof LootTable.prototype)['roll']>
+		);
 
 		openSeedPack(3);
 
@@ -138,7 +145,9 @@ describe('calcFarmingContracts', () => {
 		randIntSpy.mockImplementationOnce(() => 2).mockImplementationOnce(() => 5);
 		vi.spyOn(rng, 'roll').mockReturnValue(false);
 		const everySpy = vi.spyOn(LootTable.prototype, 'every');
-		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(new Bank());
+		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(
+			new Bank() as unknown as ReturnType<(typeof LootTable.prototype)['roll']>
+		);
 
 		openSeedPack(4);
 
@@ -153,7 +162,9 @@ describe('calcFarmingContracts', () => {
 		randIntSpy.mockImplementationOnce(() => 3).mockImplementationOnce(() => 6);
 		vi.spyOn(rng, 'roll').mockReturnValue(false);
 		const everySpy = vi.spyOn(LootTable.prototype, 'every');
-		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(new Bank());
+		vi.spyOn(LootTable.prototype, 'roll').mockReturnValue(
+			new Bank() as unknown as ReturnType<(typeof LootTable.prototype)['roll']>
+		);
 
 		openSeedPack(5);
 

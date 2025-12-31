@@ -1,4 +1,5 @@
 import { randInt, roll } from '@oldschoolgg/rng';
+import type { IFarmingContract } from '@oldschoolgg/schemas';
 import { Emoji, Events } from '@oldschoolgg/toolkit';
 import type { CropUpgradeType } from '@prisma/client';
 import { Bank, itemID, Monsters } from 'oldschooljs';
@@ -8,7 +9,6 @@ import { combatAchievementTripEffect } from '@/lib/combat_achievements/combatAch
 import { BitField } from '@/lib/constants.js';
 import { Farming, type PatchTypes } from '@/lib/skilling/skills/farming/index.js';
 import { getFarmingKeyFromName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
-import type { FarmingContract } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { FarmingActivityTaskOptions, MonsterActivityTaskOptions } from '@/lib/types/minions.js';
 import { assert } from '@/lib/util/logError.js';
 import { skillingPetDropRate } from '@/lib/util.js';
@@ -679,11 +679,11 @@ export async function executeFarmingStep({
 			userID: user.id,
 			duration: data.duration,
 			finishDate: data.finishDate,
-			channelID: data.channelID,
+			channelId: channelID,
 			id: data.id
 		};
 
-		await combatAchievementTripEffect({ user, loot, messages: infoStr, data: fakeMonsterTaskOptions });
+		await combatAchievementTripEffect({ user, messages: infoStr, data: fakeMonsterTaskOptions });
 
 		// hespori farming replaces loot with monster loot
 		loot = hesporiLoot;
@@ -751,7 +751,7 @@ export async function executeFarmingStep({
 
 	let janeMessage = false;
 	if (currentContract.hasContract && plantToHarvest.name === currentContract.plantToGrow && alivePlants > 0) {
-		const farmingContractUpdate: FarmingContract = {
+		const farmingContractUpdate: IFarmingContract = {
 			hasContract: false,
 			difficultyLevel: null,
 			plantToGrow: currentContract.plantToGrow,

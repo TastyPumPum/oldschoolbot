@@ -11,6 +11,8 @@ import type { Plant } from '@/lib/skilling/types.js';
 import { mockMUser } from './userutil.js';
 
 type PlantOverrides = Partial<Plant> & Pick<Plant, 'seedType' | 'name'>;
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type MutableUser = Mutable<ReturnType<typeof mockMUser>['user']>;
 
 function createPlant(overrides: PlantOverrides): Plant {
 	return {
@@ -94,7 +96,8 @@ describe('calcsFarming', () => {
 			skills_farming: convertLVLtoXP(75),
 			QP: 60
 		});
-		user.user.finished_quest_ids = [QuestID.ChildrenOfTheSun];
+		const mutableUser = user.user as MutableUser;
+		mutableUser.finished_quest_ids = [QuestID.ChildrenOfTheSun];
 
 		const [patches] = calcNumOfPatches(plant, user, 60);
 		expect(patches).toBe(5);
@@ -109,7 +112,8 @@ describe('calcsFarming', () => {
 		const user = mockMUser({
 			skills_farming: convertLVLtoXP(50)
 		});
-		user.user.finished_quest_ids = [QuestID.ChildrenOfTheSun];
+		const mutableUser = user.user as MutableUser;
+		mutableUser.finished_quest_ids = [QuestID.ChildrenOfTheSun];
 
 		const [patches] = calcNumOfPatches(plant, user, 0);
 		expect(patches).toBe(3);
@@ -124,7 +128,8 @@ describe('calcsFarming', () => {
 		const user = mockMUser({
 			skills_farming: convertLVLtoXP(50)
 		});
-		user.user.finished_quest_ids = [QuestID.ChildrenOfTheSun];
+		const mutableUser = user.user as MutableUser;
+		mutableUser.finished_quest_ids = [QuestID.ChildrenOfTheSun];
 
 		const [patches] = calcNumOfPatches(plant, user, 0);
 		expect(patches).toBe(2);

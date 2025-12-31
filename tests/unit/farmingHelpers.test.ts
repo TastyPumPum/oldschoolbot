@@ -109,11 +109,18 @@ describe('farming helpers', () => {
 
 		const result = userGrowingProgressStr([basePatch, growingPatch, emptyPatch]);
 
-		expect(result.content).toContain('Ready patch');
-		expect(result.content).toContain('Growing patch');
-		expect(result.content).toContain('Nothing planted');
-		expect(result.components).toHaveLength(1);
-		expect((result.components?.[0] as any).data?.custom_id).toBeDefined();
+		const normalized =
+			typeof result === 'string'
+				? { content: result, components: [] as unknown[] }
+				: 'content' in result
+					? { content: result.content, components: result.components ?? [] }
+					: { content: '', components: [] as unknown[] };
+
+		expect(normalized.content).toContain('Ready patch');
+		expect(normalized.content).toContain('Growing patch');
+		expect(normalized.content).toContain('Nothing planted');
+		expect(normalized.components).toHaveLength(1);
+		expect((normalized.components?.[0] as any).data?.custom_id).toBeDefined();
 	});
 
 	it('userGrowingProgressStr omits the auto farm button when nothing is ready', () => {
@@ -134,7 +141,14 @@ describe('farming helpers', () => {
 
 		const result = userGrowingProgressStr([emptyOnly]);
 
-		expect(result.components).toHaveLength(0);
-		expect(result.content).toContain('Nothing planted');
+		const normalized =
+			typeof result === 'string'
+				? { content: result, components: [] as unknown[] }
+				: 'content' in result
+					? { content: result.content, components: result.components ?? [] }
+					: { content: '', components: [] as unknown[] };
+
+		expect(normalized.components).toHaveLength(0);
+		expect(normalized.content).toContain('Nothing planted');
 	});
 });

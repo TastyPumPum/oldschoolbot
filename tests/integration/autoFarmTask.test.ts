@@ -1,7 +1,5 @@
-import type { ButtonBuilder } from '@oldschoolgg/discord';
 import type { RNGProvider } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
-import type { APIButtonComponentWithCustomId } from 'discord-api-types/v10';
 import { Bank } from 'oldschooljs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,19 +7,17 @@ import './setup.js';
 
 import type { IPatchData } from '../../src/lib/skilling/skills/farming/utils/types.js';
 import type { AutoFarmStepData, FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
+import * as addSubTaskModule from '../../src/lib/util/addSubTaskToActivityTask.js';
 import * as handleTripFinishModule from '../../src/lib/util/handleTripFinish.js';
-import * as farmingContractModule from '../../src/mahoji/lib/abstracted_commands/farmingContractCommand.js';
 import { farmingTask } from '../../src/tasks/minions/farmingActivity.js';
 import * as farmingStepModule from '../../src/tasks/minions/farmingStep.js';
 import { createTestUser, mockClient, TEST_CHANNEL_ID } from './util.js';
-
-const toPlain = <T>(x: any): T => (typeof x?.toJSON === 'function' ? x.toJSON() : x);
 
 vi.mock('../../src/lib/util/webhook', () => ({
 	sendToChannelID: vi.fn()
 }));
 
-describe('farming task auto farm aggregation', () => {
+describe('farming task auto farm sequencing', () => {
 	beforeEach(async () => {
 		await mockClient();
 	});
@@ -30,7 +26,7 @@ describe('farming task auto farm aggregation', () => {
 		vi.restoreAllMocks();
 	});
 
-	async function runAutoFarmScenario(canRunAutoContractValue: boolean) {
+	async function runAutoFarmScenario() {
 		const user = await createTestUser();
 
 		const basePatch: IPatchData = {
@@ -128,14 +124,12 @@ describe('farming task auto farm aggregation', () => {
 		});
 
 		const handleTripFinishSpy = vi.spyOn(handleTripFinishModule, 'handleTripFinish').mockResolvedValue();
-		const canRunAutoContractSpy = vi
-			.spyOn(farmingContractModule, 'canRunAutoContract')
-			.mockResolvedValue(canRunAutoContractValue);
+		const addSubTaskSpy = vi.spyOn(addSubTaskModule, 'default').mockResolvedValue();
 
 		const taskData: FarmingActivityTaskOptions = {
 			type: 'Farming',
 			userID: user.id,
-			channelID: TEST_CHANNEL_ID,
+			channelId: TEST_CHANNEL_ID,
 			id: 123,
 			finishDate: Date.now(),
 			plantsName: plan[0].plantsName,
@@ -149,8 +143,8 @@ describe('farming task auto farm aggregation', () => {
 			duration: plan[0].duration,
 			currentDate: plan[0].currentDate,
 			autoFarmed: true,
-			autoFarmPlan: plan,
-			autoFarmCombined: true
+			autoFarmPlan: plan.slice(1),
+			autoFarmCombined: false
 		};
 
 		const runOptions: {
@@ -173,87 +167,54 @@ describe('farming task auto farm aggregation', () => {
 
 		await farmingTask.run(taskData, runOptions);
 
-		const call = handleTripFinishSpy.mock.calls[0];
-		if (!call) {
-			throw new Error('handleTripFinish was not called during the auto farm scenario.');
+		const nextTaskArgs = addSubTaskSpy.mock.calls[0]?.[0] as FarmingActivityTaskOptions | undefined;
+		if (!nextTaskArgs) {
+			throw new Error('auto farm did not schedule the next patch.');
 		}
 
-		const [callOptions] = call;
-		if (!callOptions) {
-			throw new Error('handleTripFinish was called without expected arguments.');
-		}
-
-		const { message, loot } = callOptions;
-		const messageContent = typeof message === 'string' ? message : (message?.content ?? '');
-		let extraComponents: ButtonBuilder[] | undefined;
-		if (typeof message !== 'string') {
-			const components = message?.components;
-			if (Array.isArray(components)) {
-				const firstRow = components[0];
-				extraComponents = Array.isArray(firstRow)
-					? (firstRow as ButtonBuilder[])
-					: (components as ButtonBuilder[]);
-			}
-		}
+		const followUpTask: FarmingActivityTaskOptions = {
+			...nextTaskArgs,
+			id: 456,
+			finishDate: Date.now(),
+			userID: user.id,
+			type: 'Farming'
+		};
+		await farmingTask.run(followUpTask, runOptions);
 
 		return {
 			user,
 			executeSpy,
 			handleTripFinishSpy,
-			canRunAutoContractSpy,
-			messageContent,
-			loot: loot as Bank | null,
-			extraComponents
+			addSubTaskSpy
 		};
 	}
 
-	it('aggregates summaries and adds auto contract button when available', async () => {
-		const { user, executeSpy, handleTripFinishSpy, canRunAutoContractSpy, messageContent, loot, extraComponents } =
-			await runAutoFarmScenario(true);
+	it('processes multiple auto farm patches sequentially', async () => {
+		const { user, executeSpy, handleTripFinishSpy, addSubTaskSpy } = await runAutoFarmScenario();
 
 		expect(executeSpy).toHaveBeenCalledTimes(2);
-		expect(handleTripFinishSpy).toHaveBeenCalledTimes(1);
-		expect(canRunAutoContractSpy).toHaveBeenCalledTimes(1);
+		expect(handleTripFinishSpy).toHaveBeenCalledTimes(2);
+		expect(addSubTaskSpy).toHaveBeenCalledTimes(1);
 
-		expect(typeof messageContent).toBe('string');
-		const content = messageContent;
+		const firstCallData = executeSpy.mock.calls[0]?.[0]?.data as FarmingActivityTaskOptions | undefined;
+		const secondCallData = executeSpy.mock.calls[1]?.[0]?.data as FarmingActivityTaskOptions | undefined;
 
-		expect(content).toContain(`${user}, ${user.minionName} finished auto farming your patches.`);
-		expect(content).toContain('Your minion planted 4x Guam seed.');
-		expect(content).toContain('You harvested 8x Watermelon.');
-		expect(content).toContain('You received 300');
-		expect(content).toContain('100');
-		expect(content).toContain('50');
-		expect(content).toContain('**Boosts:** Graceful.');
-		expect(content).toContain('Completed 1 farming contract.');
-		expect(content).toContain('You received:');
-		expect(content).toContain('Seed pack');
-		expect(content).toContain('Watermelon');
-		expect(content).toContain('Paid 3x Tomatoes');
-		expect(content).toContain('Take care of your plants.');
-		expect(content).toContain('Keep chopping!');
+		expect(firstCallData?.plantsName).toBe('Guam');
+		expect(firstCallData?.patchType.lastPlanted).toBe('Guam');
 
-		expect(loot?.has('Seed pack')).toBe(true);
-		expect(loot?.has('Watermelon')).toBe(true);
+		expect(secondCallData?.plantsName).toBe('Watermelon');
+		expect(secondCallData?.patchType.lastPlanted).toBe('Guam');
 
-		expect(extraComponents).toBeDefined();
-		expect(extraComponents).toHaveLength(1);
-		const autoContractButton = toPlain<APIButtonComponentWithCustomId>(extraComponents![0] as any);
-		expect(autoContractButton.custom_id).toBe('AUTO_FARMING_CONTRACT');
-		expect(autoContractButton.label).toBe('Auto Farming Contract');
-		expect(autoContractButton.disabled).toBeUndefined();
+		const nextTaskArgs = addSubTaskSpy.mock.calls[0]?.[0] as FarmingActivityTaskOptions | undefined;
+		expect(nextTaskArgs?.autoFarmPlan).toEqual([]);
+		expect(nextTaskArgs?.duration).toBe(Time.Minute);
+
+		expect(user.minionName).toBeDefined();
 	});
 
-	it('shows reminder copy when auto contract requirements are locked', async () => {
-		const { extraComponents, canRunAutoContractSpy } = await runAutoFarmScenario(false);
+	it('queues follow-up steps even when auto contract unlocks are pending', async () => {
+		const { addSubTaskSpy } = await runAutoFarmScenario();
 
-		expect(canRunAutoContractSpy).toHaveBeenCalledTimes(1);
-		expect(extraComponents).toBeDefined();
-		expect(extraComponents).toHaveLength(1);
-
-		const autoContractButton = toPlain<APIButtonComponentWithCustomId>(extraComponents![0] as any);
-		expect(autoContractButton.custom_id).toBe('AUTO_FARMING_CONTRACT');
-		expect(autoContractButton.label).toBe('Auto Farming Contract (Unlock requirements pending)');
-		expect(autoContractButton.disabled).toBe(true);
+		expect(addSubTaskSpy).toHaveBeenCalledTimes(1);
 	});
 });
