@@ -13,7 +13,7 @@ export const collectingTask: MinionTask = {
 
 		if (isBertSandTrip) {
 			const sendResult = (message: string, loot: Bank | null = null) =>
-				handleTripFinish(user, channelId, `${user}, ${message}`, undefined, data, loot);
+				handleTripFinish({ user, channelId, message: `${user}, ${message}`, data, loot });
 
 			const requirementError = isManualEligible(user);
 			if (requirementError) {
