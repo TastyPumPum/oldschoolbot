@@ -1,21 +1,22 @@
-import { ButtonBuilder, ButtonStyle } from '@oldschoolgg/discord';
-import { stringMatches, Time } from '@oldschoolgg/toolkit';
+import { ButtonBuilder, ButtonStyle, EmbedBuilder } from '@oldschoolgg/discord';
+import { noOp, stringMatches, Time } from '@oldschoolgg/toolkit';
+import { DiscordSnowflake } from '@sapphire/snowflake';
 import { TimerManager } from '@sapphire/timer-manager';
 
 import type { User } from '@/prisma/main.js';
 import { analyticsTick } from '@/lib/analytics.js';
 import { Channel, globalConfig } from '@/lib/constants.js';
 import { GrandExchange } from '@/lib/grandExchange.js';
+import type { SafeUserUpdateInput } from '@/lib/MUser.js';
 import { MUserClass } from '@/lib/MUser.js';
 import { cacheGEPrices } from '@/lib/marketPrices.js';
 import { collectMetrics } from '@/lib/metrics.js';
+import { informationalButtons } from '@/lib/sharedComponents.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchName, FarmingPatchSettingsKey } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
 import { handleGiveawayCompletion } from '@/lib/util/giveaway.js';
 
-let lastMessageID: string | null = null;
-let lastMessageGEID: string | null = null;
 const supportEmbed = new EmbedBuilder()
 	.setAuthor({ name: '⚠️ ⚠️ ⚠️ ⚠️ READ THIS ⚠️ ⚠️ ⚠️ ⚠️' })
 	.addFields({
@@ -197,7 +198,8 @@ LIMIT 10;`);
 					};
 				}
 				if (Object.keys(userUpdates).length > 0) {
-					await user.update(userUpdates);
+					const updates = userUpdates as SafeUserUpdateInput;
+					await user.update(updates);
 				}
 
 				if (globalConfig.isProduction) {
@@ -236,22 +238,19 @@ LIMIT 10;`);
 			if (existingBotMessage) {
 				// If there has been other chat since the last bot message, leave it to avoid spam.
 				if (latestMessage.id !== existingBotMessage.id) return;
-				const botMessageAge = now - new Date(existingBotMessage.timestamp).getTime();
+				const botMessageAge = now - Number(DiscordSnowflake.timestampFrom(existingBotMessage.id));
 				if (botMessageAge < Time.Hour * 6) return;
 
 				await globalClient.deleteMessage(Channel.HelpAndSupport, existingBotMessage.id).catch(noOp);
 			} else {
-				const latestMessageAge = now - new Date(latestMessage.timestamp).getTime();
+				const latestMessageAge = now - Number(DiscordSnowflake.timestampFrom(latestMessage.id));
 				if (latestMessageAge < Time.Hour) return;
 			}
 
-			const res = await globalClient.sendMessage(Channel.HelpAndSupport, {
+			await globalClient.sendMessage(Channel.HelpAndSupport, {
 				embeds: [supportEmbed],
 				components: informationalButtons
 			});
-			if (!res) return;
-
-			lastMessageID = res.id;
 		}
 	},
 	{
@@ -269,21 +268,18 @@ LIMIT 10;`);
 
 			if (existingBotMessage) {
 				if (latestMessage.id !== existingBotMessage.id) return;
-				const botMessageAge = now - new Date(existingBotMessage.timestamp).getTime();
+				const botMessageAge = now - Number(DiscordSnowflake.timestampFrom(existingBotMessage.id));
 				if (botMessageAge < Time.Hour * 6) return;
 
 				await globalClient.deleteMessage(Channel.GrandExchange, existingBotMessage.id).catch(noOp);
 			} else {
-				const latestMessageAge = now - new Date(latestMessage.timestamp).getTime();
+				const latestMessageAge = now - Number(DiscordSnowflake.timestampFrom(latestMessage.id));
 				if (latestMessageAge < Time.Hour) return;
 			}
 
-			const res = await globalClient.sendMessage(Channel.GrandExchange, {
+			await globalClient.sendMessage(Channel.GrandExchange, {
 				embeds: [geEmbed]
 			});
-			if (!res) return;
-
-			lastMessageGEID = res.id;
 		}
 	},
 	{
