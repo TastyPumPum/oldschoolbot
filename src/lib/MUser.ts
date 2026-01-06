@@ -1466,8 +1466,9 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 	}
 }
 
+export type MUser = MUserClass;
+
 declare global {
-	export type MUser = MUserClass;
 	var mUserFetch: typeof srcMUserFetch;
 	var GlobalMUserClass: typeof MUserClass;
 }
