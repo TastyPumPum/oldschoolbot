@@ -795,7 +795,7 @@ export async function fetchRepeatTrips(user: MUser): Promise<Activity[]> {
 		},
 		take: 20
 	});
-	const filtered: { type: activity_type_enum; data: Prisma.JsonValue }[] = [];
+	const filtered: Activity[] = [];
 	for (const trip of res) {
 		if (!taskCanBeRepeated(trip, user)) continue;
 		const data = ActivityManager.convertStoredActivityToFlatActivity(trip);
@@ -805,7 +805,7 @@ export async function fetchRepeatTrips(user: MUser): Promise<Activity[]> {
 			}
 		}
 		if (!filtered.some(i => i.type === trip.type)) {
-			filtered.push({ type: trip.type, data: trip.data ?? {} });
+			filtered.push(trip);
 		}
 	}
 	return filtered;
