@@ -298,6 +298,10 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 			} else {
 				resolveInsurance(game, false);
 			}
+			if (game.phase === 'SETTLEMENT') {
+				await settleAndPayout(game, user, false);
+				notice = notice ?? (game.dealerHasBlackjack ? 'Dealer has blackjack.' : 'Blackjack resolved.');
+			}
 		} else if (game.phase === 'PLAYER_TURN') {
 			const hand = activeHand(game);
 			if (hand.isSplitAcesHand) {
@@ -359,11 +363,6 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 					notice = 'Hand finished. Dealer plays out.';
 				}
 			}
-		}
-
-		if (game.phase === 'SETTLEMENT') {
-			await settleAndPayout(game, user, false);
-			notice = notice ?? (game.dealerHasBlackjack ? 'Dealer has blackjack.' : 'Blackjack resolved.');
 		}
 
 		if (game.phase === 'PLAYER_TURN') {
