@@ -12,6 +12,7 @@ import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import { updateGiveawayMessage } from '@/lib/util/giveaway.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
 import { autoSlayCommand } from '@/mahoji/lib/abstracted_commands/autoSlayCommand.js';
+import { handleBlackjackButton } from '@/mahoji/lib/abstracted_commands/blackjackCommand.js';
 import { cancelGEListingCommand } from '@/mahoji/lib/abstracted_commands/cancelGEListingCommand.js';
 import { autoContract } from '@/mahoji/lib/abstracted_commands/farmingContractCommand.js';
 import { shootingStarsCommand } from '@/mahoji/lib/abstracted_commands/shootingStarsCommand.js';
@@ -234,6 +235,7 @@ async function globalButtonInteractionHandler({
 	const user = await mUserFetch(userID);
 	if (id.includes('REPEAT_TRIP')) return repeatTripHandler(user, id, interaction);
 
+	if (id.startsWith('BJ|')) return handleBlackjackButton(interaction, id);
 	if (id.includes('GIVEAWAY_')) return giveawayButtonHandler(user, id, interaction);
 	if (id.startsWith('GPE_')) return handleGearPresetEquip(user, id, interaction);
 	if (id.startsWith('PTR_')) return handlePinnedTripRepeat(user, id, interaction);
