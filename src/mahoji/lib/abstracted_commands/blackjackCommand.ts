@@ -277,6 +277,7 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 				});
 				return SpecialResponse.RespondedManually;
 			}
+
 			if (action === 'INSURE') {
 				const insuranceBet = Math.floor(game.mainBet / 2);
 				if (insuranceBet === 0) {
@@ -298,10 +299,11 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 			} else {
 				resolveInsurance(game, false);
 			}
-			if (game.phase === 'SETTLEMENT') {
-				await settleAndPayout(game, user, false);
-				notice = notice ?? (game.dealerHasBlackjack ? 'Dealer has blackjack.' : 'Blackjack resolved.');
-			}
+		}
+
+		if (game.phase === 'SETTLEMENT') {
+			await settleAndPayout(game, user, false);
+			notice = notice ?? (game.dealerHasBlackjack ? 'Dealer has blackjack.' : 'Blackjack resolved.');
 		} else if (game.phase === 'PLAYER_TURN') {
 			const hand = activeHand(game);
 			if (hand.isSplitAcesHand) {
