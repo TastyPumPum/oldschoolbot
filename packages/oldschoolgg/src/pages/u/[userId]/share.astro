@@ -1,0 +1,81 @@
+export const prerender = false;
+---
+import Layout from '@/layouts/Layout.astro';
+import { fetchShareProfile } from '@/lib/share/shareData.js';
+
+const { userId } = Astro.params;
+const searchParams = new URL(Astro.request.url).searchParams;
+const botParam = searchParams.get('bot');
+const bot = botParam === 'bso' || botParam === 'osb' ? botParam : null;
+
+if (!userId) {
+	throw new Error('Missing user id');
+}
+
+const profile = await fetchShareProfile({ userId, bot });
+const sharePath = `/u/${userId}/share?bot=${profile.bot}`;
+const bannerPath = `/u/${userId}/banner.png?bot=${profile.bot}`;
+const absoluteShareUrl = new URL(sharePath, __FRONTEND_URL__).toString();
+const absoluteBannerUrl = new URL(bannerPath, __FRONTEND_URL__).toString();
+const title = `${profile.minionName} • ${profile.bot.toUpperCase()} Stats`;
+---
+
+<Layout pageTitle={title} desc="Shareable Oldschool.gg stats banner" image={absoluteBannerUrl} url={absoluteShareUrl}>
+	<section class="mx-auto max-w-4xl px-4 py-8">
+		<div class="flex flex-col gap-6">
+			<div class="rounded-2xl border border-white/10 bg-black/40 p-4">
+				<img
+					src={bannerPath}
+					alt={`${profile.minionName} share banner`}
+					class="w-full rounded-xl border border-white/10"
+					loading="eager"
+				/>
+			</div>
+
+			<div class="flex flex-wrap gap-3">
+				<button
+					class="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-400"
+					data-copy-link
+				>
+					Copy link
+				</button>
+				<a
+					href={bannerPath}
+					download
+					class="rounded-lg border border-white/20 px-4 py-2 text-white hover:border-white/40"
+				>
+					Download PNG
+				</a>
+				<a
+					href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(absoluteShareUrl)}&text=${encodeURIComponent(title)}`}
+					target="_blank"
+					rel="noreferrer"
+					class="rounded-lg border border-white/20 px-4 py-2 text-white hover:border-white/40"
+				>
+					Share to X
+				</a>
+			</div>
+
+			<p class="text-sm text-white/60">
+				Share this page to get rich link previews on Discord and social networks.
+			</p>
+		</div>
+	</section>
+</Layout>
+
+<script>
+	const copyButton = document.querySelector('[data-copy-link]');
+	if (copyButton) {
+		copyButton.addEventListener('click', async () => {
+			try {
+				await navigator.clipboard.writeText(window.location.href);
+				copyButton.textContent = 'Copied!';
+				setTimeout(() => {
+					copyButton.textContent = 'Copy link';
+				}, 2000);
+			} catch {
+				copyButton.textContent = 'Copy failed';
+			}
+		});
+	}
+</script>

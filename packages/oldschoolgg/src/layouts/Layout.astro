@@ -45,10 +45,20 @@ const { pageTitle, desc, keywords, image, url } = Astro.props;
 			content={(keywords || defaultKeywords).join(", ")}
 		/>
 		<meta name="og:url" content={url || "https://www.oldschool.gg/"} />
-		<meta
-			name="og:image"
-			content={image || "https://www.oldschool.gg/logo.jpg"}
-		/>
+	<meta
+		name="og:image"
+		content={image || "https://www.oldschool.gg/logo.jpg"}
+	/>
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta
+		name="twitter:title"
+		content={pageTitle ? `${pageTitle} - Oldschool.gg` : defaultTitle}
+	/>
+	<meta name="twitter:description" content={desc || defaultDescription} />
+	<meta
+		name="twitter:image"
+		content={image || "https://www.oldschool.gg/logo.jpg"}
+	/>
 
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
