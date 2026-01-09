@@ -255,13 +255,14 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 
 	const userId = interaction.userId;
 	return userQueueFn(userId, async () => {
+		await interaction.baseDeferUpdate();
 		const game = activeBlackjackGames.get(userId);
 		if (!game) {
-			await interaction.reply({ content: 'You do not have an active Blackjack game.', ephemeral: true });
+			await interaction.followUp({ content: 'You do not have an active Blackjack game.', ephemeral: true });
 			return SpecialResponse.RespondedManually;
 		}
 		if (game.nonce !== nonce) {
-			await interaction.reply({ content: 'This Blackjack game is no longer active.', ephemeral: true });
+			await interaction.followUp({ content: 'This Blackjack game is no longer active.', ephemeral: true });
 			return SpecialResponse.RespondedManually;
 		}
 
@@ -271,7 +272,7 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 		let notice: string | undefined;
 		if (game.phase === 'INSURANCE_OFFER') {
 			if (action !== 'INSURE' && action !== 'NO_INSURE') {
-				await interaction.reply({
+				await interaction.followUp({
 					content: 'Insurance is pending. Please respond to the insurance offer.',
 					ephemeral: true
 				});
@@ -281,14 +282,14 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 			if (action === 'INSURE') {
 				const insuranceBet = Math.floor(game.mainBet / 2);
 				if (insuranceBet === 0) {
-					await interaction.reply({
+					await interaction.followUp({
 						content: 'Insurance is not available for this bet size.',
 						ephemeral: true
 					});
 					return SpecialResponse.RespondedManually;
 				}
 				if (user.GP < insuranceBet) {
-					await interaction.reply({
+					await interaction.followUp({
 						content: 'You do not have enough GP to take insurance.',
 						ephemeral: true
 					});
@@ -307,7 +308,7 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 		} else if (game.phase === 'PLAYER_TURN') {
 			const hand = activeHand(game);
 			if (hand.isSplitAcesHand) {
-				await interaction.reply({ content: 'Split aces cannot take actions.', ephemeral: true });
+				await interaction.followUp({ content: 'Split aces cannot take actions.', ephemeral: true });
 				return SpecialResponse.RespondedManually;
 			}
 
@@ -320,12 +321,18 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 					break;
 				case 'DOUBLE': {
 					if (!canDoubleHand(game)) {
-						await interaction.reply({ content: 'Double is not available for this hand.', ephemeral: true });
+						await interaction.followUp({
+							content: 'Double is not available for this hand.',
+							ephemeral: true
+						});
 						return SpecialResponse.RespondedManually;
 					}
 					const additionalBet = hand.bet;
 					if (user.GP < additionalBet) {
-						await interaction.reply({ content: 'You do not have enough GP to double.', ephemeral: true });
+						await interaction.followUp({
+							content: 'You do not have enough GP to double.',
+							ephemeral: true
+						});
 						return SpecialResponse.RespondedManually;
 					}
 					await user.transactItems({ itemsToRemove: new Bank().add('Coins', additionalBet) });
@@ -334,11 +341,14 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 				}
 				case 'SPLIT': {
 					if (!canSplitHand(game)) {
-						await interaction.reply({ content: 'Split is not available for this hand.', ephemeral: true });
+						await interaction.followUp({
+							content: 'Split is not available for this hand.',
+							ephemeral: true
+						});
 						return SpecialResponse.RespondedManually;
 					}
 					if (user.GP < game.mainBet) {
-						await interaction.reply({ content: 'You do not have enough GP to split.', ephemeral: true });
+						await interaction.followUp({ content: 'You do not have enough GP to split.', ephemeral: true });
 						return SpecialResponse.RespondedManually;
 					}
 					await user.transactItems({ itemsToRemove: new Bank().add('Coins', game.mainBet) });
@@ -346,11 +356,11 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 					break;
 				}
 				default:
-					await interaction.reply({ content: 'That action is not available right now.', ephemeral: true });
+					await interaction.followUp({ content: 'That action is not available right now.', ephemeral: true });
 					return SpecialResponse.RespondedManually;
 			}
 		} else {
-			await interaction.reply({
+			await interaction.followUp({
 				content: 'This Blackjack game is no longer accepting actions.',
 				ephemeral: true
 			});
@@ -372,7 +382,7 @@ export async function handleBlackjackButton(interaction: MInteraction, customId:
 		}
 
 		const message = buildBlackjackMessage(game, notice);
-		await interaction.update(message);
+		await interaction.baseEditReply(message);
 		return SpecialResponse.RespondedManually;
 	});
 }
