@@ -36,14 +36,22 @@ export async function fetchFullMinionData(bot: IBotType, targetUserId: string): 
 		}
 	}
 
-	const activityClient = bot === 'osb' ? osbClient.activity : bsoClient.activity;
-	const currentActivity = await activityClient.findFirst({
-		where: {
-			user_id: BigInt(targetUserId),
-			completed: false
-		},
-		orderBy: { finish_date: 'desc' }
-	});
+	const currentActivity =
+		bot === 'osb'
+			? await osbClient.activity.findFirst({
+					where: {
+						user_id: BigInt(targetUserId),
+						completed: false
+					},
+					orderBy: { finish_date: 'desc' }
+				})
+			: await bsoClient.activity.findFirst({
+					where: {
+						user_id: BigInt(targetUserId),
+						completed: false
+					},
+					orderBy: { finish_date: 'desc' }
+				});
 	const currentActivityName =
 		currentActivity &&
 		typeof currentActivity.data === 'object' &&
