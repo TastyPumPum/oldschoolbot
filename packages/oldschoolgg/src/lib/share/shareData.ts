@@ -84,6 +84,22 @@ export async function fetchShareProfile({
 	userId: string;
 	bot: 'osb' | 'bso' | null;
 }): Promise<ShareProfile> {
+	if (import.meta.env?.DEV) {
+		const resolvedBot = bot ?? 'osb';
+		return {
+			userId,
+			bot: resolvedBot,
+			minionName: 'Tasty Test Minion',
+			discordName: 'TastyTest#0001',
+			totalXp: 1_234_567_890,
+			totalLevel: 2277,
+			collectionLogCount: 500,
+			collectionLogTotal: COLLECTION_LOG_ITEMS.size,
+			combatAchievementsCount: 150,
+			combatAchievementsTotal: COMBAT_ACHIEVEMENTS_TOTAL,
+			petItemId: 20659
+		};
+	}
 	const resolvedBot = await resolveBot(userId, bot);
 	const [identity, minion] = await Promise.all([
 		fetchJson<SUserIdentity>(`${API_URL}/user/identity/${userId}`),

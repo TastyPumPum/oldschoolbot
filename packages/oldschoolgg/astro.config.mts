@@ -75,5 +75,5 @@ export default defineConfig({
 	},
 	devToolbar: { enabled: false },
 	integrations: [react()],
-	output: 'hybrid'
+	output: 'static'
 });
