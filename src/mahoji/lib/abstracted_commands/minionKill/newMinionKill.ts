@@ -84,7 +84,9 @@ export function newMinionKillCommand(args: MinionKillOptions): string | MinionKi
 		currentSlayerTask.currentTask !== null &&
 		currentSlayerTask.assignedTask.monsters.includes(monster.id);
 
-	if (monster.slayerOnly && !isOnTask && !slayerUnlocks.includes(SlayerTaskUnlocksEnum.OffTaskSlayer)) {
+	const canKillOffTask = slayerUnlocks.includes(SlayerTaskUnlocksEnum.OffTaskSlayer);
+
+	if (monster.slayerOnly && !isOnTask && !canKillOffTask) {
 		return `You can't kill ${monster.name}, because you're not on a slayer task.`;
 	}
 
