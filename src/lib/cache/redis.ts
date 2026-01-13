@@ -10,7 +10,7 @@ import {
 } from '@oldschoolgg/schemas';
 import { Time } from '@oldschoolgg/toolkit';
 import { isValidDiscordSnowflake, RedisKeys } from '@oldschoolgg/util';
-import { Redis } from 'ioredis';
+import { Redis, type RedisOptions } from 'ioredis';
 
 import type { Guild } from '@/prisma/main.js';
 import { MockedRedis } from '@/lib/cache/redis-mock.js';
@@ -41,21 +41,46 @@ const RATELIMITS: Record<RatelimitType, RatelimitConfig> = {
 
 const BotKeys = RedisKeys[BOT_TYPE];
 
+function getRedisOptions(): RedisOptions {
+	const options: RedisOptions = {};
+
+	if (process.env.REDIS_HOST) options.host = process.env.REDIS_HOST;
+	if (process.env.REDIS_PORT) {
+		const port = Number.parseInt(process.env.REDIS_PORT, 10);
+		if (!Number.isNaN(port)) options.port = port;
+	}
+	if (process.env.REDIS_PASSWORD) options.password = process.env.REDIS_PASSWORD;
+	if (process.env.REDIS_DB) {
+		const db = Number.parseInt(process.env.REDIS_DB, 10);
+		if (!Number.isNaN(db)) options.db = db;
+	}
+
+	return options;
+}
+
 class CacheManager {
 	private client: Redis;
 
 	constructor() {
+		const redisOptions = getRedisOptions();
 		if (globalConfig.isProduction) {
-			this.client = new Redis();
+			this.client = new Redis(redisOptions);
+			this.client.on('error', err => {
+				Logging.logError(err as Error, { context: { source: 'Redis' } });
+			});
 		} else {
 			try {
-				const redis = new Redis({ reconnectOnError: () => false });
-				redis.on('error', () => {
+				const redis = new Redis({ ...redisOptions, reconnectOnError: () => false });
+				redis.on('error', err => {
+					Logging.logError(err as Error, { context: { source: 'Redis', fallback: 'MockedRedis' } });
 					redis.disconnect();
 					this.client = new MockedRedis() as any as Redis;
 				});
 				this.client = redis;
 			} catch {
+				Logging.logError(new Error('Failed to initialize Redis, using MockedRedis.'), {
+					context: { source: 'Redis', fallback: 'MockedRedis' }
+				});
 				this.client = new MockedRedis() as any as Redis;
 			}
 		}
@@ -151,6 +176,21 @@ class CacheManager {
 
 	async getMember(guildId: string, userId: string) {
 		return this.getJson<IMember>(RedisKeys.Discord.Member(guildId, userId));
+	}
+
+	async getOrFetchMember(guildId: string, userId: string): Promise<IMember | null> {
+		const cached = await this.getMember(guildId, userId);
+		if (cached) return cached;
+
+		Logging.logDebug(`Member cache miss for ${userId} in guild ${guildId}, fetching from Discord.`);
+		try {
+			const member = await globalClient.fetchMember({ guildId, userId });
+			await this.setMember(member);
+			return member;
+		} catch (err) {
+			Logging.logError(err as Error, { context: { source: 'Cache.getOrFetchMember', guildId, userId } });
+			return null;
+		}
 	}
 
 	async getChannel(channelId: string): Promise<IChannel> {
