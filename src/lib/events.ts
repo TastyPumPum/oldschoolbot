@@ -11,7 +11,9 @@ import pets from '@/lib/data/pets.js';
 import { roboChimpSyncData } from '@/lib/roboChimp.js';
 import type { ActivityTaskData } from '@/lib/types/minions.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
+import { createMentionInteraction } from '@/lib/util/mentionCommandInteraction.js';
 import { minionStatsEmbed } from '@/lib/util/minionStatsEmbed.js';
+import { fetchLastRepeatableTrip, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
 import { minionStatusCommand } from '@/mahoji/lib/abstracted_commands/minionStatusCommand.js';
 
 const rareRolesSrc: [string, number, string][] = [
@@ -134,6 +136,7 @@ interface MentionCommandOptions {
 	user: MUser;
 	components: BaseSendableMessage['components'];
 	content: string;
+	message: IMessage;
 }
 interface MentionCommand {
 	name: command_name_enum;
@@ -269,6 +272,19 @@ const mentionCommands: MentionCommand[] = [
 				components
 			};
 		}
+	},
+	{
+		name: 'm',
+		aliases: ['r', 'repeat'],
+		description: 'Repeats your last trip.',
+		run: async ({ user, components, message }: MentionCommandOptions) => {
+			const activity = await fetchLastRepeatableTrip(user);
+			if (!activity) {
+				return { content: "Couldn't find any trip to repeat.", components };
+			}
+			const interaction = createMentionInteraction({ user, message });
+			return repeatTrip(user, interaction, activity);
+		}
 	}
 ];
 
@@ -309,7 +325,8 @@ export async function onMessage(msg: IMessage) {
 			const response = await command.run({
 				user,
 				components: result.components,
-				content: msgContentWithoutCommand
+				content: msgContentWithoutCommand,
+				message: msg
 			});
 			await globalClient.replyToMessage(msg, response);
 		} catch (err) {
