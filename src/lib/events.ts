@@ -38,7 +38,7 @@ const rareRolesSrc: [string, number, string][] = [
 ];
 
 async function rareRoles(msg: IMessage) {
-	if (!globalConfig.isProduction) return;
+	if (!globalConfig.isProduction && process.env.ALLOW_RARE_ROLES !== 'true') return;
 
 	if (msg.guild_id !== globalConfig.supportServerID) {
 		return;
