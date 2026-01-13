@@ -52,9 +52,17 @@ async function rareRoles(msg: IMessage) {
 
 	for (const [roleID, chance, name] of rareRolesSrc) {
 		if (roll(chance / 10)) {
-			const member = await Cache.getMainServerMember(msg.author_id);
+			const member = await Cache.getOrFetchMember(msg.guild_id, msg.author_id);
 			if (!member || member.roles.includes(roleID)) continue;
-			await globalClient.giveRole(msg.guild_id, msg.author_id, roleID);
+			try {
+				await globalClient.giveRole(msg.guild_id, msg.author_id, roleID);
+			} catch (err) {
+				Logging.logError(err as Error, {
+					context: { source: 'rareRoles', guildId: msg.guild_id, userId: msg.author_id, roleId: roleID }
+				});
+				return;
+			}
+			Logging.logDebug(`Granted rare role ${roleID} to ${msg.author_id} in ${msg.guild_id}.`);
 			await globalClient.reactToMsg({
 				channelId: msg.channel_id,
 				messageId: msg.id,
@@ -274,7 +282,9 @@ const mentionCommands: MentionCommand[] = [
 
 export async function onMessage(msg: IMessage) {
 	// biome-ignore lint/nursery/noFloatingPromises:-
-	rareRoles(msg);
+	rareRoles(msg).catch(err =>
+		Logging.logError(err as Error, { context: { source: 'rareRoles', messageId: msg.id } })
+	);
 	// biome-ignore lint/nursery/noFloatingPromises:-
 	petMessages(msg);
 	if (!msg.content) return;
