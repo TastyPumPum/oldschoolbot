@@ -1,4 +1,4 @@
-import { bold, dateFm, EmbedBuilder } from '@oldschoolgg/discord';
+import { bold, dateFm, EmbedBuilder, SpecialResponse } from '@oldschoolgg/discord';
 import { MathRNG, roll } from '@oldschoolgg/rng';
 import type { IMessage } from '@oldschoolgg/schemas';
 import { Emoji, Events, getNextUTCReset, isFunction, Time } from '@oldschoolgg/toolkit';
@@ -142,7 +142,7 @@ interface MentionCommand {
 	name: command_name_enum;
 	aliases: string[];
 	description: string;
-	run: (options: MentionCommandOptions) => Promise<SendableMessage>;
+	run: (options: MentionCommandOptions) => CommandResponse;
 }
 
 const mentionCommands: MentionCommand[] = [
@@ -328,6 +328,13 @@ export async function onMessage(msg: IMessage) {
 				content: msgContentWithoutCommand,
 				message: msg
 			});
+			if (
+				response === SpecialResponse.PaginatedMessageResponse ||
+				response === SpecialResponse.SilentErrorResponse ||
+				response === SpecialResponse.RespondedManually
+			) {
+				return;
+			}
 			await globalClient.replyToMessage(msg, response);
 		} catch (err) {
 			let errMsg = 'There was an error running that command.';
