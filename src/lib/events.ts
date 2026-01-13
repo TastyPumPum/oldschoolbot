@@ -38,11 +38,11 @@ const rareRolesSrc: [string, number, string][] = [
 ];
 
 async function rareRoles(msg: IMessage) {
+	// Only run in prod by default; allow opt-in for testing via env
 	if (!globalConfig.isProduction && process.env.ALLOW_RARE_ROLES !== 'true') return;
 
-	if (msg.guild_id !== globalConfig.supportServerID) {
-		return;
-	}
+	// Only in support server
+	if (msg.guild_id !== globalConfig.supportServerID) return;
 
 	const lastMessage = RARE_ROLES_CACHE.get(msg.author_id) ?? 1;
 	if (Date.now() - lastMessage < Time.Second * 13) return;
@@ -51,38 +51,42 @@ async function rareRoles(msg: IMessage) {
 	if (!roll(10) || !msg.guild_id) return;
 
 	for (const [roleID, chance, name] of rareRolesSrc) {
-		if (roll(chance / 10)) {
-			const member = await Cache.getOrFetchMember(msg.guild_id, msg.author_id);
-			if (!member || member.roles.includes(roleID)) continue;
-			try {
-				await globalClient.giveRole(msg.guild_id, msg.author_id, roleID);
-			} catch (err) {
-				Logging.logError(err as Error, {
-					context: { source: 'rareRoles', guildId: msg.guild_id, userId: msg.author_id, roleId: roleID }
-				});
-				return;
-			}
-			Logging.logDebug(`Granted rare role ${roleID} to ${msg.author_id} in ${msg.guild_id}.`);
-			await globalClient.reactToMsg({
-				channelId: msg.channel_id,
-				messageId: msg.id,
-				emojiId: 'Gift'
-			});
+		if (!roll(chance / 10)) continue;
 
-			if (
-				!rareRolesSrc
-					.slice(0, 3)
-					.map(i => i[2])
-					.includes(name)
-			) {
-				const username = await Cache.getBadgedUsername(msg.author_id);
-				globalClient.emit(
-					Events.ServerNotification,
-					`${Emoji.Fireworks} **${username}** just received the **${name}** role. `
-				);
-			}
-			break;
+		const member = await Cache.getOrFetchMember(msg.guild_id, msg.author_id);
+		if (!member || member.roles.includes(roleID)) continue;
+
+		try {
+			await globalClient.giveRole(msg.guild_id, msg.author_id, roleID);
+		} catch (err) {
+			Logging.logError(err as Error, {
+				context: { source: 'rareRoles', guildId: msg.guild_id, userId: msg.author_id, roleId: roleID }
+			});
+			return;
 		}
+
+		Logging.logDebug(`Granted rare role ${roleID} to ${msg.author_id} in ${msg.guild_id}.`);
+
+		await globalClient.reactToMsg({
+			channelId: msg.channel_id,
+			messageId: msg.id,
+			emojiId: 'Gift'
+		});
+
+		if (
+			!rareRolesSrc
+				.slice(0, 3)
+				.map(i => i[2])
+				.includes(name)
+		) {
+			const username = await Cache.getBadgedUsername(msg.author_id);
+			globalClient.emit(
+				Events.ServerNotification,
+				`${Emoji.Fireworks} **${username}** just received the **${name}** role. `
+			);
+		}
+
+		break;
 	}
 }
 
@@ -92,7 +96,7 @@ async function petMessages(msg: IMessage) {
 	if (!guildSettings.petchannel) return;
 
 	const key = `${msg.author_id}.${msg.guild_id}`;
-	// If they sent a message in this server in the past 1.5 mins, return.
+	// If they sent a message in this server in the past ~1.5 mins, return.
 	const lastMessage = CHAT_PET_COOLDOWN_CACHE.get(key) ?? 1;
 	if (Date.now() - lastMessage < 80_000) return;
 	CHAT_PET_COOLDOWN_CACHE.set(key, Date.now());
@@ -203,14 +207,12 @@ const mentionCommands: MentionCommand[] = [
 
 					const price = toKMB(Math.floor(item.price ?? 0));
 
-					let str = `${index + 1}. ${item.name} ID[${item.id}] Price[${price}] ${
+					let row = `${index + 1}. ${item.name} ID[${item.id}] Price[${price}] ${
 						item.tradeable ? 'Tradeable' : 'Untradeable'
 					} ${icons.join(' ')}`;
-					if (gettedItem.id === item.id) {
-						str = bold(str);
-					}
+					if (gettedItem.id === item.id) row = bold(row);
 
-					return str;
+					return row;
 				})
 				.join('\n')}`;
 
@@ -281,12 +283,14 @@ const mentionCommands: MentionCommand[] = [
 ];
 
 export async function onMessage(msg: IMessage) {
-	// biome-ignore lint/nursery/noFloatingPromises:-
+	// biome-ignore lint/nursery/noFloatingPromises: handled with .catch
 	rareRoles(msg).catch(err =>
 		Logging.logError(err as Error, { context: { source: 'rareRoles', messageId: msg.id } })
 	);
-	// biome-ignore lint/nursery/noFloatingPromises:-
+
+	// biome-ignore lint/nursery/noFloatingPromises:- (leave as-is; optionally add .catch similar to rareRoles)
 	petMessages(msg);
+
 	if (!msg.content) return;
 	const content = msg.content.trim();
 	if (!content.includes(mentionText)) return;
