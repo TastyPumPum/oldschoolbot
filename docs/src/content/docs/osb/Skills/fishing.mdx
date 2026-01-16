@@ -8,6 +8,15 @@ Fishing bait is buyable with: [[/buy name\:Fishing bait]]
 
 Dark fishing bait and Raw Karambwanji are **not** sold by the bot. You must obtain them yourself or buy from other players.
 
+## Fishing System Updates
+
+The fishing pipeline now uses a **tick-based simulation** (0.6s ticks) with per-catch rolls. Multi-fish spots track each subfish separately, and those catch arrays are persisted so trips resolve correctly after the rework.
+
+- Per-catch extra fish rolls: Rada’s blessing and Spirit flakes add extra fish without additional XP or extra clue/pet rolls.
+- Powerfishing uses faster tick rates (where supported) and disables Spirit flakes.
+- Barbarian cut-eat is supported when **Barbarian fishing** is powerfished at **99 Fishing** and **80 Cooking**, granting Cooking XP while reducing bait usage.
+- Moon key halves can be rolled **per catch** after *Children of the Sun* on eligible fish (see Boosts).
+
 ## Boosts
 
 ### Angler Outfit
@@ -25,6 +34,15 @@ Obtainable from [Fishing Trawler](fishing-trawler) and [Aerial Fishing](https://
 - 50% chance to catch double fish per action when using Spirit flakes
 - Extra fish gives no additional XP
 
+### Rada’s Blessing
+
+When equipped (and not powerfishing), Rada’s blessing grants a chance at extra fish per catch:
+
+- 2% — Rada’s blessing 1
+- 4% — Rada’s blessing 2
+- 6% — Rada’s blessing 3
+- 8% — Rada’s blessing 4
+
 ### Tools
 
 Equipping the following tools in **any** setup reduces catch time:
@@ -33,6 +51,25 @@ Equipping the following tools in **any** setup reduces catch time:
 - 5% — Pearl fly fishing rod (fly fishing)
 - 5% — Pearl barbarian rod (barbarian fishing)
 - 5% — Crystal harpoon (harpooning, caging, netting)
+
+Harpoon boosts for **Tuna/Swordfish** and **Shark** spots:
+
+- 35% — Crystal harpoon
+- 20% — Dragon harpoon
+- 20% — Infernal harpoon
+
+### Storage
+
+- **Fish barrel** or **Fish sack barrel** adds 28 inventory slots and extends trips by 9 minutes (non-minnow).
+
+### Moon Key
+
+After *Children of the Sun*, the following fish have per-catch rolls for moon key halves:
+
+- **Trout/Salmon** — 1/4100
+- **Tuna/Swordfish** — 3/5000
+- **Lobster** — 3/5000
+- **Shark** — 1/580
 
 ### Fish
 
