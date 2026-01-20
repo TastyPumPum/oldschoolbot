@@ -1,6 +1,12 @@
 import { Items } from 'oldschooljs';
 
-export const stealingArtefactsCaps = [
+type StealingArtefactsCap = {
+	level: number;
+	base: number;
+	teleport: number;
+};
+
+export const stealingArtefactsCaps: StealingArtefactsCap[] = [
 	{ level: 49, base: 130_080, teleport: 150_000 },
 	{ level: 55, base: 141_600, teleport: 163_000 },
 	{ level: 60, base: 151_200, teleport: 174_000 },
@@ -12,7 +18,7 @@ export const stealingArtefactsCaps = [
 	{ level: 90, base: 208_800, teleport: 241_000 },
 	{ level: 95, base: 218_400, teleport: 252_000 },
 	{ level: 99, base: 226_080, teleport: 261_000 }
-] as const;
+];
 
 export type StealingArtefactsCapColumn = 'base' | 'teleport';
 

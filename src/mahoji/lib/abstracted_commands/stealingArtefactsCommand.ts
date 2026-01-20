@@ -56,7 +56,6 @@ export async function stealingArtefactsCommand(
 				moltenGlassUsed: number;
 		  }
 		| undefined;
-	let craftingXp = 0;
 	let glassblowNote = '';
 
 	if (glassblowProduct !== 'none') {
@@ -73,7 +72,6 @@ export async function stealingArtefactsCommand(
 		}
 
 		duration = plan.hours * Time.Hour;
-		craftingXp = plan.craftingXp;
 		glassblow = {
 			product: glassblowProduct,
 			itemsMade: plan.itemsMade,
