@@ -73,12 +73,20 @@ You can also steal from stalls instead of pickpocketing. For most stalls, you wi
 
 ## Thievable Chests
 
-| Chest Name              | Required Level | Experience | Requirements/Notes |
-| ----------------------- | -------------- | ---------- | ------------------ |
-| Stone chest             | 64             | 280        | -                  |
-| Ardougne Castle chest   | 72             | 500        | -                  |
-| Dorgesh-Kaan rich chest | 78             | 650        | -                  |
-| Rogues' Castle chest    | 84             | 701.7      | 43 Prayer required |
+| Chest Name                 | Required Level | Experience | Requirements/Notes |
+| -------------------------- | -------------- | ---------- | ------------------ |
+| 10 coin chest              | 13             | 7.8        | -                  |
+| Nature rune chest          | 28             | 25         | -                  |
+| Isle of Souls chest        | 28             | 150        | -                  |
+| Aldarin Villas chest       | 36             | 200        | -                  |
+| 50 coin chest              | 43             | 125        | -                  |
+| Steel arrowtips chest      | 47             | 150        | -                  |
+| Dorgesh-Kaan average chest | 52             | 200        | -                  |
+| Blood runes chest          | 59             | 250        | -                  |
+| Stone chest                | 64             | 280        | -                  |
+| Ardougne Castle chest      | 72             | 500        | -                  |
+| Dorgesh-Kaan rich chest    | 78             | 650        | -                  |
+| Rogues' Castle chest       | 84             | 701.7      | 43 Prayer required |
 
 ### Rogues' Castle chest notes
 
