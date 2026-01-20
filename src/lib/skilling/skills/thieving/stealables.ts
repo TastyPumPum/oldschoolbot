@@ -33,6 +33,7 @@ export interface Stealable {
 	aliases?: string[];
 	level: number;
 	xp: number;
+	prayerLevelRequired?: number;
 	qpRequired?: number;
 	fireCapeRequired?: boolean;
 	requiredQuests?: QuestID[];
@@ -882,6 +883,7 @@ const chests: Stealable[] = [
 		type: 'chest',
 		level: 84,
 		xp: 701.7,
+		prayerLevelRequired: 43,
 		table: new LootTable()
 			.add('Nature rune', 30, 11)
 			.add("Red spiders' eggs", 4, 10)
@@ -900,8 +902,7 @@ const chests: Stealable[] = [
 			.add('Blighted manta ray', 15, 1)
 			.add('Blighted anglerfish', 11, 1)
 			.add('Uncut sapphire', 11, 1)
-			.add('Dragonstone', 2, 1)
-			.tertiary(99, 'Clue scroll (hard)'),
+			.add('Dragonstone', 2, 1),
 		id: 14774,
 		respawnTime: Time.Second * 15
 	}
