@@ -718,12 +718,6 @@ export const minigamesCommand = defineCommand({
 							min_value: 1
 						},
 						{
-							type: 'String',
-							name: 'duration',
-							description: 'Trip duration (e.g. 1h, 30m).',
-							required: false
-						},
-						{
 							type: 'Boolean',
 							name: 'stamina',
 							description: 'Use stamina for a 30% boost.',

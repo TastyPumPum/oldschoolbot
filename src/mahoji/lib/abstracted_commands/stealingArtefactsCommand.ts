@@ -1,4 +1,4 @@
-import { Duration, formatDuration, Time } from '@oldschoolgg/toolkit';
+import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import {
@@ -15,7 +15,6 @@ export async function stealingArtefactsCommand(
 	channelId: string,
 	options: {
 		quantity?: number;
-		duration?: string;
 		stamina?: boolean;
 		teleport?: boolean;
 		glassblow_product?: string;
@@ -36,19 +35,11 @@ export async function stealingArtefactsCommand(
 		questCompleted: true
 	});
 
-	if (options.duration && options.quantity) {
-		return 'You can only specify one of quantity or duration.';
-	}
-
 	const maxTripLength = await user.calcMaxTripLength('StealingArtefacts');
 	const deliveriesPerHour = getStealingArtefactsDeliveriesPerHour(teleportEligible);
 
 	let duration = maxTripLength;
-	if (options.duration) {
-		const requested = new Duration(options.duration).offset;
-		if (requested < Time.Second) return 'Invalid duration.';
-		duration = requested;
-	} else if (options.quantity) {
+	if (options.quantity) {
 		const requestedDeliveries = Math.max(1, options.quantity);
 		duration = (requestedDeliveries / deliveriesPerHour) * Time.Hour;
 	}
@@ -107,8 +98,6 @@ export async function stealingArtefactsCommand(
 		stamina,
 		teleportOptionEnabled,
 		teleportEligible,
-		hasGraceful,
-		thievingLevel,
 		glassblow
 	});
 

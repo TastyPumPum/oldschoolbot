@@ -8,7 +8,9 @@ import type { StealingArtefactsActivityTaskOptions } from '@/lib/types/minions.j
 export const stealingArtefactsTask: MinionTask = {
 	type: 'StealingArtefacts',
 	async run(data: StealingArtefactsActivityTaskOptions, { user, handleTripFinish }) {
-		const { channelId, duration, stamina, teleportEligible, hasGraceful, thievingLevel, glassblow } = data;
+		const { channelId, duration, stamina, teleportEligible, glassblow } = data;
+		const thievingLevel = user.skillsAsLevels.thieving;
+		const hasGraceful = user.hasGracefulEquipped();
 
 		const hours = duration / Time.Hour;
 		const xpInfo = calculateStealingArtefactsXpPerHour({

@@ -413,8 +413,6 @@ export interface StealingArtefactsActivityTaskOptions extends MinigameActivityTa
 	stamina: boolean;
 	teleportOptionEnabled: boolean;
 	teleportEligible: boolean;
-	hasGraceful: boolean;
-	thievingLevel: number;
 	glassblow?: {
 		product: import('@/lib/minions/data/stealingArtefacts.js').StealingArtefactsGlassblowProductKey;
 		itemsMade: number;
