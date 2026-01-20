@@ -73,20 +73,22 @@ You can also steal from stalls instead of pickpocketing. For most stalls, you wi
 
 ## Thievable Chests
 
-| Chest Name                 | Required Level | Experience | Requirements/Notes |
-| -------------------------- | -------------- | ---------- | ------------------ |
-| 10 coin chest              | 13             | 7.8        | -                  |
-| Nature rune chest          | 28             | 25         | -                  |
-| Isle of Souls chest        | 28             | 150        | -                  |
-| Aldarin Villas chest       | 36             | 200        | -                  |
-| 50 coin chest              | 43             | 125        | -                  |
-| Steel arrowtips chest      | 47             | 150        | -                  |
-| Dorgesh-Kaan average chest | 52             | 200        | -                  |
-| Blood runes chest          | 59             | 250        | -                  |
-| Stone chest                | 64             | 280        | -                  |
-| Ardougne Castle chest      | 72             | 500        | -                  |
-| Dorgesh-Kaan rich chest    | 78             | 650        | -                  |
-| Rogues' Castle chest       | 84             | 701.7      | 43 Prayer required |
+| Chest Name                 | Required Level | Experience | XP/Hr | Requirements/Notes |
+| -------------------------- | -------------- | ---------- | ----- | ------------------ |
+| 10 coin chest              | 13             | 7.8        | 1,825 | -                  |
+| Nature rune chest          | 28             | 25         | 5,850 | -                  |
+| Isle of Souls chest        | 28             | 150        | 438,750 | -                |
+| Aldarin Villas chest       | 36             | 200        | 58,500 | -                 |
+| 50 coin chest              | 43             | 125        | 29,250 | -                 |
+| Steel arrowtips chest      | 47             | 150        | 35,100 | -                 |
+| Dorgesh-Kaan average chest | 52             | 200        | 46,800 | -                 |
+| Blood runes chest          | 59             | 250        | 58,500 | -                 |
+| Stone chest                | 64             | 280        | 81,900 | -                 |
+| Ardougne Castle chest      | 72             | 500        | 117,000 | -               |
+| Dorgesh-Kaan rich chest    | 78             | 650        | 152,100 | -               |
+| Rogues' Castle chest       | 84             | 701.7      | 264,835 | 43 Prayer required |
+
+XP/Hr is calculated using the chest respawn time and the average 97.5% success rate from chest steals; actual rates vary per trip.
 
 ### Rogues' Castle chest notes
 
