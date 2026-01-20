@@ -2,7 +2,7 @@
 title: "Thieving"
 ---
 
-You can train thieving using the [[/steal]] command. To start training Thieving, you can [[/steal name\:man]]. You will obtain the standard loot from each monster you can pickpocket, all of which can be found on the [OSRS Thieving Wiki Page](https://oldschool.runescape.wiki/w/Thieving). You can also choose to steal from stalls, which are listed at the bottom of this page.
+You can train thieving using the [[/steal]] command. To start training Thieving, you can [[/steal name\:man]]. You will obtain the standard loot from each monster you can pickpocket, all of which can be found on the [OSRS Thieving Wiki Page](https://oldschool.runescape.wiki/w/Thieving). You can also choose to steal from stalls and chests, which are listed at the bottom of this page.
 
 ### Alternatives
 
@@ -70,3 +70,19 @@ You can also steal from stalls instead of pickpocketing. For most stalls, you wi
 - Requires 105 Quest points
 
 **\*\*** - Requires a Fire cape in your bank
+
+## Thievable Chests
+
+| Chest Name              | Required Level | Experience | Requirements/Notes |
+| ----------------------- | -------------- | ---------- | ------------------ |
+| Stone chest             | 64             | 280        | -                  |
+| Ardougne Castle chest   | 72             | 500        | -                  |
+| Dorgesh-Kaan rich chest | 78             | 650        | -                  |
+| Rogues' Castle chest    | 84             | 701.7      | 43 Prayer required |
+
+### Rogues' Castle chest notes
+
+- **Protection prayers:** Your minion must keep Protect from Melee active, which consumes 5–10 Prayer potion(4) or Blighted super restore(4) per hour (rounded up). If you have both, Blighted super restore(4) is used first.  
+- **Wilderness diary loot scaling:** 25% less loot without the Wilderness medium diary, standard loot with medium, and 25% extra loot with the Wilderness hard diary.  
+- **Ring of wealth (i):** Gives an extra hard clue roll (effectively doubling the hard clue chance).  
+- **PK risk:** On completion, you can be PKed and lose 5–15% of your loot (hard clues are protected).  
