@@ -3,7 +3,6 @@ import { Bank } from 'oldschooljs';
 
 import {
 	calculateGlassblowingPlan,
-	calculateStealingArtefactsXpPerHour,
 	canUseStealingArtefactsTeleport,
 	getStealingArtefactsDeliveriesPerHour,
 	type StealingArtefactsGlassblowProductKey
@@ -99,14 +98,6 @@ export async function stealingArtefactsCommand(
 		glassblow
 	});
 
-	const xpInfo = calculateStealingArtefactsXpPerHour({
-		thievingLevel,
-		teleportEligible,
-		hasGraceful,
-		stamina
-	});
-
-	const capType = teleportEligible ? 'Teleport' : 'Base';
 	const boosts = [
 		hasGraceful ? 'Graceful equipped (+20%)' : null,
 		stamina ? 'Stamina selected (+30%)' : null,
@@ -115,7 +106,5 @@ export async function stealingArtefactsCommand(
 
 	return `${user.minionName} is now stealing artefacts for ${formatDuration(duration)} (${deliveries} deliveries expected).${
 		glassblowNote ? glassblowNote : ''
-	}\nThieving XP/hr cap: ${capType} (${Math.round(xpInfo.capXpPerHour).toLocaleString()}).${
-		boosts.length > 0 ? `\nBoosts: ${boosts.join(', ')}.` : ''
-	}`;
+	}${boosts.length > 0 ? `\nBoosts: ${boosts.join(', ')}.` : ''}`;
 }

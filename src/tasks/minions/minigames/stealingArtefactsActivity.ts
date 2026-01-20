@@ -1,5 +1,5 @@
 import { randInt } from '@oldschoolgg/rng';
-import { formatDuration, Time } from '@oldschoolgg/toolkit';
+import { Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { calculateStealingArtefactsXpPerHour, getGlassblowingProduct } from '@/lib/minions/data/stealingArtefacts.js';
@@ -58,34 +58,15 @@ export const stealingArtefactsTask: MinionTask = {
 				? await user.addXP({ skillName: 'crafting', amount: craftingXp, duration })
 				: null;
 
-		const capType = teleportEligible ? 'Teleport' : 'Base';
 		const boosts = [
 			hasGraceful ? 'Graceful equipped (+20%)' : null,
 			stamina ? 'Stamina selected (+30%)' : null,
 			teleportEligible ? 'Teleport efficiency active' : null
 		].filter(Boolean);
 
-		const finalXpPerHour = Number.isInteger(xpInfo.finalXpPerHour)
-			? xpInfo.finalXpPerHour.toLocaleString()
-			: xpInfo.finalXpPerHour.toFixed(1);
-
 		let message = `${user}, ${user.minionName} finished stealing artefacts.\n`;
-		message += `**Duration:** ${formatDuration(duration)}\n`;
-		message += `**Thieving level:** ${thievingLevel}\n`;
-		message += `**Thieving XP gained:** ${thievingXp.toLocaleString()} (${finalXpPerHour} XP/hr, ${capType} cap)\n`;
 		if (boosts.length > 0) {
 			message += `**Boosts active:** ${boosts.join(', ')}\n`;
-		}
-		message += `**Deliveries:** ${deliveries.toLocaleString()}\n`;
-		message += `**Coins gained:** ${coinsGained.toLocaleString()}\n`;
-
-		if (glassblow && craftingXp > 0) {
-			const product = getGlassblowingProduct(glassblow.product);
-			if (product) {
-				message += `**Crafting XP gained:** ${Math.floor(craftingXp).toLocaleString()}\n`;
-				message += `**Glassblown:** ${glassblow.itemsMade.toLocaleString()}x ${product.item.name}\n`;
-				message += `**Molten glass used:** ${glassblow.moltenGlassUsed.toLocaleString()}\n`;
-			}
 		}
 
 		message += thievingXpMessage;
