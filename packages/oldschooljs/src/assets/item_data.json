@@ -191800,6 +191800,28 @@
 			"requirements": null
 		}
 	},
+	"999999999": {
+		"name": "Doom sexual pet",
+		"equipable": true,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": null
+		}
+	},
 	"30301": {
 		"name": "Powder grey pumpkin (laughing)",
 		"equipable": true,
