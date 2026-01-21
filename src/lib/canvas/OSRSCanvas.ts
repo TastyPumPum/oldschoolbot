@@ -343,6 +343,16 @@ export class OSRSCanvas {
 			OSRSCanvas.LOCAL_ICON_CACHE.set(itemID, image);
 			return image;
 		}
+		const overrideDirs = BOT_TYPE === 'BSO' ? ['bso_icons', 'osb_icons'] : ['osb_icons'];
+		for (const dir of overrideDirs) {
+			const overridePath = path.join('./src/lib/resources/images', dir, `${itemID}.png`);
+			const override = await readFile(overridePath).catch(() => null);
+			if (override) {
+				const image = await loadImage(override);
+				OSRSCanvas.LOCAL_ICON_CACHE.set(itemID, image);
+				return image;
+			}
+		}
 		const imageBuffer = await fetch(`https://chisel.weirdgloop.org/static/img/osrs-sprite/${itemID}.png`).then(
 			result => result.arrayBuffer().then(Buffer.from)
 		);
