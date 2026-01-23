@@ -1046,21 +1046,25 @@ export const testPotatoCommand = globalConfig.isProduction
 					return setXP(user, options.setxp.skill, options.setxp.xp);
 				}
 				if (options.setdiary) {
+					const setDiary = options.setdiary;
 					const selectedDiary = diaries.find(
 						diary =>
-							stringMatches(diary.name, options.setdiary.diary) ||
-							diary.alias?.some(alias => stringMatches(alias, options.setdiary.diary))
+							stringMatches(diary.name, setDiary.diary) ||
+							diary.alias?.some(alias => stringMatches(alias, setDiary.diary))
 					);
 					if (!selectedDiary) return 'Invalid diary.';
 					const tierOrder = ['easy', 'medium', 'hard', 'elite'] as const;
-					const selectedIndex = tierOrder.indexOf(options.setdiary.tier);
+					const selectedIndex = tierOrder.indexOf(setDiary.tier);
 					const diaryKeys = tierOrder
 						.slice(0, selectedIndex + 1)
 						.map(tier => `${selectedDiary.name}.${tier}`.replace(/\s/g, '').toLowerCase());
 					await user.update({
-						completed_achievement_diaries: uniqueArr([...user.completed_achievement_diaries, ...diaryKeys])
+						completed_achievement_diaries: uniqueArr([
+							...user.user.completed_achievement_diaries,
+							...diaryKeys
+						])
 					});
-					return `Marked ${selectedDiary.name} ${options.setdiary.tier} diary as completed.`;
+					return `Marked ${selectedDiary.name} ${setDiary.tier} diary as completed.`;
 				}
 				if (options.spawn) {
 					const { preset, collectionlog, item, items } = options.spawn;
