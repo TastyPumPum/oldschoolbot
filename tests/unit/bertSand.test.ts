@@ -28,7 +28,7 @@ describe('bertSand', () => {
 	});
 
 	test('isManualEligible returns skill error when below requirement', () => {
-		const [skill, level] = BERT_SAND_SKILL_REQS[0];
+		const [, level] = BERT_SAND_SKILL_REQS[0];
 		const user = mockMUser({
 			QP: BERT_SAND_QP_REQUIRED,
 			skills_crafting: convertLVLtoXP(level - 1),
