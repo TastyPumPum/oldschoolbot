@@ -114,7 +114,8 @@ export async function slayerNewTaskCommand({
 	extraContent,
 	slayerMasterOverride,
 	saveDefaultSlayerMaster,
-	showButtons
+	showButtons,
+	rng
 }: {
 	rng: RNGProvider;
 	user: MUser;
