@@ -188,11 +188,12 @@ export async function slayerNewTaskCommand({
 		});
 		await user.statsUpdate({ [taskStreakKey]: 0 });
 
-		const newSlayerTask = await assignExtendedSlayerTask(user, slayerMaster);
+		const newSlayerTask = await assignExtendedSlayerTask(user, slayerMaster, rng);
 		const autoSkipResult = await autoSkipFromSkipList({
 			user,
 			master: slayerMaster,
-			initialTask: newSlayerTask
+			initialTask: newSlayerTask,
+			rng
 		});
 		const finalTask = autoSkipResult.finalTask;
 		const commonName = getCommonTaskName(finalTask.assignedTask.monster);
@@ -254,11 +255,12 @@ export async function slayerNewTaskCommand({
 		return resultMessage;
 	}
 
-	const newSlayerTask = await assignExtendedSlayerTask(user, slayerMaster);
+	const newSlayerTask = await assignExtendedSlayerTask(user, slayerMaster, rng);
 	const autoSkipResult = await autoSkipFromSkipList({
 		user,
 		master: slayerMaster,
-		initialTask: newSlayerTask
+		initialTask: newSlayerTask,
+		rng
 	});
 	const finalTask = autoSkipResult.finalTask;
 	const autoSkipMessage = formatAutoSkipMessage({
