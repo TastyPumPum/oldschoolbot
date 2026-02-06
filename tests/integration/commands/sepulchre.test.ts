@@ -4,8 +4,8 @@ import { describe, expect, test } from 'vitest';
 import { zeroTimeFletchables } from '../../../src/lib/skilling/skills/fletching/fletchables/index.js';
 import { zeroTimeActivityCommand } from '../../../src/mahoji/commands/zeroTimeActivity.js';
 import { sepulchreCommand } from '../../../src/mahoji/lib/abstracted_commands/sepulchreCommand.js';
-import { TEST_CHANNEL_ID } from '../constants.js';
 import { handleTripFinishResults } from '../../test-utils/misc.js';
+import { TEST_CHANNEL_ID } from '../constants.js';
 import { createTestUser } from '../util.js';
 
 function extractResponseText(response: unknown): string {
