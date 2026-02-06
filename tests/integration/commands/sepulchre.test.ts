@@ -1,11 +1,11 @@
 import { Bank, convertLVLtoXP, Items } from 'oldschooljs';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { zeroTimeFletchables } from '../../../src/lib/skilling/skills/fletching/fletchables/index.js';
-import * as handleTripFinishModule from '../../../src/lib/util/handleTripFinish.js';
 import { zeroTimeActivityCommand } from '../../../src/mahoji/commands/zeroTimeActivity.js';
 import { sepulchreCommand } from '../../../src/mahoji/lib/abstracted_commands/sepulchreCommand.js';
 import { TEST_CHANNEL_ID } from '../constants.js';
+import { handleTripFinishResults } from '../../test-utils/misc.js';
 import { createTestUser } from '../util.js';
 
 function extractResponseText(response: unknown): string {
@@ -62,26 +62,16 @@ describe('sepulchre command', () => {
 			}
 		});
 
-		const handleTripFinishSpy = vi.spyOn(handleTripFinishModule, 'handleTripFinish');
-
 		const response = await sepulchreCommand(user, TEST_CHANNEL_ID);
 
 		expect(extractResponseText(response).toLowerCase()).not.toContain('fallback');
 
-		let lastCall: Parameters<(typeof handleTripFinishModule)['handleTripFinish']> | undefined;
-		try {
-			await user.runActivity();
-			lastCall = handleTripFinishSpy.mock.calls.at(-1);
-		} finally {
-			handleTripFinishSpy.mockRestore();
-		}
-
-		expect(lastCall).toBeDefined();
-		const firstArg = lastCall?.[0];
-		const messageArg =
-			firstArg && typeof firstArg === 'object' && 'message' in firstArg
-				? (firstArg as { message?: unknown }).message
-				: undefined;
+		const activityResult = await user.runActivity();
+		const finishResult = activityResult
+			? handleTripFinishResults.get(`${user.id}-${activityResult.type}`)
+			: undefined;
+		expect(finishResult).toBeDefined();
+		const messageArg = finishResult?.message;
 		const content = extractResponseText(messageArg);
 		expect(content.toLowerCase()).not.toContain('fallback preference');
 		expect(content.toLowerCase()).not.toContain('fallback');
