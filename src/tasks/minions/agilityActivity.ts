@@ -73,7 +73,7 @@ export const agilityTask: MinionTask = {
 			if (course.id !== 5 && user.skillsAsLevels.agility >= course.level + 20) {
 				totalMarks = Math.ceil(totalMarks / 5);
 			}
-			const [hasArdyElite] = await userhasDiaryTier(user, ArdougneDiary.elite);
+			const hasArdyElite = user.hasDiary('ardougne.elite');
 			if (hasArdyElite && course.name === 'Ardougne Rooftop Course') {
 				totalMarks = Math.floor(increaseNumByPercent(totalMarks, 25));
 				diaryBonus = true;
@@ -164,9 +164,11 @@ export const agilityTask: MinionTask = {
 			await ClientSettings.updateClientGPTrackSetting('gp_alch', alchGP);
 		}
 
-		let str = `${user}, ${user.minionName} finished ${quantity} ${course.name
-			} laps and fell on ${lapsFailed} of them.\nYou received: ${loot}${diaryBonus ? ' (25% bonus Marks for Ardougne Elite diary)' : ''
-			}.\n${xpMessages.join(' ')}${monkeyStr}`;
+		let str = `${user}, ${user.minionName} finished ${quantity} ${
+			course.name
+		} laps and fell on ${lapsFailed} of them.\nYou received: ${loot}${
+			diaryBonus ? ' (25% bonus Marks for Ardougne Elite diary)' : ''
+		}.\n${xpMessages.join(' ')}${monkeyStr}`;
 
 		if (savedRunesFromAlching > 0) {
 			str += `\nYour Bryophyta's staff saved you ${savedRunesFromAlching} Nature runes.`;

@@ -9,6 +9,7 @@ import type { UnderwaterAgilityThievingTrainingSkill } from '@/lib/skilling/skil
 import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
 import type { Peak } from '@/lib/util/peaks.js';
+import type { ZeroTimePreferenceRole } from '@/lib/util/zeroTimeActivity.js';
 
 export interface ActivityTaskOptions {
 	userID: string;
