@@ -180,6 +180,7 @@ ${prefix} fletching ${fletchResult.quantity}${setsText} ${fletchResult.fletchabl
 			response += `
 
 ${prefix} alching ${alchResult.quantity}x ${alchResult.item.name} while training. Removed ${alchResult.bankToRemove} from your bank.`;
+			await user.removeItemsFromBank(alchResult.bankToRemove);
 			await ClientSettings.updateBankSetting('magic_cost_bank', alchResult.bankToRemove);
 		}
 
