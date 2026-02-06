@@ -117,6 +117,11 @@ export interface AgilityActivityTaskOptions extends ActivityTaskOptions {
 		itemID: number;
 		quantity: number;
 	} | null;
+	fletch?: {
+		id: number;
+		qty: number;
+	} | null;
+	zeroTimePreferenceRole?: ZeroTimePreferenceRole | null;
 }
 
 export interface CookingActivityTaskOptions extends ActivityTaskOptions {
@@ -401,6 +406,11 @@ export interface SepulchreActivityTaskOptions extends MinigameActivityTaskOption
 		id: number;
 		qty: number;
 	};
+	alch?: {
+		itemID: number;
+		quantity: number;
+	} | null;
+	zeroTimePreferenceRole?: ZeroTimePreferenceRole | null;
 }
 
 export interface PlunderActivityTaskOptions extends MinigameActivityTaskOptions {

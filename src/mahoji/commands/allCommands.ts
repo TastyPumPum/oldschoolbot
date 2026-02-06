@@ -165,7 +165,8 @@ export const allCommandsDONTIMPORT: AnyCommand[] = [
 	collectionLogCommand,
 	gearPresetsCommand,
 	statsCommand,
-	xpCommand
+	xpCommand,
+	zeroTimeActivityCommand
 ];
 
 if (!globalConfig.isProduction && testPotatoCommand) {
