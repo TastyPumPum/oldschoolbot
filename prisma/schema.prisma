@@ -1451,6 +1451,7 @@ enum command_name_enum {
   xpgains
   xpto99
   zalcano
+  zero_time_activity
   zerotimeactivity
 }
 
