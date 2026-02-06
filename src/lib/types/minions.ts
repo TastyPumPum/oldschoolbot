@@ -19,6 +19,10 @@ export interface ActivityTaskOptions {
 	channelId: string;
 }
 
+export interface ZeroTimeActivityTaskOptions extends ActivityTaskOptions {
+	type: 'ZeroTimeActivity';
+}
+
 export interface ActivityTaskOptionsWithNoChanges extends ActivityTaskOptions {
 	type:
 		| 'Questing'
@@ -654,4 +658,5 @@ export type ActivityTaskData =
 	| MinigameActivityTaskOptionsWithNoChanges
 	| CutLeapingFishActivityTaskOptions
 	| CreateForestersRationsActivityTaskOptions
-	| ColoTaskOptions;
+	| ColoTaskOptions
+	| ZeroTimeActivityTaskOptions;

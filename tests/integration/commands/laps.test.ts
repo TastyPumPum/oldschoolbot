@@ -91,7 +91,11 @@ describe('laps command', () => {
 		}
 
 		expect(lastCall).toBeDefined();
-		const messageArg = lastCall?.[2];
+		const firstArg = lastCall?.[0];
+		const messageArg =
+			firstArg && typeof firstArg === 'object' && 'message' in firstArg
+				? (firstArg as { message?: unknown }).message
+				: undefined;
 		const content = extractResponseText(messageArg);
 		expect(content.toLowerCase()).not.toContain('fallback preference');
 		expect(content.toLowerCase()).not.toContain('fallback');

@@ -21,7 +21,7 @@ function chanceOfFailingAgilityPyramid(user: MUser) {
 export const agilityTask: MinionTask = {
 	type: 'Agility',
 	async run(data: AgilityActivityTaskOptions, { user, handleTripFinish }) {
-		const { courseID, quantity, channelID, duration, alch, fletch, zeroTimePreferenceRole } = data;
+		const { courseID, quantity, channelId, duration, alch, fletch, zeroTimePreferenceRole } = data;
 		const loot = new Bank();
 		const currentLevel = user.skillsAsLevels.agility;
 
@@ -46,8 +46,9 @@ export const agilityTask: MinionTask = {
 		}
 
 		const stats = await user.fetchStats();
-		const { laps_scores: newLapScores } = await user.statsUpdate({
-			laps_scores: addItemToBank(stats.laps_scores as ItemBank, course.id, quantity - lapsFailed)
+		const newLapScores = addItemToBank(stats.laps_scores as ItemBank, course.id, quantity - lapsFailed);
+		await user.statsUpdate({
+			laps_scores: newLapScores
 		});
 		const xpReceived =
 			(quantity - lapsFailed / 2) * (typeof course.xp === 'number' ? course.xp : course.xp(currentLevel));
@@ -203,6 +204,6 @@ export const agilityTask: MinionTask = {
 			itemsToAdd: loot
 		});
 
-		handleTripFinish(user, channelID, str, undefined, data, loot);
+		handleTripFinish({ user, channelId, message: str, data, loot });
 	}
 };

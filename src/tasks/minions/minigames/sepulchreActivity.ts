@@ -11,8 +11,8 @@ import { makeBankImage } from '@/lib/util/makeBankImage.js';
 
 export const sepulchreTask: MinionTask = {
 	type: 'Sepulchre',
-	async run(data: SepulchreActivityTaskOptions, { user, handleTripFinish }) {
-		const { channelID, quantity, floors, duration, fletch, alch, zeroTimePreferenceRole } = data;
+	async run(data: SepulchreActivityTaskOptions, { user, handleTripFinish, rng }) {
+		const { channelId, quantity, floors, duration, fletch, alch, zeroTimePreferenceRole } = data;
 		await user.incrementMinigameScore('sepulchre', quantity);
 
 		const completedFloors = sepulchreFloors.filter(fl => floors.includes(fl.number));
@@ -31,7 +31,7 @@ export const sepulchreTask: MinionTask = {
 				const numCoffinsToOpen = 1;
 				numCoffinsOpened += numCoffinsToOpen;
 				for (let i = 0; i < numCoffinsToOpen; i++) {
-					loot.add(openCoffin(floor.number, user));
+					loot.add(openCoffin(rng, floor.number, user));
 				}
 				agilityXP += floor.xp;
 				thievingXP = 200 * numCoffinsOpened;
@@ -177,6 +177,6 @@ export const sepulchreTask: MinionTask = {
 			str += `\nYour Bryophyta's staff saved you ${savedRunesFromAlching} Nature runes.`;
 		}
 
-		return handleTripFinish(user, channelID, str, image.file.attachment, data, itemsAdded);
+		return handleTripFinish({ user, channelId, message: { content: str, files: [image] }, data, loot: itemsAdded });
 	}
 };

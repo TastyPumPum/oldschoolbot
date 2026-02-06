@@ -1,8 +1,6 @@
 import { stringMatches, Time } from '@oldschoolgg/toolkit';
-import type { CommandInteractionOption, GuildMember } from 'discord.js';
 import { Items } from 'oldschooljs';
 
-import type { AutocompleteContext } from '../../lib/discord/commandOptions.js';
 import { zeroTimeFletchables } from '../../lib/skilling/skills/fletching/fletchables/index.js';
 import { SlayerRewardsShop, type SlayerTaskUnlocksEnum } from '../../lib/slayer/slayerUnlocks.js';
 import { hasSlayerUnlock } from '../../lib/slayer/slayerUtil.js';
@@ -124,58 +122,9 @@ function getAlchAutocompleteOptions(value: string) {
 	return results;
 }
 
-function getStringOptionValue(option: CommandInteractionOption | undefined): string | null {
-	if (!option) {
-		return null;
-	}
-	const rawValue = (option as CommandInteractionOption & { value?: unknown }).value;
-	return typeof rawValue === 'string' ? rawValue : null;
-}
-
-function getSelectedActivityTypeFromContext(context: AutocompleteContext | undefined): ZeroTimeActivityType | null {
-	if (!context) {
-		return null;
-	}
-	const focusedName = context.focusedOption.name;
-	let typeOptionName: 'primary_type' | 'fallback_type' | null = null;
-
-	if (focusedName === 'primary_item') {
-		typeOptionName = 'primary_type';
-	} else if (focusedName === 'fallback_item') {
-		typeOptionName = 'fallback_type';
-	}
-
-	if (!typeOptionName) {
-		return null;
-	}
-
-	const typeOption = context.options.find(option => option.name === typeOptionName);
-	const rawType = getStringOptionValue(typeOption);
-	if (!rawType) {
-		return null;
-	}
-
-	const normalised = rawType.toLowerCase();
-	if (!zeroTimeTypes.includes(normalised as ZeroTimeActivityType)) {
-		return null;
-	}
-
-	return normalised as ZeroTimeActivityType;
-}
-
-function fallbackTypeIsNone(context: AutocompleteContext | undefined): boolean {
-	if (!context || context.focusedOption.name !== 'fallback_item') {
-		return false;
-	}
-
-	const fallbackTypeOption = context.options.find(option => option.name === 'fallback_type');
-	const rawValue = getStringOptionValue(fallbackTypeOption);
-	return rawValue !== null && rawValue.toLowerCase() === 'none';
-}
-
 function getStoredTypeFromUser(
 	user: MUser,
-	focusedOptionName: AutocompleteContext['focusedOption']['name'] | undefined
+	focusedOptionName: 'primary_item' | 'fallback_item' | undefined
 ): ZeroTimeActivityType | null {
 	if (!focusedOptionName) {
 		return null;
@@ -192,13 +141,8 @@ function getStoredTypeFromUser(
 	return null;
 }
 
-function getAutocompleteOptions(value: string, user: MUser, context?: AutocompleteContext) {
-	if (fallbackTypeIsNone(context)) {
-		return [];
-	}
-
-	const selectedType = getSelectedActivityTypeFromContext(context);
-	const storedType = selectedType ?? getStoredTypeFromUser(user, context?.focusedOption.name);
+function getAutocompleteOptions(value: string, user: MUser, focusedOptionName: 'primary_item' | 'fallback_item') {
+	const storedType = getStoredTypeFromUser(user, focusedOptionName);
 
 	if (storedType === 'alch') {
 		return getAlchAutocompleteOptions(value);
@@ -317,7 +261,7 @@ function buildOverview(user: MUser): string {
 	return lines.join('\n');
 }
 
-export const zeroTimeActivityCommand: OSBMahojiCommand = {
+export const zeroTimeActivityCommand = defineCommand({
 	name: 'zero_time_activity',
 	description: 'Configure your preferred zero-time activities.',
 	options: [
@@ -343,12 +287,8 @@ export const zeroTimeActivityCommand: OSBMahojiCommand = {
 					name: 'primary_item',
 					description: 'Optional item for the primary activity.',
 					required: false,
-					autocomplete: async (
-						value: string,
-						user: MUser,
-						_member: GuildMember | undefined,
-						context?: AutocompleteContext
-					) => getAutocompleteOptions(value, user, context)
+					autocomplete: async ({ value, user }: StringAutoComplete) =>
+						getAutocompleteOptions(value, user, 'primary_item')
 				},
 				{
 					type: 'String',
@@ -365,12 +305,8 @@ export const zeroTimeActivityCommand: OSBMahojiCommand = {
 					name: 'fallback_item',
 					description: 'Optional item for the fallback activity.',
 					required: false,
-					autocomplete: async (
-						value: string,
-						user: MUser,
-						_member: GuildMember | undefined,
-						context?: AutocompleteContext
-					) => getAutocompleteOptions(value, user, context)
+					autocomplete: async ({ value, user }: StringAutoComplete) =>
+						getAutocompleteOptions(value, user, 'fallback_item')
 				}
 			]
 		},
@@ -380,20 +316,8 @@ export const zeroTimeActivityCommand: OSBMahojiCommand = {
 			description: 'Clear your zero-time activity preferences.'
 		}
 	],
-	run: async ({
-		options,
-		userID
-	}: CommandRunOptions<{
-		overview?: Record<string, never>;
-		set?: {
-			primary_type: string | null;
-			primary_item?: string | null;
-			fallback_type?: string | null;
-			fallback_item?: string | null;
-		};
-		clear?: Record<string, never>;
-	}>) => {
-		const user = await mUserFetch(userID);
+	run: async ({ options, userId }) => {
+		const user = await mUserFetch(userId);
 
 		if (!options.overview && !options.set && !options.clear) {
 			return buildOverview(user);
@@ -587,7 +511,7 @@ export const zeroTimeActivityCommand: OSBMahojiCommand = {
 
 			await user.update(updateData);
 
-			const refreshedUser = await mUserFetch(userID);
+			const refreshedUser = await mUserFetch(userId);
 			const summaryLines = getZeroTimeActivityPreferences(refreshedUser).map(formatZeroTimePreference);
 
 			return `Saved your zero-time preferences.\n${summaryLines.join('\n')}`;
@@ -595,4 +519,4 @@ export const zeroTimeActivityCommand: OSBMahojiCommand = {
 
 		return 'Invalid zero-time activity command usage.';
 	}
-};
+});

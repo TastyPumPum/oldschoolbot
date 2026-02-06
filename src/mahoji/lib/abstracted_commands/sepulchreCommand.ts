@@ -1,7 +1,7 @@
 import { formatDuration, reduceNumByPercent, sumArr, Time } from '@oldschoolgg/toolkit';
 
 import { sepulchreBoosts, sepulchreFloors } from '@/lib/minions/data/sepulchre.js';
-import type { SepulchreActivityTaskOptions } from '@/lib/types/minions.js';
+import type { ActivityTaskData } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import {
 	attemptZeroTimeActivity,
@@ -17,7 +17,7 @@ import {
 
 const SEPULCHRE_ALCHES_PER_HOUR = 1000;
 
-export async function sepulchreCommand(user: MUser, channelID: string) {
+export async function sepulchreCommand(user: MUser, channelId: string) {
 	const skills = user.skillsAsLevels;
 	const agilityLevel = skills.agility;
 	const thievingLevel = skills.thieving;
@@ -49,7 +49,7 @@ export async function sepulchreCommand(user: MUser, channelID: string) {
 		}
 	}
 
-	const maxLaps = Math.floor(user.calcMaxTripLength('Sepulchre') / lapLength);
+	const maxLaps = Math.floor((await user.calcMaxTripLength('Sepulchre')) / lapLength);
 	const tripLength = maxLaps * lapLength;
 
 	type FletchResult = Extract<ZeroTimeActivityResult, { type: 'fletch' }>;
@@ -115,18 +115,20 @@ export async function sepulchreCommand(user: MUser, channelID: string) {
 		await ClientSettings.updateBankSetting('magic_cost_bank', alchResult.bankToRemove);
 	}
 
-	await addSubTaskToActivityTask<SepulchreActivityTaskOptions>({
+	const task = {
 		floors: completableFloors.map(f => f.number),
 		quantity: maxLaps,
 		userID: user.id,
 		duration: tripLength,
 		type: 'Sepulchre',
-		channelID,
+		channelId,
 		minigameID: 'sepulchre',
 		fletch: fletchResult ? { id: fletchResult.fletchable.id, qty: fletchResult.quantity } : undefined,
 		alch: alchResult ? { itemID: alchResult.item.id, quantity: alchResult.quantity } : undefined,
 		zeroTimePreferenceRole
-	});
+	} satisfies Omit<Extract<ActivityTaskData, { type: 'Sepulchre' }>, 'finishDate' | 'id'>;
+
+	await addSubTaskToActivityTask(task);
 
 	let str = `${user.minionName} is now doing ${maxLaps} laps of the Sepulchre, in each lap they are doing floors ${
 		completableFloors[0].number

@@ -14,19 +14,20 @@ import {
 import { timePerAlch } from '../../../src/mahoji/lib/abstracted_commands/alchCommand.js';
 import { createTestUser } from '../util.js';
 
+type ZeroTimeCommandOption = (typeof zeroTimeActivityCommand.options)[number];
+type SetSubcommand = Extract<ZeroTimeCommandOption, { type: 'Subcommand'; name: 'set' }>;
+type SetSubcommandOption = NonNullable<SetSubcommand['options']>[number];
+type StringOption = Extract<SetSubcommandOption, { type: 'String' }>;
+
 function getSetAutocompleteOption(name: 'primary_item' | 'fallback_item') {
 	const setSubcommand = zeroTimeActivityCommand.options.find(
-		option => option.type === 'Subcommand' && option.name === 'set'
-	) as
-		| ({
-				options?: { name: string; autocomplete?: (value: string, ...args: any[]) => any }[];
-		  } & (typeof zeroTimeActivityCommand.options)[number])
-		| undefined;
+		(option): option is SetSubcommand => option.type === 'Subcommand' && option.name === 'set'
+	);
 
 	expect(setSubcommand).toBeDefined();
-	const option = setSubcommand?.options?.find(opt => opt.name === name) as
-		| { name: string; autocomplete?: (value: string, user: any, member: any, context?: any) => any }
-		| undefined;
+	const option = setSubcommand?.options?.find(
+		(opt): opt is StringOption => opt.type === 'String' && opt.name === name
+	);
 	expect(option).toBeDefined();
 	expect(typeof option?.autocomplete).toBe('function');
 	return option!;
@@ -280,14 +281,18 @@ describe('Zero Time Activity Command', () => {
 		const primaryAutocompleteOption = getSetAutocompleteOption('primary_item');
 		const fallbackAutocompleteOption = getSetAutocompleteOption('fallback_item');
 
-		const primaryResults = await primaryAutocompleteOption.autocomplete?.('', user, undefined, {
-			focusedOption: { name: 'primary_item' },
-			options: [{ name: 'primary_item' }]
-		} as any);
-		const fallbackResults = await fallbackAutocompleteOption.autocomplete?.('', user, undefined, {
-			focusedOption: { name: 'fallback_item' },
-			options: [{ name: 'fallback_item' }]
-		} as any);
+		const primaryResults = await primaryAutocompleteOption.autocomplete?.({
+			value: '',
+			user,
+			userId: user.id,
+			guildId: null
+		});
+		const fallbackResults = await fallbackAutocompleteOption.autocomplete?.({
+			value: '',
+			user,
+			userId: user.id,
+			guildId: null
+		});
 
 		expect(primaryResults?.[0]).toEqual(
 			expect.objectContaining({

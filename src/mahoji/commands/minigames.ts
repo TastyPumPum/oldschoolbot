@@ -1168,7 +1168,7 @@ export const minigamesCommand = defineCommand({
 		 *
 		 */
 		if (options.sepulchre?.start) {
-			return sepulchreCommand(user, channelID);
+			return sepulchreCommand(user, channelId);
 		}
 
 		/**
