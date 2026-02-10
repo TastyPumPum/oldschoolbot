@@ -14,7 +14,7 @@ import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 const RPS_TIMEOUT_MS = Time.Second * 90;
 
 type RPSChoice = 'rock' | 'paper' | 'scissors';
-type RPSStatus = 'pending' | 'complete' | 'cancelled';
+type RPSStatus = 'awaiting_acceptance' | 'pending' | 'complete' | 'cancelled';
 
 type RPSMatch = {
 	id: string;
@@ -54,6 +54,28 @@ function getRPSButtons(matchId: string, disabled = false): ButtonBuilder[][] {
 		.setDisabled(disabled);
 
 	return [[...choiceButtons, cancelButton]];
+}
+
+function getChallengeButtons(matchId: string, disabled = false): ButtonBuilder[][] {
+	const acceptButton = new ButtonBuilder()
+		.setCustomId(`rps:${matchId}:accept`)
+		.setLabel('Accept')
+		.setStyle(ButtonStyle.Success)
+		.setDisabled(disabled);
+
+	const declineButton = new ButtonBuilder()
+		.setCustomId(`rps:${matchId}:decline`)
+		.setLabel('Decline')
+		.setStyle(ButtonStyle.Danger)
+		.setDisabled(disabled);
+
+	const cancelButton = new ButtonBuilder()
+		.setCustomId(`rps:${matchId}:cancel`)
+		.setLabel('Cancel')
+		.setStyle(ButtonStyle.Secondary)
+		.setDisabled(disabled);
+
+	return [[acceptButton, declineButton, cancelButton]];
 }
 
 function getChoiceData(choice: RPSChoice) {
@@ -213,7 +235,7 @@ export async function rpsCommand({
 		player2Id: opponent.id,
 		stake,
 		createdAt: Date.now(),
-		status: 'pending'
+		status: 'awaiting_acceptance'
 	};
 
 	rpsMatches.set(match.id, match);
@@ -225,10 +247,10 @@ export async function rpsCommand({
 				match,
 				player1Name,
 				player2Name,
-				description: `Match expires in ${formatDuration(RPS_TIMEOUT_MS)}.`
+				description: `${opponent} do you accept this Rock Paper Scissors challenge${stake > 0 ? ` for ${toKMB(stake)} GP` : ''}?`
 			})
 		],
-		components: getRPSButtons(match.id)
+		components: getChallengeButtons(match.id)
 	});
 
 	match.messageId = initial?.message_id ?? null;
@@ -242,14 +264,16 @@ export async function rpsCommand({
 			if (!customId) return false;
 			if (!customId.startsWith(`rps:${match.id}:`)) return false;
 			if (![match.player1Id, match.player2Id].includes(i.userId)) return false;
-			if (!rpsMatches.has(match.id) || match.status !== 'pending') return false;
+			if (!rpsMatches.has(match.id) || (match.status !== 'pending' && match.status !== 'awaiting_acceptance')) {
+				return false;
+			}
 			return true;
 		}
 	});
 
 	collector.on('collect', async (buttonInteraction: ButtonMInteraction) => {
 		const currentMatch = rpsMatches.get(match.id);
-		if (!currentMatch || currentMatch.status !== 'pending') {
+		if (!currentMatch || currentMatch.status === 'cancelled' || currentMatch.status === 'complete') {
 			// can't update a dead match, so just ephemeral reply
 			await buttonInteraction.reply({ content: 'This match has expired.', ephemeral: true });
 			return;
@@ -272,6 +296,65 @@ export async function rpsCommand({
 			return;
 		}
 
+		if (currentMatch.status === 'awaiting_acceptance') {
+			if (action === 'accept') {
+				if (buttonInteraction.userId !== currentMatch.player2Id) {
+					await buttonInteraction.reply({
+						content: 'Only the challenged player can accept.',
+						ephemeral: true
+					});
+					return;
+				}
+
+				currentMatch.status = 'pending';
+				currentMatch.createdAt = Date.now();
+
+				await buttonInteraction.update({
+					embeds: [
+						await createMatchEmbed({
+							match: currentMatch,
+							player1Name,
+							player2Name,
+							description: `Match expires in ${formatDuration(RPS_TIMEOUT_MS)}.`
+						})
+					],
+					components: getRPSButtons(match.id)
+				});
+
+				await buttonInteraction.followUp({ content: 'Challenge accepted. Choose your move!', ephemeral: true });
+				return;
+			}
+
+			if (action === 'decline') {
+				if (buttonInteraction.userId !== currentMatch.player2Id) {
+					await buttonInteraction.reply({
+						content: 'Only the challenged player can decline.',
+						ephemeral: true
+					});
+					return;
+				}
+
+				currentMatch.status = 'cancelled';
+
+				await buttonInteraction.update({
+					embeds: [
+						await createMatchEmbed({
+							match: currentMatch,
+							player1Name,
+							player2Name,
+							title: 'Rock Paper Scissors — Declined',
+							description: `${opponent} declined the challenge.`
+						})
+					],
+					components: getChallengeButtons(match.id, true)
+				});
+
+				rpsMatches.delete(match.id);
+				collector.stop('cancelled');
+				return;
+			}
+		}
+
 		// Cancel
 		if (action === 'cancel') {
 			if (buttonInteraction.userId !== currentMatch.player1Id) {
@@ -282,6 +365,7 @@ export async function rpsCommand({
 				return;
 			}
 
+			const wasAwaitingAcceptance = currentMatch.status === 'awaiting_acceptance';
 			currentMatch.status = 'cancelled';
 
 			await buttonInteraction.update({
@@ -293,7 +377,7 @@ export async function rpsCommand({
 						title: 'Rock Paper Scissors — Cancelled'
 					})
 				],
-				components: getRPSButtons(match.id, true)
+				components: wasAwaitingAcceptance ? getChallengeButtons(match.id, true) : getRPSButtons(match.id, true)
 			});
 
 			// Optional private confirmation
@@ -307,6 +391,11 @@ export async function rpsCommand({
 		// Validate action
 		if (action !== 'rock' && action !== 'paper' && action !== 'scissors') {
 			await buttonInteraction.reply({ content: 'Invalid action.', ephemeral: true });
+			return;
+		}
+
+		if (currentMatch.status !== 'pending') {
+			await buttonInteraction.reply({ content: 'This challenge has not been accepted yet.', ephemeral: true });
 			return;
 		}
 
@@ -391,8 +480,9 @@ export async function rpsCommand({
 		if (reason === 'complete' || reason === 'cancelled') return;
 
 		const currentMatch = rpsMatches.get(match.id);
-		if (!currentMatch || currentMatch.status !== 'pending') return;
+		if (!currentMatch || currentMatch.status === 'cancelled' || currentMatch.status === 'complete') return;
 
+		const wasAwaitingAcceptance = currentMatch.status === 'awaiting_acceptance';
 		currentMatch.status = 'cancelled';
 
 		const anyInteraction = interaction as any;
@@ -405,10 +495,12 @@ export async function rpsCommand({
 						player1Name,
 						player2Name,
 						title: 'Rock Paper Scissors — Timed Out',
-						description: 'Timed out before both players locked in.'
+						description: wasAwaitingAcceptance
+							? 'Timed out before the challenge was accepted.'
+							: 'Timed out before both players locked in.'
 					})
 				],
-				components: getRPSButtons(match.id, true)
+				components: wasAwaitingAcceptance ? getChallengeButtons(match.id, true) : getRPSButtons(match.id, true)
 			});
 		}
 
