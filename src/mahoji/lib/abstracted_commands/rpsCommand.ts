@@ -1,4 +1,10 @@
-import { ButtonBuilder, type ButtonMInteraction, ButtonStyle, EmbedBuilder } from '@oldschoolgg/discord';
+import {
+	ButtonBuilder,
+	type ButtonMInteraction,
+	ButtonStyle,
+	EmbedBuilder,
+	SpecialResponse
+} from '@oldschoolgg/discord';
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 
@@ -409,5 +415,5 @@ export async function rpsCommand({
 		rpsMatches.delete(match.id);
 	});
 
-	return { content: '\u200B' };
+	return SpecialResponse.RespondedManually;
 }
