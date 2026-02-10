@@ -12,7 +12,7 @@ const CRASH_TIERS = [
 	{ min: 2001, max: 10_000 }
 ] as const;
 
-export const MIN_CRASH_MULTIPLIER = 101;
+export const MIN_CRASH_MULTIPLIER = 110;
 export const MAX_CRASH_MULTIPLIER = 10_000;
 
 export type CrashRisk = 'low' | 'med' | 'high';

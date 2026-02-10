@@ -33,7 +33,7 @@ Yes. Use [[/minion cancel]]. You'll lose all progress, loot, XP, and used items.
 
 ### How do I get money for a minion?
 
-Use [[/minion daily]], [[/gamble dice]], or [[/gamble crash amount\:1m auto\:2x]]. Or get gifted money from others.
+Use [[/minion daily]] and [[/gamble dice]]. Or get gifted money from others.
 
 ### Why can't I use minion commands?
 

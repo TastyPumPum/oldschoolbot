@@ -1,4 +1,3 @@
-import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 
 import {
@@ -15,32 +14,27 @@ const MIN_CRASH_BET = 10_000;
 const MAX_CRASH_BET = 500_000_000;
 
 export async function crashCommand(
-	rng: RNGProvider,
 	user: MUser,
-	autoInput: string | undefined,
+	cashout: string | undefined,
 	amountInput: string | undefined,
-	risk: CrashRisk | undefined
+	risk: CrashRisk | undefined,
+	rng: RNGProvider
 ) {
-	if (!amountInput || !autoInput) {
+	if (!amountInput || !cashout) {
 		return `Play crash with auto cashout using ${globalClient.mentionCommand('gamble', 'crash')}.
 Example: ${globalClient.mentionCommand('gamble', 'crash')} amount:1m auto:2x`;
 	}
 
 	if (user.isIronman) return "Ironmen can't gamble!";
 
-	const ratelimit = await Cache.tryRatelimit(user.id, 'gamble_crash');
-	if (!ratelimit.success) {
-		return `This command is on cooldown, you can use it again in ${formatDuration(ratelimit.timeRemainingMs)}.`;
-	}
-
 	const amount = mahojiParseNumber({ input: amountInput, min: 1, max: 500_000_000_000 });
 	if (!amount || !Number.isInteger(amount) || amount < MIN_CRASH_BET || amount > MAX_CRASH_BET) {
 		return `You can only gamble between ${toKMB(MIN_CRASH_BET)} and ${toKMB(MAX_CRASH_BET)}.`;
 	}
 
-	const autoMultiplier = parseCrashAutoMultiplier(autoInput);
+	const autoMultiplier = parseCrashAutoMultiplier(cashout);
 	if (!autoMultiplier || autoMultiplier < MIN_CRASH_MULTIPLIER) {
-		return 'Auto cashout must be at least 1.01x.';
+		return 'Auto cashout must be at least 1.10x.';
 	}
 	if (autoMultiplier > MAX_CRASH_MULTIPLIER) {
 		return `Auto cashout cannot exceed ${formatCrashMultiplier(MAX_CRASH_MULTIPLIER)}.`;

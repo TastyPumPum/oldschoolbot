@@ -4,6 +4,7 @@ import { choicesOf } from '@/discord/index.js';
 import { BitField } from '@/lib/constants.js';
 import itemIsTradeable from '@/lib/util/itemIsTradeable.js';
 import { capeGambleCommand, capeGambleStatsCommand } from '@/mahoji/lib/abstracted_commands/capegamble.js';
+import { crashCommand } from '@/mahoji/lib/abstracted_commands/crashCommand.js';
 import { diceCommand } from '@/mahoji/lib/abstracted_commands/diceCommand.js';
 import { duelCommand } from '@/mahoji/lib/abstracted_commands/duelCommand.js';
 import { hotColdCommand } from '@/mahoji/lib/abstracted_commands/hotColdCommand.js';
@@ -161,6 +162,37 @@ export const gambleCommand = defineCommand({
 					required: true
 				}
 			]
+		},
+		/**
+		 *
+		 * Crash
+		 *
+		 */
+		{
+			type: 'Subcommand',
+			name: 'crash',
+			description: 'Wager GP in crash and auto cashout at your chosen multiplier.',
+			options: [
+				{
+					type: 'String',
+					name: 'amount',
+					description: 'Amount you wish to gamble.',
+					required: true
+				},
+				{
+					type: 'String',
+					name: 'cashout_multiplier',
+					description: 'Auto cashout multiplier (e.g. 2, 2x, 2.25).',
+					required: true
+				},
+				{
+					type: 'String',
+					name: 'risk',
+					description: 'Adjusts volatility of crash points.',
+					required: false,
+					choices: choicesOf(['low', 'med', 'high'])
+				}
+			]
 		}
 	],
 	run: async ({ options, interaction, guildId, user, rng }) => {
@@ -248,6 +280,10 @@ export const gambleCommand = defineCommand({
 			for (const t of bank) debug.add(t[0].id);
 
 			return `You gave ${qty.toLocaleString()}x ${item.name} to ${recipientuser.usernameOrMention}.`;
+		}
+
+		if (options.crash) {
+			return crashCommand(user, options.crash.cashout_multiplier, options.crash.amount, options.crash.risk, rng);
 		}
 
 		return 'Invalid command.';
