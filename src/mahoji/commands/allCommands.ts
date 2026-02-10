@@ -20,6 +20,7 @@ import { cluesCommand } from '@/mahoji/commands/clues.js';
 import { configCommand } from '@/mahoji/commands/config.js';
 import { cookCommand } from '@/mahoji/commands/cook.js';
 import { craftCommand } from '@/mahoji/commands/craft.js';
+import { crashCommandDefinition } from '@/mahoji/commands/crash.js';
 import { createCommand } from '@/mahoji/commands/create.js';
 import { dataCommand } from '@/mahoji/commands/data.js';
 import { dropCommand } from '@/mahoji/commands/drop.js';
@@ -102,6 +103,7 @@ export const allCommandsDONTIMPORT: AnyCommand[] = [
 	gpCommand,
 	payCommand,
 	craftCommand,
+	crashCommandDefinition,
 	fishCommand,
 	farmingCommand,
 	dropCommand,

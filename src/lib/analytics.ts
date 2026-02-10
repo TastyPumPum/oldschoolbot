@@ -59,6 +59,7 @@ FROM users;
 			gp_alch: true,
 			gp_dice: true,
 			gp_hotcold: true,
+			gp_crash: true,
 			gp_luckypick: true,
 			gp_open: true,
 			gp_pickpocket: true,
@@ -98,7 +99,8 @@ FROM users;
 			gpDaily: currentClientSettings.gp_daily,
 			gpLuckypick: currentClientSettings.gp_luckypick,
 			gpSlots: currentClientSettings.gp_slots,
-			gpHotCold: currentClientSettings.gp_hotcold
+			gpHotCold: currentClientSettings.gp_hotcold,
+			gpCrash: currentClientSettings.gp_crash
 		},
 		select: {
 			timestamp: true
