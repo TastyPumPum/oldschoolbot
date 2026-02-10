@@ -8,6 +8,7 @@ import { diceCommand } from '@/mahoji/lib/abstracted_commands/diceCommand.js';
 import { duelCommand } from '@/mahoji/lib/abstracted_commands/duelCommand.js';
 import { hotColdCommand } from '@/mahoji/lib/abstracted_commands/hotColdCommand.js';
 import { luckyPickCommand } from '@/mahoji/lib/abstracted_commands/luckyPickCommand.js';
+import { rpsCommand } from '@/mahoji/lib/abstracted_commands/rpsCommand.js';
 import { slotsCommand } from '@/mahoji/lib/abstracted_commands/slotsCommand.js';
 
 export const gambleCommand = defineCommand({
@@ -78,6 +79,31 @@ export const gambleCommand = defineCommand({
 					type: 'String',
 					name: 'amount',
 					description: 'The GP you want to duel for.',
+					required: false
+				}
+			]
+		},
+
+		/**
+		 *
+		 * Rock Paper Scissors
+		 *
+		 */
+		{
+			type: 'Subcommand',
+			name: 'rps',
+			description: 'Challenge another player to Rock Paper Scissors.',
+			options: [
+				{
+					type: 'User',
+					name: 'user',
+					description: 'The user you want to challenge.',
+					required: true
+				},
+				{
+					type: 'String',
+					name: 'amount',
+					description: 'Optional GP stake amount.',
 					required: false
 				}
 			]
@@ -177,6 +203,23 @@ export const gambleCommand = defineCommand({
 				return 'One of you has gambling disabled and cannot participate in this duel!';
 			}
 			return duelCommand(rng, user, interaction, targetUser, options.duel.user, options.duel.amount);
+		}
+
+		if (options.rps) {
+			if (options.rps.amount) {
+				const targetUser = await mUserFetch(options.rps.user.user.id);
+				if ([user, targetUser].some(u => u.bitfield.includes(BitField.SelfGamblingLocked))) {
+					return 'One of you has gambling disabled and cannot participate in this match!';
+				}
+			}
+			return rpsCommand({
+				interaction,
+				user,
+				opponentID: options.rps.user.user.id,
+				opponentIsBot: options.rps.user.user.bot,
+				guildId,
+				stakeInput: options.rps.amount
+			});
 		}
 
 		if (options.dice) {
