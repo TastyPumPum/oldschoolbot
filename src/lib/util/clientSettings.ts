@@ -32,6 +32,7 @@ async function updateClientGPTrackSetting(
 		| 'gp_alch'
 		| 'gp_slots'
 		| 'gp_dice'
+		| 'gp_crash'
 		| 'gp_open'
 		| 'gp_daily'
 		| 'gp_sell'
