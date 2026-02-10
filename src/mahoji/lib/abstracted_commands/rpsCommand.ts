@@ -11,7 +11,7 @@ import { Bank, toKMB } from 'oldschooljs';
 import { BitField } from '@/lib/constants.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
-const RPS_TIMEOUT_MS = Time.Second * 90;
+const RPS_TIMEOUT_MS = Time.Second * 30;
 
 type RPSChoice = 'rock' | 'paper' | 'scissors';
 type RPSStatus = 'awaiting_acceptance' | 'pending' | 'complete' | 'cancelled';
