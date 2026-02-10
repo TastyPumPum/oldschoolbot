@@ -1,10 +1,4 @@
-import {
-	ActionRowBuilder,
-	ButtonBuilder,
-	type ButtonMInteraction,
-	ButtonStyle,
-	EmbedBuilder
-} from '@oldschoolgg/discord';
+import { ButtonBuilder, type ButtonMInteraction, ButtonStyle, EmbedBuilder } from '@oldschoolgg/discord';
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 
@@ -37,24 +31,23 @@ const RPS_CHOICES: { key: RPSChoice; emoji: string; label: string }[] = [
 	{ key: 'scissors', emoji: '✂️', label: 'Scissors' }
 ];
 
-function getRPSButtons(matchId: string, disabled = false) {
-	return [
-		new ActionRowBuilder<ButtonBuilder>().addComponents(
-			...RPS_CHOICES.map(choice =>
-				new ButtonBuilder()
-					.setCustomId(`rps:${matchId}:${choice.key}`)
-					.setLabel(choice.label)
-					.setEmoji(choice.emoji)
-					.setStyle(ButtonStyle.Secondary)
-					.setDisabled(disabled)
-			),
-			new ButtonBuilder()
-				.setCustomId(`rps:${matchId}:cancel`)
-				.setLabel('Cancel')
-				.setStyle(ButtonStyle.Danger)
-				.setDisabled(disabled)
-		)
-	];
+function getRPSButtons(matchId: string, disabled = false): ButtonBuilder[][] {
+	const choiceButtons = RPS_CHOICES.map(choice =>
+		new ButtonBuilder()
+			.setCustomId(`rps:${matchId}:${choice.key}`)
+			.setLabel(choice.label)
+			.setEmoji({ name: choice.emoji })
+			.setStyle(ButtonStyle.Secondary)
+			.setDisabled(disabled)
+	);
+
+	const cancelButton = new ButtonBuilder()
+		.setCustomId(`rps:${matchId}:cancel`)
+		.setLabel('Cancel')
+		.setStyle(ButtonStyle.Danger)
+		.setDisabled(disabled);
+
+	return [[...choiceButtons, cancelButton]];
 }
 
 function getChoiceData(choice: RPSChoice) {
@@ -68,13 +61,8 @@ function getChoiceForUser(match: RPSMatch, userId: string) {
 }
 
 function setChoiceForUser(match: RPSMatch, userId: string, choice: RPSChoice) {
-	if (userId === match.player1Id) {
-		match.p1Choice = choice;
-		return;
-	}
-	if (userId === match.player2Id) {
-		match.p2Choice = choice;
-	}
+	if (userId === match.player1Id) match.p1Choice = choice;
+	if (userId === match.player2Id) match.p2Choice = choice;
 }
 
 function getWinner(match: RPSMatch) {
@@ -114,9 +102,11 @@ async function createMatchEmbed({
 		getReadinessLine(player1Name, Boolean(match.p1Choice)),
 		getReadinessLine(player2Name, Boolean(match.p2Choice))
 	];
+
 	if (match.stake > 0) {
 		lines.push(`Stake: ${toKMB(match.stake)} GP`);
 	}
+
 	if (showReveal && match.p1Choice && match.p2Choice) {
 		const p1 = getChoiceData(match.p1Choice);
 		const p2 = getChoiceData(match.p2Choice);
@@ -146,16 +136,18 @@ async function settleStake({
 	stake: number;
 	guildId: string | null;
 }) {
-	if (stake <= 0) {
-		return;
-	}
+	if (stake <= 0) return;
+
 	const cost = new Bank().add('Coins', stake);
 	await Promise.all([winner.sync(), loser.sync()]);
+
 	if (winner.GP < stake || loser.GP < stake) {
 		throw new Error('One player can no longer afford the stake.');
 	}
+
 	await Promise.all([winner.removeItemsFromBank(cost), loser.removeItemsFromBank(cost)]);
 	await winner.addItemsToBank({ items: new Bank().add('Coins', stake * 2), collectionLog: false });
+
 	await prisma.economyTransaction.create({
 		data: {
 			guild_id: guildId ? BigInt(guildId) : null,
@@ -186,10 +178,11 @@ export async function rpsCommand({
 	if (opponentIsBot) return 'You cannot challenge a bot.';
 
 	const opponent = await mUserFetch(opponentID);
-	const stake = stakeInput ? mahojiParseNumber({ input: stakeInput, min: 1, max: 500_000_000_000 }) : 0;
-	if (stakeInput && !stake) {
-		return 'Invalid stake amount.';
-	}
+
+	const parsedStake = stakeInput ? mahojiParseNumber({ input: stakeInput, min: 1, max: 500_000_000_000 }) : null;
+
+	if (stakeInput && parsedStake === null) return 'Invalid stake amount.';
+	const stake = parsedStake ?? 0;
 
 	if (
 		stake > 0 &&
@@ -198,15 +191,14 @@ export async function rpsCommand({
 		return 'One of you has gambling disabled and cannot participate in this match.';
 	}
 
-	if (!(await checkCanAffordStake(user, stake))) {
-		return `You cannot afford a ${toKMB(stake)} GP stake.`;
-	}
+	if (!(await checkCanAffordStake(user, stake))) return `You cannot afford a ${toKMB(stake)} GP stake.`;
 	if (!(await checkCanAffordStake(opponent, stake))) {
 		return `${opponent.usernameOrMention} cannot afford a ${toKMB(stake)} GP stake.`;
 	}
 
 	const matchId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 	const [player1Name, player2Name] = await Cache.getBadgedUsernames([user.id, opponent.id]);
+
 	const match: RPSMatch = {
 		id: matchId,
 		channelId: interaction.channelId,
@@ -217,6 +209,7 @@ export async function rpsCommand({
 		createdAt: Date.now(),
 		status: 'pending'
 	};
+
 	rpsMatches.set(match.id, match);
 
 	await interaction.defer();
@@ -231,6 +224,7 @@ export async function rpsCommand({
 		],
 		components: getRPSButtons(match.id)
 	});
+
 	match.messageId = initial?.message_id ?? null;
 
 	const collector = globalClient.createInteractionCollector({
@@ -238,15 +232,11 @@ export async function rpsCommand({
 		timeoutMs: RPS_TIMEOUT_MS,
 		maxCollected: Infinity,
 		filter: i => {
-			if (!i.customId.startsWith(`rps:${match.id}:`)) {
-				return false;
-			}
-			if (!rpsMatches.has(match.id) || match.status !== 'pending') {
-				return 'This match has expired.';
-			}
-			if (![match.player1Id, match.player2Id].includes(i.userId)) {
-				return 'Not your match.';
-			}
+			const customId = i.customId;
+			if (!customId) return false;
+			if (!customId.startsWith(`rps:${match.id}:`)) return false;
+			if (![match.player1Id, match.player2Id].includes(i.userId)) return false;
+			if (!rpsMatches.has(match.id) || match.status !== 'pending') return false;
 			return true;
 		}
 	});
@@ -254,15 +244,29 @@ export async function rpsCommand({
 	collector.on('collect', async (buttonInteraction: ButtonMInteraction) => {
 		const currentMatch = rpsMatches.get(match.id);
 		if (!currentMatch || currentMatch.status !== 'pending') {
+			// can't update a dead match, so just ephemeral reply
 			await buttonInteraction.reply({ content: 'This match has expired.', ephemeral: true });
 			return;
 		}
-		const [, incomingMatchID, action] = buttonInteraction.customId.split(':');
+
+		if (![currentMatch.player1Id, currentMatch.player2Id].includes(buttonInteraction.userId)) {
+			await buttonInteraction.reply({ content: 'Not your match.', ephemeral: true });
+			return;
+		}
+
+		const customId = buttonInteraction.customId;
+		if (!customId) {
+			await buttonInteraction.reply({ content: 'Invalid interaction.', ephemeral: true });
+			return;
+		}
+
+		const [, incomingMatchID, action] = customId.split(':');
 		if (incomingMatchID !== currentMatch.id || !action) {
 			await buttonInteraction.reply({ content: 'Invalid match action.', ephemeral: true });
 			return;
 		}
 
+		// Cancel
 		if (action === 'cancel') {
 			if (buttonInteraction.userId !== currentMatch.player1Id) {
 				await buttonInteraction.reply({
@@ -271,9 +275,10 @@ export async function rpsCommand({
 				});
 				return;
 			}
+
 			currentMatch.status = 'cancelled';
-			await buttonInteraction.reply({ content: 'Cancelled.', ephemeral: true });
-			await interaction.reply({
+
+			await buttonInteraction.update({
 				embeds: [
 					await createMatchEmbed({
 						match: currentMatch,
@@ -284,16 +289,22 @@ export async function rpsCommand({
 				],
 				components: getRPSButtons(match.id, true)
 			});
+
+			// Optional private confirmation
+			await buttonInteraction.followUp({ content: 'Cancelled.', ephemeral: true });
+
 			rpsMatches.delete(match.id);
 			collector.stop('cancelled');
 			return;
 		}
 
-		if (!['rock', 'paper', 'scissors'].includes(action)) {
+		// Validate action
+		if (action !== 'rock' && action !== 'paper' && action !== 'scissors') {
 			await buttonInteraction.reply({ content: 'Invalid action.', ephemeral: true });
 			return;
 		}
 
+		// Lock on first click
 		const existingChoice = getChoiceForUser(currentMatch, buttonInteraction.userId);
 		if (existingChoice) {
 			await buttonInteraction.reply({ content: "You're already locked in.", ephemeral: true });
@@ -302,31 +313,41 @@ export async function rpsCommand({
 
 		const choice = action as RPSChoice;
 		setChoiceForUser(currentMatch, buttonInteraction.userId, choice);
-		const choiceData = getChoiceData(choice);
-		await buttonInteraction.reply({ content: `✅ Locked in: ${choiceData.label}`, ephemeral: true });
 
 		const bothLocked = Boolean(currentMatch.p1Choice && currentMatch.p2Choice);
+
+		// If not both locked yet, update readiness only
 		if (!bothLocked) {
-			await interaction.reply({
+			await buttonInteraction.update({
 				embeds: [
 					await createMatchEmbed({
 						match: currentMatch,
 						player1Name,
 						player2Name,
-						description: `Match expires in ${formatDuration(Math.max(0, RPS_TIMEOUT_MS - (Date.now() - currentMatch.createdAt)))}.`
+						description: `Match expires in ${formatDuration(
+							Math.max(0, RPS_TIMEOUT_MS - (Date.now() - currentMatch.createdAt))
+						)}.`
 					})
 				],
 				components: getRPSButtons(match.id)
 			});
+
+			// Private lock confirmation
+			const choiceData = getChoiceData(choice);
+			await buttonInteraction.followUp({ content: `✅ Locked in: ${choiceData.label}`, ephemeral: true });
 			return;
 		}
 
+		// Both locked -> settle + reveal
 		currentMatch.status = 'complete';
+
 		const winnerID = getWinner(currentMatch);
 		let resultLine = "It's a tie!";
+
 		if (winnerID) {
 			const winner = winnerID === user.id ? user : opponent;
 			const loser = winnerID === user.id ? opponent : user;
+
 			try {
 				await settleStake({ winner, loser, stake: currentMatch.stake, guildId });
 				resultLine =
@@ -338,7 +359,7 @@ export async function rpsCommand({
 			}
 		}
 
-		await interaction.reply({
+		await buttonInteraction.update({
 			embeds: [
 				await createMatchEmbed({
 					match: currentMatch,
@@ -351,29 +372,42 @@ export async function rpsCommand({
 			],
 			components: getRPSButtons(match.id, true)
 		});
+
+		// Optional private confirmation for the click that completed the match
+		const choiceData = getChoiceData(choice);
+		await buttonInteraction.followUp({ content: `✅ Locked in: ${choiceData.label}`, ephemeral: true });
+
 		rpsMatches.delete(match.id);
 		collector.stop('complete');
 	});
 
 	collector.once('end', async (_, reason) => {
-		if (['complete', 'cancelled'].includes(reason)) return;
+		if (reason === 'complete' || reason === 'cancelled') return;
+
 		const currentMatch = rpsMatches.get(match.id);
 		if (!currentMatch || currentMatch.status !== 'pending') return;
+
 		currentMatch.status = 'cancelled';
-		await interaction.reply({
-			embeds: [
-				await createMatchEmbed({
-					match: currentMatch,
-					player1Name,
-					player2Name,
-					title: 'Rock Paper Scissors — Timed Out',
-					description: 'Timed out before both players locked in.'
-				})
-			],
-			components: getRPSButtons(match.id, true)
-		});
+
+		const anyInteraction = interaction as any;
+
+		if (typeof anyInteraction.edit === 'function') {
+			await anyInteraction.edit({
+				embeds: [
+					await createMatchEmbed({
+						match: currentMatch,
+						player1Name,
+						player2Name,
+						title: 'Rock Paper Scissors — Timed Out',
+						description: 'Timed out before both players locked in.'
+					})
+				],
+				components: getRPSButtons(match.id, true)
+			});
+		}
+
 		rpsMatches.delete(match.id);
 	});
 
-	return null;
+	return { content: '\u200B' };
 }
