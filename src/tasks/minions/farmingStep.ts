@@ -1,6 +1,6 @@
-import { randInt, roll } from '@oldschoolgg/rng';
 import type { IFarmingContract } from '@oldschoolgg/schemas';
 import { Emoji, Events } from '@oldschoolgg/toolkit';
+import { randInt, roll } from 'node-rng';
 import { Bank, itemID, Monsters } from 'oldschooljs';
 
 import type { CropUpgradeType } from '@/prisma/main/enums.js';

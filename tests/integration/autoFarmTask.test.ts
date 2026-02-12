@@ -1,5 +1,5 @@
-import type { RNGProvider } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
+import type { RNGProvider } from 'node-rng';
 import { Bank } from 'oldschooljs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
