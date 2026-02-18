@@ -13,6 +13,7 @@ import { caCommand } from '@/mahoji/commands/ca.js';
 import { casketCommand } from '@/mahoji/commands/casket.js';
 import { chooseCommand } from '@/mahoji/commands/choose.js';
 import { chopCommand } from '@/mahoji/commands/chop.js';
+import { chronicleCommand } from '@/mahoji/commands/chronicle.js';
 import { collectionLogCommand } from '@/mahoji/commands/cl.js';
 import { claimCommand } from '@/mahoji/commands/claim.js';
 import { clueCommand } from '@/mahoji/commands/clue.js';
@@ -98,6 +99,7 @@ export const allCommandsDONTIMPORT: AnyCommand[] = [
 	configCommand,
 	claimCommand,
 	cluesCommand,
+	chronicleCommand,
 	mCommand,
 	gpCommand,
 	payCommand,
