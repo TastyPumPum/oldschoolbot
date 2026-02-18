@@ -201,8 +201,6 @@ export async function generateChronicleCard({
 			cooldownMessage: `You're generating chronicles too quickly for this setup. Try again in ${remaining}.`
 		};
 	}
-	CHRONICLE_COOLDOWN_CACHE.set(key, Date.now() + Time.Minute * 10);
-
 	const stats = await computeChronicleStats(user, period, privacy);
 	const colors = styleColors(style);
 
@@ -268,6 +266,7 @@ export async function generateChronicleCard({
 	const buffer = await canvasToBuffer(canvas);
 	const result = { buffer, stats };
 	CHRONICLE_CACHE.set(key, result);
+	CHRONICLE_COOLDOWN_CACHE.set(key, Date.now() + Time.Minute * 10);
 	return result;
 }
 
