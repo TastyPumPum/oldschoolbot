@@ -5,6 +5,7 @@ import { LRUCache } from 'lru-cache';
 import type PromiseQueue from 'p-queue';
 
 import type { Giveaway } from '@/prisma/main.js';
+import type { ChronicleStats } from '@/lib/chronicle.js';
 import { globalConfig } from '@/lib/constants.js';
 import type { MarketPriceData } from '@/lib/marketPrices.js';
 
@@ -39,7 +40,7 @@ export const CHRONICLE_CACHE = new LRUCache<
 	string,
 	{
 		buffer: Buffer;
-		stats: unknown;
+		stats: ChronicleStats;
 	}
 >({
 	max: 200,

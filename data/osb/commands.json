@@ -1,6 +1,6 @@
 {
-	"hash": "9c5b6cac83159df15a45f103c573825e",
-	"date": "2026-02-11T07:07:23.961Z",
+	"hash": "e797f99654796d6dcc949dd22a0cb514",
+	"date": "2026-02-18T13:07:47.935Z",
 	"data": [
 		{
 			"name": "activities",
@@ -90,6 +90,11 @@
 			"name": "chop",
 			"desc": "Chop logs using the Woodcutting skill.",
 			"examples": ["/chop name:Logs"],
+			"subOptions": []
+		},
+		{
+			"name": "chronicle",
+			"desc": "Generate a shareable recap card for your recent progress.",
 			"subOptions": []
 		},
 		{

@@ -20,7 +20,7 @@ const PERIOD_LABELS = {
 type ChroniclePeriod = keyof typeof PERIOD_LABELS;
 type ChronicleStyle = 'dark' | 'light' | 'retroRune' | 'minimal';
 
-interface ChronicleStats {
+export interface ChronicleStats {
 	periodLabel: string;
 	totalKCGained: number;
 	totalLootValueGained: number | null;
