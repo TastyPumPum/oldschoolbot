@@ -3,6 +3,7 @@ import { Items } from 'oldschooljs';
 
 import { CHRONICLE_CACHE, CHRONICLE_COOLDOWN_CACHE } from '@/lib/cache.js';
 import { canvasToBuffer, createCanvas } from '@/lib/canvas/canvasUtil.js';
+import { allCollectionLogsFlat } from '@/lib/data/Collections.js';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 
 const PERIOD_LOOKBACK_MS = {
@@ -22,14 +23,14 @@ type ChronicleStyle = 'dark' | 'light' | 'retroRune' | 'minimal';
 interface ChronicleStats {
 	periodLabel: string;
 	totalKCGained: number;
-	totalLootValueGained: number;
+	totalLootValueGained: number | null;
 	biggestDropName: string | null;
 	biggestDropValue: number | null;
 	mostKilledName: string | null;
 	mostKilledKC: number;
 	mostTrainedSkill: string | null;
 	mostTrainedXP: number;
-	clogSlotsGained: number;
+	clogSlotsGained: number | null;
 	generatedAt: Date;
 	privacy: boolean;
 }
@@ -43,7 +44,7 @@ function gpBucket(gp: number) {
 }
 
 function maybePrivateGP(gp: number | null, privacy: boolean) {
-	if (gp === null) return 'N/A';
+	if (gp === null) return 'Insufficient tracked history';
 	return privacy ? gpBucket(gp) : `${gp.toLocaleString()} GP`;
 }
 
@@ -75,10 +76,31 @@ export function chronicleCacheKey(userID: string, period: ChroniclePeriod, style
 	return `${userID}:${period}:${style}:${privacy ? '1' : '0'}`;
 }
 
+function getDropFromCompletedLogs(logNames: string[]) {
+	let biggestDropName: string | null = null;
+	let biggestDropValue: number | null = null;
+
+	for (const logName of logNames) {
+		const cl = allCollectionLogsFlat.find(i => i.name.toLowerCase() === logName.toLowerCase());
+		if (!cl) continue;
+		for (const itemID of cl.items.values()) {
+			const item = Items.get(itemID);
+			if (!item?.price) continue;
+			if (biggestDropValue === null || item.price > biggestDropValue) {
+				biggestDropValue = item.price;
+				biggestDropName = item.name;
+			}
+		}
+	}
+
+	return { biggestDropName, biggestDropValue };
+}
+
 async function computeChronicleStats(user: MUser, period: ChroniclePeriod, privacy: boolean): Promise<ChronicleStats> {
 	const startDate = getStartDate(period);
+	const nowISO = new Date().toISOString();
 
-	const [kcRows, xpRows, clogRows, historicalRows, clCompletions] = await Promise.all([
+	const [kcRows, xpRows, completedLogRows, beforeWindowSnapshot, latestSnapshot] = await Promise.all([
 		prisma.$queryRawUnsafe<{ mi: number; kc: bigint }[]>(`
 			SELECT (a.data->>'mi')::int AS mi, SUM((a.data->>'q')::int)::bigint AS kc
 			FROM activity a
@@ -96,20 +118,6 @@ async function computeChronicleStats(user: MUser, period: ChroniclePeriod, priva
 			AND date >= '${startDate.toISOString()}'
 			GROUP BY skill;
 		`),
-		prisma.$queryRawUnsafe<{ count: bigint }[]>(`
-			SELECT COUNT(*)::bigint AS count
-			FROM user_event
-			WHERE user_id = '${user.id}'
-			AND type = 'CLCompletion'
-			AND date >= '${startDate.toISOString()}';
-		`),
-		prisma.$queryRawUnsafe<{ gp: string; date: Date }[]>(`
-			SELECT "GP"::text AS gp, date
-			FROM historical_data
-			WHERE user_id = '${user.id}'
-			AND date >= '${startDate.toISOString()}'
-			ORDER BY date ASC;
-		`),
 		prisma.$queryRawUnsafe<{ name: string }[]>(`
 			SELECT collection_log_name AS name
 			FROM user_event
@@ -117,6 +125,22 @@ async function computeChronicleStats(user: MUser, period: ChroniclePeriod, priva
 			AND type = 'CLCompletion'
 			AND date >= '${startDate.toISOString()}'
 			AND collection_log_name IS NOT NULL;
+		`),
+		prisma.$queryRawUnsafe<{ gp: string; cl_count: number }[]>(`
+			SELECT "GP"::text AS gp, cl_completion_count::int AS cl_count
+			FROM historical_data
+			WHERE user_id = '${user.id}'
+			AND date < '${startDate.toISOString()}'
+			ORDER BY date DESC
+			LIMIT 1;
+		`),
+		prisma.$queryRawUnsafe<{ gp: string; cl_count: number }[]>(`
+			SELECT "GP"::text AS gp, cl_completion_count::int AS cl_count
+			FROM historical_data
+			WHERE user_id = '${user.id}'
+			AND date <= '${nowISO}'
+			ORDER BY date DESC
+			LIMIT 1;
 		`)
 	]);
 
@@ -130,20 +154,14 @@ async function computeChronicleStats(user: MUser, period: ChroniclePeriod, priva
 	const mostTrainedSkill = mostXPRow?.skill ?? null;
 	const mostTrainedXP = mostXPRow ? Number(mostXPRow.xp) : 0;
 
-	const firstGP = historicalRows.length > 0 ? Number(historicalRows[0].gp) : user.GP;
-	const lastGP = historicalRows.length > 0 ? Number(historicalRows[historicalRows.length - 1].gp) : user.GP;
-	const totalLootValueGained = Math.max(0, lastGP - firstGP);
+	const { biggestDropName, biggestDropValue } = getDropFromCompletedLogs(completedLogRows.map(i => i.name));
 
-	let biggestDropName: string | null = null;
-	let biggestDropValue: number | null = null;
-	for (const completion of clCompletions) {
-		const matchedItem = Items.find(foundItem => foundItem.name.toLowerCase() === completion.name.toLowerCase());
-		if (!matchedItem?.price) continue;
-		if (biggestDropValue === null || matchedItem.price > biggestDropValue) {
-			biggestDropValue = matchedItem.price;
-			biggestDropName = matchedItem.name;
-		}
-	}
+	const preWindow = beforeWindowSnapshot[0];
+	const postWindow = latestSnapshot[0];
+	const totalLootValueGained =
+		preWindow && postWindow ? Math.max(0, Number(postWindow.gp) - Number(preWindow.gp)) : null;
+	const clogSlotsGained =
+		preWindow && postWindow ? Math.max(0, Number(postWindow.cl_count) - Number(preWindow.cl_count)) : null;
 
 	return {
 		periodLabel: PERIOD_LABELS[period],
@@ -155,7 +173,7 @@ async function computeChronicleStats(user: MUser, period: ChroniclePeriod, priva
 		mostKilledKC: mostKilledRow ? Number(mostKilledRow.kc) : 0,
 		mostTrainedSkill,
 		mostTrainedXP,
-		clogSlotsGained: Number(clogRows[0]?.count ?? 0),
+		clogSlotsGained,
 		generatedAt: new Date(),
 		privacy
 	};
@@ -228,7 +246,7 @@ export async function generateChronicleCard({
 				? `${stats.mostTrainedSkill} (${stats.mostTrainedXP.toLocaleString()} XP)`
 				: 'No skill XP recorded'
 		],
-		['Collection log slots gained', stats.clogSlotsGained.toLocaleString()]
+		['Collection log slots gained', stats.clogSlotsGained?.toLocaleString() ?? 'Insufficient tracked history']
 	] as const;
 
 	let y = 300;
