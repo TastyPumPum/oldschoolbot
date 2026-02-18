@@ -5,6 +5,7 @@ import { LRUCache } from 'lru-cache';
 import type PromiseQueue from 'p-queue';
 
 import type { Giveaway } from '@/prisma/main.js';
+import type { ChronicleStats } from '@/lib/chronicle.js';
 import { globalConfig } from '@/lib/constants.js';
 import type { MarketPriceData } from '@/lib/marketPrices.js';
 
@@ -35,6 +36,19 @@ export const GE_SLOTS_CACHE = new LRUCache<
 	max: 300
 });
 export const RARE_ROLES_CACHE = new LRUCache<string, number>({ max: 1000 });
+export const CHRONICLE_CACHE = new LRUCache<
+	string,
+	{
+		buffer: Buffer;
+		stats: ChronicleStats;
+	}
+>({
+	max: 200,
+	ttl: Time.Hour * 12,
+	ttlAutopurge: true,
+	ttlResolution: Time.Second
+});
+export const CHRONICLE_COOLDOWN_CACHE = new LRUCache<string, number>({ max: 2000, ttl: Time.Minute * 15 });
 
 export const userQueues: Map<string, PromiseQueue> = new Map();
 export const CUSTOM_PRICE_CACHE = new Map<number, number>();

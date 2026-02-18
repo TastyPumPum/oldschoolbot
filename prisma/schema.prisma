@@ -1220,6 +1220,7 @@ enum command_name_enum {
   choose
   chop
   christmas
+  chronicle
   cl
   claim
   clbank
