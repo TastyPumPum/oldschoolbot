@@ -72,4 +72,3 @@ Base cast times are: Tan Leather 0.5s, Spin Flax 0.8s, Superglass Make 3s and Pl
   - Plank Make: 4s
 - Staff t3 gives **12% faster** casting.
 - Feeding [[Klik]] gives **22% faster** casting.
-- Master-clue GMC proc while tame clueing: **1.5% per clue**, or **3.5% with Divine ring**.

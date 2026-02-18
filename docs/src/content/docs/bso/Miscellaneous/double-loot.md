@@ -6,7 +6,7 @@ Double Loot is a global timed buff. If active, qualifying loot rolls are doubled
 
 ## How it is activated
 
-- Using [[Double loot token]] adds **30 minutes**.
+- Using [[Double loot token]] adds a **random 6–36 minutes**.
 - Patreon tier rewards can add time.
 - Staff/tester tooling can add time.
 
