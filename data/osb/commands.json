@@ -543,6 +543,11 @@
 			"desc": "See your OSRS xp.",
 			"examples": ["/xp rsn:Magnaboy"],
 			"subOptions": []
+		},
+		{
+			"name": "zero_time_activity",
+			"desc": "Configure your preferred zero time activity.",
+			"subOptions": []
 		}
 	]
 }
