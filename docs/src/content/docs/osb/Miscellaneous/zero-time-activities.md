@@ -16,7 +16,7 @@ Only one zero-time action runs per trip, but the fallback preference means you r
 
 ## Zero-time Alching
 
-- Requires level 55 Magic and the materials for High Alchemy (or the Rune Pouch setup you normally use).
+- Requires level 55 Magic and the materials for High Alchemy.
 - Leaving the item unset makes the bot choose from your favourite alchs at the start of **every** trip, so you always alch profitable or priority items.
 - Casting rates depend on the host activity:
   - **Agility laps:** roughly 277 casts per hour.
@@ -29,7 +29,7 @@ Only one zero-time action runs per trip, but the fallback preference means you r
 - You must meet the item's Fletching level requirement and own any necessary Slayer unlocks before configuring it.
 - Fletching speeds vary by content:
   - **Agility laps:** up to ~15,000 items per hour for darts, bolts, broad bolts, and similar stackables.
-  - **Hallowed Sepulchre:** uses the item's zero-time rate (about 18,000 sets/hour for darts and bolts, ~10,000 sets/hour for arrows, javelins, and other ammunition).
+  - **Hallowed Sepulchre:** uses the item's zero-time rate (about 18,000 items/hour for darts and bolts, or ~10,000 items/hour for arrows, javelins, and similar ammunition).
 - Materials (tips, feathers, unfinished ammunition, etc.) are removed when the trip begins, so ensure your bank holds enough supplies for the expected duration.
 
 ## Location Notes

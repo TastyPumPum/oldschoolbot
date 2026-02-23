@@ -18,6 +18,7 @@ import {
 import { timePerAlchAgility } from '@/mahoji/lib/abstracted_commands/alchCommand.js';
 
 const AGILITY_ALCHES_PER_HOUR = Time.Hour / timePerAlchAgility;
+const AGILITY_FLETCH_CAP_PER_HOUR = 15_000;
 
 export const lapsCommand = defineCommand({
 	name: 'laps',
@@ -126,7 +127,13 @@ export const lapsCommand = defineCommand({
 					itemsPerHour: AGILITY_ALCHES_PER_HOUR,
 					...(alchDisabledReason ? { disabledReason: alchDisabledReason } : {})
 				},
-				fletch: { itemsPerHour: preference => resolveConfiguredFletchItemsPerHour(preference) }
+				fletch: {
+					itemsPerHour: preference => {
+						const configuredRate = resolveConfiguredFletchItemsPerHour(preference);
+						if (!configuredRate) return undefined;
+						return Math.min(configuredRate, AGILITY_FLETCH_CAP_PER_HOUR);
+					}
+				}
 			});
 
 			if (outcome.result?.type === 'fletch') {
