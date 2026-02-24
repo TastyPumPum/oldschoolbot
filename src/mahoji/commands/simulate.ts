@@ -4,6 +4,18 @@ import { averageBank, Bank, ChambersOfXeric, toKMB } from 'oldschooljs';
 
 import { ColosseumWaveBank, startColosseumRun } from '@/lib/colosseum.js';
 import pets from '@/lib/data/pets.js';
+import {
+	MISCELLANIA_TRIP_SECONDS_PER_DAY,
+	calculateMiscellaniaDays,
+	calculateTopupTripSeconds,
+	type MiscellaniaAreaKey,
+	type MiscellaniaState,
+	miscellaniaAreaKeys,
+	miscellaniaAreaLabels,
+	normalizeMiscellaniaState,
+	simulateDetailedMiscellania,
+	validateAreas
+} from '@/lib/miscellania/calc.js';
 import { assert } from '@/lib/util/logError.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
 
@@ -190,6 +202,69 @@ export const simulateCommand = defineCommand({
 			type: 'Subcommand',
 			name: 'colosseum',
 			description: 'Simulate colosseum.'
+		},
+		{
+			type: 'Subcommand',
+			name: 'managing_miscellania',
+			description: 'Preview Managing Miscellania GP and trip duration.',
+			options: [
+				{
+					type: 'Boolean',
+					name: 'detailed',
+					description: 'Use detailed coffer/favour/resource-point simulation.',
+					required: false
+				},
+				{
+					type: 'Integer',
+					name: 'days',
+					description: 'Days to simulate in detailed mode.',
+					required: false,
+					min_value: 1,
+					max_value: 10000
+				},
+				{
+					type: 'Boolean',
+					name: 'royal_trouble',
+					description: 'Whether Royal Trouble is completed (detailed mode).',
+					required: false
+				},
+				{
+					type: 'Integer',
+					name: 'starting_coffer',
+					description: 'Starting coffer amount (detailed mode).',
+					required: false,
+					min_value: 0,
+					max_value: 7_500_000
+				},
+				{
+					type: 'Integer',
+					name: 'starting_favour',
+					description: 'Starting favour percent (detailed mode).',
+					required: false,
+					min_value: 25,
+					max_value: 100
+				},
+				{
+					type: 'Boolean',
+					name: 'constant_favour',
+					description: 'Treat favour as maintained daily (detailed mode).',
+					required: false
+				},
+				{
+					type: 'String',
+					name: 'primary_area',
+					description: 'Main collection area (10 workers).',
+					required: false,
+					choices: miscellaniaAreaKeys.map(key => ({ name: miscellaniaAreaLabels[key], value: key }))
+				},
+				{
+					type: 'String',
+					name: 'secondary_area',
+					description: 'Secondary collection area (5 workers).',
+					required: false,
+					choices: miscellaniaAreaKeys.map(key => ({ name: miscellaniaAreaLabels[key], value: key }))
+				}
+			]
 		}
 	],
 	run: async ({ interaction, options, user }) => {
@@ -217,6 +292,92 @@ export const simulateCommand = defineCommand({
 
 			if (received.length === 0) return "You didn't get any pets!";
 			return received.join(' ');
+		}
+		if (options.managing_miscellania) {
+			const now = Date.now();
+			const stateRes = await prisma.user.findUnique({
+				where: { id: user.id },
+				select: { miscellania_state: true }
+			});
+			const existing = normalizeMiscellaniaState(
+				(stateRes?.miscellania_state as MiscellaniaState | null) ?? null,
+				{
+					now
+				}
+			);
+			const primaryArea = (options.managing_miscellania.primary_area ??
+				existing?.primaryArea ??
+				'maple') as MiscellaniaAreaKey;
+			const secondaryArea = (options.managing_miscellania.secondary_area ??
+				existing?.secondaryArea ??
+				'herbs') as MiscellaniaAreaKey;
+			const areaErr = validateAreas(primaryArea, secondaryArea);
+			if (areaErr) return areaErr;
+
+			if (options.managing_miscellania.detailed) {
+				const royalTrouble = options.managing_miscellania.royal_trouble ?? true;
+				const days = options.managing_miscellania.days ?? calculateMiscellaniaDays(existing, now);
+				const startingCoffer =
+					options.managing_miscellania.starting_coffer ?? (royalTrouble ? 7_500_000 : 5_000_000);
+				const startingFavour = options.managing_miscellania.starting_favour ?? 100;
+				const constantFavour = options.managing_miscellania.constant_favour ?? false;
+
+				const detailed = simulateDetailedMiscellania({
+					days,
+					royalTrouble,
+					startingCoffer,
+					startingFavour,
+					constantFavour,
+					startingResourcePoints: existing.resourcePoints
+				});
+
+				return `Managing Miscellania detailed simulation:
+Primary area: ${miscellaniaAreaLabels[primaryArea]}
+Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
+Royal Trouble: ${detailed.royalTrouble ? 'yes' : 'no'}
+Days simulated: ${detailed.days}
+Starting coffer: ${detailed.startingCoffer.toLocaleString()}
+Ending coffer: ${detailed.endingCoffer.toLocaleString()}
+GP spent: ${detailed.gpSpent.toLocaleString()}
+Starting favour: ${detailed.startingFavour.toFixed(1)}%
+Ending favour: ${detailed.endingFavour.toFixed(1)}%
+Constant favour mode: ${detailed.constantFavour ? 'yes' : 'no'}
+Resource points: ${detailed.resourcePoints.toLocaleString()}`;
+			}
+
+			const days = calculateMiscellaniaDays(existing, now);
+			const detailed = simulateDetailedMiscellania({
+				days,
+				royalTrouble: existing.royalTrouble,
+				startingCoffer: existing.coffer,
+				startingFavour: existing.favour,
+				constantFavour: false,
+				startingResourcePoints: existing.resourcePoints
+			});
+			const gpCost = detailed.gpSpent;
+			const topupTripSeconds = calculateTopupTripSeconds(existing, now);
+			const topupDays = Math.max(1, Math.floor(topupTripSeconds / MISCELLANIA_TRIP_SECONDS_PER_DAY));
+			const duration = topupTripSeconds * 1000;
+			const maxTripLength = await user.calcMaxTripLength('MiscellaniaTopup');
+			const canAfford = user.GP >= gpCost;
+			const fitsTrip = duration <= maxTripLength;
+
+			return `Managing Miscellania preview:
+Primary area: ${miscellaniaAreaLabels[primaryArea]}
+Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
+Days to claim: ${days}
+Days since last top-up: ${topupDays}
+Starting coffer: ${existing.coffer.toLocaleString()}
+Ending coffer: ${detailed.endingCoffer.toLocaleString()}
+Cost if started now: ${gpCost.toLocaleString()} GP
+Starting favour: ${existing.favour.toFixed(1)}%
+Ending favour (before top-up): ${detailed.endingFavour.toFixed(1)}%
+Resource points gained: ${detailed.resourcePointsGained.toLocaleString()}
+Total resource points: ${detailed.resourcePoints.toLocaleString()}
+Trip duration: ${formatDuration(duration)}
+Your max trip length: ${formatDuration(maxTripLength)}
+Can afford now: ${canAfford ? 'yes' : 'no'}
+Fits max trip length: ${fitsTrip ? 'yes' : 'no'}`;
 		}
 		return 'Invalid command.';
 	}

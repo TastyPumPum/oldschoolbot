@@ -1,6 +1,6 @@
 {
-	"hash": "9c5b6cac83159df15a45f103c573825e",
-	"date": "2026-02-11T07:07:23.961Z",
+	"hash": "2c17d43f2d7c5014d62245f316805289",
+	"date": "2026-02-24T13:40:34.146Z",
 	"data": [
 		{
 			"name": "activities",
@@ -19,6 +19,7 @@
 				"enchant",
 				"fight_caves",
 				"inferno",
+				"managing_miscellania",
 				"my_notes",
 				"other",
 				"plank_make",
@@ -474,7 +475,7 @@
 			"name": "simulate",
 			"desc": "Simulate various OSRS related things.",
 			"examples": ["/simulate cox quantity:1"],
-			"subOptions": ["colosseum", "cox", "petroll"]
+			"subOptions": ["colosseum", "cox", "managing_miscellania", "petroll"]
 		},
 		{
 			"name": "slayer",

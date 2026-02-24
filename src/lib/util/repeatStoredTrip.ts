@@ -45,6 +45,7 @@ import type {
 	MahoganyHomesActivityTaskOptions,
 	MinigameActivityTaskOptionsWithNoChanges,
 	MiningActivityTaskOptions,
+	MiscellaniaTopupActivityTaskOptions,
 	MonsterActivityTaskOptions,
 	MotherlodeMiningActivityTaskOptions,
 	NexTaskOptions,
@@ -89,6 +90,7 @@ const taskCanBeRepeated = (activity: Activity, user: MUser) => {
 			activity_type_enum.BlastFurnace,
 			activity_type_enum.Easter,
 			activity_type_enum.TokkulShop,
+			activity_type_enum.MiscellaniaTopup,
 			activity_type_enum.Birdhouse,
 			activity_type_enum.StrongholdOfSecurity,
 			activity_type_enum.CombatRing
@@ -181,6 +183,15 @@ const tripHandlers: {
 	[activity_type_enum.KourendFavour]: {
 		commandName: 'm',
 		args: () => ({})
+	},
+	[activity_type_enum.MiscellaniaTopup]: {
+		commandName: 'activities',
+		args: (data: MiscellaniaTopupActivityTaskOptions) => ({
+			managing_miscellania: {
+				primary_area: data.primaryArea,
+				secondary_area: data.secondaryArea
+			}
+		})
 	},
 	[activity_type_enum.AerialFishing]: {
 		commandName: 'activities',

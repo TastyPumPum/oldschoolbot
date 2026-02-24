@@ -517,6 +517,12 @@ export interface KourendFavourActivityTaskOptions extends ActivityTaskOptions {
 	quantity: number;
 }
 
+export interface MiscellaniaTopupActivityTaskOptions extends ActivityTaskOptions {
+	type: 'MiscellaniaTopup';
+	primaryArea: string;
+	secondaryArea: string;
+}
+
 export interface TokkulShopOptions extends ActivityTaskOptions {
 	type: 'TokkulShop';
 	itemID: number;
@@ -597,6 +603,7 @@ export type ActivityTaskData =
 	| TemporossActivityTaskOptions
 	| PuroPuroActivityTaskOptions
 	| KourendFavourActivityTaskOptions
+	| MiscellaniaTopupActivityTaskOptions
 	| AgilityActivityTaskOptions
 	| InfernoOptions
 	| TOAOptions
