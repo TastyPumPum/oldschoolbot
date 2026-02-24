@@ -39,6 +39,7 @@ export interface MiscellaniaState {
 	cofferAtLastClaim: number;
 	favour: number;
 	resourcePoints: number;
+	introShown?: boolean;
 }
 
 export interface MiscellaniaDetailedSimulationResult {
@@ -172,7 +173,8 @@ export function normalizeMiscellaniaState(
 					? Math.max(0, Math.floor(state.coffer))
 					: 7_500_000,
 		favour: typeof state?.favour === 'number' ? Math.max(25, Math.min(100, state.favour)) : 100,
-		resourcePoints: typeof state?.resourcePoints === 'number' ? Math.max(0, Math.floor(state.resourcePoints)) : 0
+		resourcePoints: typeof state?.resourcePoints === 'number' ? Math.max(0, Math.floor(state.resourcePoints)) : 0,
+		introShown: typeof state?.introShown === 'boolean' ? state.introShown : false
 	};
 }
 

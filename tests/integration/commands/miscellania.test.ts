@@ -38,6 +38,20 @@ describe('Managing Miscellania Command', () => {
 		expect(user.GP).toEqual(before);
 	});
 
+	it('returns status output', async () => {
+		const user = await createTestUser(undefined, { GP: 500_000 });
+		const res = await user.runCommand('activities', {
+			managing_miscellania: {
+				action: 'status'
+			}
+		});
+		expect(res).toContain('Managing Miscellania status:');
+		expect(res).toContain('Approval:');
+		expect(res).toContain('Topup:');
+		expect(res).toContain('Claim:');
+		expect(res).toContain('Estimated GP due on claim:');
+	});
+
 	it('rejects incompatible area pairs', async () => {
 		const user = await createTestUser(undefined, { GP: 500_000 });
 		const res = await user.runCommand('activities', {
@@ -241,6 +255,6 @@ describe('Managing Miscellania Command', () => {
 				action: 'claim'
 			}
 		});
-		expect(res).toEqual('You have no Miscellania resources to claim right now.');
+		expect(res).toContain('You have no Miscellania resources to claim right now.');
 	});
 });

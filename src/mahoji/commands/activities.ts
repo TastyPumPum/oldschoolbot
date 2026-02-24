@@ -514,7 +514,8 @@ export const activitiesCommand = defineCommand({
 					required: false,
 					choices: [
 						{ name: 'Topup', value: 'topup' },
-						{ name: 'Claim', value: 'claim' }
+						{ name: 'Claim', value: 'claim' },
+						{ name: 'Status', value: 'status' }
 					]
 				},
 				{
@@ -566,8 +567,9 @@ export const activitiesCommand = defineCommand({
 		const isBusy = await user.minionIsBusy();
 		const busyStr = `${user.minionName} is currently busy.`;
 		const managingMiscellaniaOptions = options.managing_miscellania;
-		const isClaimOnly = (managingMiscellaniaOptions?.action ?? 'topup') === 'claim';
-		if (isBusy && !isClaimOnly) return busyStr;
+		const miscellaniaAction = managingMiscellaniaOptions?.action ?? 'topup';
+		const isClaimOrStatus = miscellaniaAction === 'claim' || miscellaniaAction === 'status';
+		if (isBusy && !isClaimOrStatus) return busyStr;
 
 		if (options.other) {
 			return otherActivitiesCommand(interaction, options.other.activity);
@@ -659,26 +661,59 @@ export const activitiesCommand = defineCommand({
 				'herbs') as MiscellaniaAreaKey;
 			const areaErr = validateAreas(primaryArea, secondaryArea);
 			if (areaErr) return areaErr;
-			const action = (options.managing_miscellania.action ?? 'topup') as 'topup' | 'claim';
+			const action = (options.managing_miscellania.action ?? 'topup') as 'topup' | 'claim' | 'status';
 			let existing = normalizeMiscellaniaState(stored, { now, primaryArea, secondaryArea });
 			existing = advanceMiscellaniaState(existing, now);
 			const claimDays = calculateMiscellaniaDays(existing, now);
 			const isPreview = Boolean(options.managing_miscellania.preview);
 			const gpCostToClaim = Math.max(0, existing.cofferAtLastClaim - existing.coffer);
+			const shouldShowIntro = !existing.introShown;
+			const introMessage =
+				'Managing Miscellania quick guide: use `action:topup` to restore approval, then `action:claim` to collect loot and pay the accrued GP cost.';
+			const addIntro = (content: string) => (shouldShowIntro ? `${content}\n\n${introMessage}` : content);
+			const persistIntroIfNeeded = async (state: MiscellaniaState) => {
+				if (!shouldShowIntro) return;
+				await prisma.user.update({
+					where: { id: user.id },
+					data: {
+						miscellania_state: {
+							...state,
+							primaryArea,
+							secondaryArea,
+							introShown: true
+						} as any
+					}
+				});
+			};
+
+			if (action === 'status') {
+				const daysSinceLastTopup = daysElapsedSince(existing.lastTopupAt, now);
+				const topupBlocked = daysSinceLastTopup < 1 && existing.favour >= 100;
+				const topupReadyInMs = topupBlocked ? Math.max(0, Time.Day - (now - existing.lastTopupAt)) : 0;
+				const claimAvailable = existing.resourcePoints > 0;
+				const statusText = `Managing Miscellania status:
+Approval: ${existing.favour.toFixed(1)}%
+Topup: ${topupBlocked ? `ready in ${formatDuration(topupReadyInMs)}` : 'ready now'}
+Claim: ${claimAvailable ? 'available' : 'not available'}
+Estimated GP due on claim: ${gpCostToClaim.toLocaleString()} GP`;
+				await persistIntroIfNeeded(existing);
+				return addIntro(statusText);
+			}
 
 			if (action === 'claim') {
 				if (isPreview) {
 					if (existing.resourcePoints <= 0) {
 						return 'You have no Miscellania resources to claim right now.';
 					}
-					return `Managing Miscellania claim preview:
+					await persistIntroIfNeeded(existing);
+					return addIntro(`Managing Miscellania claim preview:
 Primary area: ${miscellaniaAreaLabels[primaryArea]}
 Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
 Days since last claim: ${claimDays}
 Current coffer: ${existing.coffer.toLocaleString()}
 Current favour: ${existing.favour.toFixed(1)}%
 GP cost to claim now: ${gpCostToClaim.toLocaleString()} GP
-Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`;
+Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`);
 				}
 				return user.withLock('managing_miscellania_claim', async lockedUser => {
 					const claimNow = Date.now();
@@ -693,8 +728,24 @@ Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`;
 						secondaryArea
 					});
 					latestState = advanceMiscellaniaState(latestState, claimNow);
+					const shouldShowIntroLocked = !latestState.introShown;
+					const addIntroLocked = (content: string) =>
+						shouldShowIntroLocked ? `${content}\n\n${introMessage}` : content;
 					if (latestState.resourcePoints <= 0) {
-						return 'You have no Miscellania resources to claim right now.';
+						if (shouldShowIntroLocked) {
+							await prisma.user.update({
+								where: { id: lockedUser.id },
+								data: {
+									miscellania_state: {
+										...latestState,
+										primaryArea,
+										secondaryArea,
+										introShown: true
+									} as any
+								}
+							});
+						}
+						return addIntroLocked('You have no Miscellania resources to claim right now.');
 					}
 					const latestClaimDays = calculateMiscellaniaDays(latestState, claimNow);
 					const latestGpCostToClaim = Math.max(0, latestState.cofferAtLastClaim - latestState.coffer);
@@ -726,7 +777,8 @@ Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`;
 						resourcePoints: 0,
 						lastClaimedAt: claimNow,
 						lastUpdatedAt: claimNow,
-						cofferAtLastClaim: latestState.coffer
+						cofferAtLastClaim: latestState.coffer,
+						introShown: true
 					};
 					await prisma.user.update({
 						where: { id: lockedUser.id },
@@ -743,15 +795,17 @@ Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`;
 							users: [{ id: lockedUser.id, loot, duration: latestClaimDays * Time.Day }]
 						});
 					}
-					const content = `You claimed Miscellania resources from ${latestClaimDays} day${
-						latestClaimDays === 1 ? '' : 's'
-					}. Spent ${latestGpCostToClaim.toLocaleString()} GP. Coffer is now ${latestState.coffer.toLocaleString()} and favour is ${latestState.favour.toFixed(
-						1
-					)}%.`;
+					const content = addIntroLocked(
+						`You claimed Miscellania resources from ${latestClaimDays} day${
+							latestClaimDays === 1 ? '' : 's'
+						}. Spent ${latestGpCostToClaim.toLocaleString()} GP. Coffer is now ${latestState.coffer.toLocaleString()} and favour is ${latestState.favour.toFixed(
+							1
+						)}%.`
+					);
 					if (loot.length === 0) return content;
 					const image = await makeBankImage({
 						bank: loot,
-						title: 'Managing Miscellania Loot',
+						title: `Managing Misc Loot (${latestClaimDays} day${latestClaimDays === 1 ? '' : 's'})`,
 						user: lockedUser,
 						previousCL
 					});
@@ -762,9 +816,13 @@ Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`;
 			if (daysSinceLastTopup < 1 && existing.favour >= 100) {
 				const elapsedSinceTopup = Math.max(0, now - existing.lastTopupAt);
 				const waitMs = Math.max(0, Time.Day - elapsedSinceTopup);
-				return `Your Miscellania approval is already 100% and you already did a top-up in the last day. You can top-up again in ${formatDuration(
-					waitMs
-				)}.`;
+				const nextTopupAt = new Date(existing.lastTopupAt + Time.Day);
+				await persistIntroIfNeeded(existing);
+				return addIntro(
+					`Your Miscellania approval is already 100% and you already did a top-up in the last day. You can top-up again in ${formatDuration(
+						waitMs
+					)} (${nextTopupAt.toUTCString()}).`
+				);
 			}
 
 			const tripSeconds = calculateTopupTripSeconds(existing, now);
@@ -774,7 +832,8 @@ Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`;
 
 			if (isPreview) {
 				const fitsTrip = duration <= maxTripLength;
-				return `Managing Miscellania top-up preview:
+				await persistIntroIfNeeded(existing);
+				return addIntro(`Managing Miscellania top-up preview:
 Primary area: ${miscellaniaAreaLabels[primaryArea]}
 Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
 Days since last top-up: ${topupDays}
@@ -782,11 +841,14 @@ Current coffer: ${existing.coffer.toLocaleString()}
 Current favour: ${existing.favour.toFixed(1)}%
 Trip duration: ${formatDuration(duration)}
 Your max trip length: ${formatDuration(maxTripLength)}
-Fits max trip length: ${fitsTrip ? 'yes' : 'no'}`;
+Fits max trip length: ${fitsTrip ? 'yes' : 'no'}`);
 			}
 
 			if (duration > maxTripLength) {
-				return `Required trip is ${formatDuration(duration)}, but your max trip length is ${formatDuration(maxTripLength)}.`;
+				await persistIntroIfNeeded(existing);
+				return addIntro(
+					`Required trip is ${formatDuration(duration)}, but your max trip length is ${formatDuration(maxTripLength)}.`
+				);
 			}
 
 			await ActivityManager.startTrip<MiscellaniaTopupActivityTaskOptions>({
@@ -798,9 +860,10 @@ Fits max trip length: ${fitsTrip ? 'yes' : 'no'}`;
 				secondaryArea
 			});
 
-			return `${user.minionName} is now doing a Miscellania favour top-up trip. It will take ${formatDuration(
-				duration
-			)}.`;
+			await persistIntroIfNeeded(existing);
+			return addIntro(
+				`${user.minionName} is now doing a Miscellania favour top-up trip. It will take ${formatDuration(duration)}.`
+			);
 		}
 		if (options.underwater) {
 			if (options.underwater.agility_thieving) {
