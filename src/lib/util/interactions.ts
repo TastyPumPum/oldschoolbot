@@ -18,8 +18,7 @@ export function makeMiscellaniaTopupButton() {
 	return new ButtonBuilder()
 		.setCustomId(InteractionID.Commands.TopupMiscellania)
 		.setLabel('Top-up Miscellania')
-		.setStyle(ButtonStyle.Secondary)
-		.setEmoji({ id: EmojiId.MoneyBag });
+		.setStyle(ButtonStyle.Secondary);
 }
 
 export function makeOpenSeedPackButton() {
