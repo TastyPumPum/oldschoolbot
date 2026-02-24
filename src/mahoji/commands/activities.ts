@@ -767,7 +767,8 @@ Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`);
 					const loot = generateMiscellaniaLoot({
 						resourcePoints: claimedPoints,
 						primaryArea,
-						secondaryArea
+						secondaryArea,
+						rng
 					});
 					const { previousCL } = await lockedUser.addItemsToBank({ items: loot, collectionLog: true });
 					const nextState: MiscellaniaState = {

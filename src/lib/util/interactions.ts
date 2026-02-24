@@ -43,7 +43,7 @@ export function makeRepeatTripButton() {
 		.setCustomId(InteractionID.Commands.RepeatTrip)
 		.setLabel('Repeat Trip')
 		.setStyle(ButtonStyle.Secondary)
-		.setEmoji({ name: 'ðŸ”' });
+		.setEmoji({ name: '🔁' });
 }
 
 export function makeTearsOfGuthixButton() {
@@ -51,7 +51,7 @@ export function makeTearsOfGuthixButton() {
 		.setCustomId(InteractionID.Commands.StartTearsOfGuthix)
 		.setLabel('Start Tears of Guthix')
 		.setStyle(ButtonStyle.Secondary)
-		.setEmoji({ name: 'ðŸ' });
+		.setEmoji({ name: '🐍' });
 }
 
 export function makeBirdHouseTripButton() {

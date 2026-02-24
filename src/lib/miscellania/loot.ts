@@ -1,11 +1,14 @@
+import type { RNGProvider } from 'node-rng';
 import { Bank } from 'oldschooljs';
 
+import { globalConfig } from '@/lib/constants.js';
 import type { MiscellaniaAreaKey } from '@/lib/miscellania/calc.js';
 
 interface RateRow {
 	item: string;
 	rate: number;
 	maximum?: number;
+	extraItems?: { item: string; quantity: number }[];
 }
 
 const inverseCosts: Record<MiscellaniaAreaKey, number> = {
@@ -23,11 +26,23 @@ const inverseCosts: Record<MiscellaniaAreaKey, number> = {
 
 const rateTables: Record<string, RateRow[]> = {
 	nests: [
-		{ item: 'Bird nest (seed)', rate: 65 / 100 },
-		{ item: 'Bird nest (ring)', rate: 32 / 100 },
-		{ item: 'Bird nest (green egg)', rate: 1 / 100 },
-		{ item: 'Bird nest (blue egg)', rate: 1 / 100 },
-		{ item: 'Bird nest (red egg)', rate: 1 / 100 }
+		{ item: 'Nest box (seeds)', rate: 65 / 100 },
+		{ item: 'Nest box (ring)', rate: 32 / 100 },
+		{
+			item: 'Green bird egg',
+			rate: 1 / 100,
+			extraItems: [{ item: 'Bird nest', quantity: 1 }]
+		},
+		{
+			item: 'Blue bird egg',
+			rate: 1 / 100,
+			extraItems: [{ item: 'Bird nest', quantity: 1 }]
+		},
+		{
+			item: 'Red bird egg',
+			rate: 1 / 100,
+			extraItems: [{ item: 'Bird nest', quantity: 1 }]
+		}
 	],
 	miningGems: [
 		{ item: 'Uncut sapphire', rate: 32 / 58 },
@@ -160,42 +175,68 @@ const rateTables: Record<string, RateRow[]> = {
 	]
 };
 
-function computeExpectedValueWithMax(n: number, p: number, maximum: number): number {
-	if (n <= 0 || p <= 0 || maximum <= 0) return 0;
-	if (p >= 1) return Math.min(n, maximum);
-
-	let pMass = 0;
-	let expected = 0;
-	let prob = Math.pow(1 - p, n);
-	pMass += prob;
-	for (let k = 1; k < maximum; k++) {
-		prob *= ((n - (k - 1)) / k) * (p / (1 - p));
-		pMass += prob;
-		expected += k * prob;
-	}
-	return expected + (1 - pMass) * maximum;
-}
+const loggedUnknownItems = new Set<string>();
 
 function addItemSafe(bank: Bank, itemName: string, quantity: number) {
 	if (quantity <= 0) return;
 	try {
 		bank.add(itemName as any, quantity);
-	} catch {
-		// Ignore unknown item names to avoid claim failure.
+	} catch (error) {
+		const message = `Unknown Miscellania loot item: "${itemName}"`;
+		if (!globalConfig.isProduction) {
+			const err = new Error(message);
+			(err as Error & { cause?: unknown }).cause = error;
+			throw err;
+		}
+		if (!loggedUnknownItems.has(itemName)) {
+			loggedUnknownItems.add(itemName);
+			Logging.logError({
+				err: error as Error,
+				message,
+				context: { itemName, quantity }
+			});
+		}
 	}
 }
 
-function addFromRateTable(bank: Bank, rateTable: RateRow[], amount: number) {
+function rollRateRow(rateTable: RateRow[], rng: RNGProvider): RateRow | null {
+	if (rateTable.length === 0) return null;
+	const totalWeight = rateTable.reduce((acc, row) => acc + row.rate, 0);
+	if (totalWeight <= 0) return null;
+	let roll = rng.randFloat(0, totalWeight);
+	for (const row of rateTable) {
+		roll -= row.rate;
+		if (roll <= 0) return row;
+	}
+	return rateTable[rateTable.length - 1];
+}
+
+function addFromRateTable(bank: Bank, rateTable: RateRow[], amount: number, rng: RNGProvider) {
 	const trials = Math.max(0, Math.floor(amount));
 	if (trials <= 0) return;
-	for (const row of rateTable) {
-		const ev =
-			row.maximum === undefined ? row.rate * trials : computeExpectedValueWithMax(trials, row.rate, row.maximum);
-		addItemSafe(bank, row.item, Math.max(0, Math.round(ev)));
+	const rolledCounts: Record<string, number> = {};
+	const extraCounts: Record<string, number> = {};
+	for (let i = 0; i < trials; i++) {
+		const row = rollRateRow(rateTable, rng);
+		if (!row) continue;
+		const currentCount = rolledCounts[row.item] ?? 0;
+		if (row.maximum !== undefined && currentCount >= row.maximum) continue;
+		rolledCounts[row.item] = currentCount + 1;
+		if (row.extraItems) {
+			for (const extra of row.extraItems) {
+				extraCounts[extra.item] = (extraCounts[extra.item] ?? 0) + extra.quantity;
+			}
+		}
+	}
+	for (const [item, qty] of Object.entries(rolledCounts)) {
+		addItemSafe(bank, item, qty);
+	}
+	for (const [item, qty] of Object.entries(extraCounts)) {
+		addItemSafe(bank, item, qty);
 	}
 }
 
-function generateAreaLoot(area: MiscellaniaAreaKey, workers: number, resourcePoints: number): Bank {
+function generateAreaLoot(area: MiscellaniaAreaKey, workers: number, resourcePoints: number, rng: RNGProvider): Bank {
 	const loot = new Bank();
 	const inverseCost = inverseCosts[area];
 	const baseQty = Math.floor((workers * inverseCost * resourcePoints) / 2048);
@@ -204,46 +245,46 @@ function generateAreaLoot(area: MiscellaniaAreaKey, workers: number, resourcePoi
 	switch (area) {
 		case 'maple':
 			addItemSafe(loot, 'Maple logs', baseQty);
-			addFromRateTable(loot, rateTables.nests, Math.min(999, Math.floor(baseQty / 100)));
+			addFromRateTable(loot, rateTables.nests, Math.min(999, Math.floor(baseQty / 100)), rng);
 			break;
 		case 'coal':
 			addItemSafe(loot, 'Coal', baseQty);
-			addFromRateTable(loot, rateTables.miningGems, Math.floor(baseQty / 200 + 0.5));
+			addFromRateTable(loot, rateTables.miningGems, Math.floor(baseQty / 200 + 0.5), rng);
 			break;
 		case 'fishing_raw':
 			addItemSafe(loot, 'Raw tuna', Math.floor(0.5 * baseQty));
 			addItemSafe(loot, 'Raw swordfish', Math.floor(0.15 * baseQty));
-			addFromRateTable(loot, rateTables.fishingLoot, Math.floor(baseQty / 200));
+			addFromRateTable(loot, rateTables.fishingLoot, Math.floor(baseQty / 200), rng);
 			break;
 		case 'fishing_cooked':
 			addItemSafe(loot, 'Tuna', Math.floor(0.5 * baseQty));
 			addItemSafe(loot, 'Swordfish', Math.floor(0.15 * baseQty));
-			addFromRateTable(loot, rateTables.fishingLoot, Math.floor(baseQty / 200));
+			addFromRateTable(loot, rateTables.fishingLoot, Math.floor(baseQty / 200), rng);
 			break;
 		case 'herbs':
-			addFromRateTable(loot, rateTables.herbs, baseQty);
-			addFromRateTable(loot, rateTables.herbSeeds, Math.floor(baseQty / 100));
+			addFromRateTable(loot, rateTables.herbs, baseQty, rng);
+			addFromRateTable(loot, rateTables.herbSeeds, Math.floor(baseQty / 100), rng);
 			break;
 		case 'flax':
 			addItemSafe(loot, 'Flax', baseQty);
-			addFromRateTable(loot, rateTables.flaxSeeds, Math.floor(baseQty / 600));
+			addFromRateTable(loot, rateTables.flaxSeeds, Math.floor(baseQty / 600), rng);
 			break;
 		case 'mahogany':
 			addItemSafe(loot, 'Mahogany logs', baseQty);
-			addFromRateTable(loot, rateTables.nests, Math.floor(baseQty / 350));
+			addFromRateTable(loot, rateTables.nests, Math.floor(baseQty / 350), rng);
 			break;
 		case 'teak':
 			addItemSafe(loot, 'Teak logs', baseQty);
-			addFromRateTable(loot, rateTables.nests, Math.floor(baseQty / 350));
+			addFromRateTable(loot, rateTables.nests, Math.floor(baseQty / 350), rng);
 			break;
 		case 'hardwood_both':
 			addItemSafe(loot, 'Mahogany logs', Math.floor(0.5 * baseQty));
 			addItemSafe(loot, 'Teak logs', Math.floor(0.5 * baseQty));
-			addFromRateTable(loot, rateTables.nests, Math.floor(baseQty / 350));
+			addFromRateTable(loot, rateTables.nests, Math.floor(baseQty / 350), rng);
 			break;
 		case 'farm_seeds':
-			addFromRateTable(loot, rateTables.seeds, baseQty);
-			addFromRateTable(loot, rateTables.treeSeeds, Math.floor(baseQty / 200));
+			addFromRateTable(loot, rateTables.seeds, baseQty, rng);
+			addFromRateTable(loot, rateTables.treeSeeds, Math.floor(baseQty / 200), rng);
 			break;
 	}
 
@@ -253,15 +294,17 @@ function generateAreaLoot(area: MiscellaniaAreaKey, workers: number, resourcePoi
 export function generateMiscellaniaLoot({
 	resourcePoints,
 	primaryArea,
-	secondaryArea
+	secondaryArea,
+	rng
 }: {
 	resourcePoints: number;
 	primaryArea: MiscellaniaAreaKey;
 	secondaryArea: MiscellaniaAreaKey;
+	rng: RNGProvider;
 }): Bank {
 	const safePoints = Math.max(0, Math.floor(resourcePoints));
 	if (safePoints <= 0) return new Bank();
 	return new Bank()
-		.add(generateAreaLoot(primaryArea, 10, safePoints))
-		.add(generateAreaLoot(secondaryArea, 5, safePoints));
+		.add(generateAreaLoot(primaryArea, 10, safePoints, rng))
+		.add(generateAreaLoot(secondaryArea, 5, safePoints, rng));
 }
