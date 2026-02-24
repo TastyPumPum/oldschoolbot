@@ -5,8 +5,9 @@ import { averageBank, Bank, ChambersOfXeric, toKMB } from 'oldschooljs';
 import { ColosseumWaveBank, startColosseumRun } from '@/lib/colosseum.js';
 import pets from '@/lib/data/pets.js';
 import {
+	MISCELLANIA_TRIP_SECONDS_PER_DAY,
 	calculateMiscellaniaDays,
-	calculateMiscellaniaTripSeconds,
+	calculateTopupTripSeconds,
 	type MiscellaniaAreaKey,
 	type MiscellaniaState,
 	miscellaniaAreaKeys,
@@ -354,7 +355,9 @@ Resource points: ${detailed.resourcePoints.toLocaleString()}`;
 				startingResourcePoints: existing.resourcePoints
 			});
 			const gpCost = detailed.gpSpent;
-			const duration = calculateMiscellaniaTripSeconds(days) * 1000;
+			const topupTripSeconds = calculateTopupTripSeconds(existing, now);
+			const topupDays = Math.max(1, Math.floor(topupTripSeconds / MISCELLANIA_TRIP_SECONDS_PER_DAY));
+			const duration = topupTripSeconds * 1000;
 			const maxTripLength = await user.calcMaxTripLength('MiscellaniaTopup');
 			const canAfford = user.GP >= gpCost;
 			const fitsTrip = duration <= maxTripLength;
@@ -363,6 +366,7 @@ Resource points: ${detailed.resourcePoints.toLocaleString()}`;
 Primary area: ${miscellaniaAreaLabels[primaryArea]}
 Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
 Days to claim: ${days}
+Days since last top-up: ${topupDays}
 Starting coffer: ${existing.coffer.toLocaleString()}
 Ending coffer: ${detailed.endingCoffer.toLocaleString()}
 Cost if started now: ${gpCost.toLocaleString()} GP

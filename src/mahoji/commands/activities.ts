@@ -715,7 +715,7 @@ Current favour: ${existing.favour.toFixed(1)}%
 GP cost to claim now: ${gpCostToClaim.toLocaleString()} GP
 Can afford now: ${user.GP >= gpCostToClaim ? 'yes' : 'no'}`);
 				}
-				return user.withLock('managing_miscellania_claim', async lockedUser => {
+				return user.withLock('managing_miscellania_state', async lockedUser => {
 					const claimNow = Date.now();
 					const latestRawState = await prisma.user.findUnique({
 						where: { id: lockedUser.id },
