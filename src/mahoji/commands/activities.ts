@@ -1,12 +1,28 @@
+import { formatDuration } from '@oldschoolgg/toolkit';
+import { Bank } from 'oldschooljs';
+
 import { ownedItemOption } from '@/discord/index.js';
+import { trackLoot } from '@/lib/lootTrack.js';
 import { Planks } from '@/lib/minions/data/planks.js';
 import Potions from '@/lib/minions/data/potions.js';
 import { quests } from '@/lib/minions/data/quests.js';
+import {
+	calculateMiscellaniaDays,
+	calculateMiscellaniaTripSeconds,
+	type MiscellaniaAreaKey,
+	type MiscellaniaState,
+	miscellaniaAreaKeys,
+	miscellaniaAreaLabels,
+	normalizeMiscellaniaState,
+	simulateDetailedMiscellania,
+	validateAreas
+} from '@/lib/miscellania/calc.js';
 import Agility from '@/lib/skilling/skills/agility.js';
 import birdhouses from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
 import { Castables } from '@/lib/skilling/skills/magic/castables.js';
 import { Enchantables } from '@/lib/skilling/skills/magic/enchantables.js';
 import Prayer from '@/lib/skilling/skills/prayer.js';
+import type { MiscellaniaTopupActivityTaskOptions } from '@/lib/types/minions.js';
 import { aerialFishingCommand } from '@/mahoji/lib/abstracted_commands/aerialFishingCommand.js';
 import { alchCommand } from '@/mahoji/lib/abstracted_commands/alchCommand.js';
 import { birdhouseCheckCommand, birdhouseHarvestCommand } from '@/mahoji/lib/abstracted_commands/birdhousesCommand.js';
@@ -484,6 +500,34 @@ export const activitiesCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
+			name: 'managing_miscellania',
+			description:
+				'Send your minion to maintain Miscellania. Cost and trip time scale by days since your last claim.',
+			options: [
+				{
+					type: 'String',
+					name: 'primary_area',
+					description: 'Main collection area (10 workers).',
+					required: true,
+					choices: miscellaniaAreaKeys.map(key => ({ name: miscellaniaAreaLabels[key], value: key }))
+				},
+				{
+					type: 'String',
+					name: 'secondary_area',
+					description: 'Secondary collection area (5 workers).',
+					required: true,
+					choices: miscellaniaAreaKeys.map(key => ({ name: miscellaniaAreaLabels[key], value: key }))
+				},
+				{
+					type: 'Boolean',
+					name: 'preview',
+					description: 'Preview cost and duration without starting the trip.',
+					required: false
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
 			name: 'other',
 			description: 'Other, smaller activities.',
 			options: [
@@ -584,6 +628,94 @@ export const activitiesCommand = defineCommand({
 		}
 		if (options.cast) {
 			return castCommand(channelId, user, options.cast.spell, options.cast.quantity);
+		}
+		if (options.managing_miscellania) {
+			const primaryArea = options.managing_miscellania.primary_area as MiscellaniaAreaKey;
+			const secondaryArea = options.managing_miscellania.secondary_area as MiscellaniaAreaKey;
+			const areaErr = validateAreas(primaryArea, secondaryArea);
+			if (areaErr) return areaErr;
+
+			const now = Date.now();
+			const stateRes = await prisma.user.findUnique({
+				where: { id: user.id },
+				select: { miscellania_state: true }
+			});
+			const existing = normalizeMiscellaniaState(
+				(stateRes?.miscellania_state as MiscellaniaState | null) ?? null,
+				{
+					now,
+					primaryArea,
+					secondaryArea
+				}
+			);
+			const days = calculateMiscellaniaDays(existing, now);
+			const detailed = simulateDetailedMiscellania({
+				days,
+				royalTrouble: existing.royalTrouble,
+				startingCoffer: existing.coffer,
+				startingFavour: existing.favour,
+				constantFavour: false,
+				startingResourcePoints: existing.resourcePoints
+			});
+			const gpCost = detailed.gpSpent;
+			const duration = calculateMiscellaniaTripSeconds(days) * 1000;
+			const maxTripLength = await user.calcMaxTripLength('MiscellaniaTopup');
+			const isPreview = Boolean(options.managing_miscellania.preview);
+
+			if (isPreview) {
+				const canAfford = user.GP >= gpCost;
+				const fitsTrip = duration <= maxTripLength;
+				return `Managing Miscellania preview:
+Primary area: ${miscellaniaAreaLabels[primaryArea]}
+Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
+Days to claim: ${days}
+Starting coffer: ${existing.coffer.toLocaleString()}
+Ending coffer: ${detailed.endingCoffer.toLocaleString()}
+Cost if started now: ${gpCost.toLocaleString()} GP
+Starting favour: ${existing.favour.toFixed(1)}%
+Ending favour (before top-up): ${detailed.endingFavour.toFixed(1)}%
+Resource points gained: ${detailed.resourcePointsGained.toLocaleString()}
+Total resource points: ${detailed.resourcePoints.toLocaleString()}
+Trip duration: ${formatDuration(duration)}
+Your max trip length: ${formatDuration(maxTripLength)}
+Can afford now: ${canAfford ? 'yes' : 'no'}
+Fits max trip length: ${fitsTrip ? 'yes' : 'no'}`;
+			}
+
+			if (duration > maxTripLength) {
+				return `Required trip is ${formatDuration(duration)}, but your max trip length is ${formatDuration(maxTripLength)}.`;
+			}
+			if (user.GP < gpCost) {
+				return `You need ${gpCost.toLocaleString()} GP for this trip (${days} day${days === 1 ? '' : 's'} x 75,000).`;
+			}
+
+			await user.removeItemsFromBank(new Bank().add('Coins', gpCost));
+			await trackLoot({
+				id: 'managing_miscellania',
+				type: 'Minigame',
+				totalCost: new Bank().add('Coins', gpCost),
+				changeType: 'cost',
+				users: [{ id: user.id, cost: new Bank().add('Coins', gpCost) }]
+			});
+
+			await ActivityManager.startTrip<MiscellaniaTopupActivityTaskOptions>({
+				userID: user.id,
+				channelId,
+				duration,
+				type: 'MiscellaniaTopup',
+				primaryArea,
+				secondaryArea,
+				days,
+				gpCost,
+				endingCoffer: detailed.endingCoffer,
+				endingFavourBeforeTopup: detailed.endingFavour,
+				endingResourcePoints: detailed.resourcePoints,
+				royalTrouble: detailed.royalTrouble
+			});
+
+			return `${user.minionName} is now doing Managing Miscellania (${days} day${
+				days === 1 ? '' : 's'
+			} backlog). It will take ${formatDuration(duration)} and cost ${gpCost.toLocaleString()} GP.`;
 		}
 		if (options.underwater) {
 			if (options.underwater.agility_thieving) {
