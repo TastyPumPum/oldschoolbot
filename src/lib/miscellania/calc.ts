@@ -30,10 +30,13 @@ export const miscellaniaAreaLabels: Record<MiscellaniaAreaKey, string> = {
 
 export interface MiscellaniaState {
 	lastClaimedAt: number;
+	lastUpdatedAt: number;
+	lastTopupAt: number;
 	primaryArea: MiscellaniaAreaKey;
 	secondaryArea: MiscellaniaAreaKey;
 	royalTrouble: boolean;
 	coffer: number;
+	cofferAtLastClaim: number;
 	favour: number;
 	resourcePoints: number;
 }
@@ -156,11 +159,48 @@ export function normalizeMiscellaniaState(
 ): MiscellaniaState {
 	return {
 		lastClaimedAt: typeof state?.lastClaimedAt === 'number' ? state.lastClaimedAt : now - Time.Day,
+		lastUpdatedAt: typeof state?.lastUpdatedAt === 'number' ? state.lastUpdatedAt : now - Time.Day,
+		lastTopupAt: typeof state?.lastTopupAt === 'number' ? state.lastTopupAt : now - Time.Day,
 		primaryArea: (state?.primaryArea as MiscellaniaAreaKey | undefined) ?? primaryArea,
 		secondaryArea: (state?.secondaryArea as MiscellaniaAreaKey | undefined) ?? secondaryArea,
 		royalTrouble: typeof state?.royalTrouble === 'boolean' ? state.royalTrouble : true,
 		coffer: typeof state?.coffer === 'number' ? Math.max(0, Math.floor(state.coffer)) : 7_500_000,
+		cofferAtLastClaim:
+			typeof state?.cofferAtLastClaim === 'number'
+				? Math.max(0, Math.floor(state.cofferAtLastClaim))
+				: typeof state?.coffer === 'number'
+					? Math.max(0, Math.floor(state.coffer))
+					: 7_500_000,
 		favour: typeof state?.favour === 'number' ? Math.max(25, Math.min(100, state.favour)) : 100,
 		resourcePoints: typeof state?.resourcePoints === 'number' ? Math.max(0, Math.floor(state.resourcePoints)) : 0
 	};
+}
+
+export function advanceMiscellaniaState(state: MiscellaniaState, now = Date.now()): MiscellaniaState {
+	const elapsedSinceUpdate = daysElapsedSince(state.lastUpdatedAt, now);
+	if (elapsedSinceUpdate <= 0) return state;
+	const progressedSinceClaim = Math.max(0, daysElapsedSince(state.lastClaimedAt, state.lastUpdatedAt));
+	const daysRemainingUntilCap = Math.max(0, MISCELLANIA_MAX_DAYS - progressedSinceClaim);
+	const elapsed = Math.min(elapsedSinceUpdate, daysRemainingUntilCap);
+	if (elapsed <= 0) return state;
+	const sim = simulateDetailedMiscellania({
+		days: elapsed,
+		royalTrouble: state.royalTrouble,
+		startingCoffer: state.coffer,
+		startingFavour: state.favour,
+		constantFavour: false,
+		startingResourcePoints: state.resourcePoints
+	});
+	return {
+		...state,
+		coffer: sim.endingCoffer,
+		favour: sim.endingFavour,
+		resourcePoints: sim.resourcePoints,
+		lastUpdatedAt: state.lastUpdatedAt + elapsed * Time.Day
+	};
+}
+
+export function calculateTopupTripSeconds(state: MiscellaniaState, now = Date.now()): number {
+	const elapsed = daysElapsedSince(state.lastTopupAt, now);
+	return Math.max(1, Math.min(MISCELLANIA_MAX_DAYS, elapsed)) * MISCELLANIA_TRIP_SECONDS_PER_DAY;
 }

@@ -14,6 +14,14 @@ export function makeOpenCasketButton(tier: ClueTier) {
 		.setEmoji({ id: EmojiId.Casket });
 }
 
+export function makeMiscellaniaTopupButton() {
+	return new ButtonBuilder()
+		.setCustomId(InteractionID.Commands.TopupMiscellania)
+		.setLabel('Top-up Miscellania')
+		.setStyle(ButtonStyle.Secondary)
+		.setEmoji({ id: EmojiId.MoneyBag });
+}
+
 export function makeOpenSeedPackButton() {
 	return new ButtonBuilder()
 		.setCustomId(InteractionID.Open.SeedPack)
@@ -35,7 +43,7 @@ export function makeRepeatTripButton() {
 		.setCustomId(InteractionID.Commands.RepeatTrip)
 		.setLabel('Repeat Trip')
 		.setStyle(ButtonStyle.Secondary)
-		.setEmoji({ name: '🔁' });
+		.setEmoji({ name: 'ðŸ”' });
 }
 
 export function makeTearsOfGuthixButton() {
@@ -43,7 +51,7 @@ export function makeTearsOfGuthixButton() {
 		.setCustomId(InteractionID.Commands.StartTearsOfGuthix)
 		.setLabel('Start Tears of Guthix')
 		.setStyle(ButtonStyle.Secondary)
-		.setEmoji({ name: '🐍' });
+		.setEmoji({ name: 'ðŸ' });
 }
 
 export function makeBirdHouseTripButton() {

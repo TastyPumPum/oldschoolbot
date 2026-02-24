@@ -521,12 +521,6 @@ export interface MiscellaniaTopupActivityTaskOptions extends ActivityTaskOptions
 	type: 'MiscellaniaTopup';
 	primaryArea: string;
 	secondaryArea: string;
-	days: number;
-	gpCost: number;
-	endingCoffer: number;
-	endingFavourBeforeTopup: number;
-	endingResourcePoints: number;
-	royalTrouble: boolean;
 }
 
 export interface TokkulShopOptions extends ActivityTaskOptions {

@@ -1,31 +1,30 @@
 import { formatDuration } from '@oldschoolgg/toolkit';
 
-import type { MiscellaniaAreaKey, MiscellaniaState } from '@/lib/miscellania/calc.js';
+import {
+	advanceMiscellaniaState,
+	type MiscellaniaAreaKey,
+	type MiscellaniaState,
+	normalizeMiscellaniaState
+} from '@/lib/miscellania/calc.js';
 import type { MiscellaniaTopupActivityTaskOptions } from '@/lib/types/minions.js';
 
 export const miscellaniaTopupTask: MinionTask = {
 	type: 'MiscellaniaTopup',
 	async run(data: MiscellaniaTopupActivityTaskOptions, { user, handleTripFinish }) {
-		const {
-			channelId,
-			duration,
-			primaryArea,
-			secondaryArea,
-			days,
-			gpCost,
-			endingCoffer,
-			endingFavourBeforeTopup,
-			endingResourcePoints,
-			royalTrouble
-		} = data;
+		const { channelId, duration, primaryArea, secondaryArea } = data;
+		const now = Date.now();
+		const raw = await prisma.user.findUnique({
+			where: { id: user.id },
+			select: { miscellania_state: true }
+		});
+		const current = normalizeMiscellaniaState((raw?.miscellania_state as MiscellaniaState | null) ?? null, { now });
+		const advanced = advanceMiscellaniaState(current, now);
 		const nextState: MiscellaniaState = {
-			lastClaimedAt: Date.now(),
+			...advanced,
 			primaryArea: primaryArea as MiscellaniaAreaKey,
 			secondaryArea: secondaryArea as MiscellaniaAreaKey,
-			coffer: endingCoffer,
 			favour: 100,
-			resourcePoints: endingResourcePoints,
-			royalTrouble
+			lastTopupAt: now
 		};
 		await prisma.user.update({
 			where: { id: user.id },
@@ -35,11 +34,9 @@ export const miscellaniaTopupTask: MinionTask = {
 		handleTripFinish({
 			user,
 			channelId,
-			message: `${user}, ${user.minionName} finished Managing Miscellania (${formatDuration(
+			message: `${user}, ${user.minionName} finished a Miscellania favour top-up trip (${formatDuration(
 				duration
-			)}). Claimed ${days} day${days === 1 ? '' : 's'} worth for ${gpCost.toLocaleString()} GP. Coffer is now ${endingCoffer.toLocaleString()}, favour before top-up was ${endingFavourBeforeTopup.toFixed(
-				1
-			)}%, and total resource points are ${endingResourcePoints.toLocaleString()}.`,
+			)}). Favour restored to 100%.`,
 			data
 		});
 	}

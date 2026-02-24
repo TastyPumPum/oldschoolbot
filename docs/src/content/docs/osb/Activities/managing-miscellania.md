@@ -2,107 +2,73 @@
 title: "Managing Miscellania"
 ---
 
-Managing Miscellania in OSB is a repeatable activity that tracks coffer, favour, and resource points over time.
+Managing Miscellania in OSB has two actions:
 
-Start it with:
+- `topup` (default): do your upkeep trip to restore favour.
+- `claim`: collect your accumulated output and pay the coffer GP spend since the last claim.
 
-[[/activities managing_miscellania primary_area\:Herbs secondary_area\:Wood (Maple)]]
+Start/topup:
 
-Preview cost/time without starting:
+[[/activities managing_miscellania action\:topup primary_area\:Herbs secondary_area\:Wood (Maple)]]
 
-[[/activities managing_miscellania primary_area\:Herbs secondary_area\:Wood (Maple) preview\:true]]
+Claim:
 
-You can also preview from simulate:
-
-[[/simulate managing_miscellania primary_area\:Herbs secondary_area\:Wood (Maple)]]
-
-Detailed simulation (coffer + favour + resource points):
-
-[[/simulate managing_miscellania detailed\:true days\:30 royal_trouble\:true starting_coffer\:7500000 starting_favour\:100 primary_area\:Herbs secondary_area\:Wood (Maple)]]
+[[/activities managing_miscellania action\:claim]]
 
 ## How It Works
 
-- The bot assumes [[Royal Trouble]] is effectively complete for this activity.
-- You must pick 2 different areas:
-- `primary_area` = 10 workers
-- `secondary_area` = 5 workers
-- The trip represents your "kingdom upkeep/claim" run.
-- Some pairs are blocked:
-- You cannot pick both `Fishing (Raw)` and `Fishing (Cooked)`.
+- `primary_area` is where 10 workers go.
+- `secondary_area` is where 5 workers go.
+- Areas must be different.
+- You cannot combine `Fishing (Raw)` with `Fishing (Cooked)`.
 - You cannot combine multiple hardwood modes (`Mahogany`, `Teak`, `Hardwood (Both)`).
 
 ## State Model
 
-The command stores and updates:
+The bot persists:
 
-- current coffer amount
+- current coffer
 - current favour
-- total resource points
-- last claim timestamp
-- chosen primary/secondary area pair
+- unclaimed resource points
+- last claim time
+- last topup time
+- selected primary/secondary areas
 
-When a trip completes, favour is topped back to 100% (representing your upkeep run), and updated coffer/resource points are persisted.
+`topup` runs a normal trip and restores favour to 100% on completion.
+`claim` is instant (no trip), deducts GP from bank equal to coffer spent since last claim, and resets unclaimed resource points.
 
-## Cost And Time
+## Topup Trip Time
 
-- Day unit: 1 real day since your last Miscellania claim.
-- Minimum claim size: 1 day.
-- Maximum claim size: 100 days.
-- Trip duration per day: `15s`.
+Topup trip time scales by days since your last topup:
 
-Formulas:
-
-- `days = clamp(days_since_last_claim, 1, 100)`
+- `days = clamp(days_since_last_topup, 1, 100)`
 - `duration = days * 15s`
 
-GP cost is not a flat `75,000 * days`. It is calculated from the detailed coffer simulation loop over those days (with the daily cap and coffer percentage reduction), then withdrawn from your bank at trip start.
+Max topup duration is 25 minutes.
 
-So the maximum trip is:
+## Claim GP Cost
 
-- `7,500,000 GP`
-- `25 minutes` (100 * 15s)
+Claim GP is charged only on `action:claim`, based on coffer reduction since your previous claim.
 
-## Daily Usage
+## Preview
 
-1. Run [[/activities managing_miscellania]] with your preferred primary/secondary areas.
-2. Your minion pays GP immediately and starts the trip.
-3. On completion, claim timestamp, coffer, favour, and resource points are updated.
-4. Repeat daily (or let days accumulate, up to 100).
+Use `preview:true` with either action:
 
-## Previewing Before Sending
-
-Use either preview command to check:
-
-- days that would be claimed now
-- GP cost now
-- trip duration now
-- whether you can afford it
-- whether it fits your max trip length
+- `topup` preview: days, duration, max-trip fit, coffer/favour/resource points snapshot.
+- `claim` preview: days since claim, GP needed now, coffer/favour/resource points snapshot, affordability.
 
 ## Detailed Simulation Mode
 
-`/simulate managing_miscellania` supports a detailed mode that mirrors the internal coffer/favour loop:
+Use `/simulate managing_miscellania` for mechanic previews.
 
-- `detailed:true`
-- `days`
-- `royal_trouble`
-- `starting_coffer`
-- `starting_favour`
-- `constant_favour`
-
-It reports:
-
-- ending coffer
-- total GP spent
-- ending favour
-- resource points
+Detailed mode includes coffer/favour/resource-point simulation over arbitrary day counts.
 
 ## Testing Helpers
 
 For local/dev environments (`/testpotato` only):
 
 - `miscellania_set` sets a custom Miscellania state
-- `miscellania_age` backdates claim time by N days
+- `miscellania_age` backdates Miscellania timestamps by N days
 - `miscellania_clear` clears saved Miscellania state
 
 These are for testing and not part of normal user flow.

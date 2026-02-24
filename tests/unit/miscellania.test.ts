@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+	advanceMiscellaniaState,
 	calculateMiscellaniaCost,
 	calculateMiscellaniaDays,
 	calculateMiscellaniaTripSeconds,
@@ -18,10 +19,13 @@ describe('miscellania simplified mechanics', () => {
 		const now = 1_000_000_000;
 		const state = {
 			lastClaimedAt: now - 130 * 24 * 60 * 60 * 1000,
+			lastUpdatedAt: now - 130 * 24 * 60 * 60 * 1000,
+			lastTopupAt: now - 130 * 24 * 60 * 60 * 1000,
 			primaryArea: 'maple',
 			secondaryArea: 'herbs',
 			royalTrouble: true,
 			coffer: 7_500_000,
+			cofferAtLastClaim: 7_500_000,
 			favour: 100,
 			resourcePoints: 0
 		} as const;
@@ -60,10 +64,13 @@ describe('miscellania simplified mechanics', () => {
 		const now = 500_000_000;
 		const state = {
 			lastClaimedAt: now + 2 * 24 * 60 * 60 * 1000,
+			lastUpdatedAt: now + 2 * 24 * 60 * 60 * 1000,
+			lastTopupAt: now + 2 * 24 * 60 * 60 * 1000,
 			primaryArea: 'maple',
 			secondaryArea: 'herbs',
 			royalTrouble: true,
 			coffer: 7_500_000,
+			cofferAtLastClaim: 7_500_000,
 			favour: 100,
 			resourcePoints: 0
 		} as const;
@@ -107,5 +114,37 @@ describe('miscellania simplified mechanics', () => {
 			constantFavour: true
 		});
 		expect(result.endingFavour).toEqual(88);
+	});
+
+	test('advance is capped to 100 days of progression since last claim', () => {
+		const now = 1_000_000_000;
+		const state = {
+			lastClaimedAt: now - 300 * 24 * 60 * 60 * 1000,
+			lastUpdatedAt: now - 300 * 24 * 60 * 60 * 1000,
+			lastTopupAt: now - 300 * 24 * 60 * 60 * 1000,
+			primaryArea: 'maple',
+			secondaryArea: 'herbs',
+			royalTrouble: true,
+			coffer: 7_500_000,
+			cofferAtLastClaim: 7_500_000,
+			favour: 100,
+			resourcePoints: 0
+		} as const;
+		const advanced = advanceMiscellaniaState(state, now);
+		const expected = simulateDetailedMiscellania({
+			days: 100,
+			royalTrouble: true,
+			startingCoffer: 7_500_000,
+			startingFavour: 100,
+			constantFavour: false
+		});
+		expect(advanced.coffer).toEqual(expected.endingCoffer);
+		expect(advanced.resourcePoints).toEqual(expected.resourcePoints);
+		expect(advanced.favour).toEqual(expected.endingFavour);
+
+		const advancedAgain = advanceMiscellaniaState(advanced, now + 20 * 24 * 60 * 60 * 1000);
+		expect(advancedAgain.coffer).toEqual(advanced.coffer);
+		expect(advancedAgain.resourcePoints).toEqual(advanced.resourcePoints);
+		expect(advancedAgain.favour).toEqual(advanced.favour);
 	});
 });

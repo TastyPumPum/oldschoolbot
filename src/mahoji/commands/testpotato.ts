@@ -1235,10 +1235,13 @@ export const testPotatoCommand = globalConfig.isProduction
 					}
 					const state: MiscellaniaState = {
 						lastClaimedAt: timestamp,
+						lastUpdatedAt: timestamp,
+						lastTopupAt: timestamp,
 						primaryArea,
 						secondaryArea,
 						royalTrouble: options.miscellania_set.royal_trouble ?? true,
 						coffer: options.miscellania_set.coffer ?? 7_500_000,
+						cofferAtLastClaim: options.miscellania_set.coffer ?? 7_500_000,
 						favour: options.miscellania_set.favour ?? 100,
 						resourcePoints: options.miscellania_set.resource_points ?? 0
 					};
@@ -1263,7 +1266,9 @@ export const testPotatoCommand = globalConfig.isProduction
 					const days = options.miscellania_age.days;
 					const progressed = {
 						...state,
-						lastClaimedAt: state.lastClaimedAt - days * Time.Day
+						lastClaimedAt: state.lastClaimedAt - days * Time.Day,
+						lastUpdatedAt: state.lastUpdatedAt - days * Time.Day,
+						lastTopupAt: state.lastTopupAt - days * Time.Day
 					};
 					await prisma.user.update({
 						where: { id: user.id },

@@ -591,9 +591,7 @@ export function minionStatus(user: MUser, currentTask: ActivityTaskData | null, 
 		}
 		case 'MiscellaniaTopup': {
 			const data = currentTask as MiscellaniaTopupActivityTaskOptions;
-			return `${name} is currently doing Managing Miscellania (${data.days} day${
-				data.days === 1 ? '' : 's'
-			}, ${data.primaryArea} + ${data.secondaryArea}). ${formattedDuration}`;
+			return `${name} is currently doing Managing Miscellania (${data.primaryArea} + ${data.secondaryArea}). ${formattedDuration}`;
 		}
 		case 'Inferno': {
 			const data = currentTask as InfernoOptions;
