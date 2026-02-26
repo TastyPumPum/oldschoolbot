@@ -35,7 +35,8 @@ export enum QuestID {
 	TheFinalDawn = 15,
 	'Scrambled!' = 16,
 	ShadowsOfCustodia = 17,
-	TutorialIsland = 18
+	TutorialIsland = 18,
+	TheIdesofMilk = 19
 }
 
 export const quests: Quest[] = [
@@ -453,6 +454,17 @@ export const quests: Quest[] = [
 			.add(995, 25),
 		calcTime: () => {
 			return Time.Minute * 7;
+		}
+	},
+	{
+		id: QuestID.TheIdesofMilk,
+		qp: 1,
+		name: 'The Ides of Milk',
+		rewards: new Bank()
+			.add('Cowbell amulet')
+			.add(33117, 1), // Magic lamp (The Ides of Milk)
+		calcTime: () => {
+			return Time.Minute * 2;
 		}
 	}
 ];
