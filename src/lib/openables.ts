@@ -24,6 +24,7 @@ import {
 	LarransChest,
 	LootTable,
 	MasterMimicTable,
+	Monsters,
 	MoonKeyChest,
 	MuddyChest,
 	MysteryBox,
@@ -93,6 +94,8 @@ interface OpenArgs {
 	user: MUser;
 	self: UnifiedOpenable;
 	rng: RNGProvider;
+	openedCountOffset?: number;
+	previousLoot?: Bank;
 }
 
 export interface UnifiedOpenable {
@@ -113,6 +116,29 @@ export interface UnifiedOpenable {
 const clueItemsToNotifyOf = cluesRaresCL
 	.concat(ClueTiers.filter(i => Boolean(i.milestoneReward)).map(i => i.milestoneReward!.itemReward))
 	.concat([itemID('Bloodhound'), itemID('Ranger boots')]);
+
+const DOSSIER_RITE_NAME = 'Rite of vile transference';
+const DOSSIER_SCROLL_NAME = 'Chasm teleport scroll';
+const DOSSIER_RITE_GUARANTEE_KC = 100;
+
+function replaceDossierRiteWithScrolls({
+	loot,
+	rng,
+	ritesToReplace
+}: {
+	loot: Bank;
+	rng: RNGProvider;
+	ritesToReplace: number;
+}) {
+	if (ritesToReplace <= 0) {
+		return;
+	}
+
+	loot.remove(DOSSIER_RITE_NAME, ritesToReplace);
+	for (let i = 0; i < ritesToReplace; i++) {
+		loot.add(DOSSIER_SCROLL_NAME, rng.randInt(15, 18));
+	}
+}
 
 const clueOpenables: UnifiedOpenable[] = [];
 for (const clueTier of ClueTiers) {
@@ -416,7 +442,44 @@ const osjsOpenables: UnifiedOpenable[] = [
 		id: EItem.DOSSIER,
 		openedItem: Items.getOrThrow(EItem.DOSSIER),
 		aliases: ['dossier'],
-		output: Dossier.table,
+		output: async ({ quantity, user, rng, openedCountOffset = 0, previousLoot }) => {
+			const loot = new Bank();
+			if (quantity <= 0) {
+				return { bank: loot };
+			}
+
+			const yamaKC = await user.getKC(Monsters.Yama.id);
+
+			const hadRiteAlready =
+				user.cl.has(DOSSIER_RITE_NAME) ||
+				user.allItemsOwned.has(DOSSIER_RITE_NAME) ||
+				Boolean(previousLoot?.has(DOSSIER_RITE_NAME));
+			const shouldGuaranteeRite =
+				yamaKC >= DOSSIER_RITE_GUARANTEE_KC && !hadRiteAlready && openedCountOffset === 0;
+
+			let rollsFromTable = quantity;
+			if (shouldGuaranteeRite) {
+				rollsFromTable--;
+				if (hadRiteAlready) {
+					loot.add(DOSSIER_SCROLL_NAME, rng.randInt(15, 18));
+				} else {
+					loot.add(DOSSIER_RITE_NAME, 1);
+				}
+			}
+
+			if (rollsFromTable > 0) {
+				loot.add(Dossier.table.roll(rollsFromTable));
+			}
+
+			const ritesRolled = loot.amount(DOSSIER_RITE_NAME);
+			if (ritesRolled > 0) {
+				const maxRitesAllowed = hadRiteAlready ? 0 : 1;
+				const ritesToReplace = Math.max(0, ritesRolled - maxRitesAllowed);
+				replaceDossierRiteWithScrolls({ loot, rng, ritesToReplace });
+			}
+
+			return { bank: loot };
+		},
 		allItems: Dossier.table.allItems
 	},
 	{
@@ -568,14 +631,18 @@ export function getOpenableLoot({
 	openable,
 	quantity,
 	user,
-	rng
+	rng,
+	openedCountOffset,
+	previousLoot
 }: {
 	openable: UnifiedOpenable;
 	quantity: number;
 	user: MUser;
 	rng: RNGProvider;
+	openedCountOffset?: number;
+	previousLoot?: Bank;
 }) {
 	return openable.output instanceof LootTable
 		? { bank: openable.output.roll(quantity), message: null }
-		: openable.output({ user, self: openable, quantity, rng });
+		: openable.output({ user, self: openable, quantity, rng, openedCountOffset, previousLoot });
 }
