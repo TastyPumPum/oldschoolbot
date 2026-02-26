@@ -43,6 +43,7 @@ import {
 } from 'oldschooljs';
 
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
+import { BitField } from '@/lib/constants.js';
 import { cluesRaresCL } from '@/lib/data/CollectionsExport.js';
 import { shadeChestOpenables } from '@/lib/shadesKeys.js';
 import { nestTable } from '@/lib/simulation/birdsNest.js';
@@ -451,6 +452,7 @@ const osjsOpenables: UnifiedOpenable[] = [
 			const yamaKC = await user.getKC(Monsters.Yama.id);
 
 			const hadRiteAlready =
+				user.bitfield.includes(BitField.HasRiteOfVileTransference) ||
 				user.cl.has(DOSSIER_RITE_NAME) ||
 				user.allItemsOwned.has(DOSSIER_RITE_NAME) ||
 				Boolean(previousLoot?.has(DOSSIER_RITE_NAME));
