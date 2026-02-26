@@ -1,5 +1,5 @@
-import Dossier from '@/simulation/openables/Dossier.js';
-import ForgottenLockbox from '@/simulation/openables/ForgottenLockbox.js';
+import { Dossier } from '@/simulation/openables/Dossier.js';
+import { ForgottenLockbox } from '@/simulation/openables/ForgottenLockbox.js';
 import { Collection } from '@/structures/Collection.js';
 import type Openable from '@/structures/Openable.js';
 import type { SimpleOpenable } from '@/structures/SimpleOpenable.js';

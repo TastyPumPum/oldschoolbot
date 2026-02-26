@@ -14,7 +14,7 @@ const ForgottenLockboxTable = new LootTable()
 	.add('Oathplate chest', 1, 1)
 	.add('Oathplate legs', 1, 1);
 
-export default new SimpleOpenable({
+export const ForgottenLockbox: SimpleOpenable = new SimpleOpenable({
 	id: 30_763,
 	name: 'Forgotten lockbox',
 	aliases: ['forgotten lockbox', 'lockbox'],

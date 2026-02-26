@@ -338,6 +338,19 @@ export const wintertodtCL = resolveItems([
 	'Bruma torch',
 	'Dragon axe'
 ]);
+export const yamaCL = resolveItems([
+	'Yami',
+	'Chasm teleport scroll',
+	'Oathplate shards',
+	'Oathplate helm',
+	'Oathplate chest',
+	'Oathplate legs',
+	'Soulflame horn',
+	'Rite of vile transference',
+	'Forgotten lockbox',
+	'Dossier',
+	'Barrel of demonic tallow (full)'
+]);
 export const zalcanoCL = resolveItems(['Smolcano', 'Crystal tool seed', 'Zalcano shard', 'Uncut onyx']);
 export const zulrahCL = resolveItems([
 	'Pet snakeling',

@@ -237,12 +237,7 @@
 					"Water rune",
 					"Water talisman"
 				],
-				"items": [
-					"Frozen tear",
-					"Glacial temotli",
-					"Moxi",
-					"Pendant of ates (inert)"
-				]
+				"items": ["Frozen tear", "Glacial temotli", "Moxi", "Pendant of ates (inert)"]
 			},
 			"araxxor": {
 				"all_items": [
@@ -436,16 +431,11 @@
 					"Whiteberry seed",
 					"Wildblood seed"
 				],
-				"items": [
-					"Bryophyta's essence"
-				]
+				"items": ["Bryophyta's essence"]
 			},
 			"callisto_and_artio": {
 				"kc_activity": {
-					"default": [
-						"Callisto",
-						"Artio"
-					],
+					"default": ["Callisto", "Artio"],
 					"callisto": "Callisto",
 					"artio": "Artio"
 				},
@@ -645,11 +635,7 @@
 					"Uncut sapphire",
 					"Wilderness crabs teleport"
 				],
-				"items": [
-					"Dragon 2h sword",
-					"Dragon pickaxe",
-					"Pet chaos elemental"
-				]
+				"items": ["Dragon 2h sword", "Dragon pickaxe", "Pet chaos elemental"]
 			},
 			"chaos_fanatic": {
 				"all_items": [
@@ -705,11 +691,7 @@
 					"Zamorak monk bottom",
 					"Zamorak monk top"
 				],
-				"items": [
-					"Malediction shard 1",
-					"Odium shard 1",
-					"Pet chaos elemental"
-				]
+				"items": ["Malediction shard 1", "Odium shard 1", "Pet chaos elemental"]
 			},
 			"commander_zilyana": {
 				"all_items": [
@@ -895,11 +877,7 @@
 					"Uncut sapphire",
 					"White berries"
 				],
-				"items": [
-					"Fedora",
-					"Malediction shard 2",
-					"Odium shard 2"
-				]
+				"items": ["Fedora", "Malediction shard 2", "Odium shard 2"]
 			},
 			"deranged_archaeologist": {
 				"all_items": [
@@ -974,17 +952,11 @@
 					"Willow seed",
 					"Yew seed"
 				],
-				"items": [
-					"Steel ring"
-				]
+				"items": ["Steel ring"]
 			},
 			"dagannoth_kings": {
 				"kc_activity": {
-					"default": [
-						"Dagannoth Supreme",
-						"Dagannoth Rex",
-						"Dagannoth Prime"
-					],
+					"default": ["Dagannoth Supreme", "Dagannoth Rex", "Dagannoth Prime"],
 					"rex": "Dagannoth Rex",
 					"prime": "Dagannoth Prime",
 					"supreme": "Dagannoth Supreme"
@@ -1128,10 +1100,7 @@
 			},
 			"duke_sucellus": {
 				"kc_activity": {
-					"default": [
-						"Duke Sucellus",
-						"Duke Sucellus (Awakened)"
-					],
+					"default": ["Duke Sucellus", "Duke Sucellus (Awakened)"],
 					"awakened": "Duke Sucellus (Awakened)"
 				},
 				"all_items": [
@@ -1191,10 +1160,7 @@
 			},
 			"the_leviathan": {
 				"kc_activity": {
-					"default": [
-						"The Leviathan",
-						"The Leviathan (Awakened)"
-					],
+					"default": ["The Leviathan", "The Leviathan (Awakened)"],
 					"awakened": "The Leviathan (Awakened)"
 				},
 				"all_items": [
@@ -1255,10 +1221,7 @@
 			},
 			"vardorvis": {
 				"kc_activity": {
-					"default": [
-						"Vardorvis",
-						"Vardorvis (Awakened)"
-					],
+					"default": ["Vardorvis", "Vardorvis (Awakened)"],
 					"awakened": "Vardorvis (Awakened)"
 				},
 				"all_items": [
@@ -1319,10 +1282,7 @@
 			},
 			"the_whisperer": {
 				"kc_activity": {
-					"default": [
-						"The Whisperer",
-						"The Whisperer (Awakened)"
-					],
+					"default": ["The Whisperer", "The Whisperer (Awakened)"],
 					"awakened": "The Whisperer (Awakened)"
 				},
 				"all_items": [
@@ -1383,10 +1343,7 @@
 			},
 			"the_fight_caves": {
 				"kc_activity": "TzTok-Jad",
-				"items": [
-					"Fire cape",
-					"Tzrek-jad"
-				]
+				"items": ["Fire cape", "Tzrek-jad"]
 			},
 			"fortis_colosseum": {
 				"kc_activity": {},
@@ -1538,11 +1495,7 @@
 					"Uncut sapphire",
 					"Yew logs"
 				],
-				"items": [
-					"Baby mole",
-					"Mole claw",
-					"Mole skin"
-				]
+				"items": ["Baby mole", "Mole claw", "Mole skin"]
 			},
 			"grotesque_guardians": {
 				"all_items": [
@@ -1597,12 +1550,7 @@
 			},
 			"hespori": {
 				"all_items": [],
-				"items": [
-					"Attas seed",
-					"Bottomless compost bucket",
-					"Iasor seed",
-					"Kronos seed"
-				]
+				"items": ["Attas seed", "Bottomless compost bucket", "Iasor seed", "Kronos seed"]
 			},
 			"the_hueycoatl": {
 				"all_items": [
@@ -1651,10 +1599,7 @@
 			},
 			"the_inferno": {
 				"kc_activity": {},
-				"items": [
-					"Infernal cape",
-					"Jal-nib-rek"
-				]
+				"items": ["Infernal cape", "Jal-nib-rek"]
 			},
 			"kalphite_queen": {
 				"all_items": [
@@ -1790,12 +1735,7 @@
 					"Uncut sapphire",
 					"Yew logs"
 				],
-				"items": [
-					"Draconic visage",
-					"Dragon pickaxe",
-					"Kbd heads",
-					"Prince black dragon"
-				]
+				"items": ["Draconic visage", "Dragon pickaxe", "Kbd heads", "Prince black dragon"]
 			},
 			"kraken": {
 				"all_items": [
@@ -1851,12 +1791,7 @@
 					"Water rune",
 					"Watermelon seed"
 				],
-				"items": [
-					"Jar of dirt",
-					"Kraken tentacle",
-					"Pet kraken",
-					"Trident of the seas (full)"
-				]
+				"items": ["Jar of dirt", "Kraken tentacle", "Pet kraken", "Trident of the seas (full)"]
 			},
 			"kree'arra": {
 				"all_items": [
@@ -2092,9 +2027,7 @@
 					"Uncut diamond",
 					"Uncut ruby"
 				],
-				"items": [
-					"Hill giant club"
-				]
+				"items": ["Hill giant club"]
 			},
 			"phantom_muspah": {
 				"all_items": [
@@ -2181,22 +2114,11 @@
 					"Willow seed",
 					"Yew seed"
 				],
-				"items": [
-					"Ancient essence",
-					"Ancient icon",
-					"Charged ice",
-					"Frozen cache",
-					"Muphin",
-					"Venator shard"
-				]
+				"items": ["Ancient essence", "Ancient icon", "Charged ice", "Frozen cache", "Muphin", "Venator shard"]
 			},
 			"royal_titans": {
 				"kc_activity": {
-					"default": [
-						"Royal Titans (Branda)",
-						"Royal Titans (Eldric)",
-						"Royal Titans (sacrifice)"
-					],
+					"default": ["Royal Titans (Branda)", "Royal Titans (Eldric)", "Royal Titans (sacrifice)"],
 					"branda": "Royal Titans (Branda)",
 					"eldric": "Royal Titans (Eldric)",
 					"sac": "Royal Titans (sacrifice)"
@@ -2284,12 +2206,7 @@
 					"Weapon poison(++)",
 					"Yew seed"
 				],
-				"items": [
-					"Giant egg sac(full)",
-					"Jar of eyes",
-					"Sarachnis cudgel",
-					"Sraracha"
-				]
+				"items": ["Giant egg sac(full)", "Jar of eyes", "Sarachnis cudgel", "Sraracha"]
 			},
 			"scorpia": {
 				"all_items": [
@@ -2328,11 +2245,7 @@
 					"Uncut ruby",
 					"Wilderness crabs teleport"
 				],
-				"items": [
-					"Malediction shard 3",
-					"Odium shard 3",
-					"Scorpia's offspring"
-				]
+				"items": ["Malediction shard 3", "Odium shard 3", "Scorpia's offspring"]
 			},
 			"scurrius": {
 				"all_items": [
@@ -2364,10 +2277,7 @@
 					"Trout",
 					"Tuna"
 				],
-				"items": [
-					"Scurrius' spine",
-					"Scurry"
-				]
+				"items": ["Scurrius' spine", "Scurry"]
 			},
 			"skotizo": {
 				"all_items": [
@@ -2399,14 +2309,7 @@
 					"Uncut dragonstone",
 					"Uncut onyx"
 				],
-				"items": [
-					"Ancient shard",
-					"Dark claw",
-					"Dark totem",
-					"Jar of darkness",
-					"Skotos",
-					"Uncut onyx"
-				]
+				"items": ["Ancient shard", "Dark claw", "Dark totem", "Jar of darkness", "Skotos", "Uncut onyx"]
 			},
 			"tempoross": {
 				"items": [
@@ -2491,20 +2394,11 @@
 					"Uncut ruby",
 					"Uncut sapphire"
 				],
-				"items": [
-					"Dragon chainbody",
-					"Jar of smoke",
-					"Occult necklace",
-					"Pet smoke devil",
-					"Smoke battlestaff"
-				]
+				"items": ["Dragon chainbody", "Jar of smoke", "Occult necklace", "Pet smoke devil", "Smoke battlestaff"]
 			},
 			"venenatis_and_spindel": {
 				"kc_activity": {
-					"default": [
-						"Venenatis",
-						"Spindel"
-					],
+					"default": ["Venenatis", "Spindel"],
 					"venenatis": "Venenatis",
 					"spindel": "Spindel"
 				},
@@ -2566,10 +2460,7 @@
 			},
 			"vet'ion_and_calvar'ion": {
 				"kc_activity": {
-					"default": [
-						"Vet'ion",
-						"Calvar'ion"
-					],
+					"default": ["Vet'ion", "Calvar'ion"],
 					"vetion": "Vet'ion",
 					"calvarion": "Calvar'ion"
 				},
@@ -2741,13 +2632,82 @@
 					"Warm gloves"
 				]
 			},
-			"zalcano": {
+			"yama": {
 				"items": [
-					"Crystal tool seed",
-					"Smolcano",
-					"Uncut onyx",
-					"Zalcano shard"
+					"Aether catalyst",
+					"Barrel of demonic tallow (full)",
+					"Battlestaff",
+					"Blood rune",
+					"Chasm teleport scroll",
+					"Clue scroll (elite)",
+					"Diabolic worms",
+					"Diamond",
+					"Dossier",
+					"Dragon platelegs",
+					"Dragon plateskirt",
+					"Emerald",
+					"Fire rune",
+					"Forgotten lockbox",
+					"Law rune",
+					"Oathplate chest",
+					"Oathplate helm",
+					"Oathplate legs",
+					"Oathplate shards",
+					"Onyx bolt tips",
+					"Pineapple pizza",
+					"Prayer potion(3)",
+					"Ruby",
+					"Rune chainbody",
+					"Rune platebody",
+					"Smoke rune",
+					"Soul rune",
+					"Soulflame horn",
+					"Super combat potion(1)",
+					"Super restore mix(2)",
+					"Wild pie",
+					"Wrath rune",
+					"Yami",
+					"Zamorak mix(2)"
+				],
+				"all_items": [
+					"Aether catalyst",
+					"Barrel of demonic tallow (full)",
+					"Battlestaff",
+					"Blood rune",
+					"Chasm teleport scroll",
+					"Clue scroll (elite)",
+					"Diabolic worms",
+					"Diamond",
+					"Dossier",
+					"Dragon platelegs",
+					"Dragon plateskirt",
+					"Emerald",
+					"Fire rune",
+					"Forgotten lockbox",
+					"Law rune",
+					"Oathplate chest",
+					"Oathplate helm",
+					"Oathplate legs",
+					"Oathplate shards",
+					"Onyx bolt tips",
+					"Pineapple pizza",
+					"Prayer potion(3)",
+					"Ruby",
+					"Rune chainbody",
+					"Rune platebody",
+					"Smoke rune",
+					"Soul rune",
+					"Soulflame horn",
+					"Super combat potion(1)",
+					"Super restore mix(2)",
+					"Wild pie",
+					"Wrath rune",
+					"Yami",
+					"Zamorak mix(2)"
 				]
+			},
+			"zalcano": {
+				"items": ["Crystal tool seed", "Smolcano", "Uncut onyx", "Zalcano shard"]
 			},
 			"zulrah": {
 				"all_items": [
@@ -4871,12 +4831,7 @@
 					"Raw tuna",
 					"Rusty sword"
 				],
-				"items": [
-					"Angler boots",
-					"Angler hat",
-					"Angler top",
-					"Angler waders"
-				],
+				"items": ["Angler boots", "Angler hat", "Angler top", "Angler waders"],
 				"is_activity": true
 			},
 			"giants'_foundry": {
@@ -4894,16 +4849,8 @@
 				"is_activity": true
 			},
 			"gnome_restaurant": {
-				"all_items": [
-					"Gnomeball",
-					"Snake charm"
-				],
-				"items": [
-					"Gnome goggles",
-					"Gnome scarf",
-					"Grand seed pod",
-					"Mint cake"
-				],
+				"all_items": ["Gnomeball", "Snake charm"],
+				"items": ["Gnome goggles", "Gnome scarf", "Grand seed pod", "Mint cake"],
 				"is_activity": true
 			},
 			"guardians_of_the_rift": {
@@ -5064,13 +5011,7 @@
 				"is_activity": true
 			},
 			"rogues'_den": {
-				"items": [
-					"Rogue boots",
-					"Rogue gloves",
-					"Rogue mask",
-					"Rogue top",
-					"Rogue trousers"
-				],
+				"items": ["Rogue boots", "Rogue gloves", "Rogue mask", "Rogue top", "Rogue trousers"],
 				"is_activity": true
 			},
 			"shades_of_mort'ton": {
@@ -5093,30 +5034,13 @@
 				"is_activity": true
 			},
 			"soul_wars": {
-				"items": [
-					"Ectoplasmator",
-					"Lil' creator",
-					"Red soul cape"
-				],
-				"all_items": [
-					"Blue soul cape"
-				],
+				"items": ["Ectoplasmator", "Lil' creator", "Red soul cape"],
+				"all_items": ["Blue soul cape"],
 				"is_activity": true
 			},
 			"temple_trekking": {
-				"all_items": [
-					"Asyn remains",
-					"Fiyr remains",
-					"Nail beast nails",
-					"Reward token",
-					"Riyl remains"
-				],
-				"items": [
-					"Lumberjack boots",
-					"Lumberjack hat",
-					"Lumberjack legs",
-					"Lumberjack top"
-				],
+				"all_items": ["Asyn remains", "Fiyr remains", "Nail beast nails", "Reward token", "Riyl remains"],
+				"items": ["Lumberjack boots", "Lumberjack hat", "Lumberjack legs", "Lumberjack top"],
 				"is_activity": true
 			},
 			"tithe_farm": {
@@ -5349,11 +5273,7 @@
 					"Zamorak monk top"
 				],
 				"kc_activity": "Elder Chaos druid",
-				"items": [
-					"Elder chaos hood",
-					"Elder chaos robe",
-					"Elder chaos top"
-				]
+				"items": ["Elder chaos hood", "Elder chaos robe", "Elder chaos top"]
 			},
 			"chompy_birds": {
 				"kc_activity": "BigChompyBirdHunting",
@@ -5659,9 +5579,7 @@
 				]
 			},
 			"my_notes": {
-				"items": [
-					"Ancient page"
-				]
+				"items": ["Ancient page"]
 			},
 			"random_events": {
 				"items": [
@@ -5788,10 +5706,7 @@
 				]
 			},
 			"shooting_stars": {
-				"items": [
-					"Celestial ring (uncharged)",
-					"Star fragment"
-				]
+				"items": ["Celestial ring (uncharged)", "Star fragment"]
 			},
 			"skilling_pets": {
 				"items": [
@@ -5891,11 +5806,7 @@
 			},
 			"tz_haar": {
 				"kc_activity": {
-					"default": [
-						"TzHaar-Ket",
-						"TzHaar-Mej",
-						"TzHaar-Xil"
-					],
+					"default": ["TzHaar-Ket", "TzHaar-Mej", "TzHaar-Xil"],
 					"ket": "TzHaar-Ket",
 					"mej": "TzHaar-Mej",
 					"xil": "TzHaar-Xil"
@@ -5986,11 +5897,7 @@
 					"Yew seed"
 				],
 				"kc_activity": "Tormented Demon",
-				"items": [
-					"Burning claw",
-					"Guthixian temple teleport",
-					"Tormented synapse"
-				]
+				"items": ["Burning claw", "Guthixian temple teleport", "Tormented synapse"]
 			},
 			"miscellaneous": {
 				"items": [
@@ -6546,13 +6453,7 @@
 			"god_wars_dungeon": {
 				"counts": false,
 				"kc_activity": {
-					"default": [
-						"Commander Zilyana",
-						"K'ril Tsutsaroth",
-						"Kree'arra",
-						"General Graardor",
-						"Nex"
-					]
+					"default": ["Commander Zilyana", "K'ril Tsutsaroth", "Kree'arra", "General Graardor", "Nex"]
 				},
 				"all_items": [
 					"Adamant arrow(p++)",
@@ -6731,12 +6632,7 @@
 			"the_forgotten_four": {
 				"counts": false,
 				"kc_activity": {
-					"default": [
-						"The Leviathan",
-						"The Whisperer",
-						"Vardorvis",
-						"Duke Sucellus"
-					],
+					"default": ["The Leviathan", "The Whisperer", "Vardorvis", "Duke Sucellus"],
 					"awakened": [
 						"The Leviathan (Awakened)",
 						"The Whisperer (Awakened)",

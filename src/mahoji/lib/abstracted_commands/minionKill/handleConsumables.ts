@@ -1,5 +1,5 @@
-import { randInt } from '@oldschoolgg/rng';
 import { reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
+import { randInt } from 'node-rng';
 import { EItem, itemID } from 'oldschooljs';
 
 import { getSimilarItems } from '@/lib/data/similarItems.js';

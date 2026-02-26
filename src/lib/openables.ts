@@ -4,10 +4,12 @@ import {
 	Bank,
 	BrimstoneChest,
 	BronzeHAMChest,
+	Dossier,
 	EItem,
 	EliteMimicTable,
 	ElvenCrystalChest,
 	EMonster,
+	ForgottenLockbox,
 	GiantEggSacFull,
 	GiantsFoundryOrePack,
 	GrubbyChest,
@@ -414,16 +416,16 @@ const osjsOpenables: UnifiedOpenable[] = [
 		id: EItem.DOSSIER,
 		openedItem: Items.getOrThrow(EItem.DOSSIER),
 		aliases: ['dossier'],
-		output: Openables.Dossier.table,
-		allItems: Openables.Dossier.table.allItems
+		output: Dossier.table,
+		allItems: Dossier.table.allItems
 	},
 	{
 		name: 'Forgotten lockbox',
 		id: 30_763,
 		openedItem: Items.getOrThrow(30_763),
 		aliases: ['forgotten lockbox', 'lockbox'],
-		output: Openables.ForgottenLockbox.table,
-		allItems: Openables.ForgottenLockbox.table.allItems
+		output: ForgottenLockbox.table,
+		allItems: ForgottenLockbox.table.allItems
 	},
 	{
 		name: "Zombie Pirate's Locker",

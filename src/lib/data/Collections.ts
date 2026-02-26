@@ -126,6 +126,7 @@ import {
 	volcanicMineCL,
 	vorkathCL,
 	wintertodtCL,
+	yamaCL,
 	zalcanoCL,
 	zulrahCL
 } from '@/lib/data/CollectionsExport.js';
