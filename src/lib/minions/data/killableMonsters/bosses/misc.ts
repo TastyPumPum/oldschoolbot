@@ -1559,11 +1559,6 @@ export const miscBossKillables: KillableMonster[] = [
 			{
 				itemCost: new Bank().add('Super combat potion(4)'),
 				qtyPerKill: 0.2
-			},
-			{
-				itemCost: new Bank().add('Stamina potion(4)'),
-				qtyPerKill: 0.2,
-				optional: true
 			}
 		]
 	}

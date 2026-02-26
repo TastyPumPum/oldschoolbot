@@ -1431,8 +1431,8 @@ export const allPetsCL = resolveItems([
 	'Nid',
 	'Huberte',
 	'Moxi',
-	'Bran'
-	// 'Yami', // Currently unobtainable.
+	'Bran',
+	'Yami'
 	// 'Dom' // Currently unobtainable.
 ]);
 export const camdozaalCL = resolveItems([

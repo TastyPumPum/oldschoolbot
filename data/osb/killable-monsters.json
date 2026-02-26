@@ -9757,13 +9757,6 @@
 					"12695": 1
 				},
 				"qty_per_kill": 0.2
-			},
-			{
-				"item_cost": {
-					"12625": 1
-				},
-				"qty_per_kill": 0.2,
-				"optional": true
 			}
 		]
 	},
