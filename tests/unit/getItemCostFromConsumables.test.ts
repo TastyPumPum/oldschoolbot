@@ -12,9 +12,20 @@ describe('getItemCostFromConsumables', () => {
 		const skotizo = killableMonsters.find(m => m.name === 'Skotizo')!;
 		const gearBank = makeGearBank();
 
-		// Bank has only 7 Dark totems, so even if time allows more kills,
-		// we should clamp to 7 by availability.
-		gearBank.bank.add('Dark totem', 7);
+		const monster = killableMonsters.find(m => m.name === 'Rabbit')!;
+		for (const inputQuantity of [1, 2, 5, 100]) {
+			const consumablesCost = getItemCostFromConsumables({
+				consumableCosts: Array.isArray(monster.itemCost!) ? monster.itemCost : [monster.itemCost!],
+				gearBank,
+				inputQuantity,
+				timeToFinish: monster.timeToFinish,
+				maxTripLength: Time.Hour,
+				slayerKillsRemaining: null
+			});
+			expect(consumablesCost.itemCost!.amount('Stamina potion(4)')).toEqual(1 * 5);
+			expect(consumablesCost.itemCost!.amount('Ruby dragon bolts (e)')).toEqual(1 * 100);
+			expect(consumablesCost.finalQuantity).toEqual(1);
+		}
 
 		const timeToFinish = skotizo.timeToFinish;
 		const maxTripLength = Time.Hour;
@@ -52,9 +63,8 @@ describe('getItemCostFromConsumables', () => {
 			maxTripLength: Time.Hour,
 			slayerKillsRemaining: null
 		});
-
-		expect(consumablesCost2?.finalQuantity).toEqual(5);
-		expect(consumablesCost2?.itemCost!.amount('Dark totem')).toEqual(5);
+		expect(consumablesCost2.itemCost!.amount('Dark totem')).toEqual(5);
+		expect(consumablesCost2.finalQuantity).toEqual(5);
 	});
 
 	test('Hydra costs should always include an Anti-venom', () => {
