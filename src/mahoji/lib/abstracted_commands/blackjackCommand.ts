@@ -231,7 +231,9 @@ function gameEmbed({ game, timedOut = false }: { game: BlackjackGame; timedOut?:
 	}
 
 	if (game.phase === 'insurance') {
-		embed.setDescription(`Dealer shows an Ace. Insurance is available.\nMain bet: ${toKMB(game.baseBet)}.`);
+		embed.setDescription(
+			`Dealer shows an Ace or face card. Insurance is available.\nMain bet: ${toKMB(game.baseBet)}.`
+		);
 	} else if (game.phase === 'player') {
 		embed.setDescription(`Choose an action. Auto-stand in ${Math.floor(BLACKJACK_DECISION_TIMEOUT / 1000)}s.`);
 	} else if (game.phase === 'dealer') {

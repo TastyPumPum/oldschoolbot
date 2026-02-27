@@ -1,3 +1,4 @@
+import type { RNGProvider } from 'node-rng';
 import { describe, expect, test } from 'vitest';
 
 import {
@@ -5,6 +6,7 @@ import {
 	applyPlayerAction,
 	type BlackjackCard,
 	type BlackjackGame,
+	createBlackjackGame,
 	handValue,
 	playDealer,
 	settleBlackjackGame
@@ -102,5 +104,21 @@ describe('blackjack engine', () => {
 		expect(settlement.insurancePayout).toBe(150);
 		expect(settlement.totalPayout).toBe(150);
 		expect(settlement.net).toBe(0);
+	});
+
+	test('dealer face upcard offers insurance', () => {
+		const rng: RNGProvider = {
+			roll: () => true,
+			randInt: (_min, max) => max,
+			randFloat: (_min, max) => max,
+			rand: () => 1,
+			shuffle: array => array,
+			pick: array => array[array.length - 1],
+			percentChance: () => true,
+			randomVariation: value => value
+		};
+		const game = createBlackjackGame({ bet: 100, rng, decks: 1 });
+		expect(game.dealerCards[0].rank).toBe('Q');
+		expect(game.phase).toBe('insurance');
 	});
 });
