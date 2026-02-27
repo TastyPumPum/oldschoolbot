@@ -248,7 +248,8 @@ async function globalButtonInteractionHandler({
 	if (id.includes('GIVEAWAY_')) return giveawayButtonHandler(user, id, interaction);
 	if (id.startsWith('GPE_')) return handleGearPresetEquip(user, id, interaction);
 	if (id.startsWith('PTR_')) return handlePinnedTripRepeat(user, id, interaction);
-	if (id.startsWith('BJ|')) return blackjackButtonHandler({ customID: id, interaction });
+	if (id.startsWith('BJ|') || id.startsWith('BJC|'))
+		return blackjackButtonHandler({ customID: id, interaction, rng });
 
 	if (id.startsWith('ge_')) return handleGEButton(user, id);
 

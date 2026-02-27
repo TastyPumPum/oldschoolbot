@@ -18,25 +18,39 @@ import {
 } from '@/lib/blackjack/engine.js';
 import {
 	createActiveBlackjackGame,
+	createPendingBlackjackStart,
 	destroyActiveBlackjackGame,
+	destroyPendingBlackjackStart,
 	getActiveBlackjackGame,
 	getActiveBlackjackGameByNonce,
+	getPendingBlackjackStart,
+	getPendingBlackjackStartByNonce,
 	hasActiveBlackjackGame,
+	hasPendingBlackjackStart,
 	refreshBlackjackTimeout,
+	refreshPendingBlackjackStartTimeout,
 	touchActiveBlackjackGame,
-	updateBlackjackMessageID
+	touchPendingBlackjackStart,
+	updateBlackjackMessageID,
+	updatePendingBlackjackStartMessageID
 } from '@/lib/blackjack/state.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
 const BLACKJACK_MIN_BET = 1_000_000;
 const BLACKJACK_MAX_BET = 500_000_000;
+const BLACKJACK_CONFIRM_TIMEOUT = Time.Second * 15;
 const BLACKJACK_DECISION_TIMEOUT = Time.Second * 45;
 
 type InsuranceAction = 'INSURE' | 'NO_INSURE';
 type BlackjackButtonAction = BlackjackAction | InsuranceAction;
+type BlackjackStartAction = 'CONFIRM' | 'CANCEL';
 
 function makeBlackjackButtonID(action: BlackjackButtonAction, nonce: string): string {
 	return `BJ|${action}|${nonce}`;
+}
+
+function makeBlackjackStartButtonID(action: BlackjackStartAction, nonce: string): string {
+	return `BJC|${action}|${nonce}`;
 }
 
 function parseBlackjackButtonID(id: string): { action: BlackjackButtonAction; nonce: string } | null {
@@ -44,6 +58,13 @@ function parseBlackjackButtonID(id: string): { action: BlackjackButtonAction; no
 	if (prefix !== 'BJ' || !action || !nonce) return null;
 	if (!['HIT', 'STAND', 'DOUBLE', 'SPLIT', 'INSURE', 'NO_INSURE'].includes(action)) return null;
 	return { action: action as BlackjackButtonAction, nonce };
+}
+
+function parseBlackjackStartButtonID(id: string): { action: BlackjackStartAction; nonce: string } | null {
+	const [prefix, action, nonce] = id.split('|');
+	if (prefix !== 'BJC' || !action || !nonce) return null;
+	if (!['CONFIRM', 'CANCEL'].includes(action)) return null;
+	return { action: action as BlackjackStartAction, nonce };
 }
 
 function suitShort(card: BlackjackCard): string {
@@ -191,6 +212,21 @@ function gameIsFinished(game: BlackjackGame): boolean {
 	return game.phase === 'finished';
 }
 
+function startConfirmationComponents(nonce: string): ButtonBuilder[][] {
+	return [
+		[
+			new ButtonBuilder()
+				.setCustomId(makeBlackjackStartButtonID('CONFIRM', nonce))
+				.setLabel('Confirm')
+				.setStyle(ButtonStyle.Primary),
+			new ButtonBuilder()
+				.setCustomId(makeBlackjackStartButtonID('CANCEL', nonce))
+				.setLabel('Cancel')
+				.setStyle(ButtonStyle.Secondary)
+		]
+	];
+}
+
 async function applySettlementToUser(user: MUser, game: BlackjackGame): Promise<void> {
 	const settlement = settleBlackjackGame(game);
 	if (settlement.totalPayout > 0) {
@@ -234,6 +270,29 @@ async function onBlackjackTimeout(userID: string, nonce: string): Promise<void> 
 	});
 }
 
+async function onBlackjackStartTimeout(userID: string, nonce: string): Promise<void> {
+	const pending = getPendingBlackjackStart(userID);
+	if (!pending || pending.nonce !== nonce) return;
+	destroyPendingBlackjackStart(userID);
+	if (!pending.messageID) return;
+	try {
+		await globalClient.editMessage(pending.channelID, pending.messageID, {
+			content: 'You ran out of time to confirm blackjack.',
+			components: []
+		});
+	} catch {
+		// Ignore timeout-edit failures.
+	}
+}
+
+function scheduleBlackjackStartTimeout(userID: string): void {
+	refreshPendingBlackjackStartTimeout({
+		userID,
+		timeoutMs: BLACKJACK_CONFIRM_TIMEOUT,
+		onTimeout: pending => onBlackjackStartTimeout(pending.userID, pending.nonce)
+	});
+}
+
 function scheduleBlackjackTimeout(userID: string): void {
 	refreshBlackjackTimeout({
 		userID,
@@ -243,13 +302,11 @@ function scheduleBlackjackTimeout(userID: string): void {
 }
 
 export async function blackjackCommand({
-	rng,
 	user,
 	interaction,
 	channelID,
 	amountInput
 }: {
-	rng: RNGProvider;
 	user: MUser;
 	interaction: MInteraction;
 	channelID: string;
@@ -270,68 +327,116 @@ Use: ${globalClient.mentionCommand('gamble', 'blackjack')} amount:100m`;
 	if (hasActiveBlackjackGame(user.id)) {
 		return 'You already have an active blackjack game.';
 	}
-
-	await interaction.confirmation(`Are you sure you want to play blackjack for ${toKMB(amount)}?`);
-
-	const result = await user.withLock('blackjack_start', async lockedUser => {
-		if (hasActiveBlackjackGame(lockedUser.id)) {
-			return { error: 'You already have an active blackjack game.' } as const;
-		}
-		try {
-			await lockedUser.transactItems({
-				itemsToRemove: new Bank().add('Coins', amount)
-			});
-		} catch {
-			return { error: "You don't have enough GP to make this bet." } as const;
-		}
-
-		const game = createBlackjackGame({ bet: amount, rng });
-		if (game.phase === 'finished') {
-			await applySettlementToUser(lockedUser, game);
-			return {
-				finished: true,
-				embed: finishedEmbed({ game })
-			} as const;
-		}
-
-		const active = createActiveBlackjackGame({
-			userID: lockedUser.id,
-			channelID,
-			game
-		});
-		return {
-			finished: false,
-			embed: gameEmbed({ game }),
-			components: activeComponents(game, active.nonce),
-			nonce: active.nonce
-		} as const;
+	if (hasPendingBlackjackStart(user.id)) {
+		return 'You already have a pending blackjack confirmation.';
+	}
+	const pending = createPendingBlackjackStart({
+		userID: user.id,
+		channelID,
+		amount
 	});
-
-	if ('error' in result) {
-		return result.error ?? 'Failed to start blackjack game.';
-	}
-	if (result.finished) {
-		return { embeds: [result.embed], components: [] };
-	}
-
-	scheduleBlackjackTimeout(user.id);
 	const sent = await interaction.replyWithResponse({
-		embeds: [result.embed],
-		components: result.components
+		content: `Are you sure you want to play blackjack for ${toKMB(amount)}?\n\nYou have ${Math.floor(BLACKJACK_CONFIRM_TIMEOUT / 1000)} seconds to confirm.`,
+		components: startConfirmationComponents(pending.nonce)
 	});
 	if (sent?.message_id) {
-		updateBlackjackMessageID(user.id, sent.message_id);
+		updatePendingBlackjackStartMessageID(user.id, sent.message_id);
 	}
+	scheduleBlackjackStartTimeout(user.id);
 	return SpecialResponse.RespondedManually;
 }
 
 export async function blackjackButtonHandler({
 	customID,
-	interaction
+	interaction,
+	rng
 }: {
 	customID: string;
 	interaction: OSInteraction;
+	rng: RNGProvider;
 }): Promise<CommandResponse> {
+	const startParsed = parseBlackjackStartButtonID(customID);
+	if (startParsed) {
+		const pending = getPendingBlackjackStartByNonce(startParsed.nonce);
+		if (!pending) {
+			return { content: 'This blackjack confirmation is no longer active.', ephemeral: true };
+		}
+		if (interaction.userId !== pending.userID) {
+			return { content: "This isn't your blackjack confirmation.", ephemeral: true };
+		}
+
+		const user = await mUserFetch(pending.userID);
+		await user.withLock('blackjack_start_button', async lockedUser => {
+			const currentPending = getPendingBlackjackStartByNonce(startParsed.nonce);
+			if (!currentPending || currentPending.userID !== interaction.userId) {
+				await interaction.reply({
+					content: 'This blackjack confirmation is no longer active.',
+					ephemeral: true
+				});
+				return;
+			}
+			touchPendingBlackjackStart(currentPending.userID);
+
+			if (startParsed.action === 'CANCEL') {
+				destroyPendingBlackjackStart(currentPending.userID);
+				await interaction.update({
+					content: 'Blackjack cancelled.',
+					embeds: [],
+					components: []
+				});
+				return;
+			}
+
+			destroyPendingBlackjackStart(currentPending.userID);
+			if (hasActiveBlackjackGame(lockedUser.id)) {
+				await interaction.update({
+					content: 'You already have an active blackjack game.',
+					embeds: [],
+					components: []
+				});
+				return;
+			}
+
+			try {
+				await lockedUser.transactItems({
+					itemsToRemove: new Bank().add('Coins', currentPending.amount)
+				});
+			} catch {
+				await interaction.update({
+					content: "You don't have enough GP to make this bet.",
+					embeds: [],
+					components: []
+				});
+				return;
+			}
+
+			const game = createBlackjackGame({ bet: currentPending.amount, rng });
+			if (game.phase === 'finished') {
+				await applySettlementToUser(lockedUser, game);
+				await interaction.update({
+					content: '',
+					embeds: [finishedEmbed({ game })],
+					components: []
+				});
+				return;
+			}
+
+			const active = createActiveBlackjackGame({
+				userID: lockedUser.id,
+				channelID: currentPending.channelID,
+				game
+			});
+			updateBlackjackMessageID(lockedUser.id, interaction.messageId);
+			scheduleBlackjackTimeout(lockedUser.id);
+			await interaction.update({
+				content: '',
+				embeds: [gameEmbed({ game })],
+				components: activeComponents(game, active.nonce)
+			});
+		});
+		return SpecialResponse.RespondedManually;
+	}
+
 	const parsed = parseBlackjackButtonID(customID);
 	if (!parsed) {
 		return { content: 'Invalid blackjack interaction.', ephemeral: true };

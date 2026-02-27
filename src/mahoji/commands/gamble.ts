@@ -216,7 +216,6 @@ export const gambleCommand = defineCommand({
 
 		if (options.blackjack) {
 			return blackjackCommand({
-				rng,
 				user,
 				interaction,
 				channelID: interaction.channelId,

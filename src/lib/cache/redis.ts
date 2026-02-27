@@ -34,7 +34,7 @@ type RatelimitConfig = {
 type RatelimitType = 'random_events' | 'global_buttons' | 'stats_command';
 
 const RATELIMITS: Record<RatelimitType, RatelimitConfig> = {
-	global_buttons: { windowSeconds: 2, max: 1 },
+	global_buttons: { windowSeconds: 2, max: 10000 },
 	random_events: { windowSeconds: TTL.Hour * 3, max: 5 },
 	stats_command: { windowSeconds: 5, max: 1 }
 } as const;
@@ -108,17 +108,17 @@ class CacheManager {
 		const guildSettings = await this.getGuildSettings(guildId);
 		const guild: IGuild = guildSettings
 			? {
-					id: guildSettings.id,
-					disabled_commands: guildSettings.disabledCommands,
-					petchannel: guildSettings.petchannel,
-					staff_only_channels: guildSettings.staffOnlyChannels
-				}
+				id: guildSettings.id,
+				disabled_commands: guildSettings.disabledCommands,
+				petchannel: guildSettings.petchannel,
+				staff_only_channels: guildSettings.staffOnlyChannels
+			}
 			: {
-					id: guildId,
-					disabled_commands: [],
-					petchannel: null,
-					staff_only_channels: []
-				};
+				id: guildId,
+				disabled_commands: [],
+				petchannel: null,
+				staff_only_channels: []
+			};
 
 		await this.setJson(BotKeys.GuildSettings(guild.id), guild);
 		return guild;
