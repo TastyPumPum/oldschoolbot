@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { ButtonBuilder, ButtonStyle, EmbedBuilder, SpecialResponse } from '@oldschoolgg/discord';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
@@ -34,12 +35,15 @@ import {
 	updateBlackjackMessageID,
 	updatePendingBlackjackStartMessageID
 } from '@/lib/blackjack/state.js';
+import { type CanvasImage, canvasToBuffer, createCanvas, loadImage } from '@/lib/canvas/canvasUtil.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
 const BLACKJACK_MIN_BET = 1_000_000;
 const BLACKJACK_MAX_BET = 500_000_000;
 const BLACKJACK_CONFIRM_TIMEOUT = Time.Second * 15;
 const BLACKJACK_DECISION_TIMEOUT = Time.Second * 45;
+const BLACKJACK_IMAGE_NAME = 'blackjack_table.png';
+const BLACKJACK_CARD_ASSET_DIR = './src/lib/resources/images/gambling/cards';
 
 type InsuranceAction = 'INSURE' | 'NO_INSURE';
 type BlackjackButtonAction = BlackjackAction | InsuranceAction;
@@ -88,6 +92,115 @@ function outcomeLabel(outcome: 'blackjack' | 'win' | 'lose' | 'push'): string {
 	if (outcome === 'win') return 'Win';
 	if (outcome === 'lose') return 'Lose';
 	return 'Push';
+}
+
+const cardImageCache = new Map<string, Promise<CanvasImage>>();
+
+function rankAssetName(rank: BlackjackCard['rank']): string {
+	if (rank === 'A') return 'ace';
+	if (rank === 'J') return 'jack';
+	if (rank === 'Q') return 'queen';
+	if (rank === 'K') return 'king';
+	return rank;
+}
+
+function cardAssetFile(card: BlackjackCard | 'back'): string {
+	if (card === 'back') return 'back.svg';
+	return `${rankAssetName(card.rank)}_of_${card.suit}.svg`;
+}
+
+async function loadCardAsset(card: BlackjackCard | 'back'): Promise<CanvasImage> {
+	const file = cardAssetFile(card);
+	let cached = cardImageCache.get(file);
+	if (!cached) {
+		cached = loadImage(join(BLACKJACK_CARD_ASSET_DIR, file));
+		cardImageCache.set(file, cached);
+	}
+	return cached;
+}
+
+async function renderBlackjackTableImage({
+	game,
+	hideDealerHole
+}: {
+	game: BlackjackGame;
+	hideDealerHole: boolean;
+}): Promise<Buffer> {
+	const dealerCards: (BlackjackCard | 'back')[] = game.dealerCards.map((card, index) =>
+		hideDealerHole && index === 1 ? 'back' : card
+	);
+	const rows: { label: string; cards: (BlackjackCard | 'back')[] }[] = [
+		{ label: 'Dealer', cards: dealerCards },
+		...game.hands.map((hand, index) => ({ label: `Hand ${index + 1}`, cards: hand.cards }))
+	];
+	const maxCards = Math.max(2, ...rows.map(row => row.cards.length));
+	const base = await loadCardAsset('back');
+	const cardScale = 0.42;
+	const cardWidth = Math.max(40, Math.floor(base.width * cardScale));
+	const cardHeight = Math.max(58, Math.floor(base.height * cardScale));
+	const cardGap = 10;
+	const rowGap = 18;
+	const rowLabelHeight = 22;
+	const paddingX = 24;
+	const paddingY = 18;
+	const titleHeight = 28;
+	const width = paddingX * 2 + maxCards * cardWidth + Math.max(0, maxCards - 1) * cardGap;
+	const height =
+		paddingY * 2 + titleHeight + rows.length * (rowLabelHeight + cardHeight) + rowGap * (rows.length - 1);
+
+	const canvas = createCanvas(width, height);
+	const ctx = canvas.getContext('2d');
+
+	ctx.fillStyle = '#0a5e2a';
+	ctx.fillRect(0, 0, width, height);
+	ctx.strokeStyle = '#e4c870';
+	ctx.lineWidth = 3;
+	ctx.strokeRect(2, 2, width - 4, height - 4);
+
+	ctx.fillStyle = '#ffffff';
+	ctx.font = 'bold 22px sans-serif';
+	ctx.fillText('Blackjack', paddingX, paddingY + 20);
+
+	let y = paddingY + titleHeight;
+	for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+		const row = rows[rowIndex];
+		const isCurrentHand = rowIndex > 0 && game.phase === 'player' && game.currentHandIndex === rowIndex - 1;
+		ctx.fillStyle = isCurrentHand ? '#ffe066' : '#ffffff';
+		ctx.font = 'bold 18px sans-serif';
+		ctx.fillText(row.label, paddingX, y + 16);
+		const cardsY = y + rowLabelHeight;
+
+		for (let cardIndex = 0; cardIndex < row.cards.length; cardIndex++) {
+			const card = row.cards[cardIndex];
+			const asset = await loadCardAsset(card);
+			const x = paddingX + cardIndex * (cardWidth + cardGap);
+			ctx.drawImage(asset, x, cardsY, cardWidth, cardHeight);
+		}
+		y += rowLabelHeight + cardHeight + rowGap;
+	}
+
+	return canvasToBuffer(canvas);
+}
+
+async function maybeAddBlackjackImage({
+	game,
+	embed
+}: {
+	game: BlackjackGame;
+	embed: EmbedBuilder;
+}): Promise<{ embed: EmbedBuilder; file?: { name: string; buffer: Buffer } }> {
+	try {
+		const hideDealerHole = game.phase === 'insurance' || game.phase === 'player';
+		const imageBuffer = await renderBlackjackTableImage({ game, hideDealerHole });
+		embed.setImage(`attachment://${BLACKJACK_IMAGE_NAME}`);
+		return {
+			embed,
+			file: { name: BLACKJACK_IMAGE_NAME, buffer: imageBuffer }
+		};
+	} catch (err) {
+		Logging.logError(err as Error);
+		return { embed };
+	}
 }
 
 function gameEmbed({ game, timedOut = false }: { game: BlackjackGame; timedOut?: boolean }): EmbedBuilder {
@@ -257,14 +370,24 @@ async function onBlackjackTimeout(userID: string, nonce: string): Promise<void> 
 				});
 				return;
 			}
+			const finalVisual = await maybeAddBlackjackImage({
+				game: current.game,
+				embed: finalEmbed
+			});
 			await globalClient.sendMessage(current.channelID, {
 				content: `<@${userID}>`,
-				embeds: [finalEmbed]
+				embeds: [finalVisual.embed],
+				files: finalVisual.file ? [finalVisual.file] : undefined
 			});
 		} catch {
+			const finalVisual = await maybeAddBlackjackImage({
+				game: current.game,
+				embed: finalEmbed
+			});
 			await globalClient.sendMessage(current.channelID, {
 				content: `<@${userID}>`,
-				embeds: [finalEmbed]
+				embeds: [finalVisual.embed],
+				files: finalVisual.file ? [finalVisual.file] : undefined
 			});
 		}
 	});
@@ -413,10 +536,15 @@ export async function blackjackButtonHandler({
 			const game = createBlackjackGame({ bet: currentPending.amount, rng });
 			if (game.phase === 'finished') {
 				await applySettlementToUser(lockedUser, game);
+				const finalVisual = await maybeAddBlackjackImage({
+					game,
+					embed: finishedEmbed({ game })
+				});
 				await interaction.update({
 					content: '',
-					embeds: [finishedEmbed({ game })],
-					components: []
+					embeds: [finalVisual.embed],
+					components: [],
+					files: finalVisual.file ? [finalVisual.file] : undefined
 				});
 				return;
 			}
@@ -428,10 +556,15 @@ export async function blackjackButtonHandler({
 			});
 			updateBlackjackMessageID(lockedUser.id, interaction.messageId);
 			scheduleBlackjackTimeout(lockedUser.id);
+			const gameVisual = await maybeAddBlackjackImage({
+				game,
+				embed: gameEmbed({ game })
+			});
 			await interaction.update({
 				content: '',
-				embeds: [gameEmbed({ game })],
-				components: activeComponents(game, active.nonce)
+				embeds: [gameVisual.embed],
+				components: activeComponents(game, active.nonce),
+				files: gameVisual.file ? [gameVisual.file] : undefined
 			});
 		});
 		return SpecialResponse.RespondedManually;
@@ -516,19 +649,28 @@ export async function blackjackButtonHandler({
 		touchActiveBlackjackGame(current.userID);
 		if (gameIsFinished(current.game)) {
 			await applySettlementToUser(lockedUser, current.game);
-			const embed = finishedEmbed({ game: current.game });
+			const finalVisual = await maybeAddBlackjackImage({
+				game: current.game,
+				embed: finishedEmbed({ game: current.game })
+			});
 			destroyActiveBlackjackGame(current.userID);
 			await interaction.update({
-				embeds: [embed],
-				components: []
+				embeds: [finalVisual.embed],
+				components: [],
+				files: finalVisual.file ? [finalVisual.file] : undefined
 			});
 			return;
 		}
 
 		scheduleBlackjackTimeout(current.userID);
+		const gameVisual = await maybeAddBlackjackImage({
+			game: current.game,
+			embed: gameEmbed({ game: current.game })
+		});
 		await interaction.update({
-			embeds: [gameEmbed({ game: current.game })],
-			components: activeComponents(current.game, current.nonce)
+			embeds: [gameVisual.embed],
+			components: activeComponents(current.game, current.nonce),
+			files: gameVisual.file ? [gameVisual.file] : undefined
 		});
 	});
 
