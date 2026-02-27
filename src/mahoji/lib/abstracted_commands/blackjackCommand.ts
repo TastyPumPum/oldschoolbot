@@ -71,22 +71,6 @@ function parseBlackjackStartButtonID(id: string): { action: BlackjackStartAction
 	return { action: action as BlackjackStartAction, nonce };
 }
 
-function suitShort(card: BlackjackCard): string {
-	if (card.suit === 'clubs') return 'C';
-	if (card.suit === 'diamonds') return 'D';
-	if (card.suit === 'hearts') return 'H';
-	return 'S';
-}
-
-function cardString(card: BlackjackCard): string {
-	return `${card.rank}${suitShort(card)}`;
-}
-
-function cardsString(cards: BlackjackCard[], hideSecondCard = false): string {
-	if (!hideSecondCard) return cards.map(cardString).join(' ');
-	return cards.map((card, index) => (index === 1 ? '??' : cardString(card))).join(' ');
-}
-
 function outcomeLabel(outcome: 'blackjack' | 'win' | 'lose' | 'push'): string {
 	if (outcome === 'blackjack') return 'Blackjack';
 	if (outcome === 'win') return 'Win';
@@ -126,12 +110,17 @@ async function renderBlackjackTableImage({
 	game: BlackjackGame;
 	hideDealerHole: boolean;
 }): Promise<Buffer> {
+	const dealerVisibleCards = hideDealerHole ? [game.dealerCards[0]] : game.dealerCards;
+	const dealerTotal = handValue(dealerVisibleCards).total;
 	const dealerCards: (BlackjackCard | 'back')[] = game.dealerCards.map((card, index) =>
 		hideDealerHole && index === 1 ? 'back' : card
 	);
 	const rows: { label: string; cards: (BlackjackCard | 'back')[] }[] = [
-		{ label: 'Dealer', cards: dealerCards },
-		...game.hands.map((hand, index) => ({ label: `Hand ${index + 1}`, cards: hand.cards }))
+		{ label: `Dealer (${dealerTotal})`, cards: dealerCards },
+		...game.hands.map((hand, index) => ({
+			label: `Hand ${index + 1} (${handValue(hand.cards).total})`,
+			cards: hand.cards
+		}))
 	];
 	const maxCards = Math.max(2, ...rows.map(row => row.cards.length));
 	const base = await loadCardAsset('back');
@@ -143,7 +132,7 @@ async function renderBlackjackTableImage({
 	const rowLabelHeight = 22;
 	const paddingX = 24;
 	const paddingY = 18;
-	const titleHeight = 28;
+	const titleHeight = 0;
 	const width = paddingX * 2 + maxCards * cardWidth + Math.max(0, maxCards - 1) * cardGap;
 	const height =
 		paddingY * 2 + titleHeight + rows.length * (rowLabelHeight + cardHeight) + rowGap * (rows.length - 1);
@@ -156,10 +145,6 @@ async function renderBlackjackTableImage({
 	ctx.strokeStyle = '#e4c870';
 	ctx.lineWidth = 3;
 	ctx.strokeRect(2, 2, width - 4, height - 4);
-
-	ctx.fillStyle = '#ffffff';
-	ctx.font = 'bold 22px sans-serif';
-	ctx.fillText('Blackjack', paddingX, paddingY + 20);
 
 	let y = paddingY + titleHeight;
 	for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
@@ -205,30 +190,6 @@ async function maybeAddBlackjackImage({
 
 function gameEmbed({ game, timedOut = false }: { game: BlackjackGame; timedOut?: boolean }): EmbedBuilder {
 	const embed = new EmbedBuilder().setTitle('Blackjack').setColor(0x1f8b4c);
-	const hideDealerHole = game.phase === 'insurance' || game.phase === 'player';
-	const dealerVisibleCards = hideDealerHole ? [game.dealerCards[0]] : game.dealerCards;
-	const dealerValue = handValue(dealerVisibleCards).total;
-	embed.addFields({
-		name: 'Dealer',
-		value: `${cardsString(game.dealerCards, hideDealerHole)} (${hideDealerHole ? dealerValue : handValue(game.dealerCards).total})`
-	});
-
-	for (let index = 0; index < game.hands.length; index++) {
-		const hand = game.hands[index];
-		const value = handValue(hand.cards);
-		const isCurrent = game.phase === 'player' && game.currentHandIndex === index;
-		const flags: string[] = [];
-		if (isCurrent) flags.push('Current');
-		if (hand.isSplitAces) flags.push('Split aces');
-		if (hand.doubled) flags.push('Doubled');
-		if (value.isBust) flags.push('Bust');
-		if (hand.stood && !value.isBust) flags.push('Stand');
-		const flagText = flags.length > 0 ? ` [${flags.join(', ')}]` : '';
-		embed.addFields({
-			name: `Hand ${index + 1}${flagText}`,
-			value: `${cardsString(hand.cards)} (${value.total}) - Bet: ${toKMB(hand.bet)}`
-		});
-	}
 
 	if (game.phase === 'insurance') {
 		embed.setDescription(
@@ -263,11 +224,7 @@ function finishedEmbed({ game, timedOut = false }: { game: BlackjackGame; timedO
 	return new EmbedBuilder()
 		.setTitle('Blackjack Result')
 		.setColor(settlement.net >= 0 ? 0x57f287 : 0xed4245)
-		.setDescription(`${timedOut ? 'Timed out, auto-stand applied.\n' : ''}${lines.join('\n')}`)
-		.addFields({
-			name: 'Dealer',
-			value: `${cardsString(game.dealerCards)} (${settlement.dealerValue.total})`
-		});
+		.setDescription(`${timedOut ? 'Timed out, auto-stand applied.\n' : ''}${lines.join('\n')}`);
 }
 
 function activeComponents(game: BlackjackGame, nonce: string): ButtonBuilder[][] {
@@ -344,12 +301,18 @@ function startConfirmationComponents(nonce: string): ButtonBuilder[][] {
 
 async function applySettlementToUser(user: MUser, game: BlackjackGame): Promise<void> {
 	const settlement = settleBlackjackGame(game);
+	const tasks: Promise<unknown>[] = [
+		user.updateGPTrackSetting('gp_blackjack', settlement.net)
+	];
 	if (settlement.totalPayout > 0) {
-		await user.transactItems({
-			itemsToAdd: new Bank().add('Coins', settlement.totalPayout),
-			collectionLog: false
-		});
+		tasks.push(
+			user.transactItems({
+				itemsToAdd: new Bank().add('Coins', settlement.totalPayout),
+				collectionLog: false
+			})
+		);
 	}
+	await Promise.all(tasks);
 }
 
 async function onBlackjackTimeout(userID: string, nonce: string): Promise<void> {
