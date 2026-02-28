@@ -4,7 +4,7 @@ import { BSOMonsters } from '@/lib/bso/monsters/customMonsters.js';
 import { randFloat, randInt, roll } from '@oldschoolgg/rng';
 import { ECombatOption } from '@oldschoolgg/schemas';
 import { notEmpty, stringMatches } from '@oldschoolgg/toolkit';
-import { type Bank, EMonster, type Monster, Monsters, resolveItems } from 'oldschooljs';
+import { Bank, EMonster, type Monster, Monsters, resolveItems } from 'oldschooljs';
 
 import { caTiers } from '@/lib/combat_achievements/combatAchievements.js';
 import { BitField, type PvMMethod } from '@/lib/constants.js';

@@ -1,5 +1,5 @@
 import { randInt } from '@oldschoolgg/rng';
-import { type Bank, ItemGroups, resolveItems, toKMB } from 'oldschooljs';
+import { Bank, ItemGroups, resolveItems, toKMB } from 'oldschooljs';
 
 import { bankImageTask } from '@/lib/canvas/bankImage.js';
 import { type CanvasImage, loadImage } from '@/lib/canvas/canvasUtil.js';

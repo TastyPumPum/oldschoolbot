@@ -1,6 +1,6 @@
 import { codeBlock, EmbedBuilder } from '@oldschoolgg/discord';
 import { Emoji } from '@oldschoolgg/toolkit';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 import { chunk } from 'remeda';
 
 import { choicesOf, filterOption, itemOption } from '@/discord/index.js';

@@ -2,7 +2,7 @@ import '../../src/lib/safeglobals.js';
 import '../../src/lib/cache/redis.js';
 
 import { noOp } from '@oldschoolgg/toolkit';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 import { vi } from 'vitest';
 
 import type { OldSchoolBotClient } from '@/discord/OldSchoolBotClient.js';

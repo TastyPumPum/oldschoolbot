@@ -1,4 +1,4 @@
-import type { Bank } from '../../structures/Bank.js';
+import { Bank } from '../../structures/Bank.js';
 import LootTable from '../..//structures/LootTable.js';
 
 const DiedTable: LootTable = new LootTable()

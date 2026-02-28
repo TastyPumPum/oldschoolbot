@@ -1,5 +1,5 @@
 import { calcWhatPercent, deepEqual, formatOrdinal, round, sumArr } from '@oldschoolgg/toolkit';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import { Prisma, type TriviaQuestion, type User } from '@/prisma/clients/robochimp/client.js';
 import { BOT_TYPE, globalConfig, masteryKey } from '@/lib/constants.js';

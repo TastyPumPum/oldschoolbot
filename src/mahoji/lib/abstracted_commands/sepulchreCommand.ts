@@ -1,5 +1,5 @@
 import { formatDuration, reduceNumByPercent, sumArr, Time } from '@oldschoolgg/toolkit';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import { sepulchreBoosts, sepulchreFloors } from '@/lib/minions/data/sepulchre.js';
 import Arrows from '@/lib/skilling/skills/fletching/fletchables/arrows.js';

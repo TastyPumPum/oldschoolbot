@@ -1,4 +1,4 @@
-import type { Bank } from '@/structures/Bank.js';
+import { Bank } from '@/structures/Bank.js';
 import type { MonsterKillOptions } from '@/structures/Monster.js';
 import { Monster } from '@/structures/Monster.js';
 import { Vardorvis } from './Vardorvis.js';

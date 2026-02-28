@@ -1,5 +1,5 @@
 import { notEmpty } from '@oldschoolgg/toolkit';
-import { type Bank, Items } from 'oldschooljs';
+import { Bank, Items } from 'oldschooljs';
 import { groupBy, mapValues, pickBy, sumBy, uniqueBy } from 'remeda';
 import { max, mean, medianSorted, min, quantileSorted } from 'simple-statistics';
 
