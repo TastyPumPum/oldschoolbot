@@ -1,5 +1,5 @@
 import { Time } from '@oldschoolgg/toolkit';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
 

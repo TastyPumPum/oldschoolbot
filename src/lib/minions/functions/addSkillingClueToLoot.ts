@@ -1,6 +1,6 @@
 import { percentChance, randFloat, roll } from '@oldschoolgg/rng';
 import { sumArr } from '@oldschoolgg/toolkit';
-import { type Bank, itemID } from 'oldschooljs';
+import { Bank, itemID } from 'oldschooljs';
 
 import {
 	birdsNestID,

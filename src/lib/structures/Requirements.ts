@@ -1,7 +1,7 @@
 import type { MTame } from '@/lib/bso/structures/MTame.js';
 
 import { calcWhatPercent, objectEntries } from '@oldschoolgg/toolkit';
-import { type Bank, Items } from 'oldschooljs';
+import { Bank, Items } from 'oldschooljs';
 
 import type { Minigame, PlayerOwnedHouse } from '@/prisma/main.js';
 import type { ClueTier } from '@/lib/clues/clueTiers.js';

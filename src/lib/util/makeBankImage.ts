@@ -1,4 +1,4 @@
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import { type BankFlag, bankImageTask } from '@/lib/canvas/bankImage.js';
 import type { IconPackID } from '@/lib/canvas/iconPacks.js';

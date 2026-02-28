@@ -1,5 +1,5 @@
 import { calcWhatPercent, generateHexColorForCashStack, objectEntries, toTitleCase } from '@oldschoolgg/toolkit';
-import { type Bank, Items, toKMB } from 'oldschooljs';
+import { Bank, Items, toKMB } from 'oldschooljs';
 
 import { bankImageTask } from '@/lib/canvas/bankImage.js';
 import type { IBgSprite } from '@/lib/canvas/canvasUtil.js';

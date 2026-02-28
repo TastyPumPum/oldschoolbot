@@ -3,7 +3,7 @@ import { BSOEmoji } from '@/lib/bso/bsoEmoji.js';
 
 import type { GearSetupType } from '@oldschoolgg/gear';
 import { Emoji, objectEntries, reduceNumByPercent, UserError } from '@oldschoolgg/toolkit';
-import { type Bank, EItem } from 'oldschooljs';
+import { Bank, EItem } from 'oldschooljs';
 
 import { Eatables } from '@/lib/data/eatables.js';
 import getUserFoodFromBank, { getRealHealAmount } from '@/lib/minions/functions/getUserFoodFromBank.js';

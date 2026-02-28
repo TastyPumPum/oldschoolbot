@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle } from '@oldschoolgg/discord';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { BitField } from '@/lib/constants.js';

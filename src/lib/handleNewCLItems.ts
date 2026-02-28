@@ -1,5 +1,5 @@
 import { Events, formatOrdinal, roboChimpCLRankQuery, sumArr } from '@oldschoolgg/toolkit';
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import { type Prisma, UserEventType } from '@/prisma/main.js';
 import { allCLItems, allCollectionLogsFlat, calcCLDetails } from '@/lib/data/Collections.js';

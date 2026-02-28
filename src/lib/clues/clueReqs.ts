@@ -1,4 +1,4 @@
-import type { Bank } from 'oldschooljs';
+import { Bank } from 'oldschooljs';
 
 import type { ClueTier } from '@/lib/clues/clueTiers.js';
 import { allStashUnitTiers } from '@/lib/clues/stashUnits.js';

@@ -1,6 +1,6 @@
 import { roll } from '@oldschoolgg/rng';
 import { objectEntries, stripEmojis, toTitleCase } from '@oldschoolgg/toolkit';
-import { type ArrayItemsResolved, type Bank, Items } from 'oldschooljs';
+import { type ArrayItemsResolved, Bank, Items } from 'oldschooljs';
 import { clamp } from 'remeda';
 
 import { type BitField, BitFieldData } from '@/lib/constants.js';

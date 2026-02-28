@@ -4,7 +4,7 @@ import { globalDroprates } from '@/lib/bso/globalDroprates.js';
 
 import { type RNGProvider, roll } from '@oldschoolgg/rng';
 import { calcPercentOfNum } from '@oldschoolgg/toolkit';
-import { type Bank, EItem } from 'oldschooljs';
+import { Bank, EItem } from 'oldschooljs';
 import { match } from 'ts-pattern';
 
 import addSkillingClueToLoot from '@/lib/minions/functions/addSkillingClueToLoot.js';

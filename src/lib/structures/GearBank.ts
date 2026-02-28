@@ -1,6 +1,6 @@
 import type { MaterialBank } from '@/lib/bso/skills/invention/MaterialBank.js';
 
-import { type Bank, convertXPtoLVL, Items, resolveItems } from 'oldschooljs';
+import { Bank, convertXPtoLVL, Items, resolveItems } from 'oldschooljs';
 
 import { MAX_LEVEL } from '@/lib/constants.js';
 import { getSimilarItems } from '@/lib/data/similarItems.js';
