@@ -18,7 +18,7 @@ const runeTypes = [
 		runes: new Set(['mist', 'dust', 'mud', 'smoke', 'steam', 'lava', 'cosmic', 'chaos', 'sunfire'])
 	},
 	{ item: Items.getOrThrow('Mangled extract'), runes: new Set(['nature', 'law', 'astral', 'death']) },
-	{ item: Items.getOrThrow('Scarred extract'), runes: new Set(['blood', 'soul', 'wrath']) }
+	{ item: Items.getOrThrow('Scarred extract'), runes: new Set(['blood', 'soul', 'wrath', 'aether']) }
 ];
 
 export const runecraftCommand = defineCommand({

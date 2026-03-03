@@ -1166,6 +1166,7 @@
 				"all_items": [
 					"Adamant arrow",
 					"Adamantite ore",
+					"Aether catalyst",
 					"Anglerfish",
 					"Awakener's orb",
 					"Body rune",
@@ -1187,7 +1188,6 @@
 					"Mithril arrow",
 					"Onyx bolt tips",
 					"Prayer potion(3)",
-					"Pure essence",
 					"Ranging potion(2)",
 					"Raw manta ray",
 					"Ruby",
@@ -6572,6 +6572,7 @@
 					"Adamant javelin",
 					"Adamant longsword",
 					"Adamantite ore",
+					"Aether catalyst",
 					"Air rune",
 					"Ancient brew(2)",
 					"Anglerfish",

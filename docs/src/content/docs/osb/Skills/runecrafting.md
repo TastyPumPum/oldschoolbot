@@ -82,6 +82,7 @@ It's recommended to equip a staff in your skilling setup to provide infinite run
 | Smoke    | [[runecraft:15]] |
 | Steam    | [[runecraft:19]] |
 | Lava     | [[runecraft:23]] |
+| Aether   | [[runecraft:90]] |
 
 ## Tiaras
 

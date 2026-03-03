@@ -1,5 +1,20 @@
 [
 	{
+		"xp": 20,
+		"id": 30843,
+		"name": "Aether rune",
+		"levels": [[90, 1]],
+		"trip_length": 71520,
+		"input_rune": {
+			"566": 1,
+			"30771": 1
+		},
+		"input_talisman": {
+			"1460": 1
+		},
+		"stams": true
+	},
+	{
 		"xp": 5,
 		"id": 556,
 		"name": "Air rune",

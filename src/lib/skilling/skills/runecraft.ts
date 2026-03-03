@@ -255,6 +255,16 @@ const Runes: Rune[] = [
 		ardyDiaryChance: 15
 	},
 	{
+		xp: 20,
+		id: itemID('Aether rune'),
+		name: 'Aether rune',
+		levels: [[90, 1]],
+		tripLength: Time.Minute * 1.192,
+		inputRune: new Bank({ 'Soul rune': 1, 'Aether catalyst': 1 }),
+		inputTalisman: new Bank({ 'Soul talisman': 1 }),
+		stams: true
+	},
+	{
 		xp: 8,
 		id: itemID('Wrath rune'),
 		name: 'Wrath rune',
