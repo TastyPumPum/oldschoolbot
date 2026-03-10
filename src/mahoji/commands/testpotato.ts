@@ -605,12 +605,6 @@ export const testPotatoCommand = globalConfig.isProduction
 							max_value: 365
 						},
 						{
-							type: 'Boolean',
-							name: 'royal_trouble',
-							description: 'Whether Royal Trouble is enabled in stored state.',
-							required: false
-						},
-						{
 							type: 'Integer',
 							name: 'coffer',
 							description: 'Stored coffer amount.',
@@ -1239,7 +1233,6 @@ export const testPotatoCommand = globalConfig.isProduction
 						lastTopupAt: timestamp,
 						primaryArea,
 						secondaryArea,
-						royalTrouble: options.miscellania_set.royal_trouble ?? true,
 						coffer: options.miscellania_set.coffer ?? 7_500_000,
 						cofferAtLastClaim: options.miscellania_set.coffer ?? 7_500_000,
 						favour: options.miscellania_set.favour ?? 100,

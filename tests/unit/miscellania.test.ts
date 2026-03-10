@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest';
 
 import {
 	advanceMiscellaniaState,
-	calculateMiscellaniaCost,
 	calculateMiscellaniaDays,
 	calculateMiscellaniaTripSeconds,
 	daysElapsedSince,
@@ -23,7 +22,6 @@ describe('miscellania simplified mechanics', () => {
 			lastTopupAt: now - 130 * 24 * 60 * 60 * 1000,
 			primaryArea: 'maple',
 			secondaryArea: 'herbs',
-			royalTrouble: true,
 			coffer: 7_500_000,
 			cofferAtLastClaim: 7_500_000,
 			favour: 100,
@@ -32,16 +30,13 @@ describe('miscellania simplified mechanics', () => {
 		expect(calculateMiscellaniaDays(state, now)).toEqual(100);
 	});
 
-	test('trip seconds and cost scale by days', () => {
+	test('trip seconds scale by days', () => {
 		expect(calculateMiscellaniaTripSeconds(3)).toEqual(45);
-		expect(calculateMiscellaniaCost(3)).toEqual(225_000);
 	});
 
-	test('cost and duration are clamped between 1 and 100 days', () => {
+	test('duration is clamped between 1 and 100 days', () => {
 		expect(calculateMiscellaniaTripSeconds(0)).toEqual(15);
-		expect(calculateMiscellaniaCost(0)).toEqual(75_000);
 		expect(calculateMiscellaniaTripSeconds(150)).toEqual(1500);
-		expect(calculateMiscellaniaCost(150)).toEqual(7_500_000);
 	});
 
 	test('daysElapsedSince floors partial days', () => {
@@ -68,7 +63,6 @@ describe('miscellania simplified mechanics', () => {
 			lastTopupAt: now + 2 * 24 * 60 * 60 * 1000,
 			primaryArea: 'maple',
 			secondaryArea: 'herbs',
-			royalTrouble: true,
 			coffer: 7_500_000,
 			cofferAtLastClaim: 7_500_000,
 			favour: 100,
@@ -77,24 +71,9 @@ describe('miscellania simplified mechanics', () => {
 		expect(calculateMiscellaniaDays(state, now)).toEqual(1);
 	});
 
-	test('detailed sim matches expected 1-day non-RT values', () => {
+	test('detailed sim matches expected 1-day values', () => {
 		const result = simulateDetailedMiscellania({
 			days: 1,
-			royalTrouble: false,
-			startingCoffer: 750_000,
-			startingFavour: 100,
-			constantFavour: false
-		});
-		expect(result.endingCoffer).toEqual(700_000);
-		expect(result.gpSpent).toEqual(50_000);
-		expect(result.resourcePoints).toEqual(600);
-		expect(result.endingFavour).toEqual(96);
-	});
-
-	test('detailed sim matches expected 1-day RT values', () => {
-		const result = simulateDetailedMiscellania({
-			days: 1,
-			royalTrouble: true,
 			startingCoffer: 7_500_000,
 			startingFavour: 100,
 			constantFavour: false
@@ -108,7 +87,6 @@ describe('miscellania simplified mechanics', () => {
 	test('detailed sim constant favour keeps favour unchanged', () => {
 		const result = simulateDetailedMiscellania({
 			days: 10,
-			royalTrouble: true,
 			startingCoffer: 7_500_000,
 			startingFavour: 88,
 			constantFavour: true
@@ -124,7 +102,6 @@ describe('miscellania simplified mechanics', () => {
 			lastTopupAt: now - 300 * 24 * 60 * 60 * 1000,
 			primaryArea: 'maple',
 			secondaryArea: 'herbs',
-			royalTrouble: true,
 			coffer: 7_500_000,
 			cofferAtLastClaim: 7_500_000,
 			favour: 100,
@@ -133,7 +110,6 @@ describe('miscellania simplified mechanics', () => {
 		const advanced = advanceMiscellaniaState(state, now);
 		const expected = simulateDetailedMiscellania({
 			days: 100,
-			royalTrouble: true,
 			startingCoffer: 7_500_000,
 			startingFavour: 100,
 			constantFavour: false

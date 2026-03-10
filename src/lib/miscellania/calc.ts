@@ -34,7 +34,6 @@ export interface MiscellaniaState {
 	lastTopupAt: number;
 	primaryArea: MiscellaniaAreaKey;
 	secondaryArea: MiscellaniaAreaKey;
-	royalTrouble: boolean;
 	coffer: number;
 	cofferAtLastClaim: number;
 	favour: number;
@@ -44,7 +43,6 @@ export interface MiscellaniaState {
 
 export interface MiscellaniaDetailedSimulationResult {
 	days: number;
-	royalTrouble: boolean;
 	startingCoffer: number;
 	endingCoffer: number;
 	gpSpent: number;
@@ -55,9 +53,10 @@ export interface MiscellaniaDetailedSimulationResult {
 	resourcePointsGained: number;
 }
 
-export const MISCELLANIA_GP_PER_DAY = 75_000;
 export const MISCELLANIA_MAX_DAYS = 100;
 export const MISCELLANIA_TRIP_SECONDS_PER_DAY = 15;
+const MISCELLANIA_FAVOUR_SUBTRACTION = 131;
+const MISCELLANIA_COFFER_DAILY_CAP = 75_000;
 
 export function daysElapsedSince(timestamp: number, now = Date.now()): number {
 	if (now <= timestamp) return 0;
@@ -67,10 +66,6 @@ export function daysElapsedSince(timestamp: number, now = Date.now()): number {
 export function calculateMiscellaniaDays(state: MiscellaniaState | null, now = Date.now()): number {
 	if (!state) return 1;
 	return Math.max(1, Math.min(MISCELLANIA_MAX_DAYS, daysElapsedSince(state.lastClaimedAt, now)));
-}
-
-export function calculateMiscellaniaCost(days: number): number {
-	return Math.max(1, Math.min(MISCELLANIA_MAX_DAYS, days)) * MISCELLANIA_GP_PER_DAY;
 }
 
 export function calculateMiscellaniaTripSeconds(days: number): number {
@@ -94,14 +89,12 @@ export function validateAreas(primaryArea: MiscellaniaAreaKey, secondaryArea: Mi
 
 export function simulateDetailedMiscellania({
 	days,
-	royalTrouble,
 	startingCoffer,
 	startingFavour,
 	constantFavour,
 	startingResourcePoints = 0
 }: {
 	days: number;
-	royalTrouble: boolean;
 	startingCoffer: number;
 	startingFavour: number;
 	constantFavour: boolean;
@@ -113,20 +106,20 @@ export function simulateDetailedMiscellania({
 	let currentFavour = Math.max(25, Math.min(100, startingFavour));
 	let currentCoffer = Math.max(0, Math.floor(startingCoffer));
 
-	let favourSubtraction = 160;
-	let cofferMax = 50_000;
-	if (royalTrouble) {
-		favourSubtraction = 131;
-		cofferMax = 75_000;
-	}
-
 	for (let day = 1; day <= simDays; day++) {
-		const cofferReduction = Math.min(5 + Math.floor(currentCoffer / 10), cofferMax, currentCoffer);
+		const cofferReduction = Math.min(
+			5 + Math.floor(currentCoffer / 10),
+			MISCELLANIA_COFFER_DAILY_CAP,
+			currentCoffer
+		);
 		currentCoffer -= cofferReduction;
 		const workerEffectiveness = Math.floor((cofferReduction * 100) / 8333);
 		resourcePoints += Math.floor((workerEffectiveness * currentFavour) / 100);
 		if (currentFavour > 32 && !constantFavour) {
-			currentFavour = Math.max(32, currentFavour - Math.ceil((favourSubtraction - currentFavour) / 15));
+			currentFavour = Math.max(
+				32,
+				currentFavour - Math.ceil((MISCELLANIA_FAVOUR_SUBTRACTION - currentFavour) / 15)
+			);
 		}
 	}
 
@@ -134,7 +127,6 @@ export function simulateDetailedMiscellania({
 
 	return {
 		days: simDays,
-		royalTrouble,
 		startingCoffer: Math.max(0, Math.floor(startingCoffer)),
 		endingCoffer: currentCoffer,
 		gpSpent: Math.max(0, Math.floor(startingCoffer) - currentCoffer),
@@ -164,7 +156,6 @@ export function normalizeMiscellaniaState(
 		lastTopupAt: typeof state?.lastTopupAt === 'number' ? state.lastTopupAt : now - Time.Day,
 		primaryArea: (state?.primaryArea as MiscellaniaAreaKey | undefined) ?? primaryArea,
 		secondaryArea: (state?.secondaryArea as MiscellaniaAreaKey | undefined) ?? secondaryArea,
-		royalTrouble: typeof state?.royalTrouble === 'boolean' ? state.royalTrouble : true,
 		coffer: typeof state?.coffer === 'number' ? Math.max(0, Math.floor(state.coffer)) : 7_500_000,
 		cofferAtLastClaim:
 			typeof state?.cofferAtLastClaim === 'number'
@@ -187,7 +178,6 @@ export function advanceMiscellaniaState(state: MiscellaniaState, now = Date.now(
 	if (elapsed <= 0) return state;
 	const sim = simulateDetailedMiscellania({
 		days: elapsed,
-		royalTrouble: state.royalTrouble,
 		startingCoffer: state.coffer,
 		startingFavour: state.favour,
 		constantFavour: false,

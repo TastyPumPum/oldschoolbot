@@ -12,15 +12,14 @@ describe('Managing Miscellania Command', () => {
 				secondary_area: 'herbs',
 				detailed: true,
 				days: 1,
-				royal_trouble: false,
-				starting_coffer: 750000,
+				starting_coffer: 7_500_000,
 				starting_favour: 100
 			}
 		});
 		expect(res).toContain('Managing Miscellania detailed simulation:');
-		expect(res).toContain('Ending coffer: 700,000');
-		expect(res).toContain('GP spent: 50,000');
-		expect(res).toContain('Resource points: 600');
+		expect(res).toContain('Ending coffer: 7,425,000');
+		expect(res).toContain('GP spent: 75,000');
+		expect(res).toContain('Resource points: 900');
 	});
 
 	it('returns preview output without charging GP', async () => {
@@ -148,7 +147,6 @@ describe('Managing Miscellania Command', () => {
 		const state = stateRes.miscellania_state as unknown as MiscellaniaState;
 		const expected = simulateDetailedMiscellania({
 			days: 100,
-			royalTrouble: true,
 			startingCoffer: 7_500_000,
 			startingFavour: 100,
 			constantFavour: false
@@ -256,5 +254,47 @@ describe('Managing Miscellania Command', () => {
 			}
 		});
 		expect(res).toContain('You have no Miscellania resources to claim right now.');
+	});
+
+	it('simulate preview does not double-count already-updated progression', async () => {
+		const user = await createTestUser(undefined, { GP: 5_000_000 });
+		await user.runCommand('testpotato', {
+			miscellania_set: {
+				days_ago: 10,
+				coffer: 7_500_000,
+				favour: 100,
+				resource_points: 0,
+				primary_area: 'maple',
+				secondary_area: 'herbs'
+			}
+		});
+
+		await user.runCmdAndTrip('activities', {
+			managing_miscellania: {
+				action: 'topup',
+				primary_area: 'maple',
+				secondary_area: 'herbs'
+			}
+		});
+
+		const stateRes = await prisma.user.findUniqueOrThrow({
+			where: { id: user.id },
+			select: { miscellania_state: true }
+		});
+		const state = stateRes.miscellania_state as unknown as MiscellaniaState;
+		const expectedCost = Math.max(0, state.cofferAtLastClaim - state.coffer);
+
+		const simulateRes = await user.runCommand('simulate', {
+			managing_miscellania: {
+				primary_area: 'maple',
+				secondary_area: 'herbs'
+			}
+		});
+		const content = typeof simulateRes === 'string' ? simulateRes : ((simulateRes as any).content as string);
+		expect(content).toContain('Managing Miscellania preview:');
+		const match = content.match(/Cost if started now: ([\d,]+) GP/);
+		expect(match).not.toBeNull();
+		const parsedCost = Number((match![1] as string).replaceAll(',', ''));
+		expect(parsedCost).toEqual(expectedCost);
 	});
 });

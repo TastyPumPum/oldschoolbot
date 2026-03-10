@@ -7,6 +7,7 @@ import pets from '@/lib/data/pets.js';
 import {
 	calculateMiscellaniaDays,
 	calculateTopupTripSeconds,
+	daysElapsedSince,
 	MISCELLANIA_TRIP_SECONDS_PER_DAY,
 	type MiscellaniaAreaKey,
 	type MiscellaniaState,
@@ -223,12 +224,6 @@ export const simulateCommand = defineCommand({
 					max_value: 10000
 				},
 				{
-					type: 'Boolean',
-					name: 'royal_trouble',
-					description: 'Whether Royal Trouble is completed (detailed mode).',
-					required: false
-				},
-				{
 					type: 'Integer',
 					name: 'starting_coffer',
 					description: 'Starting coffer amount (detailed mode).',
@@ -315,16 +310,13 @@ export const simulateCommand = defineCommand({
 			if (areaErr) return areaErr;
 
 			if (options.managing_miscellania.detailed) {
-				const royalTrouble = options.managing_miscellania.royal_trouble ?? true;
 				const days = options.managing_miscellania.days ?? calculateMiscellaniaDays(existing, now);
-				const startingCoffer =
-					options.managing_miscellania.starting_coffer ?? (royalTrouble ? 7_500_000 : 5_000_000);
+				const startingCoffer = options.managing_miscellania.starting_coffer ?? 7_500_000;
 				const startingFavour = options.managing_miscellania.starting_favour ?? 100;
 				const constantFavour = options.managing_miscellania.constant_favour ?? false;
 
 				const detailed = simulateDetailedMiscellania({
 					days,
-					royalTrouble,
 					startingCoffer,
 					startingFavour,
 					constantFavour,
@@ -334,7 +326,6 @@ export const simulateCommand = defineCommand({
 				return `Managing Miscellania detailed simulation:
 Primary area: ${miscellaniaAreaLabels[primaryArea]}
 Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
-Royal Trouble: ${detailed.royalTrouble ? 'yes' : 'no'}
 Days simulated: ${detailed.days}
 Starting coffer: ${detailed.startingCoffer.toLocaleString()}
 Ending coffer: ${detailed.endingCoffer.toLocaleString()}
@@ -346,15 +337,24 @@ Resource points: ${detailed.resourcePoints.toLocaleString()}`;
 			}
 
 			const days = calculateMiscellaniaDays(existing, now);
-			const detailed = simulateDetailedMiscellania({
-				days,
-				royalTrouble: existing.royalTrouble,
-				startingCoffer: existing.coffer,
-				startingFavour: existing.favour,
-				constantFavour: false,
-				startingResourcePoints: existing.resourcePoints
-			});
-			const gpCost = detailed.gpSpent;
+			const daysSinceLastUpdate = daysElapsedSince(existing.lastUpdatedAt, now);
+			let endingCoffer = existing.coffer;
+			let endingFavour = existing.favour;
+			let resourcePoints = existing.resourcePoints;
+			if (daysSinceLastUpdate > 0) {
+				const projected = simulateDetailedMiscellania({
+					days: daysSinceLastUpdate,
+					startingCoffer: existing.coffer,
+					startingFavour: existing.favour,
+					constantFavour: false,
+					startingResourcePoints: existing.resourcePoints
+				});
+				endingCoffer = projected.endingCoffer;
+				endingFavour = projected.endingFavour;
+				resourcePoints = projected.resourcePoints;
+			}
+			const gpCost = Math.max(0, existing.cofferAtLastClaim - endingCoffer);
+			const resourcePointsGained = Math.max(0, resourcePoints - existing.resourcePoints);
 			const topupTripSeconds = calculateTopupTripSeconds(existing, now);
 			const topupDays = Math.max(1, Math.floor(topupTripSeconds / MISCELLANIA_TRIP_SECONDS_PER_DAY));
 			const duration = topupTripSeconds * 1000;
@@ -368,12 +368,12 @@ Secondary area: ${miscellaniaAreaLabels[secondaryArea]}
 Days to claim: ${days}
 Days since last top-up: ${topupDays}
 Starting coffer: ${existing.coffer.toLocaleString()}
-Ending coffer: ${detailed.endingCoffer.toLocaleString()}
+Ending coffer: ${endingCoffer.toLocaleString()}
 Cost if started now: ${gpCost.toLocaleString()} GP
 Starting favour: ${existing.favour.toFixed(1)}%
-Ending favour (before top-up): ${detailed.endingFavour.toFixed(1)}%
-Resource points gained: ${detailed.resourcePointsGained.toLocaleString()}
-Total resource points: ${detailed.resourcePoints.toLocaleString()}
+Ending favour (before top-up): ${endingFavour.toFixed(1)}%
+Resource points gained: ${resourcePointsGained.toLocaleString()}
+Total resource points: ${resourcePoints.toLocaleString()}
 Trip duration: ${formatDuration(duration)}
 Your max trip length: ${formatDuration(maxTripLength)}
 Can afford now: ${canAfford ? 'yes' : 'no'}
