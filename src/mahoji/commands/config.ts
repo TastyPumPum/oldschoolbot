@@ -144,6 +144,10 @@ const toggles: UserConfigToggle[] = [
 		bit: BitField.DisableDailyButton
 	},
 	{
+		name: 'Disable Miscellania Top-up Button',
+		bit: BitField.DisableMiscellaniaTopupButton
+	},
+	{
 		name: 'Allow Public API Data Retrieval',
 		bit: BitField.AllowPublicAPIDataRetrieval
 	}
