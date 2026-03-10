@@ -18,7 +18,9 @@ export const miscellaniaTopupTask: MinionTask = {
 				where: { id: lockedUser.id },
 				select: { miscellania_state: true }
 			});
-			const current = normalizeMiscellaniaState((raw?.miscellania_state as MiscellaniaState | null) ?? null, { now });
+			const current = normalizeMiscellaniaState((raw?.miscellania_state as MiscellaniaState | null) ?? null, {
+				now
+			});
 			const advanced = advanceMiscellaniaState(current, now);
 			const nextState: MiscellaniaState = {
 				...advanced,

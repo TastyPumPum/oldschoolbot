@@ -5,9 +5,9 @@ import { averageBank, Bank, ChambersOfXeric, toKMB } from 'oldschooljs';
 import { ColosseumWaveBank, startColosseumRun } from '@/lib/colosseum.js';
 import pets from '@/lib/data/pets.js';
 import {
-	MISCELLANIA_TRIP_SECONDS_PER_DAY,
 	calculateMiscellaniaDays,
 	calculateTopupTripSeconds,
+	MISCELLANIA_TRIP_SECONDS_PER_DAY,
 	type MiscellaniaAreaKey,
 	type MiscellaniaState,
 	miscellaniaAreaKeys,
