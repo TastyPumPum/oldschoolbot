@@ -2,7 +2,6 @@ import { choicesOf } from '@/discord/index.js';
 import { NMZ_STRATEGY } from '@/lib/constants.js';
 import TrekShopItems from '@/lib/data/buyables/trekBuyables.js';
 import { LMSBuyables } from '@/lib/data/CollectionsExport.js';
-import { zeroTimeFletchables } from '@/lib/skilling/skills/fletching/fletchables/index.js';
 import {
 	agilityArenaBuyables,
 	agilityArenaBuyCommand,
@@ -492,24 +491,7 @@ export const minigamesCommand = defineCommand({
 				{
 					type: 'Subcommand',
 					name: 'start',
-					description: 'Start a Sepulchre trip.',
-					options: [
-						{
-							type: 'Integer',
-							name: 'fletching',
-							description: 'The item you wish to fletch',
-							required: false,
-							autocomplete: async ({ value }: NumberAutoComplete) => {
-								const search = value?.toString() ?? '';
-								return zeroTimeFletchables
-									.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
-									.map(i => ({
-										name: i.name,
-										value: i.id
-									}));
-							}
-						}
-					]
+					description: 'Start a Sepulchre trip.'
 				}
 			]
 		},
@@ -1186,8 +1168,7 @@ export const minigamesCommand = defineCommand({
 		 *
 		 */
 		if (options.sepulchre?.start) {
-			const fletchingItem = options.sepulchre.start.fletching;
-			return sepulchreCommand(user, channelId, fletchingItem);
+			return sepulchreCommand(user, channelId);
 		}
 
 		/**
