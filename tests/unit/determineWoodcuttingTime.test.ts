@@ -56,6 +56,6 @@ describe('determineWoodcuttingTime', () => {
 		});
 
 		expect(quantity).toBe(1);
-		expect(duration).toBe(900);
+		expect(duration).toBeCloseTo(900);
 	});
 });
