@@ -1,4 +1,5 @@
 import { EItem } from 'oldschooljs/EItem';
+import { describe, expect, it } from 'vitest';
 
 import { determineWoodcuttingTime } from '@/lib/skilling/functions/determineWoodcuttingTime.js';
 import Woodcutting from '@/lib/skilling/skills/woodcutting/woodcutting.js';
@@ -12,7 +13,7 @@ function createRNG(results: boolean[]): RNGProvider {
 			}
 			return result;
 		}
-	} as RNGProvider;
+	} as unknown as RNGProvider;
 }
 
 describe('determineWoodcuttingTime', () => {
@@ -24,7 +25,7 @@ describe('determineWoodcuttingTime', () => {
 			user: {
 				skillsAsLevels: { farming: 1 },
 				hasEquippedOrInBank: () => false
-			} as MUser,
+			} as unknown as MUser,
 			log: teakLog,
 			axeMultiplier: 1,
 			powerchopping: true,
@@ -44,7 +45,7 @@ describe('determineWoodcuttingTime', () => {
 			user: {
 				skillsAsLevels: { farming: 35 },
 				hasEquippedOrInBank: () => false
-			} as MUser,
+			} as unknown as MUser,
 			log: teakLog,
 			axeMultiplier: 1,
 			powerchopping: true,
