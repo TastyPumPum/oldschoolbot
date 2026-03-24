@@ -1,7 +1,7 @@
 import type { IBotType } from '@oldschoolgg/schemas';
 import type { ItemBank } from 'oldschooljs';
 
-import type { FullMinionData } from '@/http/api-types.js';
+import type { FullMinionData, FullMinionGearSetup } from '@/http/api-types.js';
 
 export async function fetchFullMinionData(bot: IBotType, targetUserId: string): Promise<FullMinionData | null> {
 	const opt = { where: { id: targetUserId } } as const;
@@ -10,7 +10,7 @@ export async function fetchFullMinionData(bot: IBotType, targetUserId: string): 
 		return null;
 	}
 	const skillsXp: Record<string, number> = {};
-	const gear: Record<string, any> = {};
+	const gear: Record<string, unknown> = {};
 
 	for (const [key, value] of Object.entries(botUser)) {
 		if (key.startsWith('skills_')) {
@@ -25,6 +25,11 @@ export async function fetchFullMinionData(bot: IBotType, targetUserId: string): 
 
 	const minigameData: Record<string, number> = {};
 	const equippedItemIDs = new Set<number>();
+	const toGearSetup = (value: unknown): FullMinionGearSetup => {
+		if (value === null) return null;
+		if (typeof value === 'object' && !Array.isArray(value)) return value as FullMinionGearSetup;
+		return null;
+	};
 
 	for (const setup of Object.values(gear)) {
 		if (!setup || typeof setup !== 'object') continue;
@@ -101,14 +106,14 @@ export async function fetchFullMinionData(bot: IBotType, targetUserId: string): 
 
 		gear: {
 			pet: botUser.minion_equippedPet,
-			melee: (gear.melee ?? null) as any,
-			mage: (gear.mage ?? null) as any,
-			range: (gear.range ?? null) as any,
-			misc: (gear.misc ?? null) as any,
-			skilling: (gear.skilling ?? null) as any,
-			wildy: (gear.wildy ?? null) as any,
-			fashion: (gear.fashion ?? null) as any,
-			other: (gear.other ?? null) as any
+			melee: toGearSetup(gear.melee),
+			mage: toGearSetup(gear.mage),
+			range: toGearSetup(gear.range),
+			misc: toGearSetup(gear.misc),
+			skilling: toGearSetup(gear.skilling),
+			wildy: toGearSetup(gear.wildy),
+			fashion: toGearSetup(gear.fashion),
+			other: toGearSetup(gear.other)
 		},
 		equipped_item_ids: [...equippedItemIDs],
 
