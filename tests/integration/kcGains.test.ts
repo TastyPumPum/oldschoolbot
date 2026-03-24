@@ -6,4 +6,8 @@ describe('KC Gains leaderboard', () => {
 	it('should not allow sql injection', async () => {
 		expect(await kcGains(';DELETE FROM users;', 'man', false)).toEqual('Invalid time interval.');
 	});
+
+	it('should accept minigame names', async () => {
+		expect(await kcGains('week', 'puro puro', false)).not.toEqual('Invalid monster or minigame.');
+	});
 });

@@ -3,7 +3,7 @@ import { formatDuration, stringMatches, stringSearch } from '@oldschoolgg/toolki
 import { Bank, type Item, type ItemBank, ItemGroups, Items, resolveItems, ToBUniqueTable } from 'oldschooljs';
 
 import type { Activity } from '@/prisma/main.js';
-import { choicesOf, itemOption, monsterOption, skillOption } from '@/discord/index.js';
+import { choicesOf, itemOption, skillOption } from '@/discord/index.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { allStashUnitsFlat } from '@/lib/clues/stashUnits.js';
 import { PerkTier } from '@/lib/constants.js';
@@ -26,6 +26,7 @@ import {
 } from '@/mahoji/lib/abstracted_commands/stashUnitsCommand.js';
 
 const skillsVals = Object.values(Skills);
+const minigameVals = [...Minigames];
 
 function dateDiff(first: number, second: number) {
 	return Math.round((second - first) / (1000 * 60 * 60 * 24));
@@ -225,11 +226,16 @@ export async function kcGains(interval: string, monsterName: string, ironmanOnly
 		k => stringMatches(k.name, monsterName) || k.aliases.some(a => stringMatches(a, monsterName))
 	);
 
-	if (!monster) {
-		return 'Invalid monster.';
+	const minigame = minigameVals.find(
+		k => stringMatches(k.name, monsterName) || k.aliases.some(a => stringMatches(a, monsterName))
+	);
+
+	if (!monster && !minigame) {
+		return 'Invalid monster or minigame.';
 	}
 
-	const query = `
+	if (monster) {
+		const query = `
     SELECT a.user_id::text, SUM((a."data"->>'q')::int) AS qty, MAX(a.finish_date) AS lastDate
     FROM activity a
     JOIN users u ON a.user_id::text = u.id
@@ -240,19 +246,67 @@ export async function kcGains(interval: string, monsterName: string, ironmanOnly
     GROUP BY a.user_id
     ORDER BY qty DESC, lastDate ASC
     LIMIT 10`;
-	const res = await prisma.$queryRawUnsafe<{ user_id: string; qty: number }[]>(query);
+		const res = await prisma.$queryRawUnsafe<{ user_id: string; qty: number }[]>(query);
 
-	if (res.length === 0) {
+		if (res.length === 0) {
+			return 'No results found.';
+		}
+
+		let place = 0;
+		const embed = new EmbedBuilder()
+			.setTitle(`Highest ${monster.name} KC gains in the past ${interval}`)
+			.setDescription(
+				(
+					await Promise.all(
+						res.map(
+							async i =>
+								`${++place}. **${await Cache.getBadgedUsername(i.user_id)}**: ${Number(i.qty).toLocaleString()}`
+						)
+					)
+				).join('\n')
+			);
+
+		return { embeds: [embed] };
+	}
+
+	const minigameColumn = minigame!.column;
+	const minigameQuery = `
+    SELECT a.user_id::text, SUM(
+			CASE
+				WHEN a.type IN ('Inferno', 'Colosseum') THEN 1
+				ELSE COALESCE((a."data"->>'quantity')::int, 1)
+			END
+		) AS qty, MAX(a.finish_date) AS lastDate
+    FROM activity a
+    JOIN users u ON a.user_id::text = u.id
+    WHERE a.completed = true
+    AND a.finish_date >= now() - interval '1 ${interval}'
+    ${ironmanOnly ? ' AND u."minion.ironman" = true' : ''}
+		AND (
+			(a."data"->>'minigameID') = '${minigameColumn}'
+			OR (a.type = 'Gauntlet' AND (CASE WHEN COALESCE((a."data"->>'corrupted')::boolean, false) THEN 'corrupted_gauntlet' ELSE 'gauntlet' END) = '${minigameColumn}')
+			OR (a.type = 'Raids' AND (CASE WHEN COALESCE((a."data"->>'challengeMode')::boolean, false) THEN 'raids_challenge_mode' ELSE 'raids' END) = '${minigameColumn}')
+			OR (a.type = 'TheatreOfBlood' AND (CASE WHEN COALESCE((a."data"->>'hardMode')::boolean, false) THEN 'tob_hard' ELSE 'tob' END) = '${minigameColumn}')
+			OR (a.type = 'TombsOfAmascut' AND '${minigameColumn}' = 'tombs_of_amascut')
+			OR (a.type = 'Inferno' AND '${minigameColumn}' = 'inferno')
+			OR (a.type = 'Colosseum' AND '${minigameColumn}' = 'colosseum')
+		)
+    GROUP BY a.user_id
+    ORDER BY qty DESC, lastDate ASC
+    LIMIT 10`;
+	const minigameRes = await prisma.$queryRawUnsafe<{ user_id: string; qty: number }[]>(minigameQuery);
+
+	if (minigameRes.length === 0) {
 		return 'No results found.';
 	}
 
 	let place = 0;
 	const embed = new EmbedBuilder()
-		.setTitle(`Highest ${monster.name} KC gains in the past ${interval}`)
+		.setTitle(`Highest ${minigame!.name} KC gains in the past ${interval}`)
 		.setDescription(
 			(
 				await Promise.all(
-					res.map(
+					minigameRes.map(
 						async i =>
 							`${++place}. **${await Cache.getBadgedUsername(i.user_id)}**: ${Number(i.qty).toLocaleString()}`
 					)
@@ -738,7 +792,23 @@ export const toolsCommand = defineCommand({
 							required: true,
 							choices: choicesOf(['day', 'week', 'month'])
 						},
-						monsterOption,
+						{
+							type: 'String',
+							name: 'monster',
+							description: 'The monster or minigame you want to pick.',
+							required: true,
+							autocomplete: async ({ value }: StringAutoComplete) => {
+								const lowerValue = value.toLowerCase();
+								return [
+									...killableMonsters
+										.filter(i => (!value ? true : i.name.toLowerCase().includes(lowerValue)))
+										.map(i => ({ name: i.name, value: i.name })),
+									...minigameVals
+										.filter(i => (!value ? true : i.name.toLowerCase().includes(lowerValue)))
+										.map(i => ({ name: i.name, value: i.name }))
+								].slice(0, 25);
+							}
+						},
 						{
 							type: 'Boolean',
 							name: 'ironman',
