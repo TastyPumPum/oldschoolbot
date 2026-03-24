@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'preact/hooks';
 
 import fishablesRaw from '../../../data/osb/skills/fishing-fishables.json' with { type: 'json' };
-import { MINION_API_BASE } from '../config/api.js';
 
 type MinionData = {
 	id?: string;
@@ -585,7 +584,7 @@ export function FishingAdvisor() {
 						onClick={() => {
 							setError(null);
 							setIsLoading(true);
-							fetch(`${MINION_API_BASE}/minion/${userID}`)
+							fetch(`https://api.oldschool.gg/minion/${userID}`)
 								.then(async response => {
 									const payload = await response.json().catch(() => null);
 									if (!response.ok || !payload || typeof payload !== 'object') {
