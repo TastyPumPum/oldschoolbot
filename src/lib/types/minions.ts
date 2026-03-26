@@ -10,6 +10,7 @@ import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { SharkLureQuantity } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
 import type { Peak } from '@/lib/util/peaks.js';
+import type { ZeroTimePreferenceRole } from '@/lib/util/zeroTimeActivity.js';
 
 export interface ActivityTaskOptions {
 	userID: string;
@@ -17,6 +18,10 @@ export interface ActivityTaskOptions {
 	id: number;
 	finishDate: number;
 	channelId: string;
+}
+
+export interface ZeroTimeActivityTaskOptions extends ActivityTaskOptions {
+	type: 'ZeroTimeActivity';
 }
 
 export interface ActivityTaskOptionsWithNoChanges extends ActivityTaskOptions {
@@ -119,6 +124,11 @@ export interface AgilityActivityTaskOptions extends ActivityTaskOptions {
 		itemID: number;
 		quantity: number;
 	} | null;
+	fletch?: {
+		id: number;
+		qty: number;
+	} | null;
+	zeroTimePreferenceRole?: ZeroTimePreferenceRole | null;
 }
 
 export interface CookingActivityTaskOptions extends ActivityTaskOptions {
@@ -417,6 +427,11 @@ export interface SepulchreActivityTaskOptions extends MinigameActivityTaskOption
 		id: number;
 		qty: number;
 	};
+	alch?: {
+		itemID: number;
+		quantity: number;
+	} | null;
+	zeroTimePreferenceRole?: ZeroTimePreferenceRole | null;
 }
 
 export interface PlunderActivityTaskOptions extends MinigameActivityTaskOptions {
@@ -673,4 +688,5 @@ export type ActivityTaskData =
 	| MinigameActivityTaskOptionsWithNoChanges
 	| CutLeapingFishActivityTaskOptions
 	| CreateForestersRationsActivityTaskOptions
-	| ColoTaskOptions;
+	| ColoTaskOptions
+	| ZeroTimeActivityTaskOptions;
