@@ -1,4 +1,4 @@
-import { formatDuration, Time } from '@oldschoolgg/toolkit';
+import { Time } from '@oldschoolgg/toolkit';
 import { Bank, Items, itemID } from 'oldschooljs';
 
 import { trackLoot } from '@/lib/lootTrack.js';

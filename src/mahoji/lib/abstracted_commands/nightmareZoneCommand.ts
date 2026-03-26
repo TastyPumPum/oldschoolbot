@@ -1,12 +1,4 @@
-import {
-	calcWhatPercent,
-	formatDuration,
-	reduceNumByPercent,
-	round,
-	stringMatches,
-	sumArr,
-	Time
-} from '@oldschoolgg/toolkit';
+import { calcWhatPercent, reduceNumByPercent, round, stringMatches, sumArr, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 
 import type { NMZStrategy } from '@/lib/constants.js';
