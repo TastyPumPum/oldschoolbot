@@ -154,7 +154,9 @@ export const tksCommand = defineCommand({
 
 		// Confirmation the user has to accept before trip is sent
 		await interaction.confirmation(
-			`Are you sure you want to spend ${cost} to get ${loot}? The trip to ${action} them will take ${await formatTripDuration(user, duration)}.`
+			`Are you sure you want to spend ${cost} to get ${loot}? The trip to ${action} them will take ${formatDuration(
+				duration
+			)}.`
 		);
 
 		// Remove the cost, and update bank settings
