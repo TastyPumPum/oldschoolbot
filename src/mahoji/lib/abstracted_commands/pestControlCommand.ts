@@ -2,6 +2,7 @@ import { formatDuration, reduceNumByPercent, stringMatches, Time, toTitleCase } 
 import { Bank, Items } from 'oldschooljs';
 
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { hasSkillReqs, isValidSkill } from '@/lib/util/smallUtils.js';
 
 const itemBoosts = [
@@ -210,9 +211,7 @@ export async function pestControlStartCommand(user: MUser, channelId: string) {
 
 	let str = `${
 		user.minionName
-	} is now doing ${quantity}x Pest Control games on the ${boatType} boat. The trip will take ${formatDuration(
-		duration
-	)}.`;
+	} is now doing ${quantity}x Pest Control games on the ${boatType} boat. The trip will take ${await formatTripDuration(user, duration)}.`;
 
 	if (boosts.length > 0) {
 		str += `\n**Boosts:** ${boosts.join(', ')}.`;
