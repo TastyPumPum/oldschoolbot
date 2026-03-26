@@ -3,6 +3,7 @@ import { Bank } from 'oldschooljs';
 
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
 import type { ActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function mageArenaCommand(rng: RNGProvider, user: MUser, channelId: string) {
 	if (user.skillsAsLevels.magic < 60) {
@@ -42,7 +43,5 @@ export async function mageArenaCommand(rng: RNGProvider, user: MUser, channelId:
 		type: 'MageArena'
 	});
 
-	return `${user.minionName} is now doing the Mage Arena, it will take approximately ${formatDuration(
-		duration
-	)}. Removed ${totalCost} from your bank.`;
+	return `${user.minionName} is now doing the Mage Arena, it will take approximately ${await formatTripDuration(user, duration)}. Removed ${totalCost} from your bank.`;
 }
