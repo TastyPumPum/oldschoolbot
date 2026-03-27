@@ -22,7 +22,7 @@ Contributors are allowed to merge PRs/changes to the wiki without approval.
 2. `cd docs`
 3. `pnpm dev`
 
-For running the scripts which build data in certain pages, do `pnpm wiki` at the root. You can preview .md files in VSCode with `Ctrl-Shift-V`.
+For running the scripts which build data in certain pages, run `pnpm dev -- --wiki` at the repository root. You can preview .md files in VSCode with `Ctrl-Shift-V`.
 
 ## Auto generation
 
