@@ -80,7 +80,7 @@ export function calculateMiningResult({
 
 	// Add clue scrolls
 	if (ore.clueScrollChance) {
-		addSkillingClueToLoot(gearBank.skillsAsLevels.mining, 'mining', quantity, ore.clueScrollChance, loot);
+		addSkillingClueToLoot(rng, gearBank.skillsAsLevels.mining, 'mining', quantity, ore.clueScrollChance, loot);
 	}
 
 	// Roll for pet

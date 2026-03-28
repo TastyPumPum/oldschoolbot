@@ -1,6 +1,5 @@
 import { codeBlock, dateFm } from '@oldschoolgg/discord';
-import type { GearSetupType } from '@oldschoolgg/gear';
-import { randArrItem } from '@oldschoolgg/rng';
+import { type GearSetupType, GearSetupTypes } from '@oldschoolgg/gear';
 import { sumArr, Time, toTitleCase } from '@oldschoolgg/toolkit';
 import { isValidDiscordSnowflake } from '@oldschoolgg/util';
 import { DiscordSnowflake } from '@sapphire/snowflake';
@@ -26,6 +25,7 @@ import { gifs } from '@/mahoji/commands/admin.js';
 import { getUserInfo } from '@/mahoji/commands/minion.js';
 import { sellPriceOfItem } from '@/mahoji/commands/sell.js';
 import { cancelUsersListings } from '@/mahoji/lib/abstracted_commands/cancelGEListingCommand.js';
+import { gearViewCommand } from '@/mahoji/lib/abstracted_commands/gearCommands.js';
 
 const itemFilters = [
 	{
@@ -103,6 +103,35 @@ export const rpCommand = defineCommand({
 							type: 'Boolean',
 							name: 'json',
 							description: 'Get bank in JSON format',
+							required: false
+						}
+					]
+				},
+				{
+					type: 'Subcommand',
+					name: 'viewgear',
+					description: 'View a users gear.',
+					options: [
+						{
+							type: 'User',
+							name: 'user',
+							description: 'The user.',
+							required: true
+						},
+						{
+							type: 'String',
+							name: 'setup',
+							description: 'The setup you want to view.',
+							required: false,
+							choices: ['All', ...GearSetupTypes, 'Lost on wildy death'].map(i => ({
+								name: toTitleCase(i),
+								value: i
+							}))
+						},
+						{
+							type: 'Boolean',
+							name: 'text_format',
+							description: 'Do you want to see their gear in plaintext?',
 							required: false
 						}
 					]
@@ -377,14 +406,14 @@ export const rpCommand = defineCommand({
 			]
 		}
 	],
-	run: async ({ options, user: adminUser, interaction, guildId }) => {
+	run: async ({ options, user: adminUser, interaction, guildId, rng }) => {
 		await interaction.defer();
 		const isAdmin = adminUser.isAdmin();
 		const isMod = isAdmin || adminUser.isMod();
 		if (!guildId || (globalConfig.isProduction && guildId.toString() !== globalConfig.supportServerID)) {
-			return randArrItem(gifs);
+			return rng.pick(gifs);
 		}
-		if (!isAdmin && !isMod) return randArrItem(gifs);
+		if (!isAdmin && !isMod) return rng.pick(gifs);
 
 		if (options.user_event) {
 			const messageId =
@@ -438,12 +467,12 @@ Date: ${dateFm(date)}`;
 			return `Done: ${confirmationStr.replace('Please confirm:', '')}`;
 		}
 
-		if (!isMod) return randArrItem(gifs);
+		if (!isMod) return rng.pick(gifs);
 
 		// if (options.action) {
 		// 	for (const action of actions) {
 		// 		if (options.action[action.name]) {
-		// 			if (!action.allowed(adminUser)) return randArrItem(gifs);
+		// 			if (!action.allowed(adminUser)) return rng.pick(gifs);
 		// 			try {
 		// 				const result = await action.run();
 		// 				return result;
@@ -483,6 +512,19 @@ Date: ${dateFm(date)}`;
 			return { files: [await makeBankImage({ bank, title: userToCheck.usernameOrMention })] };
 		}
 
+		if (options.player?.viewgear) {
+			const { setup, text_format, user } = options.player.viewgear;
+			const userToCheck = await mUserFetch(user.user.id);
+			if (setup) {
+				return gearViewCommand(userToCheck, setup, Boolean(text_format));
+			}
+			const gearImage = await userToCheck.generateGearImage({ setupType: 'all' });
+			return {
+				content: `${userToCheck.usernameOrMention}'s gear setups`,
+				files: [{ buffer: gearImage, name: 'gear.png' }]
+			};
+		}
+
 		if (options.player?.add_patron_time) {
 			const { tier, time, user: userToGive } = options.player.add_patron_time;
 			const duration = new Duration(time);
@@ -496,7 +538,7 @@ Date: ${dateFm(date)}`;
 		// Unequip Items
 		if (options.player?.unequip_all_items) {
 			if (!isAdmin) {
-				return randArrItem(gifs);
+				return rng.pick(gifs);
 			}
 			const allGearSlots = ['melee', 'range', 'mage', 'misc', 'skilling', 'other', 'wildy', 'fashion'];
 			const opts = options.player.unequip_all_items;
@@ -532,7 +574,7 @@ Date: ${dateFm(date)}`;
 		// Steal Items
 		if (options.player?.steal_items) {
 			if (!isAdmin) {
-				return randArrItem(gifs);
+				return rng.pick(gifs);
 			}
 			const toDelete = options.player.steal_items.delete ?? false;
 			const actionMsg = toDelete ? 'delete' : 'steal';
@@ -590,7 +632,7 @@ Date: ${dateFm(date)}`;
 
 		if (options.player?.migrate_user) {
 			if (!isAdmin) {
-				return randArrItem(gifs);
+				return rng.pick(gifs);
 			}
 
 			const { source, dest, reason } = options.player.migrate_user;

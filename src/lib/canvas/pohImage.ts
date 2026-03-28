@@ -1,6 +1,5 @@
 import * as fs from 'node:fs';
 import path from 'node:path';
-import { randInt } from '@oldschoolgg/rng';
 import { objectEntries } from '@oldschoolgg/toolkit';
 
 import type { PlayerOwnedHouse } from '@/prisma/main.js';
@@ -10,7 +9,6 @@ import {
 	type CanvasImage,
 	canvasToBuffer,
 	createCanvas,
-	loadAndCacheLocalImage,
 	loadImage
 } from '@/lib/canvas/canvasUtil.js';
 import { OSRSCanvas } from '@/lib/canvas/OSRSCanvas.js';
@@ -43,9 +41,9 @@ class PoHImage {
 	public ready: boolean = false;
 
 	async init() {
-		this.bgImages.push(await loadAndCacheLocalImage('./src/lib/poh/images/bg_1.jpg'));
-		this.bgImages.push(await loadAndCacheLocalImage('./src/lib/poh/images/bg_2.jpg'));
-		this.bgImages.push(await loadAndCacheLocalImage('./src/lib/poh/images/bg_3.png'));
+		this.bgImages.push(await loadImage('./src/lib/poh/images/bg_1.jpg'));
+		this.bgImages.push(await loadImage('./src/lib/poh/images/bg_2.jpg'));
+		this.bgImages.push(await loadImage('./src/lib/poh/images/bg_3.jpg'));
 		for (const folder of FOLDERS) {
 			const currentPath = path.join(CONSTRUCTION_IMG_DIR, folder);
 			const filesInDir = await fs.promises.readdir(currentPath);
@@ -71,12 +69,12 @@ class PoHImage {
 		return [canvas, ctx];
 	}
 
-	randMinionCoords(): [number, number] {
+	randMinionCoords(rng: RNGProvider): [number, number] {
 		if (process.env.TEST) {
 			return [100, TOP_FLOOR_Y];
 		}
-		const roll = randInt(1, 4);
-		const x = randInt(1, HOUSE_WIDTH);
+		const roll = rng.randInt(1, 4);
+		const x = rng.randInt(1, HOUSE_WIDTH);
 		switch (roll) {
 			case 1:
 				return [x, TOP_FLOOR_Y];
@@ -85,13 +83,13 @@ class PoHImage {
 			case 3:
 				return [x, DUNGEON_FLOOR_Y];
 			case 4:
-				return [x + randInt(1, HOUSE_WIDTH), GROUND_FLOOR_Y];
+				return [x + rng.randInt(1, HOUSE_WIDTH), GROUND_FLOOR_Y];
 			default:
 				throw new Error('Unmatched case');
 		}
 	}
 
-	async run(poh: PlayerOwnedHouse, showSpaces = true) {
+	async run({ poh, rng, showSpaces = true }: { poh: PlayerOwnedHouse; rng: RNGProvider; showSpaces?: boolean }) {
 		if (!this.ready) {
 			await this.init();
 			this.ready = true;
@@ -131,7 +129,7 @@ class PoHImage {
 			const activity = await ActivityManager.getActivityOfUser(poh.user_id);
 			if (!activity) {
 				const image = this.imageCache.get(11)!;
-				const [x, y] = this.randMinionCoords();
+				const [x, y] = this.randMinionCoords(rng);
 				ctx.drawImage(image, x - image.width, y - image.height, image.width, image.height);
 			}
 		}

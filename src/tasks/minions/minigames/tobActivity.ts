@@ -1,7 +1,6 @@
 import { CHINCANNON_MESSAGES } from '@/lib/bso/bsoConstants.js';
 
-import { randArrItem, roll, shuffleArr } from '@oldschoolgg/rng';
-import { Emoji, miniID } from '@oldschoolgg/toolkit';
+import { Emoji,Events, formatOrdinal,  miniID } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { drawChestLootImage } from '@/lib/canvas/chestImage.js';
@@ -54,7 +53,8 @@ export const tobTask: MinionTask = {
 			duration,
 			deaths: allDeaths,
 			quantity,
-			cc: chincannonUser
+			cc: chincannonUser,
+			rng
 		} = data;
 		const allUsers = await Promise.all(users.map(async u => mUserFetch(u)));
 		const uniqueUsersMap = new Map<string, MUser>();
@@ -91,7 +91,8 @@ export const tobTask: MinionTask = {
 
 			const result = TheatreOfBlood.complete({
 				hardMode,
-				team: tobUsers
+				team: tobUsers,
+				rng
 			});
 
 			resultMessage += `\n **Raid${quantity < 2 ? '' : ` ${raidId}`} results (Unique chance: ${result.percentChanceOfUnique
@@ -137,8 +138,8 @@ export const tobTask: MinionTask = {
 				const bank = user.allItemsOwned.clone().add(teamsLoot.get(userID));
 
 				const { cl } = user;
-				if (hardMode && roll(30) && cl.has("Lil' zik") && cl.has('Sanguine dust')) {
-					const unownedPet = shuffleArr(tobMetamorphPets).find(pet => !bank.has(pet));
+				if (hardMode && rng.roll(30) && cl.has("Lil' zik") && cl.has('Sanguine dust')) {
+					const unownedPet = rng.shuffle(tobMetamorphPets).find(pet => !bank.has(pet));
 					if (unownedPet) {
 						userLoot.add(unownedPet);
 					}

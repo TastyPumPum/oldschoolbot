@@ -142,14 +142,14 @@ const itemsThatDontAddToTempCL = resolveItems([
 ]);
 
 async function finalizeOpening({
-	user,
-	cost,
-	loot,
-	messages,
-	openables,
-	kcBank,
-	disable_pets
-}: {
+								   user,
+								   cost,
+								   loot,
+								   messages,
+								   openables,
+								   kcBank,
+								   disable_pets
+							   }: {
 	kcBank: Bank;
 	user: MUser;
 	cost: Bank;
@@ -244,6 +244,7 @@ ${messages.join(', ')}`.trim()
 }
 
 export async function abstractedOpenCommand(
+	rng: RNGProvider,
 	interaction: MInteraction | null,
 	user: MUser,
 	_names: string[],
@@ -255,12 +256,12 @@ export async function abstractedOpenCommand(
 	const names = _names.map(i => i.replace(regex, '$1'));
 	const openables = names.includes('all')
 		? allOpenables.filter(
-				({ openedItem, excludeFromOpenAll }) =>
-					user.bank.has(openedItem.id) && !favorites.includes(openedItem.id) && excludeFromOpenAll !== true
-			)
+			({ openedItem, excludeFromOpenAll }) =>
+				user.bank.has(openedItem.id) && !favorites.includes(openedItem.id) && excludeFromOpenAll !== true
+		)
 		: names
-				.map(name => allOpenables.find(o => o.aliases.some(alias => stringMatches(alias, name))))
-				.filter(notEmpty);
+			.map(name => allOpenables.find(o => o.aliases.some(alias => stringMatches(alias, name))))
+			.filter(notEmpty);
 
 	if (names.includes('all')) {
 		if (openables.length === 0) return 'You have no openable items.';
@@ -298,6 +299,7 @@ export async function abstractedOpenCommand(
 		}
 		kcBank.add(openedItem.id, quantity);
 		const thisLoot = await getOpenableLoot({
+			rng,
 			openable,
 			quantity,
 			user,

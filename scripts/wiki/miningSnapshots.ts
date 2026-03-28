@@ -4,8 +4,6 @@ import { uniqueBy } from 'remeda';
 
 import '../base.js';
 
-import { MathRNG } from '@oldschoolgg/rng';
-
 import { calculateMiningInput } from '@/mahoji/commands/mine.js';
 import { calculateMiningResult } from '@/tasks/minions/miningActivity.js';
 import { ClueTiers } from '../../src/lib/clues/clueTiers.js';
@@ -23,7 +21,7 @@ function bankToPerHour(bank: Bank, duration: number): FloatBank {
 	return perHourBank;
 }
 
-function main() {
+export function renderMiningXpHrTable() {
 	const gearBank = makeGearBank();
 
 	gearBank.gear.skilling.equip('Varrock armour 4');
@@ -74,7 +72,8 @@ function main() {
 							craftingLevel: 120,
 							gearBank,
 							strengthLevel: 120,
-							hasDT2Quest: true
+							hasDT2Quest: true,
+							rng: MathRNG
 						});
 						if (typeof trip === 'string') {
 							console.warn(`Skipping ${ore.name} for level ${level} (${trip})`);
@@ -140,5 +139,3 @@ function main() {
 
 	handleMarkdownEmbed('miningxphr', 'osb/Skills/mining.mdx', table.toString());
 }
-
-main();

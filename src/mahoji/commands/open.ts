@@ -1,5 +1,4 @@
-import { truncateString } from '@oldschoolgg/toolkit';
-import { clamp } from 'remeda';
+import { clamp, truncateString } from '@oldschoolgg/toolkit';
 
 import { allOpenables, allOpenablesIDs } from '@/lib/openables.js';
 import {
@@ -61,7 +60,7 @@ export const openCommand = defineCommand({
 			required: false
 		}
 	],
-	run: async ({ user, options, interaction }) => {
+	run: async ({ user, options, interaction, rng }) => {
 		if (interaction) await interaction.defer();
 		if (!options.name) {
 			return `You have... ${truncateString(
@@ -71,11 +70,11 @@ export const openCommand = defineCommand({
 		}
 		options.quantity = clamp(options.quantity ?? 1, { min: 1, max: 100_000_000 });
 		if (options.open_until) {
-			return abstractedOpenUntilCommand(user, options.name, options.open_until, options.disable_pets);
+			return abstractedOpenUntilCommand(rng, user, options.name, options.open_until, options.disable_pets);
 		}
 		if (options.name.toLowerCase() === 'all') {
-			return abstractedOpenCommand(interaction, user, ['all'], 'auto', false);
+			return abstractedOpenCommand(rng, interaction, user, ['all'], 'auto', false);
 		}
-		return abstractedOpenCommand(interaction, user, [options.name], options.quantity, options.disable_pets);
+		return abstractedOpenCommand(rng, interaction, user, [options.name], options.quantity, options.disable_pets);
 	}
 });

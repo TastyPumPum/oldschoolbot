@@ -10,8 +10,8 @@ import { calculateCompCapeProgress } from '@/lib/bso/util/calculateCompCapeProgr
 import { findGroupOfUser } from '@/lib/bso/util/findGroupOfUser.js';
 import { repairBrokenItemsFromUser } from '@/lib/bso/util/repairBrokenItems.js';
 
+import type { MInteraction } from '@oldschoolgg/discord';
 import { defaultGearSetup, type EquipmentSlot, type GearSetup } from '@oldschoolgg/gear';
-import { percentChance, randArrItem, SeedableRNG } from '@oldschoolgg/rng';
 import {
 	type IBirdhouseData,
 	type IBlowpipeData,
@@ -23,6 +23,7 @@ import {
 import { calcWhatPercent, isObject, type PerkTier, Time, UserError, uniqueArr } from '@oldschoolgg/toolkit';
 import { isValidDiscordSnowflake } from '@oldschoolgg/util';
 import { Mutex } from 'async-mutex';
+import { cryptoRng, SeedableRNG } from 'node-rng/crypto';
 import { Bank, EMonster, type Item, type ItemBank, Items, itemID } from 'oldschooljs';
 import { clone } from 'remeda';
 
@@ -55,8 +56,8 @@ import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { RemoveFoodFromUserParams } from '@/lib/minions/functions/removeFoodFromUser.js';
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
 import type { AddXpParams, ClueBank, KillableMonster } from '@/lib/minions/types.js';
-import { getUsersPerkTier } from '@/lib/perkTiers.js';
-import { roboChimpUserFetch } from '@/lib/roboChimp.js';
+import { getPerkTierCached, getUsersPerkTier } from '@/lib/perkTiers.js';
+import { roboChimpUserFetchCached } from '@/lib/roboChimp.js';
 import { type MinigameName, type MinigameScore, Minigames } from '@/lib/settings/minigames.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { DetailedFarmingContract } from '@/lib/skilling/skills/farming/utils/types.js';
@@ -171,12 +172,26 @@ export class MUserClass extends BaseUser {
 	}
 
 	async calcMaxGearPresets() {
-		return (await this.fetchPerkTier()) * 2 + 4;
+		return this.perkTier * 2 + 4;
 	}
 
-	async fetchPerkTier(): Promise<0 | PerkTier> {
-		if (process.env.TEST) return 0;
-		return getUsersPerkTier(this);
+	get perkTier() {
+		return getPerkTierCached(this.id) ?? 0;
+	}
+	get perkTierIsCached(): boolean {
+		return getPerkTierCached(this.id) !== null;
+	}
+
+	async fetchPerkTier({
+		guildId,
+		interaction,
+		forceNoCache
+	}: {
+		guildId?: string | null;
+		interaction?: MInteraction;
+		forceNoCache?: boolean;
+	} = {}): Promise<0 | PerkTier> {
+		return await getUsersPerkTier({ user: this, interaction, forceNoCache, guildId });
 	}
 
 	hasMonsterRequirements(monster: KillableMonster) {
@@ -348,8 +363,7 @@ RETURNING (monster_scores->>'${monsterID}')::int AS new_kc;
 	}
 
 	async minionIsBusy(): Promise<boolean> {
-		const isBusy = await ActivityManager.minionIsBusy(this.id);
-		return isBusy;
+		return await ActivityManager.minionIsBusy(this.id);
 	}
 
 	async getCreatureScore(creatureID: number): Promise<number> {
@@ -474,7 +488,7 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 			if (avasDevice && projectileCategory?.savedByAvas) {
 				const ammoCopy = ammoRemove[1];
 				for (let i = 0; i < ammoCopy; i++) {
-					if (percentChance(avasDevice.reduction)) {
+					if (cryptoRng.percentChance(avasDevice.reduction)) {
 						ammoRemove[1]--;
 						realCost.remove(ammoRemove[0].id, 1);
 					}
@@ -499,7 +513,7 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 			if (avasDevice) {
 				const copyDarts = dart?.[1];
 				for (let i = 0; i < copyDarts; i++) {
-					if (percentChance(avasDevice.reduction)) {
+					if (cryptoRng.percentChance(avasDevice.reduction)) {
 						realCost.remove(dart[0].id, 1);
 						dart![1]--;
 					}
@@ -732,8 +746,7 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 	}
 
 	async fetchRobochimpUser() {
-		const robochimpUser = await roboChimpUserFetch(this.id);
-		return robochimpUser;
+		return roboChimpUserFetchCached(this.id);
 	}
 
 	async forceUnequip(setup: GearSetupType, slot: EquipmentSlot, reason: string) {
@@ -853,7 +866,7 @@ Charge your items using ${globalClient.mentionCommand('minion', 'charge')}.`
 	}
 
 	async addMonsterXP(params: AddMonsterXpParams) {
-		const res = addMonsterXPRaw({ ...params, attackStyles: this.getAttackStyles() });
+		const res = addMonsterXPRaw({ ...params, attackStyles: this.getAttackStyles(), rng: cryptoRng });
 		const result = await this.addXPBank(res);
 		return `**XP Gains:** ${result}`;
 	}

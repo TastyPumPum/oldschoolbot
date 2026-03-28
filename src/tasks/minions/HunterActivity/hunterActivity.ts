@@ -90,15 +90,27 @@ export function calculateHunterResult({
 	const totalCost = new Bank();
 	let newWildyGear: Gear | null = null;
 
-	let [successfulQuantity, totalHunterXP] = calcLootXPHunting(
-		Math.min(Math.floor(skillsAsLevels.hunter + (usingHuntPotion ? 2 : 0)), MAX_LEVEL),
-		creature,
-		quantity,
-		usingStaminaPotion,
-		graceful,
-		experienceScore,
-		noRandomness
-	);
+		if (!creature) {
+			Logging.logError(`Invalid creature ID provided: ${creatureID}`);
+			return;
+		}
+
+		const crystalImpling = creature.name === 'Crystal impling';
+
+		const graceful = user.hasGracefulEquipped();
+
+		const experienceScore = await user.getCreatureScore(creature.id);
+
+		let [successfulQuantity, xpReceived] = calcLootXPHunting({
+			currentLevel: Math.min(Math.floor(skillsAsLevels.hunter + (usingHuntPotion ? 2 : 0)), MAX_LEVEL),
+			creature,
+			quantity,
+			usingStaminaPotion,
+			graceful,
+			experienceScore,
+			noRandomness,
+			rng
+		});
 
 	const crystalImpling = creature.name === 'Crystal impling';
 

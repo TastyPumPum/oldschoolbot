@@ -10,10 +10,9 @@ import { RuneTable, WilvusTable, WoodTable } from '@/lib/bso/tables/seedTable.js
 import { DougTable, PekyTable } from '@/lib/bso/tables/sharedTables.js';
 
 import { type ButtonBuilder, bold } from '@oldschoolgg/discord';
-import { MathRNG, randArrItem, randInt, roll } from '@oldschoolgg/rng';
 import { getNextUTCReset, notEmpty, Time } from '@oldschoolgg/toolkit';
 import { Bank, EItem, itemID, toKMB } from 'oldschooljs';
-
+import { cryptoRng } from 'node-rng/crypto';
 import { activity_type_enum } from '@/prisma/main.js';
 import type { MessageBuilderClass } from '@/discord/MessageBuilder.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
@@ -27,6 +26,7 @@ import type { ActivityTaskData } from '@/lib/types/minions.js';
 import { MUserClass } from '@/lib/user/MUser.js';
 import {
 	makeAutoContractButton,
+	makeAutoRummageToggleButton,
 	makeAutoSlayButton,
 	makeBirdHouseTripButton,
 	makeClaimDailyButton,
@@ -58,6 +58,7 @@ interface TripFinishEffectOptions {
 	lastDailyTimestamp: bigint | null;
 	lastTearsOfGuthixTimestamp: bigint | null;
 	perkTier: PerkTier | 0;
+	rng: RNGProvider;
 
 	// BSO
 	portents?: Awaited<ReturnType<typeof getAllPortentCharges>>;
@@ -103,14 +104,14 @@ const tripFinishEffects: TripFinishEffect[] = [
 	},
 	{
 		name: 'Growable Pets',
-		fn: async ({ data, messages, user }) => {
-			await handleGrowablePetGrowth(user, data, messages);
+		fn: async args => {
+			await handleGrowablePetGrowth(args);
 		}
 	},
 	{
 		name: 'Random Events',
-		fn: async ({ data, messages, user }) => {
-			return triggerRandomEvent(user, data.type, data.duration, messages);
+		fn: async ({ data, messages, user, rng }) => {
+			return triggerRandomEvent(user, data.type, data.duration, messages, rng);
 		}
 	},
 	{
@@ -473,8 +474,8 @@ const tripFinishEffects: TripFinishEffect[] = [
 	},
 	{
 		name: 'Shooting Stars',
-		fn: async ({ user, data, components }) => {
-			await handleTriggerShootingStar(user, data, components);
+		fn: async ({ user, data, components, rng }) => {
+			await handleTriggerShootingStar({ user, data, components, rng });
 		}
 	},
 	{
@@ -560,6 +561,14 @@ const tripFinishEffects: TripFinishEffect[] = [
 		fn: async ({ components, loot }) => {
 			if (loot?.has('Seed pack')) {
 				components.push(makeOpenSeedPackButton());
+			}
+		}
+	},
+	{
+		name: 'Vale Offerings - Toggle Auto Rummage',
+		fn: async ({ components, data }) => {
+			if (data.type === 'ValeTotems') {
+				components.push(makeAutoRummageToggleButton());
 			}
 		}
 	},
@@ -682,7 +691,8 @@ export async function handleTripFinish(
 			lastDailyTimestamp: last_daily_timestamp,
 			lastTearsOfGuthixTimestamp: last_tears_of_guthix_timestamp,
 			perkTier,
-			portents
+			perkTier,
+			rng: cryptoRng
 		});
 		if (res?.itemsToAddWithCL) itemsToAddWithCL.add(res.itemsToAddWithCL);
 		if (res?.itemsToRemove) itemsToRemove.add(res.itemsToRemove);

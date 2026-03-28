@@ -5,6 +5,7 @@ import { Eatables } from '@/lib/data/eatables.js';
 import { warmGear } from '@/lib/data/filterables.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function wintertodtCommand(user: MUser, channelId: string, quantity?: number) {
 	const fmLevel = user.skillsAsLevels.firemaking;
@@ -117,13 +118,9 @@ export async function wintertodtCommand(user: MUser, channelId: string, quantity
 		type: 'Wintertodt'
 	});
 
-	const str = `${
-		user.minionName
-	} is now off to kill Wintertodt ${quantity}x times, their trip will take ${formatDuration(
+	return `${user.minionName} is now off to kill Wintertodt ${quantity}x times, their trip will return in about ${formatTripDuration(
+		user,
 		durationPerTodt * quantity
-	)}. (${formatDuration(durationPerTodt)} per todt)\n\n${boosts.length > 0 ? `${boosts.join(', ')}\n` : ''}${
-		foodStr.length > 0 ? foodStr.join(', ') : ''
-	}.`;
+	)}. (${formatDuration(durationPerTodt)} per Wintertodt)\n\n${messages.join('')}.`;
 
-	return str;
 }

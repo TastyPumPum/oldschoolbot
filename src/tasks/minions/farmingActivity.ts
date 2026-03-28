@@ -236,6 +236,7 @@ export const farmingTask: MinionTask = {
 				}
 				if (plantToHarvest.variableYield) {
 					cropYield = Farming.calcVariableYield(
+						rng,
 						plantToHarvest,
 						patchType.lastUpgradeType,
 						currentFarmingLevel,
@@ -420,7 +421,7 @@ export const farmingTask: MinionTask = {
 					channelId: data.channelId,
 					id: 1
 				};
-				await combatAchievementTripEffect({ user, messages: infoStr, data: fakeMonsterTaskOptions });
+				await combatAchievementTripEffect({ user, messages: infoStr, data: fakeMonsterTaskOptions, rng });
 				loot = hesporiLoot;
 				const plopperDroprate = clAdjustedDroprate(
 					user,

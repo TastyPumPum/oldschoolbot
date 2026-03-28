@@ -134,6 +134,8 @@ model ClientStorage {
   ourania_loot                 Json     @default("{}") @db.Json
   colo_cost                    Json     @default("{}") @db.Json
   colo_loot                    Json     @default("{}") @db.Json
+  vt_cost                      Json     @default("{}") @db.Json
+  vt_loot                      Json     @default("{}") @db.Json
 
   grand_exchange_is_locked Boolean @default(false)
   grand_exchange_total_tax BigInt  @default(0)
@@ -588,6 +590,7 @@ enum XpGainSource {
   ScatteringAshes
   Zalcano
   Wintertodt
+  ValeTotems
   FishingTrawler
   Tempoross
   TearsOfGuthix
@@ -643,6 +646,7 @@ model Minigame {
   wintertodt              Int    @default(0)
   tempoross               Int    @default(0)
   sepulchre               Int    @default(0)
+  vale_totems             Int    @default(0)
   fishing_trawler         Int    @default(0)
   barb_assault            Int    @default(0)
   pyramid_plunder         Int    @default(0)
@@ -959,26 +963,27 @@ model UserStats {
 
   on_task_monster_scores           Json @default("{}") @db.Json
   on_task_with_mask_monster_scores Json @default("{}") @db.Json
-  deaths                           Int  @default(0)
-  pk_evasion_exp                   Int  @default(0)
-  dice_wins                        Int  @default(0)
-  dice_losses                      Int  @default(0)
-  duel_losses                      Int  @default(0)
-  duel_wins                        Int  @default(0)
-  fight_caves_attempts             Int  @default(0)
-  firecapes_sacrificed             Int  @default(0)
-  tithe_farms_completed            Int  @default(0)
-  tithe_farm_points                Int  @default(0)
-  pest_control_points              Int  @default(0)
-  inferno_attempts                 Int  @default(0)
-  infernal_cape_sacrifices         Int  @default(0)
-  tob_attempts                     Int  @default(0)
-  foundry_reputation               Int  @default(0)
-  tob_hard_attempts                Int  @default(0)
-  total_cox_points                 Int  @default(0)
-  honour_level                     Int  @default(1)
-  high_gambles                     Int  @default(0)
-  honour_points                    Int  @default(0)
+  deaths                   Int @default(0)
+  pk_evasion_exp           Int @default(0)
+  dice_wins                Int @default(0)
+  dice_losses              Int @default(0)
+  duel_losses              Int @default(0)
+  duel_wins                Int @default(0)
+  fight_caves_attempts     Int @default(0)
+  firecapes_sacrificed     Int @default(0)
+  tithe_farms_completed    Int @default(0)
+  tithe_farm_points        Int @default(0)
+  vale_research_points     Int @default(0)
+  pest_control_points      Int @default(0)
+  inferno_attempts         Int @default(0)
+  infernal_cape_sacrifices Int @default(0)
+  tob_attempts             Int @default(0)
+  foundry_reputation       Int @default(0)
+  tob_hard_attempts        Int @default(0)
+  total_cox_points         Int @default(0)
+  honour_level             Int @default(1)
+  high_gambles             Int @default(0)
+  honour_points            Int @default(0)
 
   slayer_task_streak       Int @default(0)
   slayer_wildy_task_streak Int @default(0)
@@ -1169,6 +1174,7 @@ enum activity_type_enum {
   Butler
   Nightmare
   Sepulchre
+  ValeTotems
   Plunder
   FishingTrawler
   Zalcano
@@ -1177,6 +1183,7 @@ enum activity_type_enum {
   Enchanting
   Casting
   GloryCharging
+  GloryUncharging
   WealthCharging
   BarbarianAssault
   AgilityArena
@@ -1240,6 +1247,8 @@ enum activity_type_enum {
   HalloweenEvent
   NightmareZone
   ShadesOfMorton
+  ShadesOfMortonSacredOil
+  ShadesOfMortonPyreLogs
   TombsOfAmascut
   BalthazarsBigBonanza
   UnderwaterAgilityThieving
@@ -1520,6 +1529,7 @@ model UserCounter {
 }
 
 enum command_name_enum {
+  cache_refresh
   testpotato
   achievementdiary
   activities

@@ -1,6 +1,5 @@
 import { GLOBAL_BSO_XP_MULTIPLIER } from '@/lib/bso/bsoConstants.js';
-
-import { randArrItem, randInt } from '@oldschoolgg/rng';
+import { randArrItem, randInt } from 'node-rng';
 import { objectEntries, Time } from '@oldschoolgg/toolkit';
 import { Bank, convertLVLtoXP, convertXPtoLVL } from 'oldschooljs';
 import { describe, expect, test } from 'vitest';
@@ -150,7 +149,7 @@ describe('MUser', () => {
 		const user = await createTestUser();
 		const clues = [];
 		for (let i = 0; i < 100; i++) {
-			const tier = randArrItem(ClueTiers);
+			const tier = randArrItem(ClueTiers)!;
 			clues.push({
 				id: randInt(1, 100_000_000),
 				user_id: BigInt(user.id),

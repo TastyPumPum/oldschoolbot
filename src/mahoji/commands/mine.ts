@@ -1,6 +1,5 @@
-import { randomVariation } from '@oldschoolgg/rng';
-import { formatDuration, increaseNumByPercent, reduceNumByPercent, stringMatches } from '@oldschoolgg/toolkit';
-import { Items } from 'oldschooljs';
+import { increaseNumByPercent, reduceNumByPercent, stringMatches } from '@oldschoolgg/toolkit';
+import { Items, itemID  } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { determineMiningTime } from '@/lib/skilling/functions/determineMiningTime.js';
@@ -9,6 +8,7 @@ import { sinsOfTheFatherSkillRequirements } from '@/lib/skilling/functions/quest
 import Mining from '@/lib/skilling/skills/mining.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
 import type { MiningActivityTaskOptions } from '@/lib/types/minions.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
 import { motherlodeMineCommand } from '@/mahoji/lib/abstracted_commands/motherlodeMineCommand.js';
 
@@ -25,7 +25,8 @@ export function calculateMiningInput({
 	maxTripLength,
 	hasKaramjaMedium,
 	randomVariationEnabled = true,
-	hasDT2Quest
+	hasDT2Quest,
+	rng
 }: {
 	nameInput: string;
 	quantityInput: number | undefined;
@@ -40,6 +41,7 @@ export function calculateMiningInput({
 	maxTripLength: number;
 	hasKaramjaMedium: boolean;
 	randomVariationEnabled?: boolean;
+	rng: RNGProvider;
 }) {
 	const ore = Mining.Ores.find(
 		ore =>
@@ -179,7 +181,9 @@ export function calculateMiningInput({
 		powermining: isPowermining,
 		goldSilverBoost,
 		miningLvl: effectiveMiningLevel,
-		hasKaramjaMedium
+		maxTripLength,
+		hasKaramjaMedium,
+		rng
 	});
 
 	if (gearBank.hasEquipped('Offhand volcanic pickaxe') && strengthLevel >= 100 && miningLevel >= 105) {
@@ -191,9 +195,11 @@ export function calculateMiningInput({
 	const duration = timeToMine;
 
 	const fakeDurationMin =
-		quantityInput && randomVariationEnabled ? randomVariation(reduceNumByPercent(duration, 25), 20) : duration;
+		quantityInput && randomVariationEnabled ? rng.randomVariation(reduceNumByPercent(duration, 25), 20) : duration;
 	const fakeDurationMax =
-		quantityInput && randomVariationEnabled ? randomVariation(increaseNumByPercent(duration, 25), 20) : duration;
+		quantityInput && randomVariationEnabled
+			? rng.randomVariation(increaseNumByPercent(duration, 25), 20)
+			: duration;
 
 	if (ore.name === 'Gem rock' && gearBank.hasEquipped('Amulet of glory')) {
 		messages.push('3x success rate for having an Amulet of glory equipped');
@@ -248,7 +254,7 @@ export const mineCommand = defineCommand({
 			required: false
 		}
 	],
-	run: async ({ options, user, channelId }) => {
+	run: async ({ options, user, channelId, rng }) => {
 		const { quantity, powermine } = options;
 
 		const motherlodeMine =
@@ -256,7 +262,7 @@ export const mineCommand = defineCommand({
 			Mining.MotherlodeMine.aliases?.some(a => stringMatches(a, options.name));
 
 		if (motherlodeMine) {
-			return motherlodeMineCommand({ user, channelId, quantity });
+			return motherlodeMineCommand({ user, channelId, quantity, rng });
 		}
 
 		const result = calculateMiningInput({
@@ -270,8 +276,11 @@ export const mineCommand = defineCommand({
 			craftingLevel: user.skillLevel('crafting'),
 			strengthLevel: user.skillLevel('strength'),
 			maxTripLength: await user.calcMaxTripLength('Mining'),
-			hasKaramjaMedium: user.hasDiary('karamja.medium'),
-			hasDT2Quest: user.user.finished_quest_ids.includes(QuestID.DesertTreasureII)
+			isPowermining: !!powermine,
+			quantityInput: quantity,
+			hasKaramjaMedium,
+			hasDT2Quest: user.user.finished_quest_ids.includes(QuestID.DesertTreasureII),
+			rng
 		});
 
 		if (typeof result === 'string') {
@@ -296,8 +305,8 @@ export const mineCommand = defineCommand({
 			quantity ? `mined ${newQuantity}x or gets tired` : 'is satisfied'
 		}, it'll take ${
 			quantity
-				? `between ${formatDuration(fakeDurationMin)} **and** ${formatDuration(fakeDurationMax)}`
-				: formatDuration(duration)
+				? `between ${formatTripDuration(user, res.fakeDurationMin)} **and** ${formatTripDuration(user, res.fakeDurationMax)}`
+				: formatTripDuration(user, res.duration)
 		} to finish.`;
 
 		if (user.usingPet('Doug')) {

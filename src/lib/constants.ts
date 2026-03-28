@@ -159,6 +159,8 @@ export enum BitField {
 	HasDeadeyeScroll = 45,
 	HasMysticVigourScroll = 46,
 	AllowPublicAPIDataRetrieval = 47,
+	ToggleAutoRummage = 48,
+	DisableDynamicTimestamp = 49,
 
 	HasGivenBirthdayPack = 200,
 	HasPermanentSpawnLamp = 201,
@@ -430,8 +432,15 @@ export const BitFieldData: Record<BitField, BitFieldData> = {
 		protected: false,
 		userConfigurable: true
 	},
+	[BitField.DisableDynamicTimestamp]: {
+		name: 'Disable Dynamic Minion Return Time',
+		protected: false,
+		userConfigurable: true
+	},
 
 	[BitField.HasDeadeyeScroll]: { name: 'Deadeye Scroll Used', protected: false, userConfigurable: false },
+	[BitField.HasMysticVigourScroll]: { name: 'Mystic Vigour Scroll Used', protected: false, userConfigurable: false },
+	[BitField.ToggleAutoRummage]: { name: 'Auto Rummage Vale Offerings', protected: false, userConfigurable: true },
 	[BitField.HasMysticVigourScroll]: { name: 'Mystic Vigour Scroll Used', protected: false, userConfigurable: false },
 
 	[BitField.HasMoondashCharm]: {
@@ -568,7 +577,7 @@ export const globalConfig = globalConfigSchema.parse({
 
 	moderatorLogsChannels: isProduction ? '830145040495411210' : GENERAL_CHANNEL_ID,
 	supportServerID: isProduction ? '342983479501389826' : TEST_SERVER_ID,
-	guildIdsToCache: [guildId.OldschoolGG, guildId.TestServer, ...emojiServers]
+	guildIdsToCache: [guildId.OldschoolGG, guildId.TestServer, TEST_SERVER_ID, ...emojiServers]
 });
 
 if ((process.env.NODE_ENV === 'production') !== globalConfig.isProduction) {
