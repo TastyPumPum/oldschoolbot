@@ -1,5 +1,5 @@
 import { increaseNumByPercent, reduceNumByPercent, stringMatches } from '@oldschoolgg/toolkit';
-import { Items, itemID  } from 'oldschooljs';
+import { Items, itemID } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { determineMiningTime } from '@/lib/skilling/functions/determineMiningTime.js';

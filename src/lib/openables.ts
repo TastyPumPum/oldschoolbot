@@ -1,6 +1,6 @@
-import type { IFarmingContract } from '@oldschoolgg/schemas';
 import { bsoOpenables } from '@/lib/bso/openables/bsoOpenables.js';
 
+import type { IFarmingContract } from '@oldschoolgg/schemas';
 import { Emoji, Events, formatOrdinal } from '@oldschoolgg/toolkit';
 import {
 	Bank,

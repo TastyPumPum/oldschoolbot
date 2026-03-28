@@ -4,6 +4,7 @@ import { EmbedBuilder } from '@oldschoolgg/discord';
 import { sumArr, toTitleCase } from '@oldschoolgg/toolkit';
 import { Bank, convertXPtoLVL, type ItemBank, toKMB } from 'oldschooljs';
 import type { SkillsScore } from 'oldschooljs/hiscores';
+
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { getClueScoresFromOpenables } from '@/lib/clues/clueUtils.js';
 import { badges, MAX_LEVEL } from '@/lib/constants.js';

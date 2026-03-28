@@ -483,8 +483,6 @@ const camdozaalFishes: Fish[] = [
 	}
 ];
 
-
-
 export const Fishing = defineSkill({
 	aliases: ['fishing'],
 	Fishes: fishes,

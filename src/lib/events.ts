@@ -6,7 +6,7 @@ import { allIronmanMbTables, allMbTables } from '@/lib/bso/openables/mysteryBoxe
 
 import { bold, dateFm, EmbedBuilder, time } from '@oldschoolgg/discord';
 import type { IMessage } from '@oldschoolgg/schemas';
-import { Emoji,  getNextUTCReset, isFunction, type PerkTier, Time } from '@oldschoolgg/toolkit';
+import { Emoji, getNextUTCReset, isFunction, type PerkTier, Time } from '@oldschoolgg/toolkit';
 import { cryptoRng } from 'node-rng/crypto';
 import { type ItemBank, Items, toKMB } from 'oldschooljs';
 

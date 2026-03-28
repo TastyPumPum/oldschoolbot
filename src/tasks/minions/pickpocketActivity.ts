@@ -4,8 +4,8 @@ import { clueUpgraderEffect } from '@/lib/bso/skills/invention/effects/clueUpgra
 import { forcefullyUnequipItem } from '@/lib/bso/util/forcefullyUnequipItem.js';
 
 import { percentChance, randInt, roll } from '@oldschoolgg/rng';
-import { Time, Events } from '@oldschoolgg/toolkit';
-import { Items, resolveItems, Bank } from 'oldschooljs';
+import { Events, Time } from '@oldschoolgg/toolkit';
+import { Bank, Items, resolveItems } from 'oldschooljs';
 
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { Thieving } from '@/lib/skilling/skills/thieving/index.js';

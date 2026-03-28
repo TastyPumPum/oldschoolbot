@@ -122,5 +122,4 @@ export async function wintertodtCommand(user: MUser, channelId: string, quantity
 		user,
 		durationPerTodt * quantity
 	)}. (${formatDuration(durationPerTodt)} per Wintertodt)\n\n${messages.join('')}.`;
-
 }

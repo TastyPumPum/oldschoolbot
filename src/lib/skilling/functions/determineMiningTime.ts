@@ -33,7 +33,8 @@ export function determineMiningTime({
 	hasGlory,
 	maxTripLength,
 	gearBank,
-	hasKaramjaMedium, rng
+	hasKaramjaMedium,
+	rng
 }: MiningTimeOptions): [number, number] {
 	let { intercept } = ore;
 	if (ore.name === 'Gem rock' && hasGlory) {

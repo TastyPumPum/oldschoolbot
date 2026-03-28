@@ -550,7 +550,8 @@ export const activitiesCommand = defineCommand({
 		if (options.birdhouses?.action === 'harvest') {
 			return birdhouseHarvestCommand(user, channelId, options.birdhouses.birdhouse);
 		}
-		if (options.inferno?.action === 'start') return infernoStartCommand({ rng, user, channelId, emerged: Boolean(options.inferno.emerged) });
+		if (options.inferno?.action === 'start')
+			return infernoStartCommand({ rng, user, channelId, emerged: Boolean(options.inferno.emerged) });
 		if (options.plank_make?.action === 'sawmill') {
 			return sawmillCommand(
 				user,

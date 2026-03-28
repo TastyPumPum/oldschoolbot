@@ -98,7 +98,8 @@ export const finishables: Finishable[] = [
 		name: 'Theatre of Blood (Solo, Non-HM)',
 		aliases: ['tob', 'theatre of blood'],
 		cl: [...theatreOfBloodNormalUniques, ...theatreOfBloodCapes],
-		kill: ({ rng }) => new Bank(TheatreOfBlood.complete({  rng, hardMode: false, team: [{ id: '1', deaths: [] }] }).loot['1']),
+		kill: ({ rng }) =>
+			new Bank(TheatreOfBlood.complete({ rng, hardMode: false, team: [{ id: '1', deaths: [] }] }).loot['1']),
 		tertiaryDrops: [
 			{ itemId: itemID('Sinhaza shroud tier 1'), kcNeeded: 100 },
 			{ itemId: itemID('Sinhaza shroud tier 2'), kcNeeded: 500 },
@@ -111,7 +112,8 @@ export const finishables: Finishable[] = [
 		name: 'Theatre of Blood (Solo, HM)',
 		aliases: ['tob hard', 'tob hard mode', 'tobhm'],
 		cl: [...theatreOfBloodNormalUniques, ...theatreOfBloodCapes, ...theatreOfBloodHardUniques],
-		kill: ({ rng }) => new Bank(TheatreOfBlood.complete({  rng, hardMode: true, team: [{ id: '1', deaths: [] }] }).loot['1']),
+		kill: ({ rng }) =>
+			new Bank(TheatreOfBlood.complete({ rng, hardMode: true, team: [{ id: '1', deaths: [] }] }).loot['1']),
 		tertiaryDrops: [
 			{ itemId: itemID('Sinhaza shroud tier 1'), kcNeeded: 100 },
 			{ itemId: itemID('Sinhaza shroud tier 2'), kcNeeded: 500 },

@@ -11,8 +11,9 @@ import { DougTable, PekyTable } from '@/lib/bso/tables/sharedTables.js';
 
 import { type ButtonBuilder, bold } from '@oldschoolgg/discord';
 import { getNextUTCReset, notEmpty, Time } from '@oldschoolgg/toolkit';
-import { Bank, EItem, itemID, toKMB } from 'oldschooljs';
 import { cryptoRng } from 'node-rng/crypto';
+import { Bank, EItem, itemID, toKMB } from 'oldschooljs';
+
 import { activity_type_enum } from '@/prisma/main.js';
 import type { MessageBuilderClass } from '@/discord/MessageBuilder.js';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';

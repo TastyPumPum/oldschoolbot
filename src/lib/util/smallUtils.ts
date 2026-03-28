@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { gzip } from 'node:zlib';
-import { objectEntries, stripEmojis,clamp, toTitleCase } from '@oldschoolgg/toolkit';
+import { clamp, objectEntries, stripEmojis, toTitleCase } from '@oldschoolgg/toolkit';
 import { type ArrayItemsResolved, type Bank, Items } from 'oldschooljs';
 
 import { type BitField, BitFieldData } from '@/lib/constants.js';

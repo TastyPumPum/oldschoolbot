@@ -161,7 +161,7 @@ export const mixCommand = defineCommand({
 
 		let str = `${user.minionName} ${cost} making ${quantity}x ${
 			mixableItem.outputMultiple ? 'batches of' : ''
-		}${itemName}, it'll take around ${formatTripDuration(user ,duration)} to finish.`;
+		}${itemName}, it'll take around ${formatTripDuration(user, duration)} to finish.`;
 		if (boosts.length > 0) {
 			str += `\n**Boosts:** ${boosts.join(', ')}`;
 		}

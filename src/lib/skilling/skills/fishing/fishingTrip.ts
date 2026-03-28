@@ -15,19 +15,19 @@ import {
 } from './fishingUtil.js';
 
 export function calcFishingTripResult({
-										  fish,
-										  duration,
-										  catches = [],
-										  loot = [],
-										  gearBank,
-										  rng,
-										  blessingExtra = 0,
-										  flakeExtra = 0,
-										  usedBarbarianCutEat = false,
-										  isPowerfishing = false,
-										  sharkLureQuantity,
-										  extraCatchRolls = []
-									  }: {
+	fish,
+	duration,
+	catches = [],
+	loot = [],
+	gearBank,
+	rng,
+	blessingExtra = 0,
+	flakeExtra = 0,
+	usedBarbarianCutEat = false,
+	isPowerfishing = false,
+	sharkLureQuantity,
+	extraCatchRolls = []
+}: {
 	fish: Fish;
 	duration: number;
 	catches?: number[];

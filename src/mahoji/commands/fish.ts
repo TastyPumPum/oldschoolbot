@@ -106,7 +106,7 @@ export const fishCommand = defineCommand({
 			return 'Shark lures can only be used while fishing Sharks.';
 		}
 
-/*		let scaledTimePerFish = Time.Second * fish.timePerFish * (1 + (100 - user.skillsAsLevels.fishing) / 100);
+		/*		let scaledTimePerFish = Time.Second * fish.timePerFish * (1 + (100 - user.skillsAsLevels.fishing) / 100);
 
 		const boosts = [];
 		const hasShelldon = user.usingPet('Shelldon');

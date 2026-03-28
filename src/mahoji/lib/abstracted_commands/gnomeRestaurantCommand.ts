@@ -107,7 +107,8 @@ export async function gnomeRestaurantCommand(rng: RNGProvider, user: MUser, chan
 		gloriesRemoved: itemsToRemove.amount('Amulet of glory(6)')
 	});
 
-	let str = `${user.minionName} is now working at the Gnome Restaurant for ${formatTripDuration(user,
+	let str = `${user.minionName} is now working at the Gnome Restaurant for ${formatTripDuration(
+		user,
 		duration
 	)}. Removed ${itemsToRemove} from your bank.`;
 

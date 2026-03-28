@@ -10,8 +10,9 @@ import { calcDwwhChance } from '@/lib/bso/structures/Boss.js';
 
 import { randArrItem, randInt, roll } from '@oldschoolgg/rng';
 import { SimpleTable } from '@oldschoolgg/toolkit';
-import { Bank, Misc } from 'oldschooljs';
 import { MathRNG } from 'node-rng';
+import { Bank, Misc } from 'oldschooljs';
+
 import { WintertodtCrate } from '@/lib/simulation/wintertodt.js';
 
 export const winterTodtPointsTable = new SimpleTable<number>()

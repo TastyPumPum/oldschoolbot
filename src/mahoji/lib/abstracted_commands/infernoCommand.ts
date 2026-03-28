@@ -153,19 +153,22 @@ AND (data->>'diedPreZuk')::boolean = false;`)
 	return timesMadeToZuk;
 }
 
-async function infernoRun(rng: RNGProvider,{
-	user,
-	attempts,
-	timesMadeToZuk,
-	emergedAttempts,
-	isEmergedZuk
-}: {
-	user: MUser;
-	attempts: number;
-	timesMadeToZuk: number;
-	emergedAttempts: number;
-	isEmergedZuk: boolean;
-}) {
+async function infernoRun(
+	rng: RNGProvider,
+	{
+		user,
+		attempts,
+		timesMadeToZuk,
+		emergedAttempts,
+		isEmergedZuk
+	}: {
+		user: MUser;
+		attempts: number;
+		timesMadeToZuk: number;
+		emergedAttempts: number;
+		isEmergedZuk: boolean;
+	}
+) {
 	const userBank = user.bank;
 	const zukKC = await user.fetchMinigameScore('inferno');
 	const duration = new PercentCounter(baseDuration(attempts, isEmergedZuk), 'time');

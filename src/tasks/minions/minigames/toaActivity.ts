@@ -139,26 +139,26 @@ export const toaTask: MinionTask = {
 
 			let str = 'Nothing';
 			if (!chincannonUser) {
-			const { itemsAdded } = await user.transactItems({
-				itemsToAdd: totalLoot.get(userID),
-				collectionLog: true
-			});
+				const { itemsAdded } = await user.transactItems({
+					itemsToAdd: totalLoot.get(userID),
+					collectionLog: true
+				});
 
-			itemsAddedTeamLoot.add(userID, itemsAdded);
+				itemsAddedTeamLoot.add(userID, itemsAdded);
 
-			const currentStats = await user.fetchStats();
-			await user.statsUpdate({
-				toa_raid_levels_bank: new Bank()
-					.add(currentStats.toa_raid_levels_bank as ItemBank)
-					.add(raidLevel, successfulRaidCount)
-					.toJSON(),
-				total_toa_duration_minutes: {
-					increment: Math.floor(duration / Time.Minute)
-				},
-				toa_loot: new Bank(currentStats.toa_loot as ItemBank).add(totalLoot.get(userID)).toJSON()
-			});
+				const currentStats = await user.fetchStats();
+				await user.statsUpdate({
+					toa_raid_levels_bank: new Bank()
+						.add(currentStats.toa_raid_levels_bank as ItemBank)
+						.add(raidLevel, successfulRaidCount)
+						.toJSON(),
+					total_toa_duration_minutes: {
+						increment: Math.floor(duration / Time.Minute)
+					},
+					toa_loot: new Bank(currentStats.toa_loot as ItemBank).add(totalLoot.get(userID)).toJSON()
+				});
 
-			const items = itemsAdded.items();
+				const items = itemsAdded.items();
 
 				const isPurple = items.some(([item]) => ItemGroups.toaPurpleItems.includes(item.id));
 				if (

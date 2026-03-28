@@ -2,7 +2,7 @@ import { clAdjustedDroprate } from '@/lib/bso/bsoUtil.js';
 
 import { bold } from '@oldschoolgg/discord';
 import { Events, formatOrdinal, increaseNumByPercent } from '@oldschoolgg/toolkit';
-import { Bank, LootTable,Items } from 'oldschooljs';
+import { Bank, Items, LootTable } from 'oldschooljs';
 
 import type {
 	ShadesOfMortonOptions,
