@@ -32,48 +32,11 @@ function setHotCache(userId: string, tier: number) {
 }
 export function getPerkTierCached(userId: string) {
 	const tierCacheEntry = perkTierHotCache.get(userId);
-	if (!tierCacheEntry) return null;
-	if (tierCacheEntry.expires <= Date.now()) {
-		perkTierHotCache.delete(userId);
-		return null;
+	if (tierCacheEntry) {
+		return tierCacheEntry.tier;
 	}
-	return tierCacheEntry.tier;
+	return null;
 }
-
-export function clearPerkTierCached(userId: string) {
-	perkTierHotCache.delete(userId);
-}
-
-function isFreshCacheEntry(entry: PerkTierHotCacheEntry | undefined) {
-	return Boolean(entry && entry.expires > Date.now());
-}
-
-function tierMatchesRoboChimpCache(entry: PerkTierHotCacheEntry | undefined, roboChimpTier: number | null | undefined) {
-	if (!entry) return false;
-	if (roboChimpTier === null || roboChimpTier === undefined) return true;
-	return entry.tier === roboChimpTier;
-}
-
-async function getCachedRoboChimpTier(userId: string): Promise<number | null> {
-	const roboChimpCached = await Cache.getRoboChimpUser(userId);
-	if (!roboChimpCached) return null;
-	return roboChimpCached.perk_tier;
-}
-
-async function shouldUseHotCache(userId: string, entry: PerkTierHotCacheEntry | undefined): Promise<boolean> {
-	if (!isFreshCacheEntry(entry)) return false;
-	const roboChimpTier = await getCachedRoboChimpTier(userId);
-	if (!tierMatchesRoboChimpCache(entry, roboChimpTier)) {
-		clearPerkTierCached(userId);
-		return false;
-	}
-	return true;
-}
-
-async function getRoboChimpCachedUser(userId: string) {
-	return Cache.getRoboChimpUser(userId);
-}
-
 export async function getUsersPerkTier({
 	user,
 	guildId,
@@ -85,12 +48,15 @@ export async function getUsersPerkTier({
 	interaction?: MInteraction;
 	forceNoCache?: boolean;
 }): Promise<PerkTier | 0> {
-	const tierCacheEntry = perkTierHotCache.get(user.id);
-	const roboChimpCached = await getRoboChimpCachedUser(user.id);
-	if (!forceNoCache && (await shouldUseHotCache(user.id, tierCacheEntry))) {
-		return tierCacheEntry!.tier;
+	if (!forceNoCache) {
+		// We want a way to force a cache refresh
+		// Otherwise, we look for the a cached tier:
+		const tierCacheEntry = perkTierHotCache.get(user.id);
+		// If it's not expired, return it:
+		if (tierCacheEntry && tierCacheEntry.expires < Date.now()) {
+			return tierCacheEntry.tier;
+		}
 	}
-
 	const possibleGuildId = guildId ?? interaction?.guildId ?? null;
 	const eligibleTiers = [];
 	if (user.isMod()) {
@@ -119,6 +85,7 @@ export async function getUsersPerkTier({
 		eligibleTiers.push(PerkTier.Three);
 	}
 
+	const roboChimpCached = await Cache.getRoboChimpUser(user.id);
 	if (roboChimpCached) {
 		eligibleTiers.push(roboChimpCached.perk_tier);
 	}
