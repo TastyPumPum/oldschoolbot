@@ -364,7 +364,7 @@ export async function mockUser(
 export async function createTestUser(_bank?: Bank, userData: Partial<Prisma.UserCreateInput> = {}) {
 	const id = userData.id ?? mockedId();
 	userData.username ??= `TestUser`;
-	userData.bitfield ??= [BitField.DisabledRandomEvents];
+	userData.bitfield ??= [BitField.DisabledRandomEvents, BitField.DisabledPassiveImplings];
 
 	const bank = _bank ? _bank.clone() : null;
 	let GP = userData.GP ? Number(userData.GP) : undefined;

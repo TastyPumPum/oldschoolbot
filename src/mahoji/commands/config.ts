@@ -43,6 +43,10 @@ const toggles: UserConfigToggle[] = [
 		bit: BitField.DisabledRandomEvents
 	},
 	{
+		name: 'Disable Passive Implings',
+		bit: BitField.DisabledPassiveImplings
+	},
+	{
 		name: 'Small Bank Images',
 		bit: BitField.AlwaysSmallBank
 	},

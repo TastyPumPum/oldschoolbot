@@ -159,7 +159,8 @@ export enum BitField {
 	HasMysticVigourScroll = 46,
 	AllowPublicAPIDataRetrieval = 47,
 	ToggleAutoRummage = 48,
-	DisableDynamicTimestamp = 49
+	DisableDynamicTimestamp = 49,
+	DisabledPassiveImplings = 50
 }
 
 interface BitFieldData {
@@ -280,6 +281,11 @@ export const BitFieldData: Record<BitField, BitFieldData> = {
 	},
 	[BitField.DisableDynamicTimestamp]: {
 		name: 'Disable Dynamic Minion Return Time',
+		protected: false,
+		userConfigurable: true
+	},
+	[BitField.DisabledPassiveImplings]: {
+		name: 'Disabled Passive Implings',
 		protected: false,
 		userConfigurable: true
 	},
