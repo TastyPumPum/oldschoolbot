@@ -1,4 +1,4 @@
-import { formatDuration, Time } from '@oldschoolgg/toolkit';
+import { Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import {
@@ -11,6 +11,7 @@ import {
 	stealingArtefactsGlassblowingProducts
 } from '@/lib/minions/data/stealingArtefacts.js';
 import type { StealingArtefactsActivityTaskOptions } from '@/lib/types/minions.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function stealingArtefactsCommand(
 	user: MUser,
@@ -123,7 +124,7 @@ export async function stealingArtefactsCommand(
 		teleportEligible ? 'Teleport efficiency active' : null
 	].filter(Boolean);
 
-	return `${user.minionName} is now stealing artefacts for ${formatDuration(duration)} (${deliveries} deliveries expected).${glassblowNote}${
+	return `${user.minionName} is now stealing artefacts for ${formatTripDuration(user, duration)} (${deliveries} deliveries expected).${glassblowNote}${
 		boosts.length > 0 ? `\nBoosts: ${boosts.join(', ')}.` : ''
 	}`;
 }
