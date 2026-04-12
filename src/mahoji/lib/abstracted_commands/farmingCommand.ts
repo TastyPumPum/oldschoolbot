@@ -1,4 +1,4 @@
-import { percentChance } from '@oldschoolgg/rng';
+import { percentChance } from 'node-rng';
 import { formatDuration, reduceNumByPercent, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, type Item } from 'oldschooljs';
 

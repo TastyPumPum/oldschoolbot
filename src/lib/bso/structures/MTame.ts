@@ -7,7 +7,7 @@ import {
 	tameSpecies
 } from '@/lib/bso/tames/tames.js';
 
-import { roll } from '@oldschoolgg/rng';
+import { roll } from 'node-rng';
 import { formatDuration, round, Time } from '@oldschoolgg/toolkit';
 import { Bank, type Item, type ItemBank, Items } from 'oldschooljs';
 

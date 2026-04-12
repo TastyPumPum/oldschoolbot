@@ -2,7 +2,7 @@ import type { BathhouseTaskOptions } from '@/lib/bso/bsoTypes.js';
 import { calculateBathouseResult } from '@/lib/bso/minigames/baxtorianBathhouses.js';
 
 import { userMention } from '@oldschoolgg/discord';
-import { randArrItem, roll } from '@oldschoolgg/rng';
+import { randArrItem, roll } from 'node-rng';
 import { uniqueArr } from '@oldschoolgg/toolkit';
 import { resolveItems } from 'oldschooljs';
 

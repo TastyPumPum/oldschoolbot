@@ -11,7 +11,7 @@ import {
 import { tameLastFinishedActivity } from '@/lib/bso/tames/tameUtil.js';
 
 import { userMention } from '@oldschoolgg/discord';
-import { percentChance, randArrItem, randInt, roll } from '@oldschoolgg/rng';
+import { percentChance, randArrItem, randInt, roll } from 'node-rng';
 import { calcPerHour, formatDuration, increaseNumByPercent, isFunction, Time } from '@oldschoolgg/toolkit';
 import { Bank, type ItemBank, Items } from 'oldschooljs';
 import { isEmpty } from 'remeda';

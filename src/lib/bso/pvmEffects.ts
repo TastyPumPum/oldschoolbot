@@ -4,7 +4,7 @@ import { clueUpgraderEffect } from '@/lib/bso/skills/invention/effects/clueUpgra
 import { portableTannerEffect } from '@/lib/bso/skills/invention/effects/portableTannerEffect.js';
 import { slayerMaskHelms } from '@/lib/bso/skills/slayer/slayerMaskHelms.js';
 
-import { roll } from '@oldschoolgg/rng';
+import { roll } from 'node-rng';
 import { increaseNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank, type ItemBank, MonsterAttribute, Monsters } from 'oldschooljs';
 

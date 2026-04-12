@@ -20,7 +20,7 @@ import { calculateMaximumTameFeedingLevelGain, getTameStatus, sortTames } from '
 import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { bold, time } from '@oldschoolgg/discord';
-import { percentChance, randInt } from '@oldschoolgg/rng';
+import { percentChance, randInt } from 'node-rng';
 import {
 	calcPercentOfNum,
 	calcWhatPercent,

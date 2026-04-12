@@ -1,6 +1,6 @@
 import { type Nursery, type Species, TameSpeciesID, tameSpecies } from '@/lib/bso/tames/tames.js';
 
-import { MathRNG, randArrItem, roll } from '@oldschoolgg/rng';
+import { MathRNG, randArrItem, roll } from 'node-rng';
 import { Events, formatDuration, gaussianRandom, reduceNumByPercent } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 

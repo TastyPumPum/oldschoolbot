@@ -1,4 +1,4 @@
-import { MathRNG, randArrItem, SeedableRNG } from '@oldschoolgg/rng';
+import { MathRNG, randArrItem, SeedableRNG } from 'node-rng';
 import { averageArr, calcPercentOfNum, gaussianRandom, toTitleCase } from '@oldschoolgg/toolkit';
 import { type Item, Items } from 'oldschooljs';
 

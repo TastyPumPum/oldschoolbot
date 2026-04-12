@@ -8,7 +8,7 @@ import {
 	numberOfGorajanOutfitsEquipped
 } from '@/lib/bso/skills/dungoneering/dungDbFunctions.js';
 
-import { randomVariation, roll } from '@oldschoolgg/rng';
+import { randomVariation, roll } from 'node-rng';
 import { reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 

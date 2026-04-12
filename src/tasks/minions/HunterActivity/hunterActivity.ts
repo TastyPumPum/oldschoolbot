@@ -4,7 +4,7 @@ import { globalDroprates } from '@/lib/bso/globalDroprates.js';
 import { chargePortentIfHasCharges, PortentID } from '@/lib/bso/skills/divination.js';
 import { InventionID, inventionBoosts, inventionItemBoost } from '@/lib/bso/skills/invention/inventions.js';
 
-import { randInt, roll } from '@oldschoolgg/rng';
+import { randInt, roll } from 'node-rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, ECreature, type ItemBank, increaseBankQuantitesByPercent, itemID, toKMB } from 'oldschooljs';
 

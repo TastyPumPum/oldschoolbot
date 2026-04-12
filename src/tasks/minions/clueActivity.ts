@@ -1,6 +1,6 @@
 import { incrementUserCounter } from '@/lib/bso/userCounter.js';
 
-import { randInt, roll } from '@oldschoolgg/rng';
+import { randInt, roll } from 'node-rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, LootTable } from 'oldschooljs';
 

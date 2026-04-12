@@ -1,4 +1,4 @@
-import { randInt, randomVariation } from '@oldschoolgg/rng';
+import { randInt, randomVariation } from 'node-rng';
 import { Emoji, formatDuration, reduceNumByPercent, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 

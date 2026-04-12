@@ -2,7 +2,7 @@ import { EBSOMonster } from '@/lib/bso/EBSOMonster.js';
 import { BossInstance } from '@/lib/bso/structures/Boss.js';
 
 import { EmbedBuilder } from '@oldschoolgg/discord';
-import { randInt } from '@oldschoolgg/rng';
+import { randInt } from 'node-rng';
 import { formatDuration, sumArr, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 

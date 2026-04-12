@@ -5,7 +5,7 @@ import { findGroupOfUser } from '@/lib/bso/util/findGroupOfUser.js';
 import { LampTable } from '@/lib/bso/xpLamps.js';
 
 import { bold, time, userMention } from '@oldschoolgg/discord';
-import { randInt, roll } from '@oldschoolgg/rng';
+import { randInt, roll } from 'node-rng';
 import { Emoji, formatDuration, PerkTier, Time } from '@oldschoolgg/toolkit';
 import { Bank, convertLVLtoXP, itemID } from 'oldschooljs';
 

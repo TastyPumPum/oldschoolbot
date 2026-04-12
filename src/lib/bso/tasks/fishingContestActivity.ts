@@ -3,7 +3,7 @@ import { catchFishAtLocation, fishingLocations } from '@/lib/bso/minigames/fishi
 import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 import { ClueTable } from '@/lib/bso/tables/sharedTables.js';
 
-import { roll } from '@oldschoolgg/rng';
+import { roll } from 'node-rng';
 import { calcPercentOfNum } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 

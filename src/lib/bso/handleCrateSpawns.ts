@@ -1,4 +1,4 @@
-import { roll } from '@oldschoolgg/rng';
+import { roll } from 'node-rng';
 import { reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items, resolveItems } from 'oldschooljs';
 

@@ -3,7 +3,7 @@ import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 
 import type { GatewayMessageCreateDispatchData } from '@oldschoolgg/discord';
 import { EmbedBuilder } from '@oldschoolgg/discord';
-import { randArrItem, roll, shuffleArr } from '@oldschoolgg/rng';
+import { randArrItem, roll, shuffleArr } from 'node-rng';
 import type { IMessage } from '@oldschoolgg/schemas';
 import { formatOrdinal, isFunction, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items, LootTable, Monsters } from 'oldschooljs';

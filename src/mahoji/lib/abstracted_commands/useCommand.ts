@@ -5,7 +5,7 @@ import { mysteriousStepData } from '@/lib/bso/mysteryTrail.js';
 import { divinationEnergies } from '@/lib/bso/skills/divination.js';
 
 import { bold } from '@oldschoolgg/discord';
-import { randArrItem, randInt } from '@oldschoolgg/rng';
+import { randArrItem, randInt } from 'node-rng';
 import { notEmpty, objectEntries, Time } from '@oldschoolgg/toolkit';
 import { Bank, type Item, Items, resolveItems } from 'oldschooljs';
 

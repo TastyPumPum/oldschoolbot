@@ -5,7 +5,7 @@ import { chargePortentIfHasCharges, PortentID } from '@/lib/bso/skills/divinatio
 import { InventionID } from '@/lib/bso/skills/invention/inventions.js';
 import { type StoneSpirit, stoneSpirits } from '@/lib/bso/skills/mining/stoneSpirits.js';
 
-import { randInt } from '@oldschoolgg/rng';
+import { randInt } from 'node-rng';
 import { increaseNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank, itemID, toKMB } from 'oldschooljs';
 

@@ -1,4 +1,4 @@
-import { randArrItem } from '@oldschoolgg/rng';
+import { randArrItem } from 'node-rng';
 
 import type { NexTaskOptions, RaidsOptions } from '@/lib/types/minions.js';
 

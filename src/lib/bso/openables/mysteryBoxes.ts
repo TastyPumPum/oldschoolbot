@@ -4,7 +4,7 @@ import { cmbClothes } from '@/lib/bso/openables/cmb.js';
 import { mysteryBoxBlacklist } from '@/lib/bso/openables/mysteryBoxBlacklist.js';
 import { IronmanPMBTable, PMBTable } from '@/lib/bso/openables/pmb.js';
 
-import { randArrItem, roll } from '@oldschoolgg/rng';
+import { randArrItem, roll } from 'node-rng';
 import { Bank, Items, itemID, LootTable } from 'oldschooljs';
 
 import type { UnifiedOpenable } from '@/lib/openables.js';

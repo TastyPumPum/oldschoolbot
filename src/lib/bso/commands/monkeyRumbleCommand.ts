@@ -11,7 +11,7 @@ import {
 	TOTAL_MONKEYS
 } from '@/lib/bso/minigames/monkey-rumble/monkeyRumble.js';
 
-import { randArrItem } from '@oldschoolgg/rng';
+import { randArrItem } from 'node-rng';
 import { Emoji, formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 

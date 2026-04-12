@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { randArrItem, randInt, roll } from '@oldschoolgg/rng';
+import { randArrItem, randInt, roll } from 'node-rng';
 import { toTitleCase } from '@oldschoolgg/toolkit';
 import { type Item, Items } from 'oldschooljs';
 import { loadImage } from 'skia-canvas';

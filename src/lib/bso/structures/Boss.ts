@@ -1,7 +1,7 @@
 import type { NewBossOptions } from '@/lib/bso/bsoTypes.js';
 
 import type { GearStats } from '@oldschoolgg/gear';
-import { randFloat } from '@oldschoolgg/rng';
+import { randFloat } from 'node-rng';
 import {
 	calcPercentOfNum,
 	calcWhatPercent,

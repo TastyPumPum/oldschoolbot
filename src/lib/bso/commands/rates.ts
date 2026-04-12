@@ -27,7 +27,7 @@ import { memoryHarvestResult, totalTimePerRound } from '@/lib/bso/tasks/memoryHa
 import { calculateTuraelsTrialsResult } from '@/lib/bso/tasks/turaelsTrialsActivity.js';
 
 import { bold } from '@oldschoolgg/discord';
-import { MathRNG } from '@oldschoolgg/rng';
+import { MathRNG } from 'node-rng';
 import { calcPerHour, formatDuration, increaseNumByPercent, sumArr, Time } from '@oldschoolgg/toolkit';
 import { Bank, convertBankToPerHourStats, convertLVLtoXP, Items, itemID, toKMB } from 'oldschooljs';
 import { unique } from 'remeda';

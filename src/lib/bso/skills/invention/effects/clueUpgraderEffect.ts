@@ -1,6 +1,6 @@
 import { InventionID, inventionBoosts, inventionItemBoostRaw } from '@/lib/bso/skills/invention/inventions.js';
 
-import { percentChance } from '@oldschoolgg/rng';
+import { percentChance } from 'node-rng';
 import { sumArr } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 

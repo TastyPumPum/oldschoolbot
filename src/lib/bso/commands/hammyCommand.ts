@@ -1,4 +1,4 @@
-import { randArrItem, roll } from '@oldschoolgg/rng';
+import { randArrItem, roll } from 'node-rng';
 import { Emoji } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 

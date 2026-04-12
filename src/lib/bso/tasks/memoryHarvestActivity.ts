@@ -7,7 +7,7 @@ import {
 } from '@/lib/bso/skills/divination.js';
 import { inventionBoosts } from '@/lib/bso/skills/invention/inventions.js';
 
-import { roll } from '@oldschoolgg/rng';
+import { roll } from 'node-rng';
 import { calcPercentOfNum, Emoji, increaseNumByPercent } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 

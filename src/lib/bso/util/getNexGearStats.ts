@@ -1,7 +1,7 @@
 import { NexMonster } from '@/lib/bso/monsters/nex.js';
 
 import type { GearStats } from '@oldschoolgg/gear';
-import { randInt } from '@oldschoolgg/rng';
+import { randInt } from 'node-rng';
 import { calcWhatPercent } from '@oldschoolgg/toolkit';
 import { itemID } from 'oldschooljs';
 

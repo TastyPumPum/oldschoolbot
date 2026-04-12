@@ -6,7 +6,7 @@ import type { CustomMonster } from '@/lib/bso/monsters/CustomMonster.js';
 import { runeWeaponTable } from '@/lib/bso/tables/sharedTables.js';
 
 import { GearStat } from '@oldschoolgg/gear';
-import { randomVariation, roll, shuffleArr } from '@oldschoolgg/rng';
+import { randomVariation, roll, shuffleArr } from 'node-rng';
 import { Time, uniqueArr } from '@oldschoolgg/toolkit';
 import { Bank, LootTable, Monsters, resolveItems } from 'oldschooljs';
 

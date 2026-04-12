@@ -1,4 +1,4 @@
-import { MathRNG } from '@oldschoolgg/rng';
+import { MathRNG } from 'node-rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { Monsters } from 'oldschooljs';
 import { expect, test } from 'vitest';

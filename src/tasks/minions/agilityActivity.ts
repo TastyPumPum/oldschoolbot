@@ -5,7 +5,7 @@ import { globalDroprates } from '@/lib/bso/globalDroprates.js';
 import { chargePortentIfHasCharges, PortentID } from '@/lib/bso/skills/divination.js';
 import { calcUserGorajanShardChance } from '@/lib/bso/skills/dungoneering/dungDbFunctions.js';
 
-import { percentChance, randInt, randomVariation, roll } from '@oldschoolgg/rng';
+import { percentChance, randInt, randomVariation, roll } from 'node-rng';
 import { increaseNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { addItemToBank, Bank, type ItemBank, Items, toKMB } from 'oldschooljs';
 

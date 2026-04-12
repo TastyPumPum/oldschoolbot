@@ -1,7 +1,7 @@
 import { checkElderClueRequirements } from '@/lib/bso/elderClueRequirements.js';
 
 import type { ButtonBuilder } from '@oldschoolgg/discord';
-import { percentChance } from '@oldschoolgg/rng';
+import { percentChance } from 'node-rng';
 import { Emoji, notEmpty, stringMatches, uniqueArr } from '@oldschoolgg/toolkit';
 import { Bank, Items, itemID, resolveItems } from 'oldschooljs';
 

@@ -1,4 +1,4 @@
-import { roll } from '@oldschoolgg/rng';
+import { roll } from 'node-rng';
 import { calcPercentOfNum, calcWhatPercent, Events, formatDuration, formatOrdinal } from '@oldschoolgg/toolkit';
 import { Bank, EMonster, type ItemBank, itemID, Monsters } from 'oldschooljs';
 
