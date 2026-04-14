@@ -7,6 +7,7 @@ import { prepareFarmingStep, treeCheck } from '@/lib/minions/functions/farmingTr
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import { calcNumOfPatches } from '@/lib/skilling/skills/farming/utils/calcsFarming.js';
 import type { FarmingActivityTaskOptions } from '@/lib/types/minions.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function harvestCommand({
 	user,
@@ -81,7 +82,7 @@ export async function harvestCommand({
 	}
 
 	returnMessageStr = `${user.minionName} is now harvesting ${patch.lastQuantity}x ${storeHarvestablePlant}.
-It'll take around ${formatDuration(duration)} to finish.
+It'll take around ${formatTripDuration(user, duration)} to finish.
 
 ${boostStr.length > 0 ? '**Boosts**: ' : ''}${boostStr.join(', ')}`;
 
@@ -237,7 +238,7 @@ export async function farmingPlantCommand({
 	});
 
 	return `${infoStr.join(' ')}
-It'll take around ${formatDuration(duration)} to finish.
+It'll take around ${formatTripDuration(user, duration)} to finish.
 
 ${boostStr.length > 0 ? '**Boosts**: ' : ''}${boostStr.join(', ')}`;
 }
