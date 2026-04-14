@@ -1,10 +1,10 @@
-import { formatDuration } from '@oldschoolgg/toolkit';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Farming } from '../../src/lib/skilling/skills/farming/index.js';
 import type { IPatchData } from '../../src/lib/skilling/skills/farming/utils/types.js';
 import type { FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
 import { minionStatus } from '../../src/lib/util/minionStatus.js';
+import { formatTripDuration } from '../../src/lib/util/minionUtils.js';
 import { mockMUser } from './userutil.js';
 
 const defaultPatch: IPatchData = {
@@ -57,7 +57,7 @@ describe('minionStatus - Farming', () => {
 		};
 
 		const result = minionStatus(user, task);
-		const expectedRemaining = formatDuration(currentDuration + planDuration);
+		const expectedRemaining = `${formatTripDuration(user, currentDuration + planDuration)} remaining`;
 
 		expect(result).toContain('auto-farming multiple patches');
 		expect(result).toContain(`Estimated time remaining: ${expectedRemaining}.`);
@@ -92,7 +92,7 @@ describe('minionStatus - Farming', () => {
 		const result = minionStatus(user, task);
 
 		expect(result).toContain(`currently farming ${task.quantity}x ${plantsName}`);
-		expect(result).toContain(`${formatDuration(currentDuration)} remaining.`);
+		expect(result).toContain(`${formatTripDuration(user, currentDuration)} remaining.`);
 		expect(result).not.toContain('auto-farming multiple patches');
 
 		vi.useRealTimers();
