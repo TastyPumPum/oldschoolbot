@@ -38,8 +38,8 @@ Auto farming collects ready patches into a single Farming activity so you can ha
 
 ## Boosts
 
-- Equip full graceful and keep a charged [Ring of endurance](../agility/hallowed-sepulchre.md#ring-of-endurance) (equipped or in bank) to stack the 10% + 10% trip speed bonuses.
-- Completing the Ardougne elite diary grants an additional 4% time reduction on auto farm trips.
+- Equip full graceful and keep a [Ring of endurance](../agility/hallowed-sepulchre.md#ring-of-endurance) (equipped or in bank) to stack the 10% + 10% trip speed bonuses.
+- Completing Ardougne hard and elite diaries grants additional 4% + 4% time reduction on auto farm trips.
 - Farming outfit, magic secateurs, and the Farming cape apply the same XP and yield bonuses as manual planting.
 
 ## Tips

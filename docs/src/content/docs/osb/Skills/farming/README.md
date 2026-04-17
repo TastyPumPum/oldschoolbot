@@ -31,7 +31,8 @@ XP, speed, and harvest quantity can be boosted by the following:
 - **[Magic secateurs](../../Buyables/buyables)** - 10% harvest quantity boost **(works from bank)**
 - **Farming cape** - 5% harvest quantity boost **(works from bank)**
 - **Full graceful outfit** - 10% trip speed **(must be equipped)**
-- **[Ring of endurance](../../Activities/hallowed-sepulchre#ring-of-endurance)** - 10% trip speed **(must be charged and either equipped or in bank)**
+- **[Ring of endurance](../../Activities/hallowed-sepulchre#ring-of-endurance)** - 10% trip speed **(either equipped or in bank)**
+- **Ardougne hard diary** - 4% trip speed when completed
 - **Ardougne elite diary** - 4% trip speed when completed
 
 ---

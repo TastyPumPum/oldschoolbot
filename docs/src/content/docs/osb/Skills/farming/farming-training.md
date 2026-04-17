@@ -37,22 +37,22 @@ Ultracompost is created by mining volcanic ash and combining it with supercompos
 
 ### Hardwood Seeds
 
-[[/farming plant plant_name\:Teak tree]] ([[farming:35]]–[[farming:55]])  
+[[/farming plant plant_name\:Teak tree]] ([[farming:35]]-[[farming:55]])  
 [[/farming plant plant_name\:Mahogany tree]] (repeat until 99)
 
 ### Fruit Tree Seeds
 
-[[/farming plant plant_name\:Pineapple tree]] ([[farming:51]]–[[farming:57]])  
+[[/farming plant plant_name\:Pineapple tree]] ([[farming:51]]-[[farming:57]])  
 [[/farming plant plant_name\:Papaya tree]] (until [[farming:68]])  
 [[/farming plant plant_name\:Palm tree]] (until [[farming:81]])  
 [[/farming plant plant_name\:Dragonfruit tree]] (repeat until 99)
 
 ### Special Seeds
 
-[[/farming plant plant_name\:Calquat tree]] ([[farming:72]]–99)  
-[[/farming plant plant_name\:Spirit tree]] ([[farming:83]]–99)  
-[[/farming plant plant_name\:Celastrus tree]] ([[farming:85]]–99)  
-[[/farming plant plant_name\:Redwood tree]] ([[farming:90]]–99)
+[[/farming plant plant_name\:Calquat tree]] ([[farming:72]]-99)  
+[[/farming plant plant_name\:Spirit tree]] ([[farming:83]]-99)  
+[[/farming plant plant_name\:Celastrus tree]] ([[farming:85]]-99)  
+[[/farming plant plant_name\:Redwood tree]] ([[farming:90]]-99)
 
 ### Materials Needed
 
@@ -66,19 +66,20 @@ Seed quantities vary based on activity level. These are rough guidelines:
 - 100 Willow seed
 - 100 Maple seed
 - 100 Yew seed
-- 800–1000 Magic seed
+- 800-1000 Magic seed
 - 25 Teak seed
-- 50–100 Mahogany seed
+- 50-100 Mahogany seed
 - 100 Pineapple seed
 - 100 Papaya tree seed
 - 100 Palm tree seed
-- 200–300 Dragonfruit tree seed
-- 100–150 Calquat tree seed
-- 100–200 Spirit seed
-- 120–200 Celastrus seed
-- 20–30 Redwood tree seed
-- 2000–3000 Ultracompost
-- 1000–1500 Potato cactus
-- 2000–3000 Yanillian hops
-- 200–400 Limpwurt root
-- 20000–30000 Coconut
+- 200-300 Dragonfruit tree seed
+- 100-150 Calquat tree seed
+- 100-200 Spirit seed
+- 120-200 Celastrus seed
+- 20-30 Redwood tree seed
+- 2000-3000 Ultracompost
+- 1000-1500 Potato cactus
+- 2000-3000 Yanillian hops
+- 200-400 Limpwurt root
+- 20000-30000 Coconut
+
