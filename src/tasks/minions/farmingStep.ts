@@ -710,7 +710,7 @@ export async function executeFarmingStep({
 		patchType.patchPlanted &&
 		plantToHarvest.petChance &&
 		alivePlants > 0 &&
-		rng.roll(petDropRate / alivePlants)
+		rng.roll(Math.max(1, Math.ceil(petDropRate / alivePlants)))
 	) {
 		loot.add('Tangleroot');
 	}
@@ -723,7 +723,7 @@ export async function executeFarmingStep({
 	if (plantToHarvest.seedType !== 'hespori') {
 		let hesporiSeeds = 0;
 		for (let i = 0; i < alivePlants; i++) {
-			if (rng.roll(plantToHarvest.petChance / 500)) {
+			if (rng.roll(Math.max(1, Math.ceil(plantToHarvest.petChance / 500)))) {
 				hesporiSeeds++;
 			}
 		}
