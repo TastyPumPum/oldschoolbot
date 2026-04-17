@@ -55,7 +55,7 @@ function buildPreferencesEmbed(
 ): EmbedBuilder {
 	const descriptionLines: string[] = [`Contract priority: ${preferContract ? 'enabled' : 'disabled'}.`];
 	for (const patch of patchesDetailed) {
-		descriptionLines.push(`${patch.friendlyName} → ${formatPreference(preferences.get(patch.patchName))}`);
+		descriptionLines.push(`${patch.friendlyName} -> ${formatPreference(preferences.get(patch.patchName))}`);
 	}
 
 	return new EmbedBuilder().setTitle('Auto-farm preferences').setDescription(descriptionLines.join('\n'));
@@ -354,7 +354,7 @@ export const farmingCommand = defineCommand({
 				}
 
 				if (!seedInput) {
-					const summary = `${patchData.friendlyName} → ${formatPreference(
+					const summary = `${patchData.friendlyName} -> ${formatPreference(
 						preferenceMap.get(patchData.patchName)
 					)}`;
 					if (responses.length > 0) {
@@ -374,7 +374,7 @@ export const farmingCommand = defineCommand({
 					minion_farmingPreferredSeeds: serializePreferredSeeds(preferenceMap)
 				} as any);
 
-				const summary = `${patchData.friendlyName} → ${formatPreference(resolvedPreference)}`;
+				const summary = `${patchData.friendlyName} -> ${formatPreference(resolvedPreference)}`;
 				responses.push(summary);
 				return responses.join('\n');
 			}

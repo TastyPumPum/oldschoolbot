@@ -46,6 +46,7 @@ export interface FarmingStepResult {
 	loot: Bank | null;
 	attachment?: FarmingStepAttachment;
 	summary?: FarmingStepSummary;
+	stopChain?: boolean;
 }
 
 interface ExecuteFarmingStepOptions {
@@ -386,6 +387,7 @@ interface TreeRemovalResult {
 	chopped: boolean;
 	payStr: string;
 	harvestXpReset: boolean;
+	abortMessage?: string;
 }
 
 async function handleTreeRemoval(options: {
@@ -393,10 +395,9 @@ async function handleTreeRemoval(options: {
 	plantToHarvest: FarmingPlant;
 	alivePlants: number;
 	currentWoodcuttingLevel: number;
-	channelID: string;
 	data: FarmingActivityTaskOptions;
 }): Promise<TreeRemovalResult | null> {
-	const { user, plantToHarvest, alivePlants, currentWoodcuttingLevel, channelID, data } = options;
+	const { user, plantToHarvest, alivePlants, currentWoodcuttingLevel, data } = options;
 
 	if (!plantToHarvest.needsChopForHarvest) {
 		return { chopped: false, payStr: '', harvestXpReset: false };
@@ -417,16 +418,12 @@ async function handleTreeRemoval(options: {
 	const coinsOwedNow = Math.max(0, gpToCutTree - prePaid);
 
 	if (GP < coinsOwedNow) {
-		try {
-			if (await globalClient.channelIsSendable(channelID)) {
-				await globalClient.sendMessage(channelID, {
-					content: `You do not have the required woodcutting level or enough GP to clear your patches, in order to be able to plant more. You still need ${coinsOwedNow} GP.`
-				});
-			}
-		} catch (err) {
-			Logging.logError(err as Error, { channel_id: channelID, type: 'send_to_channel_id' });
-		}
-		return null;
+		return {
+			chopped: false,
+			payStr: '',
+			harvestXpReset: false,
+			abortMessage: `You do not have the required woodcutting level or enough GP to clear your patches, in order to be able to plant more. You still need ${coinsOwedNow} GP.`
+		};
 	}
 
 	let payStr = '';
@@ -596,11 +593,17 @@ export async function executeFarmingStep({
 		plantToHarvest,
 		alivePlants,
 		currentWoodcuttingLevel,
-		channelID,
 		data
 	});
 	if (!treeRemovalResult) {
 		return null;
+	}
+	if (treeRemovalResult.abortMessage) {
+		return {
+			message: treeRemovalResult.abortMessage,
+			loot: null,
+			stopChain: true
+		};
 	}
 	const { chopped, payStr, harvestXpReset } = treeRemovalResult;
 	if (harvestXpReset) {

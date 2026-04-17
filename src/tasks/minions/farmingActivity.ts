@@ -165,14 +165,15 @@ export const farmingTask: MinionTask = {
 
 		const combinedMode = Boolean(data.autoFarmCombined);
 		const [nextStep, ...remainingSteps] = data.autoFarmPlan ?? [];
-		const updatedSummary = combinedMode
+		const shouldContinueCombined = combinedMode && !result.stopChain;
+		const updatedSummary = shouldContinueCombined
 			? updateAutoFarmSummary({
 					existingSummary: data.autoFarmSummary,
 					data,
 					loot: result.loot ?? null,
 					stepSummary: result.summary
 				})
-			: undefined;
+			: data.autoFarmSummary;
 
 		const scheduleNextStep = async (
 			step: typeof nextStep,
@@ -222,23 +223,24 @@ export const farmingTask: MinionTask = {
 			await addSubTaskToActivityTask(nextTask);
 		};
 
-		if (combinedMode && nextStep) {
+		if (shouldContinueCombined && nextStep) {
 			await scheduleNextStep(nextStep, remainingSteps, updatedSummary);
 			return;
 		}
 
-		const totalLoot = combinedMode && updatedSummary ? new Bank(updatedSummary.totalLoot ?? {}) : result.loot;
-		const content =
-			combinedMode && updatedSummary ? buildCombinedAutoFarmMessage(user, updatedSummary) : result.message;
+		const shouldRenderCombinedSummary = Boolean(combinedMode && updatedSummary && !result.stopChain);
+		const totalLoot = shouldRenderCombinedSummary ? new Bank(updatedSummary!.totalLoot ?? {}) : result.loot;
+		const content = shouldRenderCombinedSummary
+			? buildCombinedAutoFarmMessage(user, updatedSummary!)
+			: result.message;
 		const finalContent =
-			combinedMode && updatedSummary && updatedSummary.attachmentMessages.length > 0
-				? `${content}\n\n${updatedSummary.attachmentMessages.join('\n\n')}`
+			shouldRenderCombinedSummary && updatedSummary!.attachmentMessages.length > 0
+				? `${content}\n\n${updatedSummary!.attachmentMessages.join('\n\n')}`
 				: content;
 		const message = result.attachment ? { content: finalContent, files: [result.attachment] } : finalContent;
-		const tripFinishData =
-			combinedMode && updatedSummary
-				? ({ ...data, duration: updatedSummary.totalDuration } satisfies FarmingActivityTaskOptions)
-				: data;
+		const tripFinishData = shouldRenderCombinedSummary
+			? ({ ...data, duration: updatedSummary!.totalDuration } satisfies FarmingActivityTaskOptions)
+			: data;
 
 		await handleTripFinish({
 			user,

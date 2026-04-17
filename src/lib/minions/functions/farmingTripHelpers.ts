@@ -181,6 +181,11 @@ export async function prepareFarmingStep({
 		duration *= 0.9;
 	}
 
+	if (user.hasDiary('ardougne.hard')) {
+		boostStr.push('4% time for Ardougne Hard diary');
+		duration *= 0.96;
+	}
+
 	if (user.hasDiary('ardougne.elite')) {
 		boostStr.push('4% time for Ardougne Elite diary');
 		duration *= 0.96;
