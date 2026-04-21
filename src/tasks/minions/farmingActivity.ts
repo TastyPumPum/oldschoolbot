@@ -163,11 +163,11 @@ export const farmingTask: MinionTask = {
 		const shouldContinueCombined = combinedMode && !result.stopChain;
 		const updatedSummary = shouldContinueCombined
 			? updateAutoFarmSummary({
-				existingSummary: data.autoFarmSummary,
-				data,
-				loot: result.loot ?? null,
-				stepSummary: result.summary
-			})
+					existingSummary: data.autoFarmSummary,
+					data,
+					loot: result.loot ?? null,
+					stepSummary: result.summary
+				})
 			: data.autoFarmSummary;
 
 		const scheduleNextStep = async (
