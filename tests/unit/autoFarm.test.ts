@@ -328,7 +328,7 @@ describe('auto farm helpers', () => {
 		);
 
 		expect(typeof response).toBe('string');
-		expect(response).toContain('auto farm the following patches');
+		expect(response).toContain('is now auto farming the following patches');
 		expect(response).toContain('4x Guam');
 		expect(response).toContain('4x Compost + 4x Guam seed');
 
