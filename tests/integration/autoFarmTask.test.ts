@@ -234,7 +234,6 @@ describe('farming task auto farm sequencing', () => {
 		const messageContent =
 			typeof finalCall?.message === 'string' ? finalCall.message : (finalCall?.message?.content ?? '');
 
-		expect(messageContent).toContain('Total time spent');
 		expect(messageContent).toContain('Seed pack');
 		expect(messageContent).toContain('Watermelon');
 

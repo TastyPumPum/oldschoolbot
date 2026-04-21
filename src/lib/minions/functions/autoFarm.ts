@@ -18,6 +18,7 @@ import type { Plant } from '@/lib/skilling/types.js';
 import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
 import { prepareFarmingStep } from './farmingTripHelpers.js';
 
@@ -426,7 +427,8 @@ export async function autoFarm(
 		infoDetails.push(...extraInfoLines);
 	});
 
-	let response = `${user}, your minion is now taking around ${formatDuration(
+	let response = `${user}, your minion is now taking around ${formatTripDuration(
+		user,
 		totalDuration
 	)} to auto farm the following patches:\n${summaryLines.join('\n')}`;
 

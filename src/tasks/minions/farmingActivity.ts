@@ -1,4 +1,3 @@
-import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 
 import type { AutoFarmSummary, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
@@ -98,23 +97,19 @@ function buildCombinedAutoFarmMessage(user: MUser, summary: AutoFarmSummary): st
 	};
 
 	const lines: string[] = [`${user}, ${user.minionName} finished auto farming your patches.`];
-	if (summary.totalDuration > 0) {
-		lines.push(`Total time spent: ${formatDuration(summary.totalDuration)}.`);
-	}
 
 	const xpParts: string[] = [];
 	if (summary.totalXP > 0) {
-		const bonusSegment =
-			summary.totalBonusXP > 0 ? ` (including ${summary.totalBonusXP.toLocaleString()} bonus XP)` : '';
+		const bonusSegment = summary.totalBonusXP > 0 ? `, +${summary.totalBonusXP.toLocaleString()} bonus` : '';
 		xpParts.push(
-			`${summary.totalXP.toLocaleString()} Farming XP${bonusSegment} ${toKMB(calcXPPerHour(summary.totalXP, summary.totalDuration))}/Hr`
+			`Farming ${summary.totalXP.toLocaleString()} XP (${toKMB(calcXPPerHour(summary.totalXP, summary.totalDuration))}/Hr${bonusSegment})`
 		);
 	}
 	if (summary.totalWoodcuttingXP > 0) {
-		xpParts.push(`${summary.totalWoodcuttingXP.toLocaleString()} Woodcutting XP`);
+		xpParts.push(`Woodcutting ${summary.totalWoodcuttingXP.toLocaleString()} XP`);
 	}
 	if (summary.totalHerbloreXP > 0) {
-		xpParts.push(`${summary.totalHerbloreXP.toLocaleString()} Herblore XP`);
+		xpParts.push(`Herblore ${summary.totalHerbloreXP.toLocaleString()} XP`);
 	}
 	if (xpParts.length > 0) {
 		lines.push(`XP gained: ${xpParts.join(', ')}.`);
@@ -137,7 +132,7 @@ function buildCombinedAutoFarmMessage(user: MUser, summary: AutoFarmSummary): st
 		lines.push(`Boosts: ${summary.boosts.join(', ')}.`);
 	}
 
-	return lines.join('\n\n');
+	return lines.join('\n');
 }
 
 export const farmingTask: MinionTask = {
@@ -168,11 +163,11 @@ export const farmingTask: MinionTask = {
 		const shouldContinueCombined = combinedMode && !result.stopChain;
 		const updatedSummary = shouldContinueCombined
 			? updateAutoFarmSummary({
-					existingSummary: data.autoFarmSummary,
-					data,
-					loot: result.loot ?? null,
-					stepSummary: result.summary
-				})
+				existingSummary: data.autoFarmSummary,
+				data,
+				loot: result.loot ?? null,
+				stepSummary: result.summary
+			})
 			: data.autoFarmSummary;
 
 		const scheduleNextStep = async (
