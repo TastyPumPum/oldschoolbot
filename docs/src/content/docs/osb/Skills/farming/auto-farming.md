@@ -20,6 +20,7 @@ Auto farming collects ready patches into a single Farming activity so you can ha
   - `highest_available` to always choose best available for that patch
   - `empty` to skip that patch type entirely
   - `prefer_contract` to prioritize your active farming contract crop when possible
+- When `prefer_contract` is enabled and a valid contract crop is available, that contract patch is scheduled first in the auto-farm trip.
 
 ## Trip Planning
 

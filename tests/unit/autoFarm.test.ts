@@ -615,6 +615,78 @@ describe('auto farm helpers', () => {
 		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
 	});
 
+	it('autoFarm starts with the contract patch when contract priority is enabled', async () => {
+		const bank = new Bank().add('Guam seed', 4).add('Acorn', 1).add('Compost', 5);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser & {
+			minion_farmingContract?: any;
+			minion_farmingPreferredContract?: boolean;
+		};
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		mutableUser.minion_farmingPreferredContract = true;
+		mutableUser.minion_farmingContract = {
+			hasContract: true,
+			difficultyLevel: 'easy',
+			plantToGrow: herbPlant.name,
+			plantTier: 1,
+			contractsCompleted: 0
+		};
+
+		const treeEmptyPatch: IPatchData = {
+			lastPlanted: null,
+			patchPlanted: false,
+			plantTime: Date.now(),
+			lastQuantity: 0,
+			lastUpgradeType: null,
+			lastPayment: false
+		};
+		const treeEmptyPatchDetailed: IPatchDataDetailed = {
+			...treeEmptyPatch,
+			ready: null,
+			readyIn: null,
+			readyAt: null,
+			patchName: treePlant.seedType,
+			friendlyName: 'Tree patch',
+			plant: null
+		};
+
+		const mixedPatches: Record<FarmingPatchName, IPatchData> = {
+			[treePlant.seedType]: treeEmptyPatch,
+			[herbPlant.seedType]: herbPatch
+		} as Record<FarmingPatchName, IPatchData>;
+
+		const transactResult = {
+			newUser: user,
+			itemsAdded: new Bank(),
+			itemsRemoved: new Bank(),
+			newBank: user.bank.clone(),
+			newCL: user.cl.clone(),
+			previousCL: new Bank(),
+			clLootBank: null
+		} satisfies Awaited<ReturnType<typeof user.transactItems>>;
+		vi.spyOn(user, 'transactItems').mockResolvedValue(transactResult);
+		vi.spyOn(user, 'statsBankUpdate').mockResolvedValue(undefined);
+		vi.spyOn(global.ClientSettings, 'updateBankSetting').mockResolvedValue();
+
+		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
+
+		await autoFarm(
+			user,
+			[treeEmptyPatchDetailed, herbPatchDetailed],
+			mixedPatches,
+			baseInteraction as MInteraction
+		);
+
+		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+		const queuedTask = (addSubTaskToActivityTask as unknown as MockInstance).mock.calls[0]?.[0] as
+			| FarmingActivityTaskOptions
+			| undefined;
+		expect(queuedTask?.plantsName).toBe(herbPlant.name);
+	});
+
 	it('autoFarm returns error when patch data is missing', async () => {
 		const bank = new Bank().add('Guam seed', 4).add('Compost', 4);
 		const user = mockMUser({

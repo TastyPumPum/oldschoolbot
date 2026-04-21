@@ -214,7 +214,13 @@ export async function autoFarm(
 		}
 
 		if (resolved.type === 'plant') {
-			planRequests.push({ type: 'plant', patch, plant: resolved.plant });
+			const planRequest: PlanRequest = { type: 'plant', patch, plant: resolved.plant };
+			if (resolved.reason === 'contract') {
+				// Always attempt the contract patch first when contract priority is enabled.
+				planRequests.unshift(planRequest);
+			} else {
+				planRequests.push(planRequest);
+			}
 			continue;
 		}
 
