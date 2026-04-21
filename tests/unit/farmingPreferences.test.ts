@@ -123,12 +123,53 @@ describe('farming seed preferences', () => {
 		const result = resolveSeedForPatch({
 			patch: basePatchData,
 			preferContract: true,
+			hasActiveContract: true,
 			contractPlant: herbPlant,
 			preferences: new Map(),
 			fallbackPlant: null
 		});
 
 		expect(result).toEqual({ type: 'plant', plant: herbPlant, reason: 'contract' });
+	});
+
+	it('resolveSeedForPatch ignores completed contracts and falls back to preferences', () => {
+		const preferences = new Map<FarmingPatchName, FarmingSeedPreference>();
+		preferences.set(herbPlant.seedType as FarmingPatchName, { type: 'highest_available' });
+
+		const result = resolveSeedForPatch({
+			patch: basePatchData,
+			preferContract: true,
+			hasActiveContract: false,
+			contractPlant: herbPlant,
+			preferences,
+			fallbackPlant: null
+		});
+
+		expect(result).toEqual({ type: 'highest', reason: 'preference_highest' });
+	});
+
+	it('resolveSeedForPatch does not re-prioritize contract crop when that crop is already ready', () => {
+		const preferences = new Map<FarmingPatchName, FarmingSeedPreference>();
+		preferences.set(herbPlant.seedType as FarmingPatchName, { type: 'highest_available' });
+
+		const readyContractCropPatch: IPatchDataDetailed = {
+			...basePatchData,
+			patchPlanted: true,
+			lastPlanted: herbPlant.name,
+			lastQuantity: 8,
+			plant: herbPlant
+		};
+
+		const result = resolveSeedForPatch({
+			patch: readyContractCropPatch,
+			preferContract: true,
+			hasActiveContract: true,
+			contractPlant: herbPlant,
+			preferences,
+			fallbackPlant: null
+		});
+
+		expect(result).toEqual({ type: 'highest', reason: 'preference_highest' });
 	});
 
 	it('resolveSeedForPatch uses seed preference when available', () => {

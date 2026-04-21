@@ -196,15 +196,19 @@ export async function autoFarm(
 	}
 
 	const contract = user.farmingContract();
+	const hasActiveContract = Boolean(contract.contract?.hasContract);
 	const contractPlant =
-		contract.plant ??
-		(contract.contract?.plantToGrow ? plants.find(pl => pl.name === contract.contract?.plantToGrow) : null);
+		hasActiveContract && contract.contract?.plantToGrow
+			? (contract.plant ??
+				(contract.contract?.plantToGrow ? plants.find(pl => pl.name === contract.contract?.plantToGrow) : null))
+			: null;
 
 	const planRequests: PlanRequest[] = [];
 	for (const patch of patchesDetailed) {
 		const resolved = resolveSeedForPatch({
 			patch,
 			preferContract,
+			hasActiveContract,
 			contractPlant: contractPlant ?? null,
 			preferences: preferredSeeds,
 			fallbackPlant: fallbackPlantsByPatch.get(patch.patchName) ?? null

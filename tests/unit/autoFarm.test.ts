@@ -767,6 +767,7 @@ describe('resolveSeedForPatch', () => {
 		const result = resolveSeedForPatch({
 			patch: herbPatchReadyDetailed,
 			preferContract: true,
+			hasActiveContract: true,
 			contractPlant: herbPlant,
 			preferences,
 			fallbackPlant: null

@@ -112,6 +112,7 @@ export function serializePreferredSeeds(
 export interface ResolveSeedForPatchOptions {
 	patch: IPatchDataDetailed;
 	preferContract: boolean;
+	hasActiveContract?: boolean;
 	contractPlant: Plant | null;
 	preferences: Map<FarmingPatchName, FarmingSeedPreference>;
 	fallbackPlant: Plant | null;
@@ -124,6 +125,7 @@ export type ResolvedSeedForPatchResult =
 export function resolveSeedForPatch({
 	patch,
 	preferContract,
+	hasActiveContract = false,
 	contractPlant,
 	preferences,
 	fallbackPlant
@@ -132,7 +134,16 @@ export function resolveSeedForPatch({
 		return null;
 	}
 
-	if (preferContract && contractPlant && contractPlant.seedType === patch.patchName) {
+	const patchAlreadyHasContractCrop =
+		patch.patchPlanted && contractPlant !== null && patch.lastPlanted === contractPlant.name;
+
+	if (
+		preferContract &&
+		hasActiveContract &&
+		contractPlant &&
+		contractPlant.seedType === patch.patchName &&
+		!patchAlreadyHasContractCrop
+	) {
 		return { type: 'plant', plant: contractPlant, reason: 'contract' };
 	}
 

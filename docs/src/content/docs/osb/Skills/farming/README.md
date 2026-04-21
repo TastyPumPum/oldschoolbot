@@ -44,7 +44,7 @@ XP, speed, and harvest quantity can be boosted by the following:
 - [[/farming check_patches]] - View patch status (includes an Auto Farm shortcut button when anything is ready)
 - [[/farming auto_farm]] - Execute an auto farming trip
 - [[/farming auto_farm_filter]] - Choose your auto farm filter
-- [[/farming set_preferred]] - View or set per-patch seed preferences and contract priority
+- [[/farming set_preferred]] - View or set per-patch seed preferences, contract priority, and `reset_all`
 - [[/farming default_compost]] - Set the compost tier to auto apply
 - [[/farming always_pay]] - Toggle automatic farmer payments
 - [[/farming compost_bin]] - Convert crops into supercompost
