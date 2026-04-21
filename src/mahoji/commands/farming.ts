@@ -185,6 +185,12 @@ export const farmingCommand = defineCommand({
 					name: 'prefer_contract',
 					description: 'Prioritize farming contracts when available.',
 					required: false
+				},
+				{
+					type: 'Boolean',
+					name: 'reset_all',
+					description: 'Clear all saved per-patch seed preferences.',
+					required: false
 				}
 			]
 		},
@@ -324,6 +330,11 @@ export const farmingCommand = defineCommand({
 			const patchNameInput = options.set_preferred.patch as FarmingPatchName | undefined;
 			const seedInput = options.set_preferred.seed ?? undefined;
 			const preferContractInput = options.set_preferred.prefer_contract;
+			const resetAllInput = Boolean(options.set_preferred.reset_all);
+
+			if (resetAllInput && (patchNameInput || seedInput)) {
+				return 'You cannot use reset_all with patch or seed options.';
+			}
 
 			if (typeof preferContractInput === 'boolean') {
 				if (preferContractInput !== preferContractCurrent) {
@@ -335,7 +346,15 @@ export const farmingCommand = defineCommand({
 				responses.push(`Contract priority is now ${preferContractInput ? 'enabled' : 'disabled'}.`);
 			}
 
-			if (!patchNameInput && !seedInput) {
+			if (resetAllInput) {
+				preferenceMap.clear();
+				await user.update({
+					minion_farmingPreferredSeeds: serializePreferredSeeds(preferenceMap)
+				} as any);
+				responses.push('Cleared all saved per-patch seed preferences.');
+			}
+
+			if (!patchNameInput && !seedInput && !resetAllInput) {
 				const embed = buildPreferencesEmbed(patchesDetailed, preferenceMap, preferContractCurrent);
 				if (responses.length > 0) {
 					return { content: responses.join('\n'), embeds: [embed] };
