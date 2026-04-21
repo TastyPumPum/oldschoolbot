@@ -279,7 +279,9 @@ export async function autoFarm(
 
 			remainingBank.remove(cost);
 			if (treeChopFee > 0) {
-				remainingBank.remove(new Bank().add('Coins', treeChopFee));
+				const treeFeeBank = new Bank().add('Coins', treeChopFee);
+				remainingBank.remove(treeFeeBank);
+				totalCost.add(treeFeeBank);
 			}
 			totalCost.add(cost);
 			totalDuration += duration;
@@ -338,7 +340,7 @@ export async function autoFarm(
 			upgradeType: step.upgradeType,
 			patchName: step.patchName,
 			payment: step.didPay,
-			treeChopFeePaid: 0,
+			treeChopFeePaid: step.treeChopFee,
 			treeChopFeePlanned: step.treeChopFee,
 			patchType: step.patch,
 			planting: true,

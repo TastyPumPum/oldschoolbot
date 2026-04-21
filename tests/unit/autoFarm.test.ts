@@ -13,6 +13,7 @@ import type {
 	IPatchData,
 	IPatchDataDetailed
 } from '../../src/lib/skilling/skills/farming/utils/types.js';
+import type { FarmingActivityTaskOptions } from '../../src/lib/types/minions.js';
 import addSubTaskToActivityTask from '../../src/lib/util/addSubTaskToActivityTask.js';
 import * as calcMaxTripLengthModule from '../../src/lib/util/calcMaxTripLength.js';
 import { mockMUser } from './userutil.js';
@@ -395,6 +396,7 @@ describe('auto farm helpers', () => {
 		const itemsToRemove = transactArg.itemsToRemove!;
 		expect(itemsToRemove.amount('Acorn')).toBe(3);
 		expect(itemsToRemove.amount('Supercompost')).toBe(3);
+		expect(itemsToRemove.amount('Coins')).toBe(600);
 		expect(itemsToRemove.amount('Tomatoes(5)')).toBe(0);
 
 		expect(statsSpy).toHaveBeenCalledWith('farming_plant_cost_bank', expect.any(Bank));
@@ -403,6 +405,11 @@ describe('auto farm helpers', () => {
 		// Again, just assert a task was queued – internal plan
 		// shape is tested in lower-level logic.
 		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+		const queuedTask = (addSubTaskToActivityTask as unknown as MockInstance).mock.calls[0]?.[0] as
+			| FarmingActivityTaskOptions
+			| undefined;
+		expect(queuedTask?.treeChopFeePaid).toBe(600);
+		expect(queuedTask?.treeChopFeePlanned).toBe(600);
 	});
 
 	it('autoFarm respects empty patch preferences', async () => {

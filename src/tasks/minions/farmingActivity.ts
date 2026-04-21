@@ -1,7 +1,6 @@
 import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank, toKMB } from 'oldschooljs';
 
-import { Farming } from '@/lib/skilling/skills/farming/index.js';
 import type { AutoFarmSummary, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { handleTripFinish as defaultHandleTripFinish } from '@/lib/util/handleTripFinish.js';
@@ -146,12 +145,13 @@ export const farmingTask: MinionTask = {
 	async run(data: FarmingActivityTaskOptions, options) {
 		const user = options?.user ?? (await mUserFetch(data.userID));
 		const handleTripFinish = options?.handleTripFinish ?? defaultHandleTripFinish;
+		const rng = options?.rng;
 		const legacyChannelId = (data as { channelID?: string }).channelID;
 		const channelId = data.channelId ?? legacyChannelId;
 		if (!channelId) {
 			throw new Error('Farming task completed without a channel id.');
 		}
-		const result = await executeFarmingStep({ user, channelID: channelId, data });
+		const result = await executeFarmingStep({ user, channelID: channelId, data, rng });
 		if (!result) {
 			await handleTripFinish({
 				user,
@@ -181,24 +181,6 @@ export const farmingTask: MinionTask = {
 			summaryToPass?: AutoFarmSummary
 		) => {
 			if (!step) return;
-			let nextPid = step.pid;
-			if (!nextPid && step.planting && step.plantsName) {
-				const nextPlant = Farming.Plants.find(plant => plant.name === step.plantsName);
-				if (nextPlant) {
-					const inserted = await prisma.farmedCrop.create({
-						data: {
-							user_id: user.id,
-							date_planted: new Date(step.currentDate),
-							item_id: nextPlant.id,
-							quantity_planted: step.quantity,
-							was_autofarmed: true,
-							paid_for_protection: step.payment ?? false,
-							upgrade_type: step.upgradeType
-						}
-					});
-					nextPid = inserted.id;
-				}
-			}
 			const nextTask = {
 				plantsName: step.plantsName,
 				patchType: step.patchType,
@@ -218,7 +200,7 @@ export const farmingTask: MinionTask = {
 				autoFarmCombined: data.autoFarmCombined,
 				autoFarmSummary: summaryToPass,
 				patchName: step.patchName,
-				pid: nextPid
+				pid: step.pid
 			} satisfies Omit<FarmingActivityTaskOptions, 'finishDate' | 'id'>;
 			await addSubTaskToActivityTask(nextTask);
 		};

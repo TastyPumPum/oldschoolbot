@@ -33,7 +33,7 @@ Auto farming collects ready patches into a single Farming activity so you can ha
 - Your [[/farming default_compost]] choice and [[/farming always_pay]] toggle are applied automatically.
 - Coins for chopping trees without the required Woodcutting level are reserved (200 gp for most trees, 2,000 gp for redwoods).
 - Seed/compost/protection costs are removed immediately before the trip starts.
-- Tree-removal coin costs are reserved during planning, then charged (or partially refunded if over-estimated) during execution.
+- Tree-removal coin costs are deducted up-front as part of trip start, then partially refunded during execution if the estimate was higher than needed.
 - If no step can be planned, auto farm returns the first failure reason (for example missing seeds/items or an unmet requirement).
 
 ## Boosts
