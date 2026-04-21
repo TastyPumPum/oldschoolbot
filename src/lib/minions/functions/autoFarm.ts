@@ -427,10 +427,10 @@ export async function autoFarm(
 		infoDetails.push(...extraInfoLines);
 	});
 
-	let response = `${user}, your minion is now taking around ${formatTripDuration(
+	let response = `${user.minionName} is now auto farming the following patches, the trip will return in about ${formatTripDuration(
 		user,
 		totalDuration
-	)} to auto farm the following patches:\n${summaryLines.join('\n')}`;
+	)}:\n${summaryLines.join('\n')}`;
 
 	if (infoDetails.length > 0) {
 		response += `
