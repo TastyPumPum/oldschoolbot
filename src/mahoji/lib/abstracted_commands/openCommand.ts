@@ -50,11 +50,16 @@ export async function abstractedOpenUntilCommand(
 	name: string,
 	openUntilItem: string,
 	disable_pets: boolean | undefined,
-	quantity: number | undefined
+	quantity: number | undefined,
+	resultQuantity: number | undefined
 ) {
 	if (quantity === undefined) quantity = 1;
 	if (quantity < 1 || !Number.isInteger(quantity)) {
 		return 'The quantity must be a positive integer.';
+	}
+	if (resultQuantity === undefined) resultQuantity = 1;
+	if (resultQuantity < 1 || !Number.isInteger(resultQuantity)) {
+		return 'The result quantity must be a positive integer.';
 	}
 
 	name = name.replace(regex, '$1');
@@ -102,7 +107,7 @@ export async function abstractedOpenUntilCommand(
 		});
 		loot.add(thisLoot.bank);
 		amountOpened++;
-		if (loot.has(openUntil.id)) break;
+		if (loot.amount(openUntil.id) >= resultQuantity) break;
 	}
 
 	// Now that we have the final total, we add the key cost:

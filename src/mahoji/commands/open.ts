@@ -55,6 +55,12 @@ export const openCommand = defineCommand({
 			}
 		},
 		{
+			type: 'Integer',
+			name: 'result_quantity',
+			description: 'The quantity of the result item to open until.',
+			required: false
+		},
+		{
 			type: 'Boolean',
 			name: 'disable_pets',
 			description: 'Disables octo & smokey when opening.',
@@ -82,7 +88,8 @@ export const openCommand = defineCommand({
 				options.name,
 				options.open_until,
 				options.disable_pets,
-				options.quantity
+				options.quantity,
+				options.result_quantity
 			);
 		}
 
