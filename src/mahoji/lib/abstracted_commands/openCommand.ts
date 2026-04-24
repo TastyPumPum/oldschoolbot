@@ -170,7 +170,6 @@ async function finalizeOpening({
 	const { bank } = user;
 	if (!bank.has(cost)) return new MessageBuilder().setContent(`You don't have ${cost}.`);
 	const newOpenableScores = await addToOpenablesScores(user, kcBank);
-	await user.transactItems({ itemsToRemove: cost });
 
 	const hasSmokey = !disable_pets && user.allItemsOwned.has('Smokey');
 	const hasOcto = !disable_pets && user.allItemsOwned.has('Octo');
@@ -213,9 +212,6 @@ async function finalizeOpening({
 	}
 	if (smokeyMsg) messages.push(smokeyMsg);
 
-	if (!user.owns(cost)) {
-		return `You don't own: ${cost}.`;
-	}
 	const { previousCL } = await user.transactItems({
 		itemsToRemove: cost,
 		itemsToAdd: loot,
