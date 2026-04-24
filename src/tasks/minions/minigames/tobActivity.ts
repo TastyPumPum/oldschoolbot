@@ -1,6 +1,6 @@
 import { CHINCANNON_MESSAGES } from '@/lib/bso/bsoConstants.js';
 
-import { Emoji, Events, formatOrdinal, miniID } from '@oldschoolgg/toolkit';
+import { Emoji, miniID } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { drawChestLootImage } from '@/lib/canvas/chestImage.js';

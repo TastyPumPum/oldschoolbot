@@ -3,7 +3,7 @@ import { handleSpecialCoxLoot } from '@/lib/bso/handleSpecialCoxLoot.js';
 import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 import { userHasFlappy } from '@/lib/bso/skills/invention/inventions.js';
 
-import { Emoji, Events, formatOrdinal } from '@oldschoolgg/toolkit';
+import { Emoji } from '@oldschoolgg/toolkit';
 import { Bank, ChambersOfXeric, resolveItems } from 'oldschooljs';
 
 import { drawChestLootImage } from '@/lib/canvas/chestImage.js';

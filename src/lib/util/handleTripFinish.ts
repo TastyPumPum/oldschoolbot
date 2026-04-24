@@ -689,9 +689,9 @@ export async function handleTripFinish(
 			loot: loot ?? null,
 			components,
 			messages,
+			portents,
 			lastDailyTimestamp: last_daily_timestamp,
 			lastTearsOfGuthixTimestamp: last_tears_of_guthix_timestamp,
-			perkTier,
 			perkTier,
 			rng: cryptoRng
 		});

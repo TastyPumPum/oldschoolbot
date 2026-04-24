@@ -510,7 +510,8 @@ export const startColosseumRun = (options: {
 };
 
 export async function colosseumCommand(itx: OSInteraction) {
-	const { user, rng, quantity, channelId } = itx;
+	const { user, rng, channelId } = itx;
+	let { quantity } = itx;
 	if (await user.minionIsBusy()) {
 		return `${user.usernameOrMention} is busy`;
 	}
