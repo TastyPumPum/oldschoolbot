@@ -3,8 +3,8 @@ import type { BathhouseTaskOptions } from '@/lib/bso/bsoTypes.js';
 import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 import type { MTame } from '@/lib/bso/structures/MTame.js';
 
-import { randArrItem } from 'node-rng';
 import { Emoji, formatDuration, reduceNumByPercent, stringMatches, Table, Time } from '@oldschoolgg/toolkit';
+import { randArrItem } from 'node-rng';
 import { Bank, type Item, Items, LootTable, resolveItems } from 'oldschooljs';
 
 import type { User } from '@/prisma/main.js';

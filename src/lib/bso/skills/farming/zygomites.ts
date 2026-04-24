@@ -2,8 +2,8 @@ import { clAdjustedDroprate } from '@/lib/bso/bsoUtil.js';
 import { globalDroprates } from '@/lib/bso/globalDroprates.js';
 import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 
-import { randArrItem, roll } from 'node-rng';
 import { SimpleTable } from '@oldschoolgg/toolkit';
+import { randArrItem, roll } from 'node-rng';
 import { Bank, type Item, Items, LootTable } from 'oldschooljs';
 
 import { BitField } from '@/lib/constants.js';

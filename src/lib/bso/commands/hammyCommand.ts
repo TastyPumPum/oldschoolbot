@@ -1,5 +1,5 @@
-import { randArrItem, roll } from 'node-rng';
 import { Emoji } from '@oldschoolgg/toolkit';
+import { randArrItem, roll } from 'node-rng';
 import { Bank, Items } from 'oldschooljs';
 
 // roll(chanceToDouble) to decide if the item doubles

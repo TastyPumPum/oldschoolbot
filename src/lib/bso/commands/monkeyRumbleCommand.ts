@@ -11,8 +11,8 @@ import {
 	TOTAL_MONKEYS
 } from '@/lib/bso/minigames/monkey-rumble/monkeyRumble.js';
 
-import { randArrItem } from 'node-rng';
 import { Emoji, formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
+import { randArrItem } from 'node-rng';
 import { Bank } from 'oldschooljs';
 
 export async function monkeyRumbleStatsCommand(user: MUser) {
