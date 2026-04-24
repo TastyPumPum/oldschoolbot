@@ -69,13 +69,27 @@ export const openCommand = defineCommand({
 				1950
 			)}.`;
 		}
-		options.quantity = clamp(options.quantity ?? 1, { min: 1, max: 100_000_000 });
-		if (options.open_until) {
-			return abstractedOpenUntilCommand(user, options.name, options.open_until, options.disable_pets);
+
+		if (options.quantity !== undefined && (!Number.isInteger(options.quantity) || options.quantity < 1)) {
+			return 'The quantity must be a positive integer.';
 		}
+
+		options.quantity = clamp(options.quantity ?? 1, { min: 1, max: 100_000_000 });
+
+		if (options.open_until) {
+			return abstractedOpenUntilCommand(
+				user,
+				options.name,
+				options.open_until,
+				options.disable_pets,
+				options.quantity
+			);
+		}
+
 		if (options.name.toLowerCase() === 'all') {
 			return abstractedOpenCommand(rng, interaction, user, ['all'], 'auto', false);
 		}
+
 		return abstractedOpenCommand(rng, interaction, user, [options.name], options.quantity, options.disable_pets);
 	}
 });

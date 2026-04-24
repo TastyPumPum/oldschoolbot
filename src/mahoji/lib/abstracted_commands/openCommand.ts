@@ -49,15 +49,14 @@ export async function abstractedOpenUntilCommand(
 	user: MUser,
 	name: string,
 	openUntilItem: string,
-	disable_pets: boolean | undefined
+	disable_pets: boolean | undefined,
+	quantity: number | undefined
 ) {
-	const quantity = 1;
+	if (quantity === undefined) quantity = 1;
 	if (quantity < 1 || !Number.isInteger(quantity)) {
 		return 'The quantity must be a positive integer.';
 	}
 
-	const perkTier = await user.fetchPerkTier();
-	if (perkTier < PerkTier.Three) return patronMsg(PerkTier.Three);
 	name = name.replace(regex, '$1');
 	const openableItem = allOpenables.find(o => o.aliases.some(alias => stringMatches(alias, name)));
 	if (!openableItem) return "That's not a valid item.";
@@ -70,6 +69,9 @@ export async function abstractedOpenUntilCommand(
 	if (!openable.allItems.includes(openUntil.id)) {
 		return `${openable.openedItem.name} doesn't drop ${openUntil.name}.`;
 	}
+
+	const perkTier = await user.fetchPerkTier();
+	if (perkTier < PerkTier.Three) return patronMsg(PerkTier.Three);
 
 	let amountOfThisOpenableOwned = user.bank.amount(openableItem.id);
 	if (amountOfThisOpenableOwned === 0) return "You don't own any of that item.";
@@ -87,7 +89,7 @@ export async function abstractedOpenUntilCommand(
 	const cost = new Bank();
 	const loot = new Bank();
 	let amountOpened = 0;
-	const max = Math.min(10000, amountOfThisOpenableOwned);
+	const max = Math.min(10000, amountOfThisOpenableOwned, quantity);
 	const totalLeaguesPoints = (await roboChimpUserFetch(user.id)).leagues_points_total;
 	for (let i = 0; i < max; i++) {
 		cost.add(openable.openedItem.id);
