@@ -194,6 +194,7 @@ export function calculateZygomiteLoot(minutes: number, userBank: Bank) {
 	for (let i = 0; i < minutes; i++) {
 		if (roll(zygomiteSeedMutChance)) {
 			const randomZyg = randArrItem(zygomiteFarmingSource.filter(z => z.lootTable !== null));
+			if (!randomZyg) continue;
 			const sourceSeed = randomZyg.mutatedFromItems?.roll();
 			if (!sourceSeed) continue;
 			if (userBank.amount(sourceSeed.item.id) < cost.amount(sourceSeed.item.id) + 1) continue;

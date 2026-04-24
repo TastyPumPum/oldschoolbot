@@ -32,7 +32,7 @@ export const fishingContestTask: MinionTask = {
 		caughtFish.sort((a, b) => b.lengthCentimetres - a.lengthCentimetres);
 		await prisma.fishingContestCatch.createMany({
 			data: caughtFish.map(f => ({
-				name: f.name,
+				name: f.name ?? 'Unknown fish',
 				user_id: BigInt(user.id),
 				length_cm: f.lengthCentimetres
 			}))

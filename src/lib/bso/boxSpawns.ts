@@ -94,6 +94,7 @@ const createdChallenge: Challenge = async (msg: IMessage): Promise<MUser | null>
 			!isFunction(i.inputItems)
 	);
 	const randomCreatable = randArrItem(all);
+	if (!randomCreatable) return null;
 
 	return runChallenge({
 		msg,
@@ -126,6 +127,7 @@ const monsters = [...Object.values(BSOMonsters), ...killableMonsters]
 
 const monsterDropChallenge: Challenge = async (msg: IMessage): Promise<MUser | null> => {
 	const monster = randArrItem(monsters);
+	if (!monster) return null;
 	const items = MathRNG.shuffle(monster.allItems).slice(0, 3);
 	const validMonsters = monsters.filter(mon => items.every(t => mon.allItems.includes(t)));
 
@@ -139,6 +141,7 @@ const monsterDropChallenge: Challenge = async (msg: IMessage): Promise<MUser | n
 
 const collectionLogChallenge: Challenge = async (msg: IMessage): Promise<MUser | null> => {
 	const cl = randArrItem(allCollectionLogsFlat);
+	if (!cl) return null;
 
 	return runChallenge({
 		msg,
@@ -186,15 +189,16 @@ export async function boxSpawnHandler(msg: IMessage) {
 	if (!roll(20)) return;
 	lastDrop = Date.now();
 
-	const item: Challenge = randArrItem([
-		itemChallenge,
-		triviaChallenge,
-		createdChallenge,
-		collectionLogChallenge,
-		collectionLogChallenge,
-		monsterDropChallenge,
-		monsterDropChallenge
-	]);
+	const item: Challenge =
+		randArrItem([
+			itemChallenge,
+			triviaChallenge,
+			createdChallenge,
+			collectionLogChallenge,
+			collectionLogChallenge,
+			monsterDropChallenge,
+			monsterDropChallenge
+		]) ?? itemChallenge;
 	const winner = await item(msg);
 	if (!winner) return;
 	const wonStr = `This is your ${formatOrdinal(await winner.fetchUserStat('main_server_challenges_won'))} challenge win!`;

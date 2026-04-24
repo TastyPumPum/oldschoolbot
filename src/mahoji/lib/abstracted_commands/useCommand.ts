@@ -253,7 +253,9 @@ export const genericUsables: {
 			content: 'You open the bottle, reading the scroll inside, and then return it to the ocean...',
 			files: [
 				{
-					buffer: await scriptImageGenerator.generateScriptImage(randArrItem(messageInABottleMessages)),
+					buffer: await scriptImageGenerator.generateScriptImage(
+						randArrItem(messageInABottleMessages) ?? messageInABottleMessages[0]
+					),
 					name: 'image.png'
 				}
 			]

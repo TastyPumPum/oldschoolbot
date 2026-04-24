@@ -4,7 +4,7 @@ import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 import { userHasFlappy } from '@/lib/bso/skills/invention/inventions.js';
 
 import { Emoji } from '@oldschoolgg/toolkit';
-import { MathRNG, randomVariation, roll } from 'node-rng';
+import { MathRNG, randArrItem, randomVariation, roll } from 'node-rng';
 import { Bank, ChambersOfXeric, resolveItems } from 'oldschooljs';
 
 import { drawChestLootImage } from '@/lib/canvas/chestImage.js';
@@ -73,7 +73,7 @@ async function handleCoxXP(user: MUser, qty: number, isCm: boolean) {
 
 export const raidsTask: MinionTask = {
 	type: 'Raids',
-	async run(data: RaidsOptions, { handleTripFinish, rng }) {
+	async run(data: RaidsOptions, { handleTripFinish }) {
 		const { channelId, users, challengeMode, duration, leader, quantity: _quantity, cc } = data;
 		const quantity = _quantity ?? 1;
 		const allUsers = await Promise.all(users.map(async u => mUserFetch(u)));

@@ -108,10 +108,15 @@ export const pickpocketTask: MinionTask = {
 		if (user.hasEquipped("Thieves' armband")) {
 			boosts.push('3x loot for Thieves armband');
 			updateBank.itemLootBank.multiply(3, notMultiplied);
-			await perHourChance(duration, 40, async () => {
-				await forcefullyUnequipItem(user, Items.getOrThrow("Thieves' armband"));
-				boosts.push('Your thieves armband broke!');
-			});
+			await perHourChance(
+				duration,
+				40,
+				async () => {
+					await forcefullyUnequipItem(user, Items.getOrThrow("Thieves' armband"));
+					boosts.push('Your thieves armband broke!');
+				},
+				rng
+			);
 		} else {
 			const { didCharge } = await chargePortentIfHasCharges({
 				user,

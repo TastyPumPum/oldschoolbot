@@ -189,7 +189,7 @@ export function calculateMiningResult({
 				loot.remove(ore.id, loot.amount(ore.id));
 				loot.add(barsFromKlikBank);
 				messages.push(
-					'<:klik:749945070932721676> Klik breathes a incredibly hot fire breath, and smelts all your ores!'
+					'<:klik:749945070932721676> Klik breathes an incredibly hot fire breath, and smelts all your ores!'
 				);
 			}
 		}

@@ -57,7 +57,7 @@ export const tobTask: MinionTask = {
 			quantity,
 			cc: chincannonUser
 		} = data;
-		const rng = data.rng ?? taskRng ?? cryptoRng;
+		const rng = taskRng ?? cryptoRng;
 		const allUsers = await Promise.all(users.map(async u => mUserFetch(u)));
 		const uniqueUsersMap = new Map<string, MUser>();
 		for (const user of allUsers) {
@@ -141,7 +141,7 @@ export const tobTask: MinionTask = {
 
 				const { cl } = user;
 				if (hardMode && rng.roll(30) && cl.has("Lil' zik") && cl.has('Sanguine dust')) {
-					const unownedPet = rng.shuffle(tobMetamorphPets).find(pet => !bank.has(pet));
+					const unownedPet = rng.shuffle(tobMetamorphPets).find((pet: number | string) => !bank.has(pet));
 					if (unownedPet) {
 						userLoot.add(unownedPet);
 					}

@@ -383,7 +383,10 @@ export function calculateBathouseResult(data: BathhouseTaskOptions) {
 	const firemakingXP = herbXP * 15.5 * tier.xpMultiplier + ore.warmth * 5000;
 
 	const speciesServed: BathhouseSpecies[] = [];
-	for (let i = 0; i < quantity; i++) speciesServed.push(randArrItem(speciesCanServe));
+	for (let i = 0; i < quantity; i++) {
+		const randomSpecies = randArrItem(speciesCanServe);
+		if (randomSpecies) speciesServed.push(randomSpecies);
+	}
 
 	let gaveExtraTips: BathhouseSpecies | null = null;
 

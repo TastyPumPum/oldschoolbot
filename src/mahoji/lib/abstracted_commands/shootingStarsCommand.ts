@@ -208,7 +208,6 @@ export async function shootingStarsCommand({
 	for (const s of stars) {
 		const [timeToMine, newQuantity] = determineMiningTime({
 			quantity: Math.round(s.dustAvailable / usersWith),
-			gearBank: user.gearBank,
 			ore: star,
 			ticksBetweenRolls: currentPickaxe.ticksBetweenRolls,
 			glovesRate: 0,

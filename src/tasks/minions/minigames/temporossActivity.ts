@@ -7,7 +7,7 @@ import { makeBankImage } from '@/lib/util/makeBankImage.js';
 
 export const temporossTask: MinionTask = {
 	type: 'Tempoross',
-	async run(data: TemporossActivityTaskOptions, { user, handleTripFinish, rng }) {
+	async run(data: TemporossActivityTaskOptions, { user, handleTripFinish }) {
 		const { channelId, quantity, rewardBoost, duration } = data;
 
 		const currentLevel = user.skillsAsLevels.fishing;

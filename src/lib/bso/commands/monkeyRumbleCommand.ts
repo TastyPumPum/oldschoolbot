@@ -120,6 +120,11 @@ export async function monkeyRumbleCommand(user: MUser, channelId: string): Comma
 
 	return {
 		content: str,
-		files: [await monkeyHeadImage({ monkey: monkeysToFight[0], content: randArrItem(fightingMessages) })]
+		files: [
+			await monkeyHeadImage({
+				monkey: monkeysToFight[0],
+				content: randArrItem(fightingMessages) ?? fightingMessages[0]
+			})
+		]
 	};
 }

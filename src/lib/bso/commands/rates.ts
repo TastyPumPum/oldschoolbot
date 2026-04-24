@@ -355,7 +355,8 @@ ${zygomiteFarmingSource
 									invincible: true,
 									noRandomness: true,
 									graceful: true,
-									experienceScore: 10
+									experienceScore: 10,
+									rng: MathRNG
 								});
 								results += [
 									creature.name,
@@ -509,7 +510,8 @@ ${zygomiteFarmingSource
 										strengthLevel: 120,
 										maxTripLength: duration,
 										hasKaramjaMedium: true,
-										hasDT2Quest: true
+										hasDT2Quest: true,
+										rng: MathRNG
 									});
 									if (typeof result === 'string') continue;
 									const spiritOre = stoneSpirits.find(t => t.ore.id === ore.id);

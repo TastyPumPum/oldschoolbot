@@ -294,6 +294,7 @@ export const hunterTask: MinionTask = {
 			return;
 		}
 
+		const crystalImpling = creature.name === 'Crystal impling';
 		const graceful = user.hasGracefulEquipped();
 
 		const experienceScore = await user.getCreatureScore(creature.id);

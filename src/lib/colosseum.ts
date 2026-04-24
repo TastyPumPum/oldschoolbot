@@ -509,9 +509,9 @@ export const startColosseumRun = (options: {
 	throw new Error('Colosseum run did not end correctly.');
 };
 
-export async function colosseumCommand(itx: OSInteraction) {
+export async function colosseumCommand(itx: OSInteraction, inputQuantity?: number) {
 	const { user, rng, channelId } = itx;
-	let { quantity } = itx;
+	let quantity = inputQuantity;
 	if (await user.minionIsBusy()) {
 		return `${user.usernameOrMention} is busy`;
 	}

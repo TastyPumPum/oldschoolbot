@@ -3,6 +3,7 @@ import { checkElderClueRequirements } from '@/lib/bso/elderClueRequirements.js';
 import type { ButtonBuilder } from '@oldschoolgg/discord';
 import { Emoji, notEmpty, stringMatches, uniqueArr } from '@oldschoolgg/toolkit';
 import { percentChance } from 'node-rng';
+import { cryptoRng } from 'node-rng/crypto';
 import { Bank, Items, itemID, resolveItems } from 'oldschooljs';
 
 import type { MessageBuilderClass } from '@/discord/MessageBuilder.js';
@@ -91,6 +92,7 @@ export async function abstractedOpenUntilCommand(
 	for (let i = 0; i < max; i++) {
 		cost.add(openable.openedItem.id);
 		const thisLoot = await getOpenableLoot({
+			rng: cryptoRng,
 			openable,
 			quantity: 1,
 			user,
@@ -185,6 +187,7 @@ async function finalizeOpening({
 			loot.add(
 				(
 					await getOpenableLoot({
+						rng: cryptoRng,
 						user,
 						openable,
 						quantity: smokeyBonus,
