@@ -2,6 +2,7 @@ import { Time } from '@oldschoolgg/toolkit';
 import { LRUCache } from 'lru-cache';
 
 import { BitField, PerkTier } from '@/lib/constants.js';
+import '@/lib/cache/redis.js';
 
 export const allPerkBitfields: BitField[] = [
 	BitField.PatronTier6,
