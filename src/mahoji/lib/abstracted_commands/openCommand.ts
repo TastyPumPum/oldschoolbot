@@ -76,7 +76,9 @@ export async function abstractedOpenUntilCommand(
 	}
 
 	const perkTier = await user.fetchPerkTier();
-	if (perkTier < PerkTier.Three) return patronMsg(PerkTier.Three);
+	if (quantity === undefined && perkTier < PerkTier.Three) {
+		return patronMsg(PerkTier.Three);
+	}
 
 	let amountOfThisOpenableOwned = user.bank.amount(openableItem.id);
 	if (amountOfThisOpenableOwned === 0) return "You don't own any of that item.";
@@ -214,9 +216,9 @@ async function finalizeOpening({
 	if (!user.owns(cost)) {
 		return `You don't own: ${cost}.`;
 	}
-	await user.transactItems({ itemsToRemove: cost });
-	const { previousCL } = await user.addItemsToBank({
-		items: loot,
+	const { previousCL } = await user.transactItems({
+		itemsToRemove: cost,
+		itemsToAdd: loot,
 		collectionLog: true,
 		filterLoot: false,
 		dontAddToTempCL: openables.some(i => itemsThatDontAddToTempCL.includes(i.id))
