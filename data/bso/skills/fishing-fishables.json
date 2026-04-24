@@ -304,6 +304,23 @@
 		"can_powerfish": true
 	},
 	{
+		"name": "Rocktail",
+		"subfishes": [
+			{
+				"id": 50001,
+				"level": 120,
+				"xp": 230,
+				"intercept": 0.02,
+				"slope": 0.0031
+			}
+		],
+		"pet_chance": 129434,
+		"clue_scroll_chance": 25434,
+		"lost_ticks": 0.1,
+		"banking_time": 25,
+		"ticks_per_roll": 5
+	},
+	{
 		"name": "Sardine/Herring",
 		"subfishes": [
 			{
