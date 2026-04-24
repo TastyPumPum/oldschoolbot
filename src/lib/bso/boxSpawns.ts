@@ -3,9 +3,9 @@ import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 
 import type { GatewayMessageCreateDispatchData } from '@oldschoolgg/discord';
 import { EmbedBuilder } from '@oldschoolgg/discord';
-import { randArrItem, roll, shuffleArr } from 'node-rng';
 import type { IMessage } from '@oldschoolgg/schemas';
 import { formatOrdinal, isFunction, stringMatches, Time } from '@oldschoolgg/toolkit';
+import { MathRNG, randArrItem, roll } from 'node-rng';
 import { Bank, Items, LootTable, Monsters } from 'oldschooljs';
 
 import { globalConfig } from '@/lib/constants.js';
@@ -74,7 +74,7 @@ const itemChallenge: Challenge = async (msg: IMessage): Promise<MUser | null> =>
 	const randomItem = Items.random();
 	const scrambed = randomItem.name
 		.split(' ')
-		.map(part => shuffleArr([...part]).join(''))
+		.map(part => MathRNG.shuffle([...part]).join(''))
 		.join(' ');
 
 	return runChallenge({
@@ -126,7 +126,7 @@ const monsters = [...Object.values(BSOMonsters), ...killableMonsters]
 
 const monsterDropChallenge: Challenge = async (msg: IMessage): Promise<MUser | null> => {
 	const monster = randArrItem(monsters);
-	const items = shuffleArr(monster.allItems).slice(0, 3);
+	const items = MathRNG.shuffle(monster.allItems).slice(0, 3);
 	const validMonsters = monsters.filter(mon => items.every(t => mon.allItems.includes(t)));
 
 	return runChallenge({

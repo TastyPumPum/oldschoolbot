@@ -1,7 +1,8 @@
 import { checkElderClueRequirements } from '@/lib/bso/elderClueRequirements.js';
 
 import { increaseNumByPercent, isWeekend, notEmpty, stringMatches, Time } from '@oldschoolgg/toolkit';
-import { Bank, clamp, type Item, type ItemBank, Items } from 'oldschooljs';
+import { Bank, type Item, type ItemBank, Items } from 'oldschooljs';
+import { clamp } from 'remeda';
 
 import { type ClueTier, ClueTiers } from '@/lib/clues/clueTiers.js';
 import { clueHunterOutfit } from '@/lib/data/CollectionsExport.js';

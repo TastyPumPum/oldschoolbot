@@ -23,7 +23,8 @@ import {
 import { calcWhatPercent, isObject, type PerkTier, Time, UserError, uniqueArr } from '@oldschoolgg/toolkit';
 import { isValidDiscordSnowflake } from '@oldschoolgg/util';
 import { Mutex } from 'async-mutex';
-import { cryptoRng, SeedableRNG } from 'node-rng/crypto';
+import { SeedableRNG } from 'node-rng';
+import { cryptoRng } from 'node-rng/crypto';
 import { Bank, EMonster, type Item, type ItemBank, Items, itemID } from 'oldschooljs';
 import { clone } from 'remeda';
 

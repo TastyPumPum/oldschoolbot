@@ -4,6 +4,7 @@ import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 import { userHasFlappy } from '@/lib/bso/skills/invention/inventions.js';
 
 import { Emoji } from '@oldschoolgg/toolkit';
+import { MathRNG, randomVariation, roll } from 'node-rng';
 import { Bank, ChambersOfXeric, resolveItems } from 'oldschooljs';
 
 import { drawChestLootImage } from '@/lib/canvas/chestImage.js';
@@ -135,7 +136,7 @@ export const raidsTask: MinionTask = {
 				const hasDust = userData.loot.has('Metamorphic dust') || userData.mUser.cl.has('Metamorphic dust');
 				if (challengeMode && roll(50) && hasDust) {
 					const result = userData.loot.clone().add(userData.mUser.allItemsOwned);
-					const unownedPet = shuffleArr(chambersOfXericMetamorphPets).find(pet => !result.has(pet));
+					const unownedPet = MathRNG.shuffle(chambersOfXericMetamorphPets).find(pet => !result.has(pet));
 					if (unownedPet) {
 						userLoot.add(unownedPet);
 					}

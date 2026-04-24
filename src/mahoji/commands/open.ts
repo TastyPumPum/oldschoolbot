@@ -1,4 +1,5 @@
-import { clamp, truncateString } from '@oldschoolgg/toolkit';
+import { truncateString } from '@oldschoolgg/toolkit';
+import { clamp } from 'remeda';
 
 import { allOpenables, allOpenablesIDs } from '@/lib/openables.js';
 import {

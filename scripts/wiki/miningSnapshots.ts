@@ -2,8 +2,6 @@ import { calcPerHour, Table, Time } from '@oldschoolgg/toolkit';
 import { Bank, convertLVLtoXP } from 'oldschooljs';
 import { uniqueBy } from 'remeda';
 
-import '../base.js';
-
 import { calculateMiningInput } from '@/mahoji/commands/mine.js';
 import { calculateMiningResult } from '@/tasks/minions/miningActivity.js';
 import { ClueTiers } from '../../src/lib/clues/clueTiers.js';
