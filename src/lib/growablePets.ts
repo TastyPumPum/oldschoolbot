@@ -1,8 +1,8 @@
-import { randFloat, roll } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
+import { roll } from 'node-rng';
 import { Bank, Items, resolveItems } from 'oldschooljs';
 
-import type { ActivityTaskOptions } from '@/lib/types/minions.js';
+import type { TripFinishEffect } from '@/lib/util/handleTripFinish.js';
 
 export const kittens = resolveItems([
 	'Grey and black kitten',
@@ -65,14 +65,14 @@ for (let i = 0; i < kittens.length; i++) {
 	});
 }
 
-export async function handleGrowablePetGrowth(user: MUser, data: ActivityTaskOptions, messages: string[]) {
+export const handleGrowablePetGrowth: TripFinishEffect['fn'] = async ({ user, data, messages, rng }) => {
 	const equippedPet = user.user.minion_equippedPet;
 	if (!equippedPet) return;
 	const equippedGrowablePet = growablePets.find(pet => pet.stages.includes(equippedPet));
 	if (!equippedGrowablePet) return;
 	if (equippedGrowablePet.stages[equippedGrowablePet.stages.length - 1] === equippedPet) return;
 	const minutesInThisTrip = data.duration / Time.Minute;
-	if (randFloat(0, equippedGrowablePet.growthRate) <= minutesInThisTrip) {
+	if (rng.randFloat(0, equippedGrowablePet.growthRate) <= minutesInThisTrip) {
 		let nextPet = equippedGrowablePet.stages[equippedGrowablePet.stages.indexOf(equippedPet) + 1];
 		const isLastPet = nextPet === equippedGrowablePet.stages[equippedGrowablePet.stages.length - 1];
 		if (nextPet === -1) {
@@ -97,7 +97,7 @@ export async function handleGrowablePetGrowth(user: MUser, data: ActivityTaskOpt
 		});
 		messages.push(`Your ${Items.getOrThrow(equippedPet).name} grew into a ${Items.getOrThrow(nextPet).name}!`);
 	}
-}
+};
 
 export const growablePetsCL = growablePets
 	.flatMap(i => i.stages)
