@@ -18,7 +18,6 @@ import { Bank, type ItemBank, Items, toKMB } from 'oldschooljs';
 import { economy_transaction_type } from '@/prisma/main/enums.js';
 import type { ClientStorage } from '@/prisma/main.js';
 import { bulkUpdateCommands, itemOption } from '@/discord/index.js';
-import { makeGiveawayButtons } from '@/mahoji/commands/giveaway.js';
 import {
 	bitfieldCanUserManipulate,
 	changeBitFieldForUser,
@@ -32,6 +31,7 @@ import { countUsersWithItemInCl } from '@/lib/rawSql.js';
 import { sorts } from '@/lib/sorts.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
 import { parseBank } from '@/lib/util/parseStringBank.js';
+import { makeGiveawayButtons } from '@/mahoji/commands/giveaway.js';
 
 export const gifs = [
 	'https://tenor.com/view/angry-stab-monkey-knife-roof-gif-13841993',

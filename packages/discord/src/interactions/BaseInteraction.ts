@@ -13,12 +13,7 @@ import {
 } from 'discord-api-types/v10';
 
 import type { DiscordClient } from '../client/DiscordClient.js';
-import {
-	type APISendableMessage,
-	type SendableMessage,
-	sendableMsgToApiCreate,
-	sendableMsgToApiEdit
-} from '../client/types.js';
+import { type APISendableMessage, type SendableMessage, sendableMsgToApiCreate } from '../client/types.js';
 
 type EditMessageOptions = SendableMessage;
 
@@ -133,7 +128,7 @@ export class BaseInteraction {
 		messageId: string,
 		options: SendableMessage
 	): Promise<RESTPostAPIInteractionCallbackWithResponseResult> {
-		const { files, message } = await sendableMsgToApiEdit({ msg: options });
+		const { files, message } = await this.toBody(options);
 		return this.rest.patch(Routes.webhookMessage(this.applicationId, this.token, messageId), {
 			auth: false,
 			body: message,
