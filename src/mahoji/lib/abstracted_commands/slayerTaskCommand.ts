@@ -4,7 +4,6 @@ import { EItem, type Monster, Monsters } from 'oldschooljs';
 import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { slayerActionButtons } from '@/lib/slayer/slayerButtons.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
-import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
 import {
 	assignNewSlayerTask,
 	calcMaxBlockedTasks,
@@ -149,7 +148,7 @@ export async function slayerNewTaskCommand({
 		});
 		await user.statsUpdate({ [taskStreakKey]: 0 });
 
-		const newSlayerTask = await assignNewSlayerTask(interaction, slayerMaster);
+		const newSlayerTask = await assignNewSlayerTask({ user, rng }, slayerMaster);
 		const commonName = getCommonTaskName(newSlayerTask.assignedTask.monster);
 		const returnMessage =
 			`Your task has been skipped.\n\n ${slayerMaster.name}` +
@@ -202,24 +201,7 @@ export async function slayerNewTaskCommand({
 		return resultMessage;
 	}
 
-	const newSlayerTask = await assignNewSlayerTask(interaction, slayerMaster);
-	const myUnlocks = user.user.slayer_unlocks ?? [];
-	const extendReward = SlayerRewardsShop.find(srs => srs.extendID?.includes(newSlayerTask.currentTask.monster_id));
-	if (extendReward && myUnlocks.includes(extendReward.id)) {
-		const quantity = newSlayerTask.assignedTask.extendedAmount
-			? rng.randInt(newSlayerTask.assignedTask.extendedAmount[0], newSlayerTask.assignedTask.extendedAmount[1])
-			: Math.ceil(newSlayerTask.currentTask.quantity * extendReward.extendMult!);
-		newSlayerTask.currentTask.quantity = quantity;
-		await prisma.slayerTask.update({
-			where: {
-				id: newSlayerTask.currentTask.id
-			},
-			data: {
-				quantity: newSlayerTask.currentTask.quantity,
-				quantity_remaining: newSlayerTask.currentTask.quantity
-			}
-		});
-	}
+	const newSlayerTask = await assignNewSlayerTask({ user, rng }, slayerMaster);
 
 	let commonName = getCommonTaskName(newSlayerTask.assignedTask.monster);
 	if (commonName === 'TzHaar') {

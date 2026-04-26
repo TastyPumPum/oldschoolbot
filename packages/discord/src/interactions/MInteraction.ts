@@ -4,7 +4,6 @@ import type {
 	IInteractionResponse,
 	IMember
 } from '@oldschoolgg/schemas';
-import { deepMerge } from '@oldschoolgg/toolkit';
 import {
 	type APIChatInputApplicationCommandInteraction,
 	type APIMessage,
@@ -13,7 +12,7 @@ import {
 } from 'discord-api-types/v10';
 
 import type { DiscordClient } from '../client/DiscordClient.js';
-import type { BaseSendableMessage, SendableMessage } from '../client/types.js';
+import { type BaseSendableMessage, normalizeSendableMessage, type SendableMessage } from '../client/types.js';
 import { convertApiMemberToZMember } from '../conversions.js';
 import type { SpecialResponse } from '../util.js';
 import { BaseInteraction } from './BaseInteraction.js';
@@ -126,28 +125,10 @@ export class MInteraction<T extends AnyInteraction = AnyInteraction> extends Bas
 	}
 
 	returnStringOrFile(string: string | BaseSendableMessage): BaseSendableMessage {
-		const TOO_LONG_STR = 'The result was too long (over 2000 characters), please read the attached file.';
-
 		if (typeof string === 'string') {
-			if (string.length > 2000) {
-				return {
-					content: TOO_LONG_STR,
-					files: [{ buffer: Buffer.from(string), name: 'result.txt' }]
-				};
-			}
-			return { content: string };
+			return normalizeSendableMessage({ content: string });
 		}
-		if (string.content && string.content.length > 2000) {
-			return deepMerge(
-				string,
-				{
-					content: TOO_LONG_STR,
-					files: [{ buffer: Buffer.from(string.content), name: 'result.txt' }]
-				},
-				{ clone: false }
-			);
-		}
-		return string;
+		return normalizeSendableMessage(string);
 	}
 }
 

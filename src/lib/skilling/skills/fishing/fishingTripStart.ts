@@ -1,3 +1,5 @@
+import { InventionID, inventionBoosts, inventionItemBoost } from '@/lib/bso/skills/invention/inventions.js';
+
 import { Time } from '@oldschoolgg/toolkit';
 import { MathRNG, type RNGProvider } from 'node-rng';
 import { Bank, EItem, Items } from 'oldschooljs';
@@ -24,9 +26,19 @@ const FEATHER_ID = Items.getId('Feather');
 const FEATHER_PACK_ID = Items.getId('Feather pack');
 const SHARK_LURE_ID = Items.getId('Shark lure');
 const FEATHER_PACK_SIZE = 100;
+const oldFishingBoostTripExtensions = [
+	["Champion's tackle box", 4],
+	['Professional tackle box', 3],
+	['Standard tackle box', 2],
+	['Basic tackle box', 1]
+] as const;
 
 function isHarpoonFishSpot(fish: Fish) {
 	return harpoonFishSpots.has(fish.name);
+}
+
+function speedMultiplierFromPercentReduction(percent: number) {
+	return 1 / (1 - percent / 100);
 }
 
 function rollExtraLoot({
@@ -287,7 +299,7 @@ function determineFishingTime({
 	};
 }
 
-export function calcFishingTripStart({
+export async function calcFishingTripStart({
 	gearBank,
 	fish,
 	maxTripLength,
@@ -296,7 +308,8 @@ export function calcFishingTripStart({
 	powerfish,
 	hasWildyEliteDiary,
 	rng,
-	sharkLureQuantity
+	sharkLureQuantity,
+	user
 }: {
 	gearBank: GearBank;
 	fish: Fish;
@@ -307,6 +320,7 @@ export function calcFishingTripStart({
 	hasWildyEliteDiary: boolean;
 	rng?: RNGProvider;
 	sharkLureQuantity?: SharkLureQuantity;
+	user?: MUser;
 }) {
 	const rngProvider = rng ?? MathRNG;
 
@@ -333,6 +347,7 @@ export function calcFishingTripStart({
 	const availableFeathers = baitIsFeather ? gearBank.bank.amount(FEATHER_ID) : 0;
 	const availableFeatherPacks = baitIsFeather ? gearBank.bank.amount(FEATHER_PACK_ID) : 0;
 	const totalFeatherSupply = baitIsFeather ? availableFeathers + availableFeatherPacks * FEATHER_PACK_SIZE : 0;
+	let tripSpeedMultiplier = 1;
 
 	if (['Minnow', 'Karambwanji'].includes(fish.name)) {
 		isPowerfishing = false;
@@ -345,6 +360,24 @@ export function calcFishingTripStart({
 	const boosts: string[] = [];
 	if (isPowerfishing) {
 		boosts.push('**Powerfishing**');
+	}
+
+	if (gearBank.usingPet('Shelldon')) {
+		tripSpeedMultiplier *= 2;
+		boosts.push('2x faster for Shelldon');
+	}
+
+	if (gearBank.hasEquippedOrInBank('Shark tooth necklace')) {
+		tripSpeedMultiplier *= speedMultiplierFromPercentReduction(5);
+		boosts.push('5% faster for Shark tooth necklace');
+	}
+
+	for (const [tackleBox, minutes] of oldFishingBoostTripExtensions) {
+		if (gearBank.hasEquippedOrInBank(tackleBox)) {
+			maxTripLength += Time.Minute * minutes;
+			boosts.push(`+${minutes} minute${minutes === 1 ? '' : 's'} for ${tackleBox}`);
+			break;
+		}
 	}
 
 	let harpoonBoost = 1;
@@ -407,123 +440,149 @@ export function calcFishingTripStart({
 		}
 	}
 
-	const tripTicks = maxTrip / (Time.Second * 0.6);
-	const flakesAvailable = gearBank.bank.amount('Spirit flakes');
+	const calculateTrip = (currentTripSpeedMultiplier: number, baseBoosts: string[]) => {
+		const tripTicks = (maxTrip * currentTripSpeedMultiplier) / (Time.Second * 0.6);
+		const flakesAvailable = gearBank.bank.amount('Spirit flakes');
 
-	const useBarbarianCutEat =
-		fish.name === 'Barbarian fishing' &&
-		isPowerfishing &&
-		gearBank.skillsAsLevels.fishing >= 99 &&
-		gearBank.skillsAsLevels.cooking >= 80;
+		const useBarbarianCutEat =
+			fish.name === 'Barbarian fishing' &&
+			isPowerfishing &&
+			gearBank.skillsAsLevels.fishing >= 99 &&
+			gearBank.skillsAsLevels.cooking >= 80;
 
-	const initialBait = fish.bait ? (baitIsFeather ? totalFeatherSupply : gearBank.bank.amount(fish.bait)) : 0;
+		const initialBait = fish.bait ? (baitIsFeather ? totalFeatherSupply : gearBank.bank.amount(fish.bait)) : 0;
 
-	if (fish.bait) {
-		if (baitIsFeather) {
-			if (totalFeatherSupply === 0) {
-				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
-			}
-			if (!useBarbarianCutEat) {
-				quantity = Math.min(quantity, totalFeatherSupply);
-			}
-		} else {
-			const baseCost = new Bank().add(fish.bait);
-			const maxCanDo = gearBank.bank.fits(baseCost);
-			if (maxCanDo === 0) {
-				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
-			}
-			if (!useBarbarianCutEat) {
-				quantity = Math.min(quantity, maxCanDo);
-			}
-		}
-	}
-
-	let sharkLuresToConsume = 0;
-	const {
-		catches,
-		loot,
-		ticksElapsed,
-		flakesUsed,
-		baitUsed,
-		blessingExtra,
-		flakeExtra,
-		extraCatchRolls,
-		boosts: extraBoosts
-	} = determineFishingTime({
-		quantity,
-		tripTicks,
-		isPowerfishing,
-		isUsingSpiritFlakes,
-		fish,
-		gearBank,
-		invSlots,
-		blessingChance,
-		flakesAvailable,
-		harpoonBoost,
-		hasWildyEliteDiary,
-		initialBait,
-		useBarbarianCutEat,
-		rng: rngProvider,
-		sharkLureMultiplier
-	});
-
-	boosts.push(...extraBoosts);
-
-	const totalCaught = catches.reduce((total, val) => total + val, 0);
-	if (appliedSharkLureQuantity > 0) {
-		sharkLuresToConsume = totalCaught * appliedSharkLureQuantity;
-	}
-	if (totalCaught === 0) {
-		return `You can't fish any ${fish.name}. Try a higher quantity or ensure you have the required supplies.`;
-	}
-
-	const duration = Time.Second * 0.6 * ticksElapsed;
-
-	let featherPacksToOpen = 0;
-	if (baitIsFeather && baitUsed > 0) {
-		const directFeatherUsage = Math.min(availableFeathers, baitUsed);
-		const remainingFeathersNeeded = baitUsed - directFeatherUsage;
-		if (remainingFeathersNeeded > 0) {
-			featherPacksToOpen = Math.ceil(remainingFeathersNeeded / FEATHER_PACK_SIZE);
-			if (featherPacksToOpen > availableFeatherPacks) {
-				if (fish.bait === undefined) {
-					return `You need bait to fish ${fish.name}!`;
+		if (fish.bait) {
+			if (baitIsFeather) {
+				if (totalFeatherSupply === 0) {
+					return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
 				}
-				return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
+				if (!useBarbarianCutEat) {
+					quantity = Math.min(quantity, totalFeatherSupply);
+				}
+			} else {
+				const baseCost = new Bank().add(fish.bait);
+				const maxCanDo = gearBank.bank.fits(baseCost);
+				if (maxCanDo === 0) {
+					return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
+				}
+				if (!useBarbarianCutEat) {
+					quantity = Math.min(quantity, maxCanDo);
+				}
 			}
+		}
+
+		let sharkLuresToConsume = 0;
+		const {
+			catches,
+			loot,
+			ticksElapsed,
+			flakesUsed,
+			baitUsed,
+			blessingExtra,
+			flakeExtra,
+			extraCatchRolls,
+			boosts: extraBoosts
+		} = determineFishingTime({
+			quantity,
+			tripTicks,
+			isPowerfishing,
+			isUsingSpiritFlakes,
+			fish,
+			gearBank,
+			invSlots,
+			blessingChance,
+			flakesAvailable,
+			harpoonBoost,
+			hasWildyEliteDiary,
+			initialBait,
+			useBarbarianCutEat,
+			rng: rngProvider,
+			sharkLureMultiplier
+		});
+
+		const boosts = [...baseBoosts, ...extraBoosts];
+		const totalCaught = catches.reduce((total, val) => total + val, 0);
+		if (appliedSharkLureQuantity > 0) {
+			sharkLuresToConsume = totalCaught * appliedSharkLureQuantity;
+		}
+		if (totalCaught === 0) {
+			return `You can't fish any ${fish.name}. Try a higher quantity or ensure you have the required supplies.`;
+		}
+
+		const duration = (Time.Second * 0.6 * ticksElapsed) / currentTripSpeedMultiplier;
+
+		let featherPacksToOpen = 0;
+		if (baitIsFeather && baitUsed > 0) {
+			const directFeatherUsage = Math.min(availableFeathers, baitUsed);
+			const remainingFeathersNeeded = baitUsed - directFeatherUsage;
+			if (remainingFeathersNeeded > 0) {
+				featherPacksToOpen = Math.ceil(remainingFeathersNeeded / FEATHER_PACK_SIZE);
+				if (featherPacksToOpen > availableFeatherPacks) {
+					if (fish.bait === undefined) {
+						return `You need bait to fish ${fish.name}!`;
+					}
+					return `You need ${Items.itemNameFromId(fish.bait)} to fish ${fish.name}!`;
+				}
+			}
+		}
+
+		const suppliesToRemove = new Bank();
+		if (fish.bait && baitUsed > 0) {
+			suppliesToRemove.add(fish.bait, baitUsed);
+		}
+		if (flakesUsed > 0) {
+			suppliesToRemove.add('Spirit flakes', flakesUsed);
+		}
+		if (sharkLuresToConsume > 0) {
+			suppliesToRemove.add(SHARK_LURE_ID, sharkLuresToConsume);
+		}
+
+		return {
+			duration,
+			quantity: totalCaught,
+			flakesBeingUsed: flakesUsed > 0 ? flakesUsed : undefined,
+			boosts,
+			fish,
+			catches,
+			loot,
+			isPowerfishing,
+			isUsingSpiritFlakes: flakesUsed > 0,
+			spiritFlakePreference,
+			sharkLureQuantity: appliedSharkLureQuantity,
+			sharkLuresToConsume: sharkLuresToConsume > 0 ? sharkLuresToConsume : undefined,
+			sharkLurePreference,
+			suppliesToRemove,
+			blessingExtra,
+			flakeExtra,
+			usedBarbarianCutEat: useBarbarianCutEat,
+			featherPacksToOpen: featherPacksToOpen > 0 ? featherPacksToOpen : undefined,
+			extraCatchRolls
+		};
+	};
+
+	let result = calculateTrip(tripSpeedMultiplier, boosts);
+	if (typeof result === 'string') {
+		return result;
+	}
+
+	if (user?.hasEquippedOrInBank('Mecha rod')) {
+		const mechaSpeedMultiplier = speedMultiplierFromPercentReduction(inventionBoosts.mechaRod.speedBoostPercent);
+		const estimatedDuration = quantityInput
+			? Math.min(maxTripLength, result.duration / mechaSpeedMultiplier)
+			: maxTripLength;
+		const mechaRodBoost = await inventionItemBoost({
+			user,
+			inventionID: InventionID.MechaRod,
+			duration: estimatedDuration
+		});
+		if (mechaRodBoost.success) {
+			result = calculateTrip(tripSpeedMultiplier * mechaSpeedMultiplier, [
+				...boosts,
+				`${inventionBoosts.mechaRod.speedBoostPercent}% faster for Mecha rod (${mechaRodBoost.messages})`
+			]);
 		}
 	}
 
-	const suppliesToRemove = new Bank();
-	if (fish.bait && baitUsed > 0) {
-		suppliesToRemove.add(fish.bait, baitUsed);
-	}
-	if (flakesUsed > 0) {
-		suppliesToRemove.add('Spirit flakes', flakesUsed);
-	}
-	if (sharkLuresToConsume > 0) {
-		suppliesToRemove.add(SHARK_LURE_ID, sharkLuresToConsume);
-	}
-
-	return {
-		duration,
-		quantity: totalCaught,
-		flakesBeingUsed: flakesUsed > 0 ? flakesUsed : undefined,
-		boosts,
-		fish,
-		catches,
-		loot,
-		isPowerfishing,
-		isUsingSpiritFlakes: flakesUsed > 0,
-		spiritFlakePreference,
-		sharkLureQuantity: appliedSharkLureQuantity,
-		sharkLuresToConsume: sharkLuresToConsume > 0 ? sharkLuresToConsume : undefined,
-		sharkLurePreference,
-		suppliesToRemove,
-		blessingExtra,
-		flakeExtra,
-		usedBarbarianCutEat: useBarbarianCutEat,
-		featherPacksToOpen: featherPacksToOpen > 0 ? featherPacksToOpen : undefined,
-		extraCatchRolls
-	};
+	return result;
 }

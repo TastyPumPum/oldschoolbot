@@ -115,7 +115,7 @@ export const fishCommand = defineCommand({
 			boosts.push('2x faster for Shelldon');
 		}*/
 
-		const result = Fishing.util.calcFishingTripStart({
+		const result = await Fishing.util.calcFishingTripStart({
 			gearBank: user.gearBank,
 			fish: spot,
 			maxTripLength,
@@ -123,7 +123,8 @@ export const fishCommand = defineCommand({
 			wantsToUseFlakes: Boolean(options.spirit_flakes),
 			powerfish: Boolean(options.powerfish),
 			hasWildyEliteDiary,
-			sharkLureQuantity
+			sharkLureQuantity,
+			user
 		});
 
 		if (typeof result === 'string') {

@@ -49,6 +49,10 @@ type AnyClassWithBuild = InstanceType<
 export type SendableMessage = string | BaseSendableMessage | AnyClassWithBuild;
 
 export type APISendableMessage = { message: RESTPostAPIChannelMessageJSONBody; files: RawFile[] | null };
+export const MAX_DISCORD_MESSAGE_CONTENT_LENGTH = 2000;
+export const TOO_LONG_CONTENT_FALLBACK =
+	'The result was too long (over 2000 characters), please read the attached file.';
+
 function isButtonMatrix(arr: ButtonBuilder[] | ButtonBuilder[][]): arr is ButtonBuilder[][] {
 	return Array.isArray(arr[0]);
 }
@@ -68,15 +72,25 @@ function resolveComponents(
 
 const DEFAULT_ALLOWED_MENTIONS: APIAllowedMentions = { users: [], roles: [], parse: [] };
 
+export function normalizeSendableMessage(msg: BaseSendableMessage): BaseSendableMessage {
+	if (!msg.content || msg.content.length <= MAX_DISCORD_MESSAGE_CONTENT_LENGTH) return msg;
+	return {
+		...msg,
+		content: TOO_LONG_CONTENT_FALLBACK,
+		files: [...(msg.files?.filter(Boolean) ?? []), { buffer: Buffer.from(msg.content), name: 'result.txt' }]
+	};
+}
+
 export async function sendableMsgToApiCreate({ msg }: { msg: SendableMessage }): Promise<APISendableMessage> {
 	if (typeof msg === 'string') {
 		return sendableMsgToApiCreate({ msg: { content: msg } });
 	}
 
 	if ('build' in msg) {
-		// TODO: if content >2k, send as txt file
 		return sendableMsgToApiCreate({ msg: await msg.build() });
 	}
+
+	msg = normalizeSendableMessage(msg);
 
 	const message: RESTPostAPIChannelMessageJSONBody = {
 		content: msg.content ?? '',

@@ -251,12 +251,12 @@ export const slayerCommand = defineCommand({
 		}
 		if (options.new_task) {
 			return slayerNewTaskCommand({
+				rng,
 				user,
 				interaction,
 				slayerMasterOverride: options.new_task.master,
 				saveDefaultSlayerMaster: Boolean(options.new_task.save),
-				showButtons: true,
-				rng
+				showButtons: true
 			});
 		}
 		if (options.manage) {
