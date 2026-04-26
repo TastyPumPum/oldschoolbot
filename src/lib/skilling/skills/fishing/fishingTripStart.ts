@@ -371,6 +371,28 @@ export async function calcFishingTripStart({
 		tripSpeedMultiplier *= speedMultiplierFromPercentReduction(5);
 		boosts.push('5% faster for Shark tooth necklace');
 	}
+	switch (fish.bait) {
+		case Items.getId('Fishing bait'):
+			if (fish.name !== 'Infernal eel' && gearBank.hasEquippedOrInBank('Pearl fishing rod')) {
+				tripSpeedMultiplier *= speedMultiplierFromPercentReduction(5);
+				boosts.push('5% faster for Pearl fishing rod');
+			}
+			break;
+		case FEATHER_ID:
+			if (fish.name === 'Barbarian fishing' && gearBank.hasEquippedOrInBank('Pearl barbarian rod')) {
+				tripSpeedMultiplier *= speedMultiplierFromPercentReduction(5);
+				boosts.push('5% faster for Pearl barbarian rod');
+			} else if (fish.name !== 'Barbarian fishing' && gearBank.hasEquippedOrInBank('Pearl fly fishing rod')) {
+				tripSpeedMultiplier *= speedMultiplierFromPercentReduction(5);
+				boosts.push('5% faster for Pearl fly fishing rod');
+			}
+			break;
+		default:
+			if (gearBank.hasEquippedOrInBank('Crystal harpoon')) {
+				tripSpeedMultiplier *= speedMultiplierFromPercentReduction(5);
+				boosts.push('5% faster for Crystal harpoon');
+			}
+	}
 
 	for (const [tackleBox, minutes] of oldFishingBoostTripExtensions) {
 		if (gearBank.hasEquippedOrInBank(tackleBox)) {
