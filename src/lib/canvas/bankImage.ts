@@ -241,6 +241,7 @@ class BankImageTask {
 	public whiteEffect: Image | null = null;
 	public wubblesEffect: Image | null = null;
 	public easterEffect: Image | null = null;
+	public octoBubblesEffect: Image | null = null;
 
 	public effects: Map<number, Image> = new Map();
 
@@ -258,6 +259,7 @@ class BankImageTask {
 		this.whiteEffect = await loadImage(await fs.readFile('./src/lib/resources/images/white-glow.png'));
 		this.easterEffect = await loadImage(await fs.readFile('./src/lib/resources/images/easter-glow.png'));
 		this.wubblesEffect = await loadImage(await fs.readFile('./src/lib/resources/images/wubbles-glow.png'));
+		this.octoBubblesEffect = await loadImage(await fs.readFile('./src/lib/resources/images/octo-bubbles.png'));
 		const coolItemEffects: [number, Image][] = [
 			[itemID('Radiant Magnabbit'), this.redEffect!],
 			[itemID('Monkey egg'), this.bananaEffect!],
@@ -265,7 +267,8 @@ class BankImageTask {
 			[itemID('Eagle egg'), this.easterEffect],
 			[itemID('Hoppy'), this.easterEffect],
 			[itemID('Wubbles'), this.wubblesEffect!],
-			[itemID('Seer'), this.whiteEffect!]
+			[itemID('Seer'), this.whiteEffect!],
+			[itemID('Octo'), this.octoBubblesEffect!]
 		];
 
 		for (const [itemId, itemEffect] of coolItemEffects) {
