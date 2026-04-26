@@ -41,6 +41,7 @@ import {
 	type DiscordClientOptions,
 	type SendableMessage,
 	sendableMsgToApiCreate,
+	sendableMsgToApiEdit,
 	type UserUsernameFetcher,
 	type ValidAPIChannel
 } from './types.js';
@@ -256,7 +257,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 
 	async editMessage(channelId: string, messageId: string, body: SendableMessage): Promise<void> {
 		const route = Routes.channelMessage(channelId, messageId);
-		const { files, message } = await this.sendableMsgToApiCreate(body);
+		const { files, message } = await sendableMsgToApiEdit({ msg: body });
 		await this.rest.patch(route, {
 			body: message,
 			files: files ?? undefined
