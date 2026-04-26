@@ -3,7 +3,6 @@ import { debounce, Events, Time } from '@oldschoolgg/toolkit';
 import { Bank, type ItemBank } from 'oldschooljs';
 
 import type { Giveaway } from '@/prisma/main.js';
-import { makeGiveawayButtons } from '@/mahoji/commands/giveaway.js';
 
 async function refundGiveaway(creator: MUser, loot: Bank) {
 	await creator.transactItems({
@@ -75,7 +74,7 @@ export const updateGiveawayMessage = debounce(async (_giveaway: Giveaway, winner
 		newContent = generateGiveawayContent(giveaway.user_id, giveaway.finish_date, giveaway.users_entered);
 	}
 	const edits: BaseSendableMessage = {};
-	edits.components = giveaway.completed ? [] : makeGiveawayButtons(giveaway.id);
+	if (giveaway.completed) edits.components = [];
 	if (message.content !== newContent) {
 		edits.content = newContent;
 	}

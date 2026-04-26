@@ -49,11 +49,6 @@ type AnyClassWithBuild = InstanceType<
 export type SendableMessage = string | BaseSendableMessage | AnyClassWithBuild;
 
 export type APISendableMessage = { message: RESTPostAPIChannelMessageJSONBody; files: RawFile[] | null };
-export const MAX_DISCORD_MESSAGE_CONTENT_LENGTH = 2000;
-export const TOO_LONG_CONTENT_FALLBACK =
-	'The result was too long (over 2000 characters), please read the attached file.';
-type SendableMessageSerializationMode = 'create' | 'edit';
-
 function isButtonMatrix(arr: ButtonBuilder[] | ButtonBuilder[][]): arr is ButtonBuilder[][] {
 	return Array.isArray(arr[0]);
 }
@@ -73,57 +68,24 @@ function resolveComponents(
 
 const DEFAULT_ALLOWED_MENTIONS: APIAllowedMentions = { users: [], roles: [], parse: [] };
 
-export function normalizeSendableMessage(msg: BaseSendableMessage): BaseSendableMessage {
-	if (!msg.content || msg.content.length <= MAX_DISCORD_MESSAGE_CONTENT_LENGTH) return msg;
-	return {
-		...msg,
-		content: TOO_LONG_CONTENT_FALLBACK,
-		files: [...(msg.files?.filter(Boolean) ?? []), { buffer: Buffer.from(msg.content), name: 'result.txt' }]
-	};
-}
-
-async function sendableMsgToApi({
-	msg,
-	mode
-}: {
-	msg: SendableMessage;
-	mode: SendableMessageSerializationMode;
-}): Promise<APISendableMessage> {
+export async function sendableMsgToApiCreate({ msg }: { msg: SendableMessage }): Promise<APISendableMessage> {
 	if (typeof msg === 'string') {
-		return sendableMsgToApi({ msg: { content: msg }, mode });
+		return sendableMsgToApiCreate({ msg: { content: msg } });
 	}
 
 	if ('build' in msg) {
-		return sendableMsgToApi({ msg: await msg.build(), mode });
+		// TODO: if content >2k, send as txt file
+		return sendableMsgToApiCreate({ msg: await msg.build() });
 	}
 
-	msg = normalizeSendableMessage(msg);
-	const message: RESTPostAPIChannelMessageJSONBody =
-		mode === 'create'
-			? {
-					content: msg.content ?? '',
-					components: resolveComponents(msg.components),
-					embeds: msg.embeds?.map(embed => embed.toJSON()),
-					flags: msg.ephemeral ? MessageFlags.Ephemeral : undefined,
-					allowed_mentions: merge(DEFAULT_ALLOWED_MENTIONS, msg.allowedMentions),
-					message_reference: msg.messageReference
-				}
-			: {};
-
-	if (mode === 'edit') {
-		if ('content' in msg) {
-			message.content = msg.content ?? '';
-		}
-		if ('components' in msg) {
-			message.components = resolveComponents(msg.components);
-		}
-		if ('embeds' in msg) {
-			message.embeds = msg.embeds?.map(embed => embed.toJSON());
-		}
-		if ('allowedMentions' in msg) {
-			message.allowed_mentions = merge(DEFAULT_ALLOWED_MENTIONS, msg.allowedMentions);
-		}
-	}
+	const message: RESTPostAPIChannelMessageJSONBody = {
+		content: msg.content ?? '',
+		components: resolveComponents(msg.components),
+		embeds: msg.embeds?.map(embed => embed.toJSON()),
+		flags: msg.ephemeral ? MessageFlags.Ephemeral : undefined,
+		allowed_mentions: merge(DEFAULT_ALLOWED_MENTIONS, msg.allowedMentions),
+		message_reference: msg.messageReference
+	};
 
 	if ('files' in msg && msg.files && msg.files.length > 0) {
 		const files: RawFile[] = [];
@@ -134,14 +96,6 @@ async function sendableMsgToApi({
 		return { message, files };
 	}
 	return { message, files: null };
-}
-
-export async function sendableMsgToApiCreate({ msg }: { msg: SendableMessage }): Promise<APISendableMessage> {
-	return sendableMsgToApi({ msg, mode: 'create' });
-}
-
-export async function sendableMsgToApiEdit({ msg }: { msg: SendableMessage }): Promise<APISendableMessage> {
-	return sendableMsgToApi({ msg, mode: 'edit' });
 }
 
 export interface DiscordClientEventsMap {
