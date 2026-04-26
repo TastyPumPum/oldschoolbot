@@ -18,6 +18,7 @@ import { Bank, type ItemBank, Items, toKMB } from 'oldschooljs';
 import { economy_transaction_type } from '@/prisma/main/enums.js';
 import type { ClientStorage } from '@/prisma/main.js';
 import { bulkUpdateCommands, itemOption } from '@/discord/index.js';
+import { makeGiveawayButtons } from '@/mahoji/commands/giveaway.js';
 import {
 	bitfieldCanUserManipulate,
 	changeBitFieldForUser,
@@ -610,6 +611,11 @@ export const adminCommand = defineCommand({
 					description: 'The reason'
 				}
 			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'fix_giveaways',
+			description: 'Re-add Join/Leave buttons to all active giveaways.'
 		}
 	],
 	run: async ({ options, userId, interaction, guildId, rng }) => {
@@ -801,6 +807,46 @@ ${META_CONSTANTS.RENDERED_STR}`
 
 			await user.addItemsToBank({ items, collectionLog: false });
 			return `Gave ${items} to ${user.mention}`;
+		}
+
+		if (options.fix_giveaways) {
+			const giveaways = await prisma.giveaway.findMany({
+				where: {
+					completed: false
+				},
+				select: {
+					id: true,
+					channel_id: true,
+					message_id: true
+				}
+			});
+			let fixed = 0;
+			let failed = 0;
+			const errors: string[] = [];
+
+			for (const giveaway of giveaways) {
+				try {
+					await globalClient.editMessage(giveaway.channel_id, giveaway.message_id, {
+						components: makeGiveawayButtons(giveaway.id)
+					});
+					fixed++;
+				} catch (err) {
+					failed++;
+					errors.push(`${giveaway.id}: ${(err as Error).message}`);
+					Logging.logError(err as Error, {
+						command: 'admin_fix_giveaways',
+						giveaway_id: giveaway.id,
+						channel_id: giveaway.channel_id,
+						message_id: giveaway.message_id
+					});
+				}
+			}
+
+			let response = `Processed ${giveaways.length} active giveaways. Fixed ${fixed}. Failed ${failed}.`;
+			if (errors.length > 0) {
+				response += `\n\nFirst errors:\n${errors.slice(0, 10).join('\n')}`;
+			}
+			return response;
 		}
 
 		if (options.item_stats) {

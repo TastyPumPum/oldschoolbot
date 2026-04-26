@@ -21,7 +21,7 @@ function userHasUnlimitedGiveaways(user: MUser) {
 	return user.isTrusted() || user.bitfield.includes(BitField.UnlimitedGiveaways);
 }
 
-function makeGiveawayButtons(giveawayID: number) {
+export function makeGiveawayButtons(giveawayID: number) {
 	return [
 		new ButtonBuilder()
 			.setCustomId(`GIVEAWAY_ENTER_${giveawayID}`)
