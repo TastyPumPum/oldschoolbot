@@ -440,8 +440,8 @@ const fishes: Fish[] = [
 				id: itemID('Raw rocktail'),
 				level: 120,
 				xp: 230,
-				intercept: 0.02,
-				slope: 0.0031
+				intercept: 0.03,
+				slope: 0.00465
 			}
 		],
 		petChance: 129_434,
