@@ -47,6 +47,26 @@ export const combinedTmbUmbEmbTables = [...new Set([...tmbTable, ...umbTable, ..
 const nonPMBMbTable = [...combinedTmbUmbEmbTables, ...ClothingMysteryBoxTable.allItems, ...baseHolidayItems.allItems];
 export const allMbTables = [...new Set([...nonPMBMbTable, ...PMBTable.allItems])];
 export const allIronmanMbTables = [...new Set([...nonPMBMbTable, ...IronmanPMBTable.allItems])];
+export const mysteryBoxTypeTables = [
+	{ abbreviation: 'TMB', itemIDs: tmbTable },
+	{ abbreviation: 'UMB', itemIDs: umbTable },
+	{ abbreviation: 'EMB', itemIDs: embTable },
+	{ abbreviation: 'CMB', itemIDs: ClothingMysteryBoxTable.allItems },
+	{ abbreviation: 'HMB', itemIDs: baseHolidayItems.allItems },
+	{ abbreviation: 'PMB', itemIDs: PMBTable.allItems },
+	{ abbreviation: 'IPMB', itemIDs: IronmanPMBTable.allItems }
+] as const;
+
+export function getMysteryBoxAbbreviationsForItem(targetItemID: number, isIronman: boolean) {
+	return mysteryBoxTypeTables
+		.filter(table => {
+			if (!table.itemIDs.includes(targetItemID)) return false;
+			if (table.abbreviation === 'PMB') return !isIronman;
+			if (table.abbreviation === 'IPMB') return isIronman;
+			return true;
+		})
+		.map(table => (table.abbreviation === 'IPMB' ? 'PMB' : table.abbreviation));
+}
 
 const MR_E_DROPRATE_FROM_UMB_AND_TMB = 5000;
 const MR_E_DROPRATE_FROM_EMB = 500;
