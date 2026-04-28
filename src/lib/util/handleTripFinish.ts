@@ -334,5 +334,19 @@ export async function handleTripFinish(
 		message.addAllowedUserMentions(data.users);
 	}
 
+	const content = message.message.content ?? '';
+	if (content.length > 2000) {
+		const firstLine = content.split('\n')[0];
+		message.addFile({
+			name: `${data.type}-trip-return.txt`,
+			buffer: Buffer.from(content)
+		});
+		message.setContent(
+			`${
+				firstLine.length <= 1500 ? `${firstLine}\n\n` : ''
+			}The full trip return was too long to send as a Discord message, so it has been attached as a text file.`
+		);
+	}
+
 	await globalClient.sendMessageOrWebhook(channelId, message);
 }
