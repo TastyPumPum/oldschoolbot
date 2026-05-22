@@ -24,4 +24,3 @@ OSB has several GP gambling modes under [[/gamble]].
 
 - Ironmen cannot use GP gambling modes.
 - If you use self-gambling lock, GP gambling commands are blocked.
-

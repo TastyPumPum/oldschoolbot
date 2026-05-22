@@ -82,6 +82,19 @@ class CacheManager {
 		return raw ? JSON.parse(raw) : null;
 	}
 
+	public async setTemporaryJson(key: string, value: object, ttlSeconds: number): Promise<void> {
+		await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+	}
+
+	public async getTemporaryJson<T = unknown>(key: string): Promise<T | null> {
+		return this.getJson<T>(key);
+	}
+
+	public async deleteKeys(...keys: string[]): Promise<void> {
+		if (keys.length === 0) return;
+		await this.client.del(...keys);
+	}
+
 	private async getString(key: string): Promise<string | null> {
 		return this.client.get(key);
 	}

@@ -98,6 +98,12 @@ export const gambleCommand = defineCommand({
 					name: 'amount',
 					description: 'Amount you wish to gamble.',
 					required: false
+				},
+				{
+					type: 'Boolean',
+					name: 'force_start',
+					description: 'Skip the confirmation prompt and start immediately.',
+					required: false
 				}
 			]
 		},
@@ -219,7 +225,9 @@ export const gambleCommand = defineCommand({
 				user,
 				interaction,
 				channelID: interaction.channelId,
-				amountInput: options.blackjack.amount
+				amountInput: options.blackjack.amount,
+				forceStart: options.blackjack.force_start ?? false,
+				rng
 			});
 		}
 

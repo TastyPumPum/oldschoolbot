@@ -22,4 +22,3 @@ Dice is a simple percentile roll gamble.
 - Maximum bet: 500m GP
 
 Back to [Gambling](/osb/miscellaneous/gambling/).
-

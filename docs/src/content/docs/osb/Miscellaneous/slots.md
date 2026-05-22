@@ -27,4 +27,3 @@ Start with:
 - TBow: 15x
 
 Back to [Gambling](/osb/miscellaneous/gambling/).
-

@@ -1271,6 +1271,10 @@ ${(
 ] as const;
 
 export async function statsCommand(user: MUser, type: string): Promise<SendableMessage> {
+	const ratelimit = await Cache.tryRatelimit(user.id, 'stats_command');
+	if (!ratelimit.success) {
+		return `This command is on cooldown, you can use it again in ${formatDuration(ratelimit.timeRemainingMs)}.`;
+	}
 	const dataPoint = dataPoints.find(dp => stringMatches(dp.name, type));
 	if (!dataPoint) return 'Invalid stat name.';
 	const { perkTierNeeded } = dataPoint;

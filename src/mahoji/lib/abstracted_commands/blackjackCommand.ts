@@ -35,6 +35,7 @@ import {
 	updateBlackjackMessageID,
 	updatePendingBlackjackStartMessageID
 } from '@/lib/blackjack/state.js';
+import { bankImageTask } from '@/lib/canvas/bankImage.js';
 import { type CanvasImage, canvasToBuffer, createCanvas, loadImage } from '@/lib/canvas/canvasUtil.js';
 import { mahojiParseNumber } from '@/mahoji/mahojiSettings.js';
 
@@ -105,11 +106,19 @@ async function loadCardAsset(card: BlackjackCard | 'back'): Promise<CanvasImage>
 
 async function renderBlackjackTableImage({
 	game,
-	hideDealerHole
+	hideDealerHole,
+	bankBackgroundId,
+	bankBgHexColor
 }: {
 	game: BlackjackGame;
 	hideDealerHole: boolean;
+	bankBackgroundId?: number | null;
+	bankBgHexColor?: string | null;
 }): Promise<Buffer> {
+	if (!bankImageTask.ready) {
+		await bankImageTask.init();
+		bankImageTask.ready = true;
+	}
 	const dealerVisibleCards = hideDealerHole ? [game.dealerCards[0]] : game.dealerCards;
 	const dealerTotal = handValue(dealerVisibleCards).total;
 	const dealerCards: (BlackjackCard | 'back')[] = game.dealerCards.map((card, index) =>
@@ -139,12 +148,27 @@ async function renderBlackjackTableImage({
 
 	const canvas = createCanvas(width, height);
 	const ctx = canvas.getContext('2d');
+	const { sprite, uniqueSprite, background, backgroundImage } = bankImageTask.getBgAndSprite({
+		bankBackgroundId: bankBackgroundId ?? 1
+	});
 
-	ctx.fillStyle = '#0a5e2a';
+	ctx.fillStyle = background.transparent
+		? bankBgHexColor
+			? bankBgHexColor
+			: 'rgba(0,0,0,0)'
+		: ctx.createPattern(sprite.repeatableBg, 'repeat')!;
 	ctx.fillRect(0, 0, width, height);
-	ctx.strokeStyle = '#e4c870';
-	ctx.lineWidth = 3;
-	ctx.strokeRect(2, 2, width - 4, height - 4);
+	if (!uniqueSprite && backgroundImage) {
+		const scale = Math.max(width / backgroundImage.width, height / backgroundImage.height);
+		const bgWidth = backgroundImage.width * scale;
+		const bgHeight = backgroundImage.height * scale;
+		ctx.drawImage(backgroundImage, (width - bgWidth) / 2, (height - bgHeight) / 2, bgWidth, bgHeight);
+	}
+	if (!background.transparent) {
+		ctx.strokeStyle = '#000000aa';
+		ctx.lineWidth = 3;
+		ctx.strokeRect(2, 2, width - 4, height - 4);
+	}
 
 	let y = paddingY + titleHeight;
 	for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
@@ -171,15 +195,22 @@ async function renderBlackjackTableImage({
 async function maybeAddBlackjackImage({
 	game,
 	embed,
-	descriptionBelowImage
+	descriptionBelowImage,
+	user
 }: {
 	game: BlackjackGame;
 	embed: EmbedBuilder;
 	descriptionBelowImage?: string;
+	user?: MUser;
 }): Promise<{ embeds: EmbedBuilder[]; file?: { name: string; buffer: Buffer } }> {
 	try {
 		const hideDealerHole = game.phase === 'insurance' || game.phase === 'player';
-		const imageBuffer = await renderBlackjackTableImage({ game, hideDealerHole });
+		const imageBuffer = await renderBlackjackTableImage({
+			game,
+			hideDealerHole,
+			bankBackgroundId: user?.user.bankBackground,
+			bankBgHexColor: user?.user.bank_bg_hex
+		});
 		embed.setImage(`attachment://${BLACKJACK_IMAGE_NAME}`);
 		if (descriptionBelowImage) {
 			embed.setDescription(null);
@@ -323,7 +354,10 @@ function startConfirmationComponents(nonce: string): ButtonBuilder[][] {
 
 async function applySettlementToUser(user: MUser, game: BlackjackGame): Promise<void> {
 	const settlement = settleBlackjackGame(game);
-	const tasks: Promise<unknown>[] = [user.updateGPTrackSetting('gp_blackjack', settlement.net)];
+	const tasks: Promise<unknown>[] = [
+		ClientSettings.updateClientGPTrackSetting('gp_blackjack', settlement.net),
+		user.updateGPTrackSetting('gp_blackjack', settlement.net)
+	];
 	if (settlement.totalPayout > 0) {
 		tasks.push(
 			user.transactItems({
@@ -336,41 +370,37 @@ async function applySettlementToUser(user: MUser, game: BlackjackGame): Promise<
 }
 
 async function onBlackjackTimeout(userID: string, nonce: string): Promise<void> {
-	const active = getActiveBlackjackGame(userID);
+	const active = await getActiveBlackjackGame(userID);
 	if (!active || active.nonce !== nonce) return;
 
 	const user = await mUserFetch(userID);
 	await user.withLock('blackjack_timeout', async lockedUser => {
-		const current = getActiveBlackjackGame(userID);
+		const current = await getActiveBlackjackGame(userID);
 		if (!current || current.nonce !== nonce) return;
 		autoStand(current.game);
 		await applySettlementToUser(lockedUser, current.game);
 		const finalEmbed = finishedEmbed({ game: current.game, timedOut: true });
-		destroyActiveBlackjackGame(userID);
+		await destroyActiveBlackjackGame(userID);
+		const finalVisual = await maybeAddBlackjackImage({
+			game: current.game,
+			embed: finalEmbed,
+			descriptionBelowImage: finishedDescription({ game: current.game, timedOut: true }),
+			user: lockedUser
+		});
 		try {
 			if (current.messageID) {
 				await globalClient.editMessage(current.channelID, current.messageID, {
-					embeds: [finalEmbed],
+					content: 'Blackjack timed out. Result posted below.',
+					embeds: [],
 					components: []
 				});
-				return;
 			}
-			const finalVisual = await maybeAddBlackjackImage({
-				game: current.game,
-				embed: finalEmbed,
-				descriptionBelowImage: finishedDescription({ game: current.game, timedOut: true })
-			});
 			await globalClient.sendMessage(current.channelID, {
 				content: `<@${userID}>`,
 				embeds: finalVisual.embeds,
 				files: finalVisual.file ? [finalVisual.file] : undefined
 			});
 		} catch {
-			const finalVisual = await maybeAddBlackjackImage({
-				game: current.game,
-				embed: finalEmbed,
-				descriptionBelowImage: finishedDescription({ game: current.game, timedOut: true })
-			});
 			await globalClient.sendMessage(current.channelID, {
 				content: `<@${userID}>`,
 				embeds: finalVisual.embeds,
@@ -381,9 +411,9 @@ async function onBlackjackTimeout(userID: string, nonce: string): Promise<void> 
 }
 
 async function onBlackjackStartTimeout(userID: string, nonce: string): Promise<void> {
-	const pending = getPendingBlackjackStart(userID);
+	const pending = await getPendingBlackjackStart(userID);
 	if (!pending || pending.nonce !== nonce) return;
-	destroyPendingBlackjackStart(userID);
+	await destroyPendingBlackjackStart(userID);
 	if (!pending.messageID) return;
 	try {
 		await globalClient.editMessage(pending.channelID, pending.messageID, {
@@ -415,12 +445,16 @@ export async function blackjackCommand({
 	user,
 	interaction,
 	channelID,
-	amountInput
+	amountInput,
+	forceStart,
+	rng
 }: {
 	user: MUser;
 	interaction: MInteraction;
 	channelID: string;
 	amountInput: string | undefined;
+	forceStart: boolean;
+	rng: RNGProvider;
 }): Promise<CommandResponse> {
 	const amount = mahojiParseNumber({ input: amountInput, min: 1 });
 	if (!amount) {
@@ -434,13 +468,73 @@ Use: ${globalClient.mentionCommand('gamble', 'blackjack')} amount:100m`;
 	if (amount < BLACKJACK_MIN_BET || amount > BLACKJACK_MAX_BET) {
 		return `You must bet between ${toKMB(BLACKJACK_MIN_BET)} and ${toKMB(BLACKJACK_MAX_BET)}.`;
 	}
-	if (hasActiveBlackjackGame(user.id)) {
+	if (user.isIronman) {
+		return "Ironmen can't gamble! Go pickpocket some men for GP.";
+	}
+	if (await hasActiveBlackjackGame(user.id)) {
 		return 'You already have an active blackjack game.';
 	}
-	if (hasPendingBlackjackStart(user.id)) {
+	if (await hasPendingBlackjackStart(user.id)) {
 		return 'You already have a pending blackjack confirmation.';
 	}
-	const pending = createPendingBlackjackStart({
+	if (forceStart) {
+		if (await hasActiveBlackjackGame(user.id)) {
+			return 'You already have an active blackjack game.';
+		}
+		if (await hasPendingBlackjackStart(user.id)) {
+			return 'You already have a pending blackjack confirmation.';
+		}
+
+		try {
+			await user.transactItems({
+				itemsToRemove: new Bank().add('Coins', amount)
+			});
+		} catch {
+			return "You don't have enough GP to make this bet.";
+		}
+
+		const game = createBlackjackGame({ bet: amount, rng });
+		if (game.phase === 'finished') {
+			await applySettlementToUser(user, game);
+			const finalVisual = await maybeAddBlackjackImage({
+				game,
+				embed: finishedEmbed({ game }),
+				descriptionBelowImage: finishedDescription({ game }),
+				user
+			});
+			await interaction.reply({
+				content: '',
+				embeds: finalVisual.embeds,
+				components: [],
+				files: finalVisual.file ? [finalVisual.file] : undefined
+			});
+			return SpecialResponse.RespondedManually;
+		}
+
+		const active = await createActiveBlackjackGame({
+			userID: user.id,
+			channelID,
+			game
+		});
+		scheduleBlackjackTimeout(user.id);
+		const gameVisual = await maybeAddBlackjackImage({
+			game,
+			embed: gameEmbed({ game }),
+			descriptionBelowImage: gameDescription({ game }) ?? undefined,
+			user
+		});
+		const sent = await interaction.replyWithResponse({
+			content: '',
+			embeds: gameVisual.embeds,
+			components: activeComponents(game, active.nonce),
+			files: gameVisual.file ? [gameVisual.file] : undefined
+		});
+		if (sent?.message_id) {
+			await updateBlackjackMessageID(user.id, sent.message_id);
+		}
+		return SpecialResponse.RespondedManually;
+	}
+	const pending = await createPendingBlackjackStart({
 		userID: user.id,
 		channelID,
 		amount
@@ -450,7 +544,7 @@ Use: ${globalClient.mentionCommand('gamble', 'blackjack')} amount:100m`;
 		components: startConfirmationComponents(pending.nonce)
 	});
 	if (sent?.message_id) {
-		updatePendingBlackjackStartMessageID(user.id, sent.message_id);
+		await updatePendingBlackjackStartMessageID(user.id, sent.message_id);
 	}
 	scheduleBlackjackStartTimeout(user.id);
 	return SpecialResponse.RespondedManually;
@@ -467,7 +561,7 @@ export async function blackjackButtonHandler({
 }): Promise<CommandResponse> {
 	const startParsed = parseBlackjackStartButtonID(customID);
 	if (startParsed) {
-		const pending = getPendingBlackjackStartByNonce(startParsed.nonce);
+		const pending = await getPendingBlackjackStartByNonce(startParsed.nonce);
 		if (!pending) {
 			return { content: 'This blackjack confirmation is no longer active.', ephemeral: true };
 		}
@@ -477,7 +571,7 @@ export async function blackjackButtonHandler({
 
 		const user = await mUserFetch(pending.userID);
 		await user.withLock('blackjack_start_button', async lockedUser => {
-			const currentPending = getPendingBlackjackStartByNonce(startParsed.nonce);
+			const currentPending = await getPendingBlackjackStartByNonce(startParsed.nonce);
 			if (!currentPending || currentPending.userID !== interaction.userId) {
 				await interaction.reply({
 					content: 'This blackjack confirmation is no longer active.',
@@ -485,10 +579,19 @@ export async function blackjackButtonHandler({
 				});
 				return;
 			}
-			touchPendingBlackjackStart(currentPending.userID);
+			if (Date.now() - currentPending.updatedAt > BLACKJACK_CONFIRM_TIMEOUT) {
+				await destroyPendingBlackjackStart(currentPending.userID);
+				await interaction.update({
+					content: 'You ran out of time to confirm blackjack.',
+					embeds: [],
+					components: []
+				});
+				return;
+			}
+			await touchPendingBlackjackStart(currentPending.userID);
 
 			if (startParsed.action === 'CANCEL') {
-				destroyPendingBlackjackStart(currentPending.userID);
+				await destroyPendingBlackjackStart(currentPending.userID);
 				await interaction.update({
 					content: 'Blackjack cancelled.',
 					embeds: [],
@@ -497,8 +600,8 @@ export async function blackjackButtonHandler({
 				return;
 			}
 
-			destroyPendingBlackjackStart(currentPending.userID);
-			if (hasActiveBlackjackGame(lockedUser.id)) {
+			await destroyPendingBlackjackStart(currentPending.userID);
+			if (await hasActiveBlackjackGame(lockedUser.id)) {
 				await interaction.update({
 					content: 'You already have an active blackjack game.',
 					embeds: [],
@@ -526,7 +629,8 @@ export async function blackjackButtonHandler({
 				const finalVisual = await maybeAddBlackjackImage({
 					game,
 					embed: finishedEmbed({ game }),
-					descriptionBelowImage: finishedDescription({ game })
+					descriptionBelowImage: finishedDescription({ game }),
+					user: lockedUser
 				});
 				await interaction.update({
 					content: '',
@@ -537,17 +641,18 @@ export async function blackjackButtonHandler({
 				return;
 			}
 
-			const active = createActiveBlackjackGame({
+			const active = await createActiveBlackjackGame({
 				userID: lockedUser.id,
 				channelID: currentPending.channelID,
 				game
 			});
-			updateBlackjackMessageID(lockedUser.id, interaction.messageId);
+			await updateBlackjackMessageID(lockedUser.id, interaction.messageId);
 			scheduleBlackjackTimeout(lockedUser.id);
 			const gameVisual = await maybeAddBlackjackImage({
 				game,
 				embed: gameEmbed({ game }),
-				descriptionBelowImage: gameDescription({ game }) ?? undefined
+				descriptionBelowImage: gameDescription({ game }) ?? undefined,
+				user: lockedUser
 			});
 			await interaction.update({
 				content: '',
@@ -563,7 +668,7 @@ export async function blackjackButtonHandler({
 	if (!parsed) {
 		return { content: 'Invalid blackjack interaction.', ephemeral: true };
 	}
-	const active = getActiveBlackjackGameByNonce(parsed.nonce);
+	const active = await getActiveBlackjackGameByNonce(parsed.nonce);
 	if (!active) {
 		return { content: 'This blackjack game is no longer active.', ephemeral: true };
 	}
@@ -573,9 +678,26 @@ export async function blackjackButtonHandler({
 
 	const user = await mUserFetch(active.userID);
 	await user.withLock('blackjack_button', async lockedUser => {
-		const current = getActiveBlackjackGameByNonce(parsed.nonce);
+		const current = await getActiveBlackjackGameByNonce(parsed.nonce);
 		if (!current || current.userID !== interaction.userId) {
 			await interaction.reply({ content: 'This blackjack game is no longer active.', ephemeral: true });
+			return;
+		}
+		if (Date.now() - current.updatedAt > BLACKJACK_DECISION_TIMEOUT) {
+			autoStand(current.game);
+			await applySettlementToUser(lockedUser, current.game);
+			const finalVisual = await maybeAddBlackjackImage({
+				game: current.game,
+				embed: finishedEmbed({ game: current.game, timedOut: true }),
+				descriptionBelowImage: finishedDescription({ game: current.game, timedOut: true }),
+				user: lockedUser
+			});
+			await destroyActiveBlackjackGame(current.userID);
+			await interaction.update({
+				embeds: finalVisual.embeds,
+				components: [],
+				files: finalVisual.file ? [finalVisual.file] : undefined
+			});
 			return;
 		}
 		let deductedBet = 0;
@@ -635,15 +757,16 @@ export async function blackjackButtonHandler({
 			return;
 		}
 
-		touchActiveBlackjackGame(current.userID);
+		await touchActiveBlackjackGame(current.userID);
 		if (gameIsFinished(current.game)) {
 			await applySettlementToUser(lockedUser, current.game);
 			const finalVisual = await maybeAddBlackjackImage({
 				game: current.game,
 				embed: finishedEmbed({ game: current.game }),
-				descriptionBelowImage: finishedDescription({ game: current.game })
+				descriptionBelowImage: finishedDescription({ game: current.game }),
+				user: lockedUser
 			});
-			destroyActiveBlackjackGame(current.userID);
+			await destroyActiveBlackjackGame(current.userID);
 			await interaction.update({
 				embeds: finalVisual.embeds,
 				components: [],
@@ -656,7 +779,8 @@ export async function blackjackButtonHandler({
 		const gameVisual = await maybeAddBlackjackImage({
 			game: current.game,
 			embed: gameEmbed({ game: current.game }),
-			descriptionBelowImage: gameDescription({ game: current.game }) ?? undefined
+			descriptionBelowImage: gameDescription({ game: current.game }) ?? undefined,
+			user: lockedUser
 		});
 		await interaction.update({
 			embeds: gameVisual.embeds,

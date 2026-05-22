@@ -21,4 +21,3 @@ Start with:
 - If you do not pick in time, your bet is refunded.
 
 Back to [Gambling](/osb/miscellaneous/gambling/).
-
