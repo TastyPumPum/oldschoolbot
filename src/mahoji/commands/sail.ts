@@ -5,9 +5,17 @@ import { QuestID } from '@/lib/minions/data/quests.js';
 import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
 import { SailingDifficulties, SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
-import { getOrCreateUserShip, getShipPartTier, hasFacility, snapshotShip } from '@/lib/skilling/skills/sailing/ship.js';
+import { getEligibleSeaChartingTasks } from '@/lib/skilling/skills/sailing/seaCharting.js';
+import {
+	getCompletedChartingTaskIds,
+	getOrCreateUserShip,
+	getShipPartTier,
+	hasFacility,
+	snapshotShip
+} from '@/lib/skilling/skills/sailing/ship.js';
 import { calcSailingTripStart } from '@/lib/skilling/skills/sailing/util.js';
 import type { SailingActivityTaskOptions } from '@/lib/types/minions.js';
+import { makeStartQuestButton } from '@/lib/util/interactions.js';
 
 export const sailCommand = defineCommand({
 	name: 'sail',
@@ -58,8 +66,10 @@ export const sailCommand = defineCommand({
 	run: async ({ options, user, channelId }) => {
 		const hasPandemonium = user.user.finished_quest_ids?.includes(QuestID.Pandemonium) ?? false;
 		if (!hasPandemonium) {
-			return `${user.minionName} needs to have completed the Pandemonium quest to access the sailing skill.
-			\n You can complete this quest by using the command: \`/activities quest name:Pandemonium\``;
+			return {
+				content: `${user.minionName} needs to have completed the Pandemonium quest to access the sailing skill.\n\nYou can complete this quest by using the command: \`/activities quest name:Pandemonium\``,
+				components: [makeStartQuestButton('Pandemonium')]
+			};
 		}
 		const activity = SailingActivityById.get(options.activity);
 		if (!activity) return 'That is not a valid Sailing activity.';
@@ -79,7 +89,10 @@ export const sailCommand = defineCommand({
 		if (activity.id === 'sea_charting' && difficulty.id === 'standard') {
 			const hasCurrentAffairs = user.user.finished_quest_ids?.includes(QuestID.CurrentAffairs) ?? false;
 			if (!hasCurrentAffairs) {
-				return `${user.minionName} needs to complete the Current Affairs quest to do Sea charting at Standard difficulty.`;
+				return {
+					content: `${user.minionName} needs to complete the Current Affairs quest to do Sea charting at Standard difficulty.`,
+					components: [makeStartQuestButton('Current Affairs')]
+				};
 			}
 		}
 
@@ -93,7 +106,7 @@ export const sailCommand = defineCommand({
 		const ship = await getOrCreateUserShip(user.id);
 		if (activity.requiredFacility && !hasFacility(ship, activity.requiredFacility)) {
 			const facility = SailingFacilitiesById.get(activity.requiredFacility);
-			return `${activity.name} requires the ${facility?.name ?? activity.requiredFacility} facility. Install it with /ship install.`;
+			return `${activity.name} requires the ${facility?.name ?? activity.requiredFacility} facility. Install it with \`/ship install\`.`;
 		}
 		if (activity.requiredShipTiers) {
 			for (const [part, tier] of Object.entries(activity.requiredShipTiers)) {
@@ -115,6 +128,45 @@ export const sailCommand = defineCommand({
 		const maxTripLength = await user.calcMaxTripLength('Sailing');
 
 		const variantData = variant ? activity.variants?.find(v => v.id === variant) : undefined;
+		if (activity.id === 'sea_charting') {
+			const eligibleTasks = getEligibleSeaChartingTasks(user, getCompletedChartingTaskIds(ship));
+			if (eligibleTasks.length === 0) {
+				return `${user.minionName} has no eligible Sea charting tasks to complete right now.`;
+			}
+
+			const requestedQuantity = Math.min(options.quantity ?? eligibleTasks.length, eligibleTasks.length);
+			const chartingTrip = calcSailingTripStart({
+				activity,
+				maxTripLength,
+				quantityInput: requestedQuantity,
+				ship: shipSnapshot,
+				timeMultiplier: difficulty.timeMultiplier
+			});
+			const selectedTasks = eligibleTasks.slice(0, chartingTrip.quantity);
+
+			await ActivityManager.startTrip<SailingActivityTaskOptions>({
+				userID: user.id,
+				channelId,
+				duration: chartingTrip.duration,
+				type: 'Sailing',
+				activity: activity.id,
+				quantity: chartingTrip.quantity,
+				iQty: options.quantity ? options.quantity : undefined,
+				ship: shipSnapshot,
+				sailingLevel: user.skillsAsLevels.sailing,
+				difficulty: difficulty.id,
+				chartingTaskIds: selectedTasks.map(task => task.id)
+			});
+
+			let response = `${user.minionName} is now doing Sea charting (${chartingTrip.quantity} tasks), it'll take around ${formatDuration(
+				chartingTrip.duration
+			)} to finish.`;
+			if (chartingTrip.boosts.length > 0) {
+				response += `\n\n**Boosts:** ${chartingTrip.boosts.join(', ')}.`;
+			}
+			return response;
+		}
+
 		const { quantity, duration, boosts } = calcSailingTripStart({
 			activity,
 			maxTripLength,

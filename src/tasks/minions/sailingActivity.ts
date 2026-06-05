@@ -6,7 +6,17 @@ import { SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js
 import { SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js';
 import {
+	getSeaChartingCompletionBonusesForTask,
+	getSeaChartingCompletionGroupTasks,
+	getSeaChartingCompletionKey,
+	type SeaChartingTask,
+	seaChartingTaskById,
+	seaChartingTaskXP
+} from '@/lib/skilling/skills/sailing/seaCharting.js';
+import {
+	getClaimedChartingCompletionBonuses,
 	getClamItemId,
+	getCompletedChartingTaskIds,
 	getOrCreateUserShip,
 	hasFacility,
 	updateUpgradesBank
@@ -21,6 +31,65 @@ export const sailingTask: MinionTask = {
 		const activity = SailingActivityById.get(activityId);
 		if (!activity) {
 			throw new Error(`Unknown sailing activity: ${activityId}`);
+		}
+
+		if (activity.id === 'sea_charting') {
+			const shipState = await getOrCreateUserShip(user.id);
+			const completedTaskIds = new Set(getCompletedChartingTaskIds(shipState));
+			const claimedCompletionBonuses = new Set(getClaimedChartingCompletionBonuses(shipState));
+			const tasksCompleted = (data.chartingTaskIds ?? [])
+				.map(id => seaChartingTaskById.get(id))
+				.filter((task): task is SeaChartingTask => task !== undefined && !completedTaskIds.has(task.id));
+
+			if (tasksCompleted.length === 0) {
+				return handleTripFinish({
+					user,
+					channelId,
+					message: `${user}, ${user.minionName} finished Sea charting, but had no new charting tasks to complete.`,
+					data
+				});
+			}
+
+			const nextCompletedTaskIds = new Set([...completedTaskIds, ...tasksCompleted.map(task => task.id)]);
+			let xpReceived = tasksCompleted.reduce((total, task) => total + seaChartingTaskXP[task.type], 0);
+			const completedBonusMessages: string[] = [];
+
+			for (const task of tasksCompleted) {
+				for (const bonus of getSeaChartingCompletionBonusesForTask(task)) {
+					const completionKey = getSeaChartingCompletionKey(bonus);
+					if (claimedCompletionBonuses.has(completionKey)) continue;
+					const groupTasks = getSeaChartingCompletionGroupTasks(bonus);
+					const completedCount = groupTasks.filter(t => nextCompletedTaskIds.has(t.id)).length;
+					if (completedCount < Math.min(bonus.taskCount, groupTasks.length)) continue;
+					xpReceived += bonus.xp;
+					claimedCompletionBonuses.add(completionKey);
+					completedBonusMessages.push(`${bonus.sea}: ${bonus.xp} XP`);
+				}
+			}
+
+			await updateUpgradesBank(user.id, {
+				completedChartingTaskIds: [...nextCompletedTaskIds],
+				claimedChartingCompletionBonuses: [...claimedCompletionBonuses]
+			});
+
+			const xpRes = await user.addXP({
+				skillName: 'sailing',
+				amount: xpReceived,
+				duration
+			});
+
+			let str = `${user}, ${user.minionName} finished Sea charting for ${tasksCompleted.length} tasks. ${xpRes}`;
+			if (completedBonusMessages.length > 0) {
+				str += `\nCompleted charting bonuses: ${completedBonusMessages.join(', ')}.`;
+			}
+			str += `\nCharted task IDs: ${tasksCompleted.map(task => task.id).join(', ')}.`;
+
+			return handleTripFinish({
+				user,
+				channelId,
+				message: str,
+				data
+			});
 		}
 
 		const variant = data.variant ? activity.variants?.find(v => v.id === data.variant) : undefined;

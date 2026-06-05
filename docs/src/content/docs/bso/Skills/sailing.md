@@ -61,7 +61,6 @@ Clearing Gwenith Glide on Shark rank within 3:42 awards a Heart of Ithell (recla
 
 Facilities are installed on your ship to unlock content. Examples include:
 
-- Captain's log (sea charting)
 - Salvaging hook (shipwreck salvaging)
 - Fishing station (deep sea trawling)
 - Racing sails (Barracuda Trials)

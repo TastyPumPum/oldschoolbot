@@ -1,7 +1,6 @@
 import { Bank } from 'oldschooljs';
 
 export type SailingFacilityId =
-	| 'captains_log'
 	| 'salvaging_hook'
 	| 'fishing_station'
 	| 'racing_sails'
@@ -19,13 +18,6 @@ export interface SailingFacility {
 }
 
 export const SailingFacilities: SailingFacility[] = [
-	{
-		id: 'captains_log',
-		name: "Captain's log",
-		level: 1,
-		cost: new Bank({ Plank: 8, Rope: 2, 'Sea salt': 5 }),
-		description: 'Enables sea charting.'
-	},
 	{
 		id: 'salvaging_hook',
 		name: 'Salvaging hook',

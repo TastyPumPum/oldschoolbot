@@ -23,6 +23,8 @@ export type SailingUpgradesBank = {
 	charts?: number;
 	unlockedRegions?: SailingRegionId[];
 	clamItemId?: number | null;
+	completedChartingTaskIds?: number[];
+	claimedChartingCompletionBonuses?: string[];
 };
 
 export function getUpgradesBank(ship: UserShip): SailingUpgradesBank {
@@ -56,6 +58,14 @@ export function hasUnlockedRegion(ship: UserShip, region: SailingRegionId): bool
 
 export function getClamItemId(ship: UserShip): number | null {
 	return getUpgradesBank(ship).clamItemId ?? null;
+}
+
+export function getCompletedChartingTaskIds(ship: UserShip): number[] {
+	return getUpgradesBank(ship).completedChartingTaskIds ?? [];
+}
+
+export function getClaimedChartingCompletionBonuses(ship: UserShip): string[] {
+	return getUpgradesBank(ship).claimedChartingCompletionBonuses ?? [];
 }
 
 export async function updateUpgradesBank(userID: string, updates: Partial<SailingUpgradesBank>) {

@@ -41,14 +41,13 @@ export interface SailingActivity {
 	qpRequired?: number;
 }
 
-const SeaChartingTable = new LootTable().add('Sea salt', [1, 3], 5).add('Sealed letter', 1, 2).oneIn(80, 'Ship ticket');
+const SeaChartingTable = new LootTable();
 
 const PortTasksTable = new LootTable()
 	.add('Coins', [250, 650], 12)
 	.add('Oak plank', [1, 2], 3)
 	.add('Rope', 1, 2)
 	.add('Coconut', 1, 1)
-	.add('Sea salt', [1, 3], 2)
 	.add('Shipping order', 1, 1)
 	.oneIn(120, 'Shipping contract');
 
@@ -63,7 +62,7 @@ const ShipwreckSalvageTable = new LootTable()
 	.oneIn(120, 'Sea fishing map')
 	.oneIn(180, 'Sea shell');
 
-const BarracudaTrialsTable = new LootTable().add('Sea salt', [1, 2], 1);
+const BarracudaTrialsTable = new LootTable().add('Coins', [100, 300], 1);
 
 const DeepSeaTrawlingTable = new LootTable()
 	.add('Raw shark', [1, 3], 4)
@@ -78,15 +77,14 @@ export const SailingActivities: SailingActivity[] = [
 		id: 'sea_charting',
 		name: 'Sea charting',
 		level: 1,
-		xp: 120,
+		xp: 0,
 		baseTime: Time.Minute * 1.5,
-		baseRisk: 0.02,
+		baseRisk: 0,
 		lootTable: SeaChartingTable,
-		petChance: 450_000,
+		petChance: 0,
 		reputation: 2,
 		allowedDifficulties: ['easy', 'standard'],
-		hazards: [{ name: 'Sudden squall', chance: 0.04, effect: 'fail' }],
-		requiredFacility: 'captains_log'
+		hazards: [{ name: 'Sudden squall', chance: 0.04, effect: 'fail' }]
 	},
 	{
 		id: 'port_tasks',

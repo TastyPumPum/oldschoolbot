@@ -193,6 +193,7 @@ export interface SailingActivityTaskOptions extends ActivityTaskOptions {
 	difficulty?: SailingDifficultyId;
 	variant?: string;
 	sailingLevel?: number;
+	chartingTaskIds?: number[];
 	iQty?: number;
 }
 
