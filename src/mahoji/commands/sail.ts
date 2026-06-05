@@ -129,6 +129,21 @@ export const sailCommand = defineCommand({
 			const trial = BarracudaTrialById.get(activity.id);
 			const rank = trial ? getBarracudaRank(trial, variant) : undefined;
 			if (!trial || !rank) return 'That is not a valid Barracuda Trial rank.';
+			if (trial.mimickedQuestRequirement) {
+				const requirement = trial.mimickedQuestRequirement;
+				const missingRequirements: string[] = [];
+				if (requirement.qpReq && user.QP < requirement.qpReq) {
+					missingRequirements.push(`${requirement.qpReq} QP`);
+				}
+				for (const [skill, level] of Object.entries(requirement.skillReqs ?? {})) {
+					if (user.skillsAsLevels[skill as keyof typeof user.skillsAsLevels] < level) {
+						missingRequirements.push(`${level} ${skill}`);
+					}
+				}
+				if (missingRequirements.length > 0) {
+					return `${trial.name} requires ${requirement.name} requirements: ${missingRequirements.join(', ')}.`;
+				}
+			}
 		}
 		if (activity.qpRequired && user.QP < activity.qpRequired) {
 			return `${user.minionName} needs ${activity.qpRequired} QP to do ${activity.name}.`;

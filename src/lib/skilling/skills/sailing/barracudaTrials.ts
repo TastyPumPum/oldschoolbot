@@ -3,6 +3,7 @@ import { Bank } from 'oldschooljs';
 
 import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
+import type { Skills } from '@/lib/types/index.js';
 
 export type BarracudaTrialId = Extract<SailingActivityId, 'tempor_tantrum' | 'jubbly_jive' | 'gwenith_glide'>;
 export type BarracudaRank = 'swordfish' | 'shark' | 'marlin';
@@ -25,6 +26,11 @@ export interface BarracudaTrial {
 	location: string;
 	requiredFacility?: SailingFacilityId;
 	requiredAnyFacilities?: SailingFacilityId[];
+	mimickedQuestRequirement?: {
+		name: string;
+		qpReq?: number;
+		skillReqs?: Partial<Skills>;
+	};
 	unsupportedRequirementNotes?: string[];
 	paintChance: number;
 	ranks: BarracudaTrialRank[];
@@ -123,6 +129,15 @@ export const BarracudaTrials: BarracudaTrial[] = [
 		level: 72,
 		trialMaster: 'Gwyna',
 		location: 'Porth Gwenith',
+		mimickedQuestRequirement: {
+			name: 'Regicide',
+			qpReq: 50,
+			skillReqs: {
+				crafting: 10,
+				agility: 56,
+				ranged: 25
+			}
+		},
 		requiredAnyFacilities: ['wind_catcher', 'gale_catcher'],
 		unsupportedRequirementNotes: ['Requires a skiff with an adamant keel or better in OSRS.'],
 		paintChance: 400,
