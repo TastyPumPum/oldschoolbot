@@ -1,6 +1,6 @@
 {
-	"hash": "191bd1c84b5a173841675293f5a9553a",
-	"date": "2026-06-05T09:18:41.353Z",
+	"hash": "b9f00e9320c05e96bf409452ae6f0470",
+	"date": "2026-06-05T14:24:44.753Z",
 	"data": [
 		{
 			"name": "activities",
@@ -479,7 +479,7 @@
 		{
 			"name": "ship",
 			"desc": "Manage your Sailing ship.",
-			"subOptions": ["clam", "install", "rename", "status", "upgrade"]
+			"subOptions": ["clam", "install", "rename", "sort_salvage", "status", "upgrade"]
 		},
 		{
 			"name": "simulate",

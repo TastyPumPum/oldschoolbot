@@ -20,9 +20,10 @@ export interface SailingFacility {
 export const SailingFacilities: SailingFacility[] = [
 	{
 		id: 'salvaging_hook',
-		name: 'Salvaging hook',
-		level: 10,
-		cost: new Bank({ 'Oak plank': 20, 'Iron nails': 50, Rope: 4 }),
+		name: 'Bronze salvaging hook',
+		level: 15,
+		constructionLevel: 1,
+		cost: new Bank({ Plank: 4, 'Bronze nails': 16, 'Bronze bar': 6, Rope: 1 }),
 		description: 'Enables shipwreck salvaging.'
 	},
 	{

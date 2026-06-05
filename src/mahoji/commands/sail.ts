@@ -5,6 +5,11 @@ import { QuestID } from '@/lib/minions/data/quests.js';
 import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
 import { SailingDifficulties, SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
+import {
+	getBestSalvagingShipwreckForLevel,
+	SalvagingShipwreckById,
+	type SalvagingShipwreckId
+} from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getEligibleSeaChartingTasks } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
 	getCompletedChartingTaskIds,
@@ -74,7 +79,11 @@ export const sailCommand = defineCommand({
 		const activity = SailingActivityById.get(options.activity);
 		if (!activity) return 'That is not a valid Sailing activity.';
 
-		const variant = options.variant ?? activity.variants?.[0]?.id;
+		const variant =
+			options.variant ??
+			(activity.id === 'shipwreck_salvaging'
+				? getBestSalvagingShipwreckForLevel(user.skillsAsLevels.sailing)?.id
+				: activity.variants?.[0]?.id);
 		if (variant && !activity.variants?.some(v => v.id === variant)) {
 			return 'That is not a valid variant for this activity.';
 		}
@@ -98,6 +107,13 @@ export const sailCommand = defineCommand({
 
 		if (user.skillsAsLevels.sailing < activity.level) {
 			return `${user.minionName} needs ${activity.level} Sailing to do ${activity.name}.`;
+		}
+		if (activity.id === 'shipwreck_salvaging') {
+			const shipwreck = SalvagingShipwreckById.get(variant as SalvagingShipwreckId);
+			if (!shipwreck) return `${user.minionName} needs ${activity.level} Sailing to do ${activity.name}.`;
+			if (user.skillsAsLevels.sailing < shipwreck.level) {
+				return `${user.minionName} needs ${shipwreck.level} Sailing to salvage from ${shipwreck.name}.`;
+			}
 		}
 		if (activity.qpRequired && user.QP < activity.qpRequired) {
 			return `${user.minionName} needs ${activity.qpRequired} QP to do ${activity.name}.`;

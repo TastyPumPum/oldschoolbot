@@ -6,6 +6,11 @@ import { SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js
 import { SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js';
 import {
+	addStoredSalvage,
+	SalvagingShipwreckById,
+	type SalvagingShipwreckId
+} from '@/lib/skilling/skills/sailing/salvaging.js';
+import {
 	getSeaChartingCompletionBonusesForTask,
 	getSeaChartingCompletionGroupTasks,
 	getSeaChartingCompletionKey,
@@ -18,6 +23,7 @@ import {
 	getClamItemId,
 	getCompletedChartingTaskIds,
 	getOrCreateUserShip,
+	getStoredSalvage,
 	hasFacility,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
@@ -82,7 +88,38 @@ export const sailingTask: MinionTask = {
 			if (completedBonusMessages.length > 0) {
 				str += `\nCompleted charting bonuses: ${completedBonusMessages.join(', ')}.`;
 			}
-			str += `\nCharted task IDs: ${tasksCompleted.map(task => task.id).join(', ')}.`;
+
+			return handleTripFinish({
+				user,
+				channelId,
+				message: str,
+				data
+			});
+		}
+
+		if (activity.id === 'shipwreck_salvaging') {
+			const shipwreck = SalvagingShipwreckById.get(data.variant as SalvagingShipwreckId);
+			if (!shipwreck) {
+				throw new Error(`Unknown salvaging shipwreck: ${data.variant}`);
+			}
+
+			const shipState = await getOrCreateUserShip(user.id);
+			const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, quantity);
+			await updateUpgradesBank(user.id, { salvage: nextSalvage });
+
+			const extractorTicks = hasFacility(shipState, 'crystal_extractor') ? Math.floor(duration / 63_000) : 0;
+			const extractorXP = extractorTicks * 250;
+			const salvageXP = Math.floor(quantity * shipwreck.salvagingXP);
+			const xpRes = await user.addXP({
+				skillName: 'sailing',
+				amount: salvageXP + extractorXP,
+				duration
+			});
+
+			let str = `${user}, ${user.minionName} finished salvaging ${quantity}x ${shipwreck.name}. ${xpRes}\nStored salvage: ${quantity.toLocaleString()}x ${shipwreck.salvageName}.`;
+			if (extractorXP > 0) {
+				str += `\nCrystal extractor XP: ${extractorXP}.`;
+			}
 
 			return handleTripFinish({
 				user,

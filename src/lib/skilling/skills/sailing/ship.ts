@@ -1,6 +1,7 @@
 import type { UserShip } from '@/prisma/main.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
+import type { StoredSalvage } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { MAX_SHIP_TIER, type ShipPart } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 export type SailingShipSnapshot = {
@@ -25,6 +26,7 @@ export type SailingUpgradesBank = {
 	clamItemId?: number | null;
 	completedChartingTaskIds?: number[];
 	claimedChartingCompletionBonuses?: string[];
+	salvage?: StoredSalvage;
 };
 
 export function getUpgradesBank(ship: UserShip): SailingUpgradesBank {
@@ -66,6 +68,10 @@ export function getCompletedChartingTaskIds(ship: UserShip): number[] {
 
 export function getClaimedChartingCompletionBonuses(ship: UserShip): string[] {
 	return getUpgradesBank(ship).claimedChartingCompletionBonuses ?? [];
+}
+
+export function getStoredSalvage(ship: UserShip): StoredSalvage {
+	return getUpgradesBank(ship).salvage ?? {};
 }
 
 export async function updateUpgradesBank(userID: string, updates: Partial<SailingUpgradesBank>) {

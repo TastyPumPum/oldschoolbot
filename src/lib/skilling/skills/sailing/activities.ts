@@ -2,6 +2,7 @@ import { Time } from '@oldschoolgg/toolkit';
 import { LootTable } from 'oldschooljs';
 
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
+import { type SalvagingShipwreckId, SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import type { ShipPart } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 export type SailingActivityId =
@@ -27,7 +28,7 @@ export interface SailingActivity {
 	allowedDifficulties?: Array<'easy' | 'standard' | 'hard' | 'elite'>;
 	hazards?: Array<{ name: string; chance: number; effect: 'fail' | 'delay' | 'damage' }>;
 	variants?: Array<{
-		id: 'courier' | 'bounty' | 'swordfish' | 'shark' | 'marlin';
+		id: 'courier' | 'bounty' | 'swordfish' | 'shark' | 'marlin' | SalvagingShipwreckId;
 		name: string;
 		xpMultiplier: number;
 		lootMultiplier: number;
@@ -50,17 +51,6 @@ const PortTasksTable = new LootTable()
 	.add('Coconut', 1, 1)
 	.add('Shipping order', 1, 1)
 	.oneIn(120, 'Shipping contract');
-
-const ShipwreckSalvageTable = new LootTable()
-	.add('Coins', [500, 1200], 10)
-	.add('Steel bar', 1, 3)
-	.add('Uncut sapphire', 1, 2)
-	.add('Uncut emerald', 1, 1)
-	.add('Iron nails', [10, 30], 2)
-	.add('Ironwood logs', [1, 2], 1)
-	.add('Sealed message', 1, 1)
-	.oneIn(120, 'Sea fishing map')
-	.oneIn(180, 'Sea shell');
 
 const BarracudaTrialsTable = new LootTable().add('Coins', [100, 300], 1);
 
@@ -117,16 +107,23 @@ export const SailingActivities: SailingActivity[] = [
 	{
 		id: 'shipwreck_salvaging',
 		name: 'Shipwreck salvaging',
-		level: 10,
-		xp: 280,
-		baseTime: Time.Minute * 3.5,
-		baseRisk: 0.14,
-		lootTable: ShipwreckSalvageTable,
-		petChance: 300_000,
+		level: 15,
+		xp: 0,
+		baseTime: Time.Minute,
+		baseRisk: 0,
+		lootTable: new LootTable(),
+		petChance: 0,
 		reputation: 0,
 		allowedDifficulties: ['standard'],
 		requiredFacility: 'salvaging_hook',
-		requiredShipTiers: { hull: 2 }
+		variants: SalvagingShipwrecks.map(shipwreck => ({
+			id: shipwreck.id,
+			name: shipwreck.name,
+			xpMultiplier: 1,
+			lootMultiplier: 1,
+			timeMultiplier: shipwreck.averageDuration / Time.Minute,
+			lootTable: new LootTable()
+		}))
 	},
 	{
 		id: 'tempor_tantrum',

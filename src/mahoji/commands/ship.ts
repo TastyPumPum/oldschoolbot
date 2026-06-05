@@ -2,11 +2,19 @@ import { Bank, type Item, Items } from 'oldschooljs';
 
 import { SailingFacilities, SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import {
+	formatStoredSalvage,
+	removeStoredSalvage,
+	SalvagingShipwreckById,
+	type SalvagingShipwreckId,
+	SalvagingShipwrecks
+} from '@/lib/skilling/skills/sailing/salvaging.js';
+import {
 	getClamItemId,
 	getInstalledFacilities,
 	getOrCreateUserShip,
 	getShipBonusesFromSnapshot,
 	getShipPartTier,
+	getStoredSalvage,
 	snapshotShip,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
@@ -74,6 +82,30 @@ export const shipCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
+			name: 'sort_salvage',
+			description: 'Sort stored shipwreck salvage for Sailing XP.',
+			options: [
+				{
+					type: 'String',
+					name: 'type',
+					description: 'The salvage type to sort. Leave empty to sort all stored salvage.',
+					required: false,
+					choices: SalvagingShipwrecks.map(shipwreck => ({
+						name: shipwreck.salvageName,
+						value: shipwreck.id
+					}))
+				},
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'The amount of this salvage to sort.',
+					required: false,
+					min_value: 1
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
 			name: 'upgrade',
 			description: 'Upgrade a ship part.',
 			options: [
@@ -116,8 +148,9 @@ export const shipCommand = defineCommand({
 			const bonuses = getShipBonusesFromSnapshot(snapshot);
 			const name = ship.ship_name ?? 'Unnamed ship';
 			const facilities = getInstalledFacilities(ship).map(f => SailingFacilitiesById.get(f)?.name ?? f);
+			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship));
 
-			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
+			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
 		}
 
 		if (options.clam) {
@@ -158,6 +191,53 @@ export const shipCommand = defineCommand({
 			await updateUpgradesBank(user.id, { clamItemId: item.id });
 
 			return `You fed the giant clam a ${item.name}. It will return a pearl on your next encounter.`;
+		}
+
+		if (options.sort_salvage) {
+			if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+
+			const stored = getStoredSalvage(ship);
+			const salvageType = options.sort_salvage.type as SalvagingShipwreckId | undefined;
+			const quantityInput = options.sort_salvage.quantity;
+
+			if (!salvageType && quantityInput) {
+				return 'Choose a salvage type when sorting a specific quantity.';
+			}
+
+			const entries = salvageType
+				? [
+						[
+							salvageType,
+							Math.min(quantityInput ?? stored[salvageType] ?? 0, stored[salvageType] ?? 0)
+						] as const
+					]
+				: SalvagingShipwrecks.map(shipwreck => [shipwreck.id, stored[shipwreck.id] ?? 0] as const);
+
+			const salvageToSort = entries.filter(([, quantity]) => quantity > 0);
+			if (salvageToSort.length === 0) {
+				return salvageType
+					? `You don't have any ${SalvagingShipwreckById.get(salvageType)?.salvageName ?? 'salvage'} stored.`
+					: "You don't have any stored salvage to sort.";
+			}
+
+			let nextStored = stored;
+			let xpReceived = 0;
+			const sortedParts: string[] = [];
+			for (const [shipwreckId, quantity] of salvageToSort) {
+				const shipwreck = SalvagingShipwreckById.get(shipwreckId);
+				if (!shipwreck) continue;
+				nextStored = removeStoredSalvage(nextStored, shipwreckId, quantity);
+				xpReceived += quantity * shipwreck.sortingXP;
+				sortedParts.push(`${quantity.toLocaleString()}x ${shipwreck.salvageName}`);
+			}
+
+			await updateUpgradesBank(user.id, { salvage: nextStored });
+			const xpRes = await user.addXP({
+				skillName: 'sailing',
+				amount: xpReceived
+			});
+
+			return `Sorted ${sortedParts.join(', ')}. ${xpRes}`;
 		}
 
 		if (options.install) {
