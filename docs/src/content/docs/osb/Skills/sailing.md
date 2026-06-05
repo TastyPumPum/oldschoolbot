@@ -101,6 +101,7 @@ These encounters are not applied to Sea charting, Shipwreck salvaging, or Barrac
 - The current ship model uses generic tiers, not OSRS skiff hulls, masts, helms, keels, or crew layout.
 - Skiff-only and OSRS boat-part requirements are documented in activity messages but cannot be fully checked yet.
 - Crewmate restrictions for Barracuda Trials are not enforced because crewmates are not modelled as OSRS ship crew.
+- The Gale catcher schematic requirement is not checked because the schematic item is not currently in the item data.
 - Salvage sorting gives XP only; salvage loot tables are not implemented.
 - Barracuda route movement, hazards, and player skill are not simulated.
 - Regicide itself is not added as a named bot quest; Gwenith checks the mimicked Regicide requirements instead.
