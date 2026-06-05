@@ -8,7 +8,6 @@ import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js
 import {
 	getClamItemId,
 	getOrCreateUserShip,
-	getShipBonusesFromSnapshot,
 	hasFacility,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
@@ -45,15 +44,6 @@ export const sailingTask: MinionTask = {
 		const extractorTicks = hasFacility(shipState, 'crystal_extractor') ? Math.floor(duration / 63_000) : 0;
 		const extractorXP = extractorTicks * 250;
 
-		const { lootBonus } = getShipBonusesFromSnapshot(ship);
-		if (result.successfulActions > 0) {
-			const bonusRolls = Math.floor(result.successfulActions * lootBonus);
-			if (bonusRolls > 0) {
-				result.loot.add(activity.lootTable.roll(bonusRolls));
-				result.bonusRolls = bonusRolls;
-			}
-		}
-
 		const encounterResult = rollOceanEncounters({
 			duration,
 			sailingLevel: user.skillsAsLevels.sailing,
@@ -84,9 +74,11 @@ export const sailingTask: MinionTask = {
 
 		let str = `${user}, ${user.minionName} finished ${activity.name} for ${quantity} actions. ${xpRes}`;
 
-		if (variant?.lootTable) {
-			const bonusLootRolls = Math.max(1, Math.floor(result.successfulActions * lootMultiplier * 0.25));
-			result.loot.add(variant.lootTable.roll(bonusLootRolls));
+		if (variant?.lootTable && result.successfulActions > 0) {
+			const bonusLootRolls = Math.floor(result.successfulActions * lootMultiplier * 0.25);
+			if (bonusLootRolls > 0) {
+				result.loot.add(variant.lootTable.roll(bonusLootRolls));
+			}
 		}
 
 		const avgActionMs = Math.floor(duration / Math.max(1, quantity));
