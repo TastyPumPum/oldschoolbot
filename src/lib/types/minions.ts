@@ -11,6 +11,7 @@ import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities
 import type { SailingDifficultyId } from '@/lib/skilling/skills/sailing/difficulties.js';
 import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
 import type { SailingShipSnapshot } from '@/lib/skilling/skills/sailing/ship.js';
+import type { SharkLureQuantity } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
 import type { Peak } from '@/lib/util/peaks.js';
 
@@ -24,46 +25,46 @@ export interface ActivityTaskOptions {
 
 export interface ActivityTaskOptionsWithNoChanges extends ActivityTaskOptions {
 	type:
-		| 'Questing'
-		| 'BarbarianAssault'
-		| 'ChampionsChallenge'
-		| 'MyNotes'
-		| 'AerialFishing'
-		| 'SoulWars'
-		| 'RoguesDenMaze'
-		| 'CastleWars'
-		| 'MageArena'
-		| 'MageTrainingArena'
-		| 'BlastFurnace'
-		| 'MageArena2'
-		| 'BigChompyBirdHunting'
-		| 'PestControl'
-		| 'TearsOfGuthix'
-		| 'LastManStanding'
-		| 'BirthdayEvent'
-		| 'TroubleBrewing'
-		| 'Easter'
-		| 'ShootingStars'
-		| 'HalloweenEvent'
-		| 'StrongholdOfSecurity'
-		| 'CombatRing'
-		| 'Revenants';
+	| 'Questing'
+	| 'BarbarianAssault'
+	| 'ChampionsChallenge'
+	| 'MyNotes'
+	| 'AerialFishing'
+	| 'SoulWars'
+	| 'RoguesDenMaze'
+	| 'MageArena'
+	| 'MageTrainingArena'
+	| 'BlastFurnace'
+	| 'MageArena2'
+	| 'BigChompyBirdHunting'
+	| 'PestControl'
+	| 'TearsOfGuthix'
+	| 'LastManStanding'
+	| 'BirthdayEvent'
+	| 'TroubleBrewing'
+	| 'Easter'
+	| 'ShootingStars'
+	| 'HalloweenEvent'
+	| 'StrongholdOfSecurity'
+	| 'CombatRing'
+	| 'Revenants';
 }
 
 export interface ActivityTaskOptionsWithQuantity extends ActivityTaskOptions {
 	type:
-		| 'VolcanicMine'
-		| 'Cyclops'
-		| 'ShootingStars'
-		| 'DriftNet'
-		| 'WealthCharging'
-		| 'GloryCharging'
-		| 'AerialFishing'
-		| 'FishingTrawler'
-		| 'CamdozaalFishing'
-		| 'CamdozaalMining'
-		| 'CamdozaalSmithing'
-		| 'MyNotes';
+	| 'VolcanicMine'
+	| 'Cyclops'
+	| 'ShootingStars'
+	| 'DriftNet'
+	| 'WealthCharging'
+	| 'GloryCharging'
+	| 'GloryUncharging'
+	| 'AerialFishing'
+	| 'FishingTrawler'
+	| 'CamdozaalFishing'
+	| 'CamdozaalMining'
+	| 'CamdozaalSmithing'
+	| 'MyNotes';
 	quantity: number;
 	// iQty is 'input quantity.' This is the number specified at command time, so we can accurately repeat such trips.
 	iQty?: number;
@@ -163,9 +164,23 @@ export interface ClueActivityTaskOptions extends ActivityTaskOptions {
 
 export interface FishingActivityTaskOptions extends ActivityTaskOptions {
 	type: 'Fishing';
-	fishID: number;
+	fishID: string;
 	quantity: number;
+	qty: number[];
+	loot?: number[];
+	extraCatchRolls?: number[];
+	flakesToRemove?: number;
 	flakesQuantity?: number;
+	powerfish?: boolean;
+	spiritFlakes?: boolean;
+	spiritFlakePreference?: boolean;
+	sharkLureQuantity?: SharkLureQuantity;
+	sharkLuresToConsume?: number;
+	sharkLurePreference?: SharkLureQuantity;
+	blessingExtra?: number;
+	blessingQuantity?: number;
+	flakeExtra?: number;
+	usedBarbarianCutEat?: boolean;
 	iQty?: number;
 }
 
@@ -369,20 +384,20 @@ interface MinigameActivityTaskOptions extends ActivityTaskOptions {
 
 export interface MinigameActivityTaskOptionsWithNoChanges extends MinigameActivityTaskOptions {
 	type:
-		| 'Wintertodt'
-		| 'TroubleBrewing'
-		| 'TearsOfGuthix'
-		| 'SoulWars'
-		| 'RoguesDenMaze'
-		| 'MageTrainingArena'
-		| 'LastManStanding'
-		| 'BigChompyBirdHunting'
-		| 'FishingTrawler'
-		| 'PestControl'
-		| 'BarbarianAssault'
-		| 'ChampionsChallenge'
-		| 'CastleWars'
-		| 'AgilityArena';
+	| 'Wintertodt'
+	| 'TroubleBrewing'
+	| 'TearsOfGuthix'
+	| 'SoulWars'
+	| 'RoguesDenMaze'
+	| 'MageTrainingArena'
+	| 'LastManStanding'
+	| 'BigChompyBirdHunting'
+	| 'FishingTrawler'
+	| 'PestControl'
+	| 'BarbarianAssault'
+	| 'ChampionsChallenge'
+	| 'CastleWars'
+	| 'AgilityArena';
 }
 
 export interface MahoganyHomesActivityTaskOptions extends MinigameActivityTaskOptions {
@@ -422,6 +437,15 @@ export interface SepulchreActivityTaskOptions extends MinigameActivityTaskOption
 export interface PlunderActivityTaskOptions extends MinigameActivityTaskOptions {
 	type: 'Plunder';
 	rooms: number[];
+}
+
+export interface ValeTotemsActivityTaskOptions extends MinigameActivityTaskOptions {
+	type: 'ValeTotems';
+	offerings: number;
+	fletchXp: number;
+	logId: number;
+	itemId: number;
+	staminaPot: boolean | undefined;
 }
 
 export interface ZalcanoActivityTaskOptions extends ActivityTaskOptions {
@@ -587,6 +611,18 @@ export interface ShadesOfMortonOptions extends MinigameActivityTaskOptions {
 	shadeID: string;
 	logID: number;
 }
+
+export interface ShadesOfMortonSacredOilOptions extends ActivityTaskOptions {
+	type: 'ShadesOfMortonSacredOil';
+	quantity: number;
+}
+
+export interface ShadesOfMortonPyreLogsOptions extends ActivityTaskOptions {
+	type: 'ShadesOfMortonPyreLogs';
+	quantity: number;
+	logID: number;
+}
+
 export interface SpecificQuestOptions extends ActivityTaskOptions {
 	type: 'SpecificQuest';
 	questID: number;
@@ -623,6 +659,8 @@ export type ActivityTaskData =
 	| GiantsFoundryActivityTaskOptions
 	| NightmareZoneActivityTaskOptions
 	| ShadesOfMortonOptions
+	| ShadesOfMortonSacredOilOptions
+	| ShadesOfMortonPyreLogsOptions
 	| UnderwaterAgilityThievingTaskOptions
 	| PickpocketActivityTaskOptions
 	| BuryingActivityTaskOptions
@@ -649,6 +687,7 @@ export type ActivityTaskData =
 	| NightmareActivityTaskOptions
 	| TitheFarmActivityTaskOptions
 	| SepulchreActivityTaskOptions
+	| ValeTotemsActivityTaskOptions
 	| GnomeRestaurantActivityTaskOptions
 	| SpecificQuestOptions
 	| ActivityTaskOptionsWithNoChanges
