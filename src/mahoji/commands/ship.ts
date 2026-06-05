@@ -1,5 +1,6 @@
 import { Bank, type Item, Items } from 'oldschooljs';
 
+import { BarracudaTrials, getBarracudaTrialProgress } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import { SailingFacilities, SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import {
 	formatStoredSalvage,
@@ -9,6 +10,7 @@ import {
 	SalvagingShipwrecks
 } from '@/lib/skilling/skills/sailing/salvaging.js';
 import {
+	getBarracudaTrialsProgress,
 	getClamItemId,
 	getInstalledFacilities,
 	getOrCreateUserShip,
@@ -149,8 +151,20 @@ export const shipCommand = defineCommand({
 			const name = ship.ship_name ?? 'Unnamed ship';
 			const facilities = getInstalledFacilities(ship).map(f => SailingFacilitiesById.get(f)?.name ?? f);
 			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship));
+			const barracudaProgress = getBarracudaTrialsProgress(ship);
+			const barracudaStatus = BarracudaTrials.map(trial => {
+				const progress = getBarracudaTrialProgress(barracudaProgress, trial.id);
+				const ranks =
+					progress.completedRanks.length === 0
+						? 'None'
+						: trial.ranks
+								.filter(rank => progress.completedRanks.includes(rank.id))
+								.map(rank => rank.name)
+								.join(', ');
+				return `${trial.name}: ${ranks}`;
+			}).join('\n');
 
-			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
+			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBarracuda Trials:\n${barracudaStatus}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
 		}
 
 		if (options.clam) {

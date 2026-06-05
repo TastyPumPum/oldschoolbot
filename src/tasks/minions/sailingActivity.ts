@@ -3,6 +3,15 @@ import { Bank } from 'oldschooljs';
 
 import { skillEmoji } from '@/lib/data/emojis.js';
 import { SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import {
+	type BarracudaRank,
+	BarracudaTrialById,
+	formatBarracudaRankObjectives,
+	getBarracudaRank,
+	getBarracudaTrialProgress,
+	isBarracudaTrialId,
+	setBarracudaTrialProgress
+} from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import { SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js';
 import {
@@ -19,6 +28,7 @@ import {
 	seaChartingTaskXP
 } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
+	getBarracudaTrialsProgress,
 	getClaimedChartingCompletionBonuses,
 	getClamItemId,
 	getCompletedChartingTaskIds,
@@ -94,6 +104,80 @@ export const sailingTask: MinionTask = {
 				channelId,
 				message: str,
 				data
+			});
+		}
+
+		if (isBarracudaTrialId(activity.id)) {
+			const trial = BarracudaTrialById.get(activity.id)!;
+			const rank = getBarracudaRank(trial, data.variant);
+			if (!rank) {
+				throw new Error(`Unknown Barracuda Trial rank: ${data.variant}`);
+			}
+
+			const shipState = await getOrCreateUserShip(user.id);
+			const barracudaProgress = getBarracudaTrialsProgress(shipState);
+			const trialProgress = getBarracudaTrialProgress(barracudaProgress, trial.id);
+			const completedRanks = new Set(trialProgress.completedRanks);
+			const newlyCompletedRank = !completedRanks.has(rank.id);
+			if (newlyCompletedRank) {
+				completedRanks.add(rank.id);
+			}
+			const bestTime = trialProgress.bestTimes[rank.id];
+			const nextBestTimes = {
+				...trialProgress.bestTimes,
+				[rank.id]: bestTime ? Math.min(bestTime, rank.targetTime) : rank.targetTime
+			};
+
+			const loot = new Bank();
+			if (newlyCompletedRank) {
+				loot.add(rank.reward);
+			}
+			if (rank.id === 'marlin') {
+				for (let i = 0; i < quantity; i++) {
+					if (rng.roll(trial.paintChance)) {
+						loot.add('Barracuda paint');
+					}
+				}
+			}
+
+			await updateUpgradesBank(user.id, {
+				barracudaTrials: setBarracudaTrialProgress(
+					barracudaProgress,
+					trial.id,
+					[...completedRanks] as BarracudaRank[],
+					nextBestTimes
+				)
+			});
+
+			const xpReceived = quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0);
+			const xpRes = await user.addXP({
+				skillName: 'sailing',
+				amount: xpReceived,
+				duration
+			});
+
+			let str = `${user}, ${user.minionName} completed ${trial.name} at ${rank.name} rank ${quantity}x. ${xpRes}`;
+			const objectives = formatBarracudaRankObjectives(rank);
+			if (objectives) {
+				str += `\nObjectives completed: ${objectives}.`;
+			}
+			if (newlyCompletedRank) {
+				str += `\nNew rank achieved: ${rank.name}. Bonus XP: ${rank.bonusXP.toLocaleString()}.`;
+			}
+			if (loot.length > 0) {
+				await user.transactItems({
+					itemsToAdd: loot,
+					collectionLog: true
+				});
+				str += `\nYou received: ${loot}.`;
+			}
+
+			return handleTripFinish({
+				user,
+				channelId,
+				message: str,
+				data,
+				loot: loot.length > 0 ? loot : null
 			});
 		}
 
@@ -185,16 +269,6 @@ export const sailingTask: MinionTask = {
 			if (bonusLootRolls > 0) {
 				result.loot.add(variant.lootTable.roll(bonusLootRolls));
 			}
-		}
-
-		const avgActionMs = Math.floor(duration / Math.max(1, quantity));
-		const heartBank = new Bank().add('Heart of Ithell', 1);
-		const shouldAwardHeart = activity.id === 'gwenith_glide' && variant?.id === 'shark' && avgActionMs <= 222_000;
-		if (shouldAwardHeart && !user.owns(heartBank)) {
-			result.loot.add(heartBank);
-			str += `\nYou earned a Heart of Ithell for a Gwenith Glide (Shark) clear in ${Math.floor(
-				avgActionMs / 60000
-			)}:${String(Math.floor((avgActionMs % 60000) / 1000)).padStart(2, '0')}.`;
 		}
 
 		const successRate = Math.round(result.successChance * 10000) / 100;

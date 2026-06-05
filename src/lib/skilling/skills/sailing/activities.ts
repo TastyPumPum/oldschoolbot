@@ -1,6 +1,7 @@
 import { Time } from '@oldschoolgg/toolkit';
 import { LootTable } from 'oldschooljs';
 
+import { BarracudaTrials } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import { type SalvagingShipwreckId, SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import type { ShipPart } from '@/lib/skilling/skills/sailing/upgrades.js';
@@ -25,7 +26,7 @@ export interface SailingActivity {
 	lootTable: LootTable;
 	petChance: number;
 	reputation: number;
-	allowedDifficulties?: Array<'easy' | 'standard' | 'hard' | 'elite'>;
+	allowedDifficulties?: ReadonlyArray<'easy' | 'standard' | 'hard' | 'elite'>;
 	hazards?: Array<{ name: string; chance: number; effect: 'fail' | 'delay' | 'damage' }>;
 	variants?: Array<{
 		id: 'courier' | 'bounty' | 'swordfish' | 'shark' | 'marlin' | SalvagingShipwreckId;
@@ -38,6 +39,7 @@ export interface SailingActivity {
 	requiredShipTiers?: Partial<Record<ShipPart, number>>;
 	requiredItems?: string[];
 	requiredFacility?: SailingFacilityId;
+	requiredAnyFacilities?: SailingFacilityId[];
 	requiredReputation?: number;
 	qpRequired?: number;
 }
@@ -51,8 +53,6 @@ const PortTasksTable = new LootTable()
 	.add('Coconut', 1, 1)
 	.add('Shipping order', 1, 1)
 	.oneIn(120, 'Shipping contract');
-
-const BarracudaTrialsTable = new LootTable().add('Coins', [100, 300], 1);
 
 const DeepSeaTrawlingTable = new LootTable()
 	.add('Raw shark', [1, 3], 4)
@@ -86,7 +86,7 @@ export const SailingActivities: SailingActivity[] = [
 		lootTable: PortTasksTable,
 		petChance: 400_000,
 		reputation: 0,
-		allowedDifficulties: ['standard'],
+		allowedDifficulties: ['standard' as const],
 		variants: [
 			{
 				id: 'courier',
@@ -114,7 +114,7 @@ export const SailingActivities: SailingActivity[] = [
 		lootTable: new LootTable(),
 		petChance: 0,
 		reputation: 0,
-		allowedDifficulties: ['standard'],
+		allowedDifficulties: ['standard' as const],
 		requiredFacility: 'salvaging_hook',
 		variants: SalvagingShipwrecks.map(shipwreck => ({
 			id: shipwreck.id,
@@ -125,126 +125,28 @@ export const SailingActivities: SailingActivity[] = [
 			lootTable: new LootTable()
 		}))
 	},
-	{
-		id: 'tempor_tantrum',
-		name: 'The Tempor Tantrum',
-		level: 30,
-		xp: 634,
-		baseTime: Time.Second * 118,
-		baseRisk: 0.06,
-		lootTable: BarracudaTrialsTable,
-		petChance: 260_000,
+	...BarracudaTrials.map(trial => ({
+		id: trial.id,
+		name: trial.name,
+		level: trial.level,
+		xp: trial.ranks[0].xp,
+		baseTime: trial.ranks[0].targetTime,
+		baseRisk: 0,
+		lootTable: new LootTable(),
+		petChance: 0,
 		reputation: 0,
-		allowedDifficulties: ['standard'],
-		requiredFacility: 'racing_sails',
-		requiredShipTiers: { hull: 2, sails: 2 },
-		variants: [
-			{
-				id: 'swordfish',
-				name: 'Swordfish',
-				xpMultiplier: 1,
-				lootMultiplier: 1,
-				timeMultiplier: 1,
-				lootTable: BarracudaTrialsTable
-			},
-			{
-				id: 'shark',
-				name: 'Shark',
-				xpMultiplier: 1.739,
-				lootMultiplier: 1.05,
-				timeMultiplier: 1.534,
-				lootTable: BarracudaTrialsTable
-			},
-			{
-				id: 'marlin',
-				name: 'Marlin',
-				xpMultiplier: 3.008,
-				lootMultiplier: 1.1,
-				timeMultiplier: 2.373,
-				lootTable: BarracudaTrialsTable
-			}
-		]
-	},
-	{
-		id: 'jubbly_jive',
-		name: 'The Jubbly Jive',
-		level: 55,
-		xp: 2392,
-		baseTime: Time.Second * 133,
-		baseRisk: 0.08,
-		lootTable: BarracudaTrialsTable,
-		petChance: 240_000,
-		reputation: 0,
-		allowedDifficulties: ['standard'],
-		requiredFacility: 'inoculation_station',
-		requiredShipTiers: { hull: 3, sails: 3 },
-		variants: [
-			{
-				id: 'swordfish',
-				name: 'Swordfish',
-				xpMultiplier: 1,
-				lootMultiplier: 1,
-				timeMultiplier: 1,
-				lootTable: BarracudaTrialsTable
-			},
-			{
-				id: 'shark',
-				name: 'Shark',
-				xpMultiplier: 1.785,
-				lootMultiplier: 1.05,
-				timeMultiplier: 1.429,
-				lootTable: BarracudaTrialsTable
-			},
-			{
-				id: 'marlin',
-				name: 'Marlin',
-				xpMultiplier: 3.418,
-				lootMultiplier: 1.1,
-				timeMultiplier: 2.489,
-				lootTable: BarracudaTrialsTable
-			}
-		]
-	},
-	{
-		id: 'gwenith_glide',
-		name: 'The Gwenith Glide',
-		level: 72,
-		xp: 4100,
-		baseTime: Time.Second * 130,
-		baseRisk: 0.1,
-		lootTable: BarracudaTrialsTable,
-		petChance: 220_000,
-		reputation: 0,
-		allowedDifficulties: ['standard'],
-		requiredFacility: 'racing_sails',
-		requiredShipTiers: { hull: 4, sails: 4 },
-		variants: [
-			{
-				id: 'swordfish',
-				name: 'Swordfish',
-				xpMultiplier: 1,
-				lootMultiplier: 1,
-				timeMultiplier: 1,
-				lootTable: BarracudaTrialsTable
-			},
-			{
-				id: 'shark',
-				name: 'Shark',
-				xpMultiplier: 2.272,
-				lootMultiplier: 1.05,
-				timeMultiplier: 1.785,
-				lootTable: BarracudaTrialsTable
-			},
-			{
-				id: 'marlin',
-				name: 'Marlin',
-				xpMultiplier: 4.429,
-				lootMultiplier: 1.1,
-				timeMultiplier: 2.915,
-				lootTable: BarracudaTrialsTable
-			}
-		]
-	},
+		allowedDifficulties: ['standard' as const],
+		requiredFacility: trial.requiredFacility,
+		requiredAnyFacilities: trial.requiredAnyFacilities,
+		variants: trial.ranks.map(rank => ({
+			id: rank.id,
+			name: rank.name,
+			xpMultiplier: 1,
+			lootMultiplier: 1,
+			timeMultiplier: rank.targetTime / trial.ranks[0].targetTime,
+			lootTable: new LootTable()
+		}))
+	})),
 	{
 		id: 'deep_sea_trawling',
 		name: 'Deep sea trawling',

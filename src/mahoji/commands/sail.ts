@@ -3,6 +3,15 @@ import { Bank } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import {
+	type BarracudaRank,
+	BarracudaTrialById,
+	formatBarracudaRankObjectives,
+	getBarracudaRank,
+	getBarracudaTrialProgress,
+	getPreviousBarracudaRank,
+	isBarracudaTrialId
+} from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import { SailingDifficulties, SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import {
@@ -12,6 +21,7 @@ import {
 } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getEligibleSeaChartingTasks } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
+	getBarracudaTrialsProgress,
 	getCompletedChartingTaskIds,
 	getOrCreateUserShip,
 	getShipPartTier,
@@ -115,6 +125,11 @@ export const sailCommand = defineCommand({
 				return `${user.minionName} needs ${shipwreck.level} Sailing to salvage from ${shipwreck.name}.`;
 			}
 		}
+		if (isBarracudaTrialId(activity.id)) {
+			const trial = BarracudaTrialById.get(activity.id);
+			const rank = trial ? getBarracudaRank(trial, variant) : undefined;
+			if (!trial || !rank) return 'That is not a valid Barracuda Trial rank.';
+		}
 		if (activity.qpRequired && user.QP < activity.qpRequired) {
 			return `${user.minionName} needs ${activity.qpRequired} QP to do ${activity.name}.`;
 		}
@@ -123,6 +138,15 @@ export const sailCommand = defineCommand({
 		if (activity.requiredFacility && !hasFacility(ship, activity.requiredFacility)) {
 			const facility = SailingFacilitiesById.get(activity.requiredFacility);
 			return `${activity.name} requires the ${facility?.name ?? activity.requiredFacility} facility. Install it with \`/ship install\`.`;
+		}
+		if (
+			activity.requiredAnyFacilities &&
+			!activity.requiredAnyFacilities.some(facility => hasFacility(ship, facility))
+		) {
+			const facilities = activity.requiredAnyFacilities.map(
+				facility => SailingFacilitiesById.get(facility)?.name ?? facility
+			);
+			return `${activity.name} requires one of these facilities: ${facilities.join(', ')}. Install one with \`/ship install\`.`;
 		}
 		if (activity.requiredShipTiers) {
 			for (const [part, tier] of Object.entries(activity.requiredShipTiers)) {
@@ -144,6 +168,49 @@ export const sailCommand = defineCommand({
 		const maxTripLength = await user.calcMaxTripLength('Sailing');
 
 		const variantData = variant ? activity.variants?.find(v => v.id === variant) : undefined;
+		if (isBarracudaTrialId(activity.id)) {
+			const trial = BarracudaTrialById.get(activity.id)!;
+			const rank = getBarracudaRank(trial, variant)!;
+			const progress = getBarracudaTrialProgress(getBarracudaTrialsProgress(ship), trial.id);
+			const completedRanks = new Set(progress.completedRanks);
+			const previousRank = getPreviousBarracudaRank(rank.id);
+			if (previousRank && !completedRanks.has(previousRank)) {
+				const previousRankName =
+					trial.ranks.find(trialRank => trialRank.id === previousRank)?.name ?? previousRank;
+				return `${user.minionName} needs to complete ${trial.name} at ${previousRankName} rank before attempting ${rank.name} rank.`;
+			}
+
+			const maxQuantity = Math.max(1, Math.floor(maxTripLength / rank.targetTime));
+			const quantity = Math.min(options.quantity ?? maxQuantity, maxQuantity);
+			const duration = quantity * rank.targetTime;
+
+			await ActivityManager.startTrip<SailingActivityTaskOptions>({
+				userID: user.id,
+				channelId,
+				duration,
+				type: 'Sailing',
+				activity: activity.id,
+				quantity,
+				iQty: options.quantity ? options.quantity : undefined,
+				ship: shipSnapshot,
+				sailingLevel: user.skillsAsLevels.sailing,
+				difficulty: difficulty.id,
+				variant: rank.id satisfies BarracudaRank
+			});
+
+			let response = `${user.minionName} is now attempting ${trial.name} at ${rank.name} rank (${quantity} completions), it'll take around ${formatDuration(
+				duration
+			)} to finish.`;
+			const objectives = formatBarracudaRankObjectives(rank);
+			if (objectives) {
+				response += `\nObjectives: ${objectives}.`;
+			}
+			if (trial.unsupportedRequirementNotes?.length) {
+				response += `\nOSRS requirements not checked by the bot yet: ${trial.unsupportedRequirementNotes.join(' ')}`;
+			}
+			return response;
+		}
+
 		if (activity.id === 'sea_charting') {
 			const eligibleTasks = getEligibleSeaChartingTasks(user, getCompletedChartingTaskIds(ship));
 			if (eligibleTasks.length === 0) {

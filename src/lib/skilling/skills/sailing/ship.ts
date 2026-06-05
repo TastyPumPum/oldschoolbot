@@ -1,4 +1,5 @@
 import type { UserShip } from '@/prisma/main.js';
+import type { BarracudaTrialsProgress } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
 import type { StoredSalvage } from '@/lib/skilling/skills/sailing/salvaging.js';
@@ -27,6 +28,7 @@ export type SailingUpgradesBank = {
 	completedChartingTaskIds?: number[];
 	claimedChartingCompletionBonuses?: string[];
 	salvage?: StoredSalvage;
+	barracudaTrials?: BarracudaTrialsProgress;
 };
 
 export function getUpgradesBank(ship: UserShip): SailingUpgradesBank {
@@ -72,6 +74,10 @@ export function getClaimedChartingCompletionBonuses(ship: UserShip): string[] {
 
 export function getStoredSalvage(ship: UserShip): StoredSalvage {
 	return getUpgradesBank(ship).salvage ?? {};
+}
+
+export function getBarracudaTrialsProgress(ship: UserShip): BarracudaTrialsProgress {
+	return getUpgradesBank(ship).barracudaTrials ?? {};
 }
 
 export async function updateUpgradesBank(userID: string, updates: Partial<SailingUpgradesBank>) {
