@@ -35,7 +35,11 @@ export enum QuestID {
 	TheFinalDawn = 15,
 	'Scrambled!' = 16,
 	ShadowsOfCustodia = 17,
-	TutorialIsland = 18
+	TutorialIsland = 18,
+	Pandemonium = 19,
+	PryingTimes = 20,
+	CurrentAffairs = 21,
+	TroubledTortugans = 22
 }
 
 export const quests: Quest[] = [
@@ -453,6 +457,89 @@ export const quests: Quest[] = [
 			.add(995, 25),
 		calcTime: () => {
 			return Time.Minute * 7;
+		}
+	},
+	{
+		id: QuestID.Pandemonium,
+		qp: 1,
+		name: 'Pandemonium',
+		skillsRewards: {
+			sailing: 400
+		},
+		rewards: new Bank()
+			.add(32083, 25) //Sawmill coupon (wood plank)
+			.add('Repair kit', 2)
+			.add('Spyglass'),
+		calcTime: () => {
+			return Time.Minute * 5;
+		}
+	},
+	{
+		id: QuestID.PryingTimes,
+		qp: 1,
+		name: 'Prying Times',
+		prerequisitesQuests: [QuestID.Pandemonium],
+		qpReq: 2,
+		skillReqs: {
+			mining: 10,
+			smithing: 30,
+			sailing: 12
+		},
+		skillsRewards: {
+			sailing: 800,
+			smithing: 1000
+		},
+		rewards: new Bank()
+			.add(32085, 25) //Sawmill coupon (oak plank)
+			.add('Crowbar'),
+		calcTime: () => {
+			return Time.Minute * 7;
+		}
+	},
+	{
+		id: QuestID.CurrentAffairs,
+		qp: 1,
+		name: 'Current Affairs',
+		prerequisitesQuests: [QuestID.Pandemonium],
+		skillReqs: {
+			fishing: 10,
+			sailing: 22
+		},
+		skillsRewards: {
+			sailing: 1400,
+			fishing: 1000
+		},
+		rewards: new Bank()
+			.add(32085, 25) //Sawmill coupon (oak plank)
+			.add('Mayor of Catherby')
+			.add('Current duck'),
+		calcTime: () => {
+			return Time.Minute * 6;
+		}
+	},
+	{
+		id: QuestID.TroubledTortugans,
+		qp: 1,
+		name: 'Troubled Tortugans',
+		prerequisitesQuests: [QuestID.Pandemonium],
+		skillReqs: {
+			slayer: 51,
+			construction: 48,
+			sailing: 45,
+			hunter: 45,
+			woodcutting: 40,
+			crafting: 34
+		},
+		skillsRewards: {
+			sailing: 10000,
+			slayer: 8000
+		},
+		calcTime: (user: MUser) => {
+			let duration = Time.Minute * 13;
+			if (user.combatLevel < 50) {
+				duration += Time.Minute * 5;
+			}
+			return duration;
 		}
 	}
 ];

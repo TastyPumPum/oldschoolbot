@@ -21,7 +21,7 @@
 		"output_items": {
 			"13069": 1
 		},
-		"qp_required": 328,
+		"qp_required": 332,
 		"gp_cost": 99000
 	},
 	{
@@ -1008,6 +1008,15 @@
 		"ironman_price": 5000,
 		"output_items": {
 			"642": 1
+		}
+	},
+	{
+		"name": "Crowbar",
+		"gp_cost": 100,
+		"ironman_price": 10,
+		"required_quests": [20],
+		"output_items": {
+			"31807": 1
 		}
 	},
 	{
@@ -3267,7 +3276,7 @@
 			"9813": 1,
 			"9814": 1
 		},
-		"qp_required": 328,
+		"qp_required": 332,
 		"gp_cost": 99000
 	},
 	{
@@ -3275,7 +3284,7 @@
 		"output_items": {
 			"13068": 1
 		},
-		"qp_required": 328,
+		"qp_required": 332,
 		"gp_cost": 99000
 	},
 	{

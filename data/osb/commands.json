@@ -1,6 +1,6 @@
 {
-	"hash": "c3cf22c657cfa6cce5809c9f38dac7bf",
-	"date": "2026-06-02T16:20:50.151Z",
+	"hash": "191bd1c84b5a173841675293f5a9553a",
+	"date": "2026-06-05T09:18:41.353Z",
 	"data": [
 		{
 			"name": "activities",
@@ -464,11 +464,22 @@
 			"subOptions": []
 		},
 		{
+			"name": "sail",
+			"desc": "Send your minion on a Sailing activity.",
+			"examples": ["/sail activity:Port contracts"],
+			"subOptions": []
+		},
+		{
 			"name": "sell",
 			"desc": "Sell items from your bank to the bot for GP.",
 			"examples": ["/sell items:10k trout, 5 coal"],
 			"flags": ["minion"],
 			"subOptions": []
+		},
+		{
+			"name": "ship",
+			"desc": "Manage your Sailing ship.",
+			"subOptions": ["clam", "install", "rename", "status", "upgrade"]
 		},
 		{
 			"name": "simulate",

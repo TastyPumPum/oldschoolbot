@@ -7,11 +7,11 @@ import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { MinigameName } from '@/lib/settings/minigames.js';
 import type { UnderwaterAgilityThievingTrainingSkill } from '@/lib/skilling/skills/agility.js';
 import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
+import type { SharkLureQuantity } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
 import type { SailingDifficultyId } from '@/lib/skilling/skills/sailing/difficulties.js';
 import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
 import type { SailingShipSnapshot } from '@/lib/skilling/skills/sailing/ship.js';
-import type { SharkLureQuantity } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
 import type { Peak } from '@/lib/util/peaks.js';
 
@@ -25,46 +25,46 @@ export interface ActivityTaskOptions {
 
 export interface ActivityTaskOptionsWithNoChanges extends ActivityTaskOptions {
 	type:
-	| 'Questing'
-	| 'BarbarianAssault'
-	| 'ChampionsChallenge'
-	| 'MyNotes'
-	| 'AerialFishing'
-	| 'SoulWars'
-	| 'RoguesDenMaze'
-	| 'MageArena'
-	| 'MageTrainingArena'
-	| 'BlastFurnace'
-	| 'MageArena2'
-	| 'BigChompyBirdHunting'
-	| 'PestControl'
-	| 'TearsOfGuthix'
-	| 'LastManStanding'
-	| 'BirthdayEvent'
-	| 'TroubleBrewing'
-	| 'Easter'
-	| 'ShootingStars'
-	| 'HalloweenEvent'
-	| 'StrongholdOfSecurity'
-	| 'CombatRing'
-	| 'Revenants';
+		| 'Questing'
+		| 'BarbarianAssault'
+		| 'ChampionsChallenge'
+		| 'MyNotes'
+		| 'AerialFishing'
+		| 'SoulWars'
+		| 'RoguesDenMaze'
+		| 'MageArena'
+		| 'MageTrainingArena'
+		| 'BlastFurnace'
+		| 'MageArena2'
+		| 'BigChompyBirdHunting'
+		| 'PestControl'
+		| 'TearsOfGuthix'
+		| 'LastManStanding'
+		| 'BirthdayEvent'
+		| 'TroubleBrewing'
+		| 'Easter'
+		| 'ShootingStars'
+		| 'HalloweenEvent'
+		| 'StrongholdOfSecurity'
+		| 'CombatRing'
+		| 'Revenants';
 }
 
 export interface ActivityTaskOptionsWithQuantity extends ActivityTaskOptions {
 	type:
-	| 'VolcanicMine'
-	| 'Cyclops'
-	| 'ShootingStars'
-	| 'DriftNet'
-	| 'WealthCharging'
-	| 'GloryCharging'
-	| 'GloryUncharging'
-	| 'AerialFishing'
-	| 'FishingTrawler'
-	| 'CamdozaalFishing'
-	| 'CamdozaalMining'
-	| 'CamdozaalSmithing'
-	| 'MyNotes';
+		| 'VolcanicMine'
+		| 'Cyclops'
+		| 'ShootingStars'
+		| 'DriftNet'
+		| 'WealthCharging'
+		| 'GloryCharging'
+		| 'GloryUncharging'
+		| 'AerialFishing'
+		| 'FishingTrawler'
+		| 'CamdozaalFishing'
+		| 'CamdozaalMining'
+		| 'CamdozaalSmithing'
+		| 'MyNotes';
 	quantity: number;
 	// iQty is 'input quantity.' This is the number specified at command time, so we can accurately repeat such trips.
 	iQty?: number;
@@ -384,20 +384,20 @@ interface MinigameActivityTaskOptions extends ActivityTaskOptions {
 
 export interface MinigameActivityTaskOptionsWithNoChanges extends MinigameActivityTaskOptions {
 	type:
-	| 'Wintertodt'
-	| 'TroubleBrewing'
-	| 'TearsOfGuthix'
-	| 'SoulWars'
-	| 'RoguesDenMaze'
-	| 'MageTrainingArena'
-	| 'LastManStanding'
-	| 'BigChompyBirdHunting'
-	| 'FishingTrawler'
-	| 'PestControl'
-	| 'BarbarianAssault'
-	| 'ChampionsChallenge'
-	| 'CastleWars'
-	| 'AgilityArena';
+		| 'Wintertodt'
+		| 'TroubleBrewing'
+		| 'TearsOfGuthix'
+		| 'SoulWars'
+		| 'RoguesDenMaze'
+		| 'MageTrainingArena'
+		| 'LastManStanding'
+		| 'BigChompyBirdHunting'
+		| 'FishingTrawler'
+		| 'PestControl'
+		| 'BarbarianAssault'
+		| 'ChampionsChallenge'
+		| 'CastleWars'
+		| 'AgilityArena';
 }
 
 export interface MahoganyHomesActivityTaskOptions extends MinigameActivityTaskOptions {

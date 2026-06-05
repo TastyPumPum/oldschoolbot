@@ -3,6 +3,7 @@ import { Bank } from 'oldschooljs';
 
 import { skillEmoji } from '@/lib/data/emojis.js';
 import { SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import { SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js';
 import {
 	getClamItemId,
@@ -24,9 +25,11 @@ export const sailingTask: MinionTask = {
 		}
 
 		const variant = data.variant ? activity.variants?.find(v => v.id === data.variant) : undefined;
+		const difficulty = data.difficulty ? SailingDifficultyById.get(data.difficulty) : undefined;
 
-		const xpMultiplier = variant?.xpMultiplier ?? 1;
-		const lootMultiplier = variant?.lootMultiplier ?? 1;
+		const xpMultiplier = (variant?.xpMultiplier ?? 1) * (difficulty?.xpMultiplier ?? 1);
+		const lootMultiplier = (variant?.lootMultiplier ?? 1) * (difficulty?.lootMultiplier ?? 1);
+		const baseRiskOverride = difficulty ? activity.baseRisk + difficulty.riskBonus : undefined;
 
 		const result = calcSailingTripResult({
 			activity,
@@ -34,7 +37,8 @@ export const sailingTask: MinionTask = {
 			ship,
 			sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
 			xpMultiplier,
-			lootMultiplier
+			lootMultiplier,
+			baseRiskOverride
 		});
 
 		const shipState = await getOrCreateUserShip(user.id);

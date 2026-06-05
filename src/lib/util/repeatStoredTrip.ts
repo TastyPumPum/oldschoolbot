@@ -775,6 +775,7 @@ const tripHandlers: {
 		args: (data: SailingActivityTaskOptions) => ({
 			activity: data.activity,
 			quantity: data.iQty,
+			difficulty: data.difficulty,
 			variant: data.variant
 		})
 	}
