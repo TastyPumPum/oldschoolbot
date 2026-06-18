@@ -123,6 +123,16 @@ export const taskCanBeRepeated = (activity: Activity) => {
 		] as activity_type_enum[]
 	).includes(activity.type);
 };
+
+async function canRepeatSlayerMonsterTrip(user: MUser, data: ActivityTaskData): Promise<boolean> {
+	if (data.type !== activity_type_enum.MonsterKilling || !data.onTask) return true;
+	const { assignedTask } = await user.fetchSlayerInfo();
+	return Boolean(assignedTask?.monsters.includes(data.mi));
+}
+
+const slayerRepeatError =
+	'You are no longer on a Slayer task for this monster. Use Auto Slay for your current task, or run `/k` manually if you want to kill it off-task.';
+
 type ActivityMap = {
 	[K in ActivityTaskData as K['type']]: K;
 };
@@ -1060,6 +1070,7 @@ export async function fetchRepeatTrips(user: MUser): Promise<Activity[]> {
 	for (const trip of res) {
 		if (!taskCanBeRepeated(trip)) continue;
 		const data = ActivityManager.convertStoredActivityToFlatActivity(trip);
+		if (!(await canRepeatSlayerMonsterTrip(user, data))) continue;
 		if (data.type === activity_type_enum.Farming) {
 			if (!data.autoFarmed) {
 				continue;
@@ -1094,6 +1105,9 @@ export async function repeatTrip(user: MUser, interaction: OSInteraction, activi
 	}
 	const handler = tripHandlers[activity.type];
 	const args: ActivityTaskData = ActivityManager.convertStoredActivityToFlatActivity(activity, interaction);
+	if (!(await canRepeatSlayerMonsterTrip(user, args))) {
+		return { content: slayerRepeatError, ephemeral: true };
+	}
 	let commandArgs: CommandOptions;
 	try {
 		commandArgs = handler.args(args as any) as CommandOptions;
