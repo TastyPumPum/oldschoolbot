@@ -27,8 +27,6 @@ import { wintertodtCommand } from '@/mahoji/lib/abstracted_commands/wintertodtCo
 import { zalcanoCommand } from '@/mahoji/lib/abstracted_commands/zalcanoCommand.js';
 
 const invalidMonsterMsg = "That isn't a valid monster.\n\nFor example, `/k name:zulrah quantity:5`";
-const staleSlayerTaskMsg =
-	'You are no longer on a Slayer task for this monster. Use Auto Slay for your current task, or run `/k` manually if you want to kill it off-task.';
 
 export async function minionKillCommand(
 	user: MUser,
@@ -39,8 +37,7 @@ export async function minionKillCommand(
 	inputQuantity: number | undefined,
 	method: PvMMethod | undefined,
 	wilderness: boolean | undefined,
-	_solo: boolean | undefined,
-	onTask: boolean | undefined
+	_solo: boolean | undefined
 ): CommandResponse {
 	if (inputQuantity !== undefined && inputQuantity < 1) return 'Quantity must be greater than 0.';
 	if (await user.minionIsBusy()) {
@@ -93,10 +90,6 @@ export async function minionKillCommand(
 	}
 
 	const slayerInfo = await user.fetchSlayerInfo();
-
-	if (onTask && !slayerInfo.assignedTask?.monsters.includes(monster.id)) {
-		return staleSlayerTaskMsg;
-	}
 
 	const pkEvasionExperience = await user.fetchUserStat('pk_evasion_exp');
 
@@ -187,9 +180,9 @@ export async function minionKillCommand(
 		died,
 		pkEncounters,
 		hasWildySupplies,
-		isInWilderness: result.isInWilderness === true ? true : undefined,
+		isInWilderness: result.isInWilderness ? true : undefined,
 		attackStyles: result.attackStyles,
-		onTask: slayerInfo.assignedTask !== null
+		onTask: result.isOnTask
 	});
 
 	let response = `${minionName} is now killing ${result.quantity}x ${monster.name}, ${dtdResult ? `using a <:deathtouched_dart:822674661967265843> **Deathtouched dart**, it'll take around ${formatTripDuration(user, Time.Second * 5)}` : `It'll take around ${formatTripDuration(user, result.duration)} to finish`}. Attack styles used: ${result.attackStyles.join(', ')}.`;
