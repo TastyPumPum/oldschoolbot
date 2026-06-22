@@ -9,13 +9,18 @@ import type { ActivityTaskData } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { handleTripFinish } from '@/lib/util/handleTripFinish.js';
 
-function getActivityLogSummary(activity: Activity): string {
+export function getActivityLogSummary(activity: Activity): string {
 	if (activity.type !== 'Farming') {
 		return '';
 	}
 	const data = activity.data as Record<string, unknown> | null;
 	if (!data || typeof data !== 'object') {
 		return '';
+	}
+
+	if (data.autoFarmCombined === true && Array.isArray(data.autoFarmPlan) && data.autoFarmPlan.length > 1) {
+		const patchGroupCount = data.autoFarmPlan.length;
+		return `: AutoFarming x${patchGroupCount.toLocaleString()} patch group${patchGroupCount === 1 ? '' : 's'}`;
 	}
 
 	const plantsName =
