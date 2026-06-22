@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle, SpecialResponse } from '@oldschoolgg/discord';
-import { Emoji, formatDuration } from '@oldschoolgg/toolkit';
+import { Emoji, formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import type { CropUpgradeType } from '@/prisma/main/enums.js';
@@ -12,7 +12,11 @@ import {
 	resolveSeedForPatch
 } from '@/lib/skilling/skills/farming/autoFarm/preferences.js';
 import { plants } from '@/lib/skilling/skills/farming/index.js';
-import { formatFarmingBoosts, formatItemsUsed } from '@/lib/skilling/skills/farming/utils/farmingFormatters.js';
+import {
+	farmingBoostMessages,
+	formatFarmingBoosts,
+	formatItemsUsed
+} from '@/lib/skilling/skills/farming/utils/farmingFormatters.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { IPatchData, IPatchDataDetailed } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { Plant } from '@/lib/skilling/types.js';
@@ -27,6 +31,7 @@ interface PlannedAutoFarmStep {
 	plant: Plant;
 	quantity: number;
 	duration: number;
+	travelPatchCount: number;
 	upgradeType: CropUpgradeType | null;
 	didPay: boolean;
 	treeChopFee: number;
@@ -48,6 +53,26 @@ interface BuildSummaryResult {
 	extraInfoLines: string[];
 }
 
+interface SharedPatchLocation {
+	name: string;
+	patches: Partial<Record<FarmingPatchName, number>>;
+}
+
+const sharedAllotmentFlowerHerbLocations: SharedPatchLocation[] = [
+	{ name: 'South Falador', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'West of Port Phasmatys', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'Catherby', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'North of Ardougne', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'Hosidius', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'Harmony Island', patches: { allotment: 1, herb: 1 } },
+	{ name: 'Farming Guild', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'Prifddinas', patches: { allotment: 2, flower: 1 } },
+	{ name: 'Troll Stronghold', patches: { herb: 1 } },
+	{ name: 'Weiss', patches: { herb: 1 } },
+	{ name: 'Ortus Farm', patches: { allotment: 2, flower: 1, herb: 1 } },
+	{ name: 'Kastori', patches: { flower: 1 } }
+];
+
 function shouldHideInfoLine(line: string): boolean {
 	const normalized = line.toLowerCase();
 	return (
@@ -66,6 +91,87 @@ function buildSummaryForStep(index: number, step: PlannedAutoFarmStep): BuildSum
 		summaryLine: `${index + 1}. ${step.friendlyName}: ${step.quantity.toLocaleString()}x ${step.plant.name}`,
 		extraInfoLines
 	};
+}
+
+function farmingTimeBoostMultiplier(boosts: string[]): number {
+	let multiplier = 1;
+	if (boosts.includes(farmingBoostMessages.gracefulTime)) multiplier *= 0.9;
+	if (boosts.includes(farmingBoostMessages.ringOfEnduranceTime)) multiplier *= 0.9;
+	if (boosts.includes(farmingBoostMessages.ardougneHardTime)) multiplier *= 0.96;
+	if (boosts.includes(farmingBoostMessages.ardougneEliteTime)) multiplier *= 0.96;
+	return multiplier;
+}
+
+function allocateSharedLocationVisits(step: PlannedAutoFarmStep) {
+	const allocations: { step: PlannedAutoFarmStep; patchCount: number; locationIndex: number }[] = [];
+	let remainingPatchCount = step.travelPatchCount;
+
+	for (const [locationIndex, location] of sharedAllotmentFlowerHerbLocations.entries()) {
+		if (remainingPatchCount <= 0) {
+			break;
+		}
+
+		const locationPatchCount = location.patches[step.patchName] ?? 0;
+		if (locationPatchCount <= 0) {
+			continue;
+		}
+
+		const patchCount = Math.min(remainingPatchCount, locationPatchCount);
+		allocations.push({ step, patchCount, locationIndex });
+		remainingPatchCount -= patchCount;
+	}
+
+	return allocations;
+}
+
+function calculateSharedLocationTiming(plannedSteps: PlannedAutoFarmStep[]) {
+	const stepSavings = new Map<PlannedAutoFarmStep, number>();
+	const allocationsByLocation = new Map<
+		number,
+		{ step: PlannedAutoFarmStep; patchCount: number; locationIndex: number }[]
+	>();
+
+	for (const step of plannedSteps) {
+		for (const allocation of allocateSharedLocationVisits(step)) {
+			const allocations = allocationsByLocation.get(allocation.locationIndex) ?? [];
+			allocations.push(allocation);
+			allocationsByLocation.set(allocation.locationIndex, allocations);
+		}
+	}
+
+	for (const allocations of allocationsByLocation.values()) {
+		const patchTypesAtLocation = new Set(allocations.map(allocation => allocation.step.patchName));
+		if (patchTypesAtLocation.size < 2) {
+			continue;
+		}
+
+		let hasKeptTravelVisit = false;
+		for (const allocation of allocations) {
+			let savedPatchTravelCount = allocation.patchCount;
+			if (!hasKeptTravelVisit) {
+				savedPatchTravelCount -= 1;
+				hasKeptTravelVisit = true;
+			}
+			if (savedPatchTravelCount <= 0) {
+				continue;
+			}
+
+			const effectiveTravelTime =
+				allocation.step.plant.timePerPatchTravel *
+				Time.Second *
+				farmingTimeBoostMultiplier(allocation.step.boosts);
+			stepSavings.set(
+				allocation.step,
+				(stepSavings.get(allocation.step) ?? 0) + savedPatchTravelCount * effectiveTravelTime
+			);
+		}
+	}
+
+	const stepDurations = plannedSteps.map(step => Math.max(1, step.duration - (stepSavings.get(step) ?? 0)));
+	const totalDuration = stepDurations.reduce((total, duration) => total + duration, 0);
+	const totalSavedDuration = [...stepSavings.values()].reduce((total, duration) => total + duration, 0);
+
+	return { stepDurations, totalDuration, totalSavedDuration };
 }
 
 async function tryRepeatPreviousTrip({
@@ -232,7 +338,8 @@ export async function autoFarm(
 				continue;
 			}
 
-			const { quantity, duration, cost, upgradeType, didPay, infoStr, boostStr, treeChopFee } = prepared.data;
+			const { quantity, duration, travelPatchCount, cost, upgradeType, didPay, infoStr, boostStr, treeChopFee } =
+				prepared.data;
 			if (quantity <= 0 || duration <= 0) {
 				continue;
 			}
@@ -251,15 +358,31 @@ export async function autoFarm(
 				errorsForPatch.push(`You don't own ${cost}.`);
 				continue;
 			}
-			if (totalDuration + duration > maxTripLength) {
-				skippedDueToTripLength = true;
-				skippedPatchNamesDueToTripLength.add(patch.friendlyName);
-				continue;
-			}
 			const patchData = patches[patch.patchName];
 			if (!patchData) {
 				errorsForPatch.push(`Unable to resolve patch data for ${patch.friendlyName}.`);
 				break;
+			}
+
+			const plannedStep: PlannedAutoFarmStep = {
+				plant: candidate,
+				quantity,
+				duration,
+				travelPatchCount,
+				upgradeType,
+				didPay,
+				treeChopFee,
+				patch: patchData,
+				patchName: patch.patchName,
+				friendlyName: patch.friendlyName,
+				info: infoStr,
+				boosts: boostStr
+			};
+			const timingWithStep = calculateSharedLocationTiming([...plannedSteps, plannedStep]);
+			if (timingWithStep.totalDuration > maxTripLength) {
+				skippedDueToTripLength = true;
+				skippedPatchNamesDueToTripLength.add(patch.friendlyName);
+				continue;
 			}
 
 			remainingBank.remove(cost);
@@ -269,20 +392,8 @@ export async function autoFarm(
 				totalCost.add(treeFeeBank);
 			}
 			totalCost.add(cost);
-			totalDuration += duration;
-			plannedSteps.push({
-				plant: candidate,
-				quantity,
-				duration,
-				upgradeType,
-				didPay,
-				treeChopFee,
-				patch: patchData,
-				patchName: patch.patchName,
-				friendlyName: patch.friendlyName,
-				info: infoStr,
-				boosts: boostStr
-			});
+			totalDuration = timingWithStep.totalDuration;
+			plannedSteps.push(plannedStep);
 			planned = true;
 			break;
 		}
@@ -315,10 +426,14 @@ export async function autoFarm(
 		return noCropsResponse;
 	}
 
+	const sharedLocationTiming = calculateSharedLocationTiming(plannedSteps);
+	totalDuration = sharedLocationTiming.totalDuration;
+
 	const autoFarmPlan: AutoFarmStepData[] = [];
 	const planningStartTime = Date.now();
 	let accumulatedDuration = 0;
-	for (const step of plannedSteps) {
+	for (const [index, step] of plannedSteps.entries()) {
+		const duration = sharedLocationTiming.stepDurations[index] ?? step.duration;
 		autoFarmPlan.push({
 			plantsName: step.plant.name,
 			quantity: step.quantity,
@@ -330,9 +445,9 @@ export async function autoFarm(
 			patchType: step.patch,
 			planting: true,
 			currentDate: planningStartTime + accumulatedDuration,
-			duration: step.duration
+			duration
 		});
-		accumulatedDuration += step.duration;
+		accumulatedDuration += duration;
 	}
 
 	const firstStep = autoFarmPlan[0];
@@ -394,6 +509,11 @@ export async function autoFarm(
 	await user.statsBankUpdate('farming_plant_cost_bank', totalCost);
 
 	const uniqueBoosts = [...new Set(plannedSteps.flatMap(step => step.boosts))];
+	if (sharedLocationTiming.totalSavedDuration > 0) {
+		uniqueBoosts.push(
+			`Shared farming locations: saved ${formatDuration(sharedLocationTiming.totalSavedDuration)} travel time`
+		);
+	}
 	const summaryLines: string[] = [];
 	const infoDetails: string[] = [];
 

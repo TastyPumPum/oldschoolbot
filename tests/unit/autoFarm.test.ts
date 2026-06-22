@@ -91,11 +91,13 @@ function isBaseMessage(value: unknown): value is {
 }
 
 const herbPlant = plants.find(p => p.name === 'Guam');
+const allotmentPlant = plants.find(p => p.name === 'Potato');
+const flowerPlant = plants.find(p => p.name === 'Marigold');
 const treePlant = plants.find(p => p.name === 'Oak tree');
 const ranarrPlant = plants.find(p => p.name === 'Ranarr');
 
-if (!herbPlant || !treePlant || !ranarrPlant) {
-	throw new Error('Expected Guam, Ranarr, and Oak tree plants to exist for tests');
+if (!herbPlant || !allotmentPlant || !flowerPlant || !treePlant || !ranarrPlant) {
+	throw new Error('Expected Guam, Potato, Marigold, Ranarr, and Oak tree plants to exist for tests');
 }
 
 const [herbSeedItem] = herbPlant.inputItems.items();
@@ -133,6 +135,44 @@ const herbPatchReadyDetailed: IPatchDataDetailed = {
 	plant: herbPlant
 };
 
+const allotmentPatch: IPatchData = {
+	lastPlanted: null,
+	patchPlanted: false,
+	plantTime: Date.now(),
+	lastQuantity: 0,
+	lastUpgradeType: null,
+	lastPayment: false
+};
+
+const allotmentPatchDetailed: IPatchDataDetailed = {
+	...allotmentPatch,
+	ready: null,
+	readyIn: null,
+	readyAt: null,
+	patchName: allotmentPlant.seedType,
+	friendlyName: 'Allotment patch',
+	plant: null
+};
+
+const flowerPatch: IPatchData = {
+	lastPlanted: null,
+	patchPlanted: false,
+	plantTime: Date.now(),
+	lastQuantity: 0,
+	lastUpgradeType: null,
+	lastPayment: false
+};
+
+const flowerPatchDetailed: IPatchDataDetailed = {
+	...flowerPatch,
+	ready: null,
+	readyIn: null,
+	readyAt: null,
+	patchName: flowerPlant.seedType,
+	friendlyName: 'Flower patch',
+	plant: null
+};
+
 const treePatch: IPatchData = {
 	lastPlanted: treePlant.name,
 	patchPlanted: true,
@@ -159,6 +199,12 @@ const baseInteraction: FarmingTestInteraction = {
 };
 
 const herbPatches: Partial<Record<FarmingPatchName, IPatchData>> = {
+	[herbPlant.seedType]: herbPatch
+};
+
+const sharedLocationPatches: Partial<Record<FarmingPatchName, IPatchData>> = {
+	[allotmentPlant.seedType]: allotmentPatch,
+	[flowerPlant.seedType]: flowerPatch,
 	[herbPlant.seedType]: herbPatch
 };
 
@@ -348,6 +394,55 @@ describe('auto farm helpers', () => {
 		// We don't assert internal shape of autoFarmPlan here –
 		// just that a task was queued.
 		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+	});
+
+	it('autoFarm shares travel time across allotment, flower, and herb locations', async () => {
+		const bank = new Bank().add('Potato seed', 24).add('Marigold seed', 4).add('Guam seed', 4).add('Compost', 16);
+		const user = mockMUser({
+			bank,
+			skills_farming: convertLVLtoXP(50)
+		});
+		const mutableUser = user.user as MutableUser;
+		mutableUser.auto_farm_filter = AutoFarmFilterEnum.AllFarm;
+		mutableUser.minion_defaultCompostToUse = CropUpgradeType.compost;
+		(mutableUser as any).minion_farmingPreferredSeeds = {
+			allotment: { type: 'seed', seedID: itemID('Potato seed') },
+			flower: { type: 'seed', seedID: itemID('Marigold seed') },
+			herb: { type: 'seed', seedID: itemID('Guam seed') }
+		};
+
+		const transactResult = {
+			newUser: user,
+			itemsAdded: new Bank(),
+			itemsRemoved: new Bank(),
+			newBank: user.bank.clone(),
+			newCL: user.cl.clone(),
+			previousCL: new Bank(),
+			clLootBank: null
+		} satisfies Awaited<ReturnType<typeof user.transactItems>>;
+		vi.spyOn(user, 'transactItems').mockResolvedValue(transactResult);
+		vi.spyOn(user, 'statsBankUpdate').mockResolvedValue(undefined);
+		vi.spyOn(global.ClientSettings, 'updateBankSetting').mockResolvedValue();
+
+		calcMaxTripLengthSpy.mockReturnValue(360 * 1000);
+
+		const response = await autoFarm(
+			user,
+			[allotmentPatchDetailed, flowerPatchDetailed, herbPatchDetailed],
+			sharedLocationPatches as Record<FarmingPatchName, IPatchData>,
+			baseInteraction as MInteraction
+		);
+
+		expect(typeof response).toBe('string');
+		if (typeof response !== 'string') return;
+		expect(response).toContain('**Boosts**: Shared farming locations: saved');
+		expect(response).toContain('travel time');
+		expect(addSubTaskToActivityTask).toHaveBeenCalledTimes(1);
+		const queuedTask = (addSubTaskToActivityTask as unknown as MockInstance).mock.calls[0]?.[0] as
+			| FarmingActivityTaskOptions
+			| undefined;
+		expect(queuedTask?.duration).toBe(160 * 1000);
+		expect(queuedTask?.autoFarmPlan?.map(step => step.duration)).toEqual([120 * 1000, 20 * 1000, 20 * 1000]);
 	});
 
 	it('autoFarm names patch groups skipped due to trip length', async () => {

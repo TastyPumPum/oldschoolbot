@@ -7,7 +7,7 @@ Auto farming collects ready patches into a single Farming activity so you can ha
 ## Overview
 
 - [[/farming auto_farm]] checks every patch you have unlocked, harvests ready planted patches, and plants/replants according to your filter and preferences.
-- The trip is planned as one continuous Farming activity whose duration equals the sum of each patch step (travel, harvest, replant). Your minion stays out for the full Farming trip length instead of returning after every patch.
+- The trip is planned as one continuous Farming activity whose duration equals the sum of each patch step (travel, harvest, replant), with shared travel time reduced when allotment, flower, and herb patches are farmed at the same locations. Your minion stays out for the full Farming trip length instead of returning after every patch.
 - You can also trigger auto farming from the button that appears on [[/farming check_patches]] when something is ready, or when an empty patch can be planted by **AllFarm**.
 - The Auto Farm button can be disabled with [[/config user toggle name\:Disable Auto Farm Button]].
 
@@ -29,12 +29,13 @@ Auto farming collects ready patches into a single Farming activity so you can ha
 ## Trip Planning
 
 - Auto farming respects your maximum Farming trip length (see [[/minion activities]]). Steps that would exceed the limit are skipped and named in the chat response.
+- Allotment, flower, and herb patches at the same farming locations share travel time in auto farming, matching how a real patch run would process nearby patches together.
 - Each step is timestamped, so the harvesting order in the summary matches the real execution order.
 - If your minion is already busy the command will refuse to start.
 
 ## Messages
 
-- The start response shows how many patch groups were scheduled, the return time, a **Patches:** list, and an **Items used:** section.
+- The start response shows how many patch groups were scheduled, the return time, a **Patches:** list, an **Items used:** section, and any **Boosts** applied.
 - **Items used:** is grouped into compost, seeds/spores, coins, and other items so you can see the total cost without adding each patch line manually.
 - The completion response combines all completed steps into one summary with **XP gained:**, **Total loot:**, and **Patches farmed:**.
 - Farming, Woodcutting, and Herblore XP gains include XP/hr when those skills gained XP during the trip.
@@ -53,6 +54,7 @@ Auto farming collects ready patches into a single Farming activity so you can ha
 
 - Equip full graceful and keep a [Ring of endurance](../agility/hallowed-sepulchre.md#ring-of-endurance) (equipped or in bank) to stack the 10% + 10% trip speed bonuses.
 - Completing Ardougne hard and elite diaries grants additional 4% + 4% time reduction on auto farm trips.
+- Farming allotment, flower, and herb patches together can show a **Shared farming locations** boost with the travel time saved when nearby patch groups share travel time.
 - Farming outfit, magic secateurs, and the Farming cape apply the same XP and yield bonuses as manual planting.
 
 ## Tips

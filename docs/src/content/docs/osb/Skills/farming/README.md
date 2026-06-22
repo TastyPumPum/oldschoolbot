@@ -61,6 +61,7 @@ Use [[/farming auto_farm]] to process every patch your current filter/preference
 - Respects [[/farming auto_farm_filter]] choices (`AllFarm` to use your best seeds everywhere, `Replant` to stick to what was already growing).
 - Supports [[/farming set_preferred]] for per-patch behavior (`seed`, `highest_available`, or `empty`) plus optional contract prioritization.
 - Applies your [[/farming default_compost]] choice and [[/farming always_pay]] setting automatically.
+- Reduces shared travel time when allotment, flower, and herb patches are processed together at the same farming locations.
 - Skips patches that would push the trip beyond the max duration or when required resources are missing.
 
 See [Auto Farming](auto-farming.md) for a full breakdown, including resource handling and troubleshooting tips.

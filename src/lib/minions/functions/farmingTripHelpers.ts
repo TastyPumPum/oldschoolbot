@@ -28,6 +28,7 @@ export interface PrepareFarmingStepOptions {
 export interface PreparedFarmingStep {
 	quantity: number;
 	duration: number;
+	travelPatchCount: number;
 	cost: Bank;
 	didPay: boolean;
 	upgradeType: CropUpgradeType | null;
@@ -167,13 +168,18 @@ export async function prepareFarmingStep({
 	}
 
 	let duration = 0;
+	let travelPatchCount = 0;
 	if (patchDetailed.patchPlanted) {
-		duration = patchDetailed.lastQuantity * (timePerPatchTravel + timePerPatchPlant + timePerPatchHarvest);
+		travelPatchCount = patchDetailed.lastQuantity;
+		duration = travelPatchCount * (timePerPatchTravel + timePerPatchPlant + timePerPatchHarvest);
 		if (quantityToDo > patchDetailed.lastQuantity) {
-			duration += (quantityToDo - patchDetailed.lastQuantity) * (timePerPatchTravel + timePerPatchPlant);
+			const extraPatchCount = quantityToDo - patchDetailed.lastQuantity;
+			travelPatchCount += extraPatchCount;
+			duration += extraPatchCount * (timePerPatchTravel + timePerPatchPlant);
 		}
 	} else {
-		duration = quantityToDo * (timePerPatchTravel + timePerPatchPlant);
+		travelPatchCount = quantityToDo;
+		duration = travelPatchCount * (timePerPatchTravel + timePerPatchPlant);
 	}
 
 	if (user.hasGracefulEquipped()) {
@@ -208,6 +214,7 @@ export async function prepareFarmingStep({
 		data: {
 			quantity: quantityToDo,
 			duration,
+			travelPatchCount,
 			cost,
 			didPay,
 			upgradeType,
