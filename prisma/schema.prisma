@@ -263,12 +263,6 @@ model UserShip {
 
   ship_name String? @db.VarChar(32)
 
-  hull_tier       Int @default(1)
-  sails_tier      Int @default(1)
-  crew_tier       Int @default(1)
-  navigation_tier Int @default(1)
-  cargo_tier      Int @default(1)
-
   upgrades_bank Json @default("{}") @db.Json
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)

@@ -9,8 +9,6 @@ import type { UnderwaterAgilityThievingTrainingSkill } from '@/lib/skilling/skil
 import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { SharkLureQuantity } from '@/lib/skilling/skills/fishing/fishingUtil.js';
 import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
-import type { SailingDifficultyId } from '@/lib/skilling/skills/sailing/difficulties.js';
-import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
 import type { SailingShipSnapshot } from '@/lib/skilling/skills/sailing/ship.js';
 import type { TrawlingNetId } from '@/lib/skilling/skills/sailing/trawling.js';
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
@@ -190,8 +188,6 @@ export interface SailingActivityTaskOptions extends ActivityTaskOptions {
 	activity: SailingActivityId;
 	quantity: number;
 	ship: SailingShipSnapshot;
-	region?: SailingRegionId;
-	difficulty?: SailingDifficultyId;
 	variant?: string;
 	sailingLevel?: number;
 	chartingTaskIds?: number[];

@@ -4,16 +4,16 @@ title: "Sailing"
 
 ### Status
 
-Sailing is in active development. This page documents the current bot implementation, which aims to follow OSRS data where it is represented in the codebase.
+Sailing is in active development. Activities and rewards come from OSRS. Where live navigation or player input cannot be represented by an AFK bot trip, documented XP/hour estimates and simplified interactions are used.
 
 ### Commands
 
-- `/sail` - Start a Sailing activity. Supports `activity`, `variant`, `difficulty`, and `quantity`.
-- `/ship status` - View ship tiers, installed facilities, stored salvage, and Barracuda Trial ranks.
+- `/sail` - Start a Sailing activity. Supports `activity`, `variant`, and `quantity`.
+- `/ship status` - View installed facilities, stored salvage, and Barracuda Trial ranks.
 - `/ship install` - Install a Sailing facility.
-- `/ship upgrade` - Upgrade generic ship tiers.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
-- `/ship clam` - Feed/check the giant clam used by Sailing ocean encounters.
+- `/ship clam` - Prepare a tradeable, alchable item for a future giant clam encounter.
+- `/ship rename` - Rename your ship.
 
 Sailing trips are fully AFK. Sail trimming, wind mote releases, and crystal extractor harvesting are calculated automatically when the trip finishes.
 
@@ -21,21 +21,27 @@ Sailing trips are fully AFK. Sail trimming, wind mote releases, and crystal extr
 
 Sailing requires the Pandemonium quest. When content is locked by a named quest, the bot can show a Start Quest button where that quest exists in the bot.
 
-Sea charting at Standard difficulty requires Current Affairs. This follows the OSRS training flow without requiring players to keep the Current duck item after completing the quest.
+Individual charting tasks retain their OSRS level and quest requirements. Current tasks require Current Affairs, and crate tasks require Prying Times.
 
 ### Activities
 
 Implemented Sailing activities:
 
 - Sea charting
-- Port tasks
+- Courier and bounty port tasks
 - Shipwreck salvaging
 - Barracuda Trials
 - Deep sea trawling
 
 ### Sea Charting
 
-Sea charting uses one-off charting tasks and completion bonuses. Easy charting is available from level 1. Standard charting requires Current Affairs and 22 Sailing.
+Sea charting uses one-off OSRS charting tasks and completion bonuses. The bot selects eligible unfinished tasks, respecting each task's Sailing level, quest, and diving equipment requirements.
+
+### Port Tasks
+
+Courier tasks are available from level 1 and bounty tasks from level 30. They run as ten-minute AFK task cycles rather than simulating notice boards, cargo handling, ship combat, and individual routes.
+
+The bot uses approximate XP/hour bands from the Sailing training guide. Rewards follow OSRS: coins equal the base Sailing XP gained, plus a 1/36 chance of shark paint per completed cycle. Concurrent task capacity increases at levels 7, 28, 56, and 84 and is included in the rate shown at trip completion.
 
 ### Shipwreck Salvaging
 
@@ -52,7 +58,9 @@ Supported shipwrecks:
 - Fremennik shipwreck - 80 Sailing
 - Merchant shipwreck - 87 Sailing
 
-Salvaging stores unsorted salvage on the ship. `/ship sort_salvage` converts stored salvage into the OSRS sorting XP and rolls the corresponding OSRS salvage loot table. Drops absent from the bot's current item cache are omitted until the item data is updated.
+Without a salvaging station facility, salvaging stores unsorted salvage on the ship. `/ship sort_salvage` sorts it at port for the OSRS sorting XP and loot table.
+
+With a salvaging station facility installed, salvage is automatically sorted during the AFK trip. This represents the facility's OSRS ability to sort salvage while at sea.
 
 ### Barracuda Trials
 
@@ -75,7 +83,7 @@ Rewards currently implemented:
 - Jubbly Shark: Captured wind mote
 - Jubbly Marlin: Gurtob's fabric roll, with Barracuda paint chance
 - Gwenith Swordfish: Serrated key
-- Gwenith Shark: Heart of Ithell
+- Gwenith Shark: Heart of ithell
 - Gwenith Marlin: Gwyna's fabric roll, with Barracuda paint chance
 
 Gwenith Glide requires Regicide in OSRS. In the bot this is mimicked with 10 Crafting, 56 Agility, 25 Ranged, and 50 quest points.
@@ -87,17 +95,17 @@ Facilities are installed on your ship to unlock content.
 - Bronze salvaging hook - unlocks shipwreck salvaging.
 - Keg - built with the Barrel stand from The Tempor Tantrum. Ale effects are not yet modelled.
 - Inoculation station - protects against fetid waters and is required for The Jubbly Jive.
-- Salvaging station - allows salvage sorting aboard the ship.
+- Salvaging station - automatically sorts salvage while salvaging at sea.
 - Rope, linen, hemp, and cotton trawling nets - unlock increasingly deep trawling shoals.
 - Wind catcher - automatically catches and releases wind motes for 40 Sailing XP; requires Captured wind mote to build.
 - Gale catcher - automatically catches and releases wind motes for 70 Sailing XP; requires Captured wind mote to build.
-- Crystal extractor - automatically grants 250 Sailing XP every 63 seconds. Its motes are automatically released for 10 Sailing XP when a catcher is installed; requires Heart of Ithell to build.
+- Crystal extractor - automatically grants 250 Sailing XP every 63 seconds. Its motes are automatically released for 10 Sailing XP when a catcher is installed; requires a Heart of ithell, which is not consumed.
 
 ### Passive Sailing Actions
 
 During every Sailing trip, the bot automatically:
 
-- Trims the sails once per completed 30 seconds and rolls the Soup chance for each trim.
+- Trims the starter sails once per completed 30 seconds and rolls the Soup chance for each trim.
 - Applies the 25% reduced trimming XP when a wind or gale catcher is installed.
 - Releases every wind mote generated by trimming.
 - Harvests the crystal extractor once per completed 63 seconds and releases its mote when a catcher is installed.
@@ -119,18 +127,23 @@ Trawling rolls occur every three ticks. Better nets increase the maximum fish ca
 
 ### Ocean Encounters
 
-Ocean encounters can occur during generic Sailing trips. Implemented encounters include clue turtles, castaways, lost caskets, lost shipments, mysterious glow, Ocean Man, and the giant clam.
+Moving activities such as Sea charting, port tasks, and Barracuda Trials can trigger ocean encounters. The bot uses the OSRS 72-second checks with escalating 1/6 through 6/6 spawn odds and the published encounter rarity weights.
 
-These encounters are not applied to Sea charting, Shipwreck salvaging, or Barracuda Trials where those activities have their own sourced result paths.
+Implemented encounters are strong winds, mysterious glows, lost crates, castaways, giant clams, clue turtles, Ocean Man, and lost caskets. Lost crates award real items from their OSRS loot categories rather than creating crate items. Lost caskets award one roll from the appropriate clue reward table.
+
+`/ship clam` represents feeding the clam during an encounter. The prepared item must be tradeable and alchable, takes at least one hour to polish, and is returned as the appropriate real pearl on a later giant clam encounter.
 
 ### Known Limitations
 
-- The current ship model uses generic tiers, not OSRS skiff hulls, masts, helms, keels, or crew layout.
+- Port-task routes, cargo handling, bounty combat, and notice-board selection are represented by approximate XP/hour bands.
+- Lost-crate tier selection and loot within each real OSRS loot category are simplified.
+- The giant clam is prepared through `/ship clam` because feeding it during a random AFK encounter is not interactive.
+- OSRS hulls, masts, sails, helms, keels, cargo holds, and crew layout are not yet modelled. Generic ship tiers and their invented bonuses have been removed.
 - Skiff-only and OSRS boat-part requirements are documented in activity messages but cannot be fully checked yet.
 - Crewmate restrictions for Barracuda Trials are not enforced because crewmates are not modelled as OSRS ship crew.
 - The Gale catcher schematic requirement is not checked because the schematic item is not currently in the item data.
 - The salvaging station schematic and several salvage pre-roll items are not checked because those items are not currently in the item data.
 - Barracuda route movement, hazards, and player skill are not simulated.
-- Automatic sail trimming and released motes grant their sourced XP, but their live navigation speed effects are not represented by the trip timer.
+- Automatic sail trimming currently uses the starter sail's sourced XP until real sail parts are implemented. Live navigation speed effects are not represented by the trip timer.
 - Keg ale effects, trawling bait, mixed shoals, trophy fish, fish crates, and crewmate-operated nets are not modelled.
 - Regicide itself is not added as a named bot quest; Gwenith checks the mimicked Regicide requirements instead.

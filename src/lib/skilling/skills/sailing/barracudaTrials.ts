@@ -169,7 +169,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				xp: 9315,
 				bonusXP: 35_000,
 				targetTime: Time.Minute * 3 + Time.Second * 42,
-				reward: new Bank().add('Heart of Ithell'),
+				reward: new Bank().add('Heart of ithell'),
 				petChance: 4500,
 				objectives: [
 					"Collect the rank's lost supplies",

@@ -1,8 +1,8 @@
-import { Events } from '@oldschoolgg/toolkit';
+import { Events, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { skillEmoji } from '@/lib/data/emojis.js';
-import { SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import { getMaxPortTasks, getPortTaskXPHour, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
 import {
 	type BarracudaRank,
 	BarracudaTrialById,
@@ -12,7 +12,6 @@ import {
 	isBarracudaTrialId,
 	setBarracudaTrialProgress
 } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
-import { SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js';
 import {
 	addStoredSalvage,
@@ -30,8 +29,9 @@ import {
 import {
 	getBarracudaTrialsProgress,
 	getClaimedChartingCompletionBonuses,
-	getClamItemId,
+	getClamItem,
 	getCompletedChartingTaskIds,
+	getInstalledFacilities,
 	getOrCreateUserShip,
 	getStoredSalvage,
 	updateUpgradesBank
@@ -43,7 +43,6 @@ import {
 	type TrawlingShoalId
 } from '@/lib/skilling/skills/sailing/trawling.js';
 import { calculatePassiveSailingActions } from '@/lib/skilling/skills/sailing/upgrades.js';
-import { calcSailingTripResult } from '@/lib/skilling/skills/sailing/util.js';
 import type { SailingActivityTaskOptions } from '@/lib/types/minions.js';
 
 async function rollSoup({
@@ -87,7 +86,6 @@ async function applyPassiveSailingActions({
 }) {
 	const result = calculatePassiveSailingActions({
 		duration: data.duration,
-		sailsTier: data.ship.sailsTier,
 		sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
 		facilities: data.ship.facilities ?? []
 	});
@@ -127,10 +125,18 @@ function formatPassiveSailingActions(result: ReturnType<typeof calculatePassiveS
 	return messages;
 }
 
+function formatOceanEncounters(result: ReturnType<typeof rollOceanEncounters>) {
+	if (result.encounters === 0) return [];
+	return [
+		`Ocean encounters: ${result.encounters.toLocaleString()} (${result.xp.toLocaleString()} Sailing XP).`,
+		...result.messages
+	];
+}
+
 export const sailingTask: MinionTask = {
 	type: 'Sailing',
 	async run(data: SailingActivityTaskOptions, { user, handleTripFinish, rng }) {
-		const { activity: activityId, quantity, channelId, duration, ship } = data;
+		const { activity: activityId, quantity, channelId, duration } = data;
 		const activity = SailingActivityById.get(activityId);
 		if (!activity) {
 			throw new Error(`Unknown sailing activity: ${activityId}`);
@@ -178,6 +184,21 @@ export const sailingTask: MinionTask = {
 			const loot = new Bank();
 			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
 			xpReceived += passiveActions.totalXP;
+			const clam = getClamItem(shipState);
+			const encounters = rollOceanEncounters({
+				duration,
+				sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
+				facilities: data.ship.facilities ?? [],
+				clamItemId: clam.itemId,
+				clamFedAt: clam.fedAt,
+				user,
+				rng
+			});
+			xpReceived += encounters.xp;
+			loot.add(encounters.loot);
+			if (encounters.clamConsumed) {
+				await updateUpgradesBank(user.id, { clamItemId: null, clamFedAt: null });
+			}
 			await rollSoup({
 				user,
 				loot,
@@ -197,6 +218,9 @@ export const sailingTask: MinionTask = {
 				str += `\nCompleted charting bonuses: ${completedBonusMessages.join(', ')}.`;
 			}
 			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
+			}
+			for (const message of formatOceanEncounters(encounters)) {
 				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
@@ -254,6 +278,20 @@ export const sailingTask: MinionTask = {
 				activity: `${trial.name} at ${rank.name} rank`
 			});
 			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
+			const clam = getClamItem(shipState);
+			const encounters = rollOceanEncounters({
+				duration,
+				sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
+				facilities: data.ship.facilities ?? [],
+				clamItemId: clam.itemId,
+				clamFedAt: clam.fedAt,
+				user,
+				rng
+			});
+			loot.add(encounters.loot);
+			if (encounters.clamConsumed) {
+				await updateUpgradesBank(user.id, { clamItemId: null, clamFedAt: null });
+			}
 
 			await updateUpgradesBank(user.id, {
 				barracudaTrials: setBarracudaTrialProgress(
@@ -264,7 +302,8 @@ export const sailingTask: MinionTask = {
 				)
 			});
 
-			const xpReceived = quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0) + passiveActions.totalXP;
+			const xpReceived =
+				quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0) + passiveActions.totalXP + encounters.xp;
 			const xpRes = await user.addXP({
 				skillName: 'sailing',
 				amount: xpReceived,
@@ -280,6 +319,9 @@ export const sailingTask: MinionTask = {
 				str += `\nNew rank achieved: ${rank.name}. Bonus XP: ${rank.bonusXP.toLocaleString()}.`;
 			}
 			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
+			}
+			for (const message of formatOceanEncounters(encounters)) {
 				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
@@ -299,6 +341,62 @@ export const sailingTask: MinionTask = {
 			});
 		}
 
+		if (activity.id === 'port_tasks') {
+			const variant = data.variant === 'bounty' ? 'bounty' : 'courier';
+			const sailingLevel = data.sailingLevel ?? user.skillsAsLevels.sailing;
+			const xpPerHour = getPortTaskXPHour(variant, sailingLevel);
+			const taskXP = Math.floor((duration / Time.Hour) * xpPerHour);
+			const loot = new Bank().add('Coins', taskXP);
+			for (let i = 0; i < quantity; i++) {
+				if (rng.roll(36)) loot.add('Shark paint');
+			}
+			await rollSoup({
+				user,
+				loot,
+				rng,
+				rolls: quantity,
+				chance: 6000,
+				activity: variant === 'bounty' ? 'completing bounty tasks' : 'delivering courier cargo'
+			});
+			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
+			const shipState = await getOrCreateUserShip(user.id);
+			const clam = getClamItem(shipState);
+			const encounters = rollOceanEncounters({
+				duration,
+				sailingLevel,
+				facilities: data.ship.facilities ?? [],
+				clamItemId: clam.itemId,
+				clamFedAt: clam.fedAt,
+				user,
+				rng
+			});
+			loot.add(encounters.loot);
+			if (encounters.clamConsumed) {
+				await updateUpgradesBank(user.id, { clamItemId: null, clamFedAt: null });
+			}
+			const xpRes = await user.addXP({
+				skillName: 'sailing',
+				amount: taskXP + passiveActions.totalXP + encounters.xp,
+				duration
+			});
+			await user.transactItems({ itemsToAdd: loot, collectionLog: true });
+
+			let str = `${user}, ${user.minionName} finished ${quantity.toLocaleString()} ${variant} task cycles using ${getMaxPortTasks(sailingLevel)} concurrent task slot${getMaxPortTasks(sailingLevel) === 1 ? '' : 's'}. ${xpRes}\nApproximate base rate: ${xpPerHour.toLocaleString()} Sailing XP/hr.\nYou received: ${loot}.`;
+			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
+			}
+			for (const message of formatOceanEncounters(encounters)) {
+				str += `\n${message}`;
+			}
+			return handleTripFinish({
+				user,
+				channelId,
+				message: str,
+				data,
+				loot
+			});
+		}
+
 		if (activity.id === 'shipwreck_salvaging') {
 			const shipwreck = SalvagingShipwreckById.get(data.variant as SalvagingShipwreckId);
 			if (!shipwreck) {
@@ -306,27 +404,40 @@ export const sailingTask: MinionTask = {
 			}
 
 			const shipState = await getOrCreateUserShip(user.id);
-			const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, quantity);
-			await updateUpgradesBank(user.id, { salvage: nextSalvage });
-
 			const salvageXP = Math.floor(quantity * shipwreck.salvagingXP);
 			const loot = new Bank();
+			const hasSalvagingStation = getInstalledFacilities(shipState).includes('salvaging_station');
+			let sortingXP = 0;
+			if (hasSalvagingStation) {
+				sortingXP = Math.floor(quantity * shipwreck.sortingXP);
+				loot.add(shipwreck.lootTable.roll(quantity));
+				const soupQuantity = loot.amount('Soup');
+				if (user.owns('Soup') && soupQuantity > 0) {
+					loot.remove('Soup', soupQuantity);
+				} else if (soupQuantity > 1) {
+					loot.remove('Soup', soupQuantity - 1);
+				}
+				if (!user.owns('Soup') && soupQuantity > 0) {
+					globalClient.emit(
+						Events.ServerNotification,
+						`${skillEmoji.sailing} **${user.badgedUsername}'s** minion, ${user.minionName}, just received Soup while sorting salvage at sea!`
+					);
+				}
+			} else {
+				const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, quantity);
+				await updateUpgradesBank(user.id, { salvage: nextSalvage });
+			}
 			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
-			await rollSoup({
-				user,
-				loot,
-				rng,
-				rolls: quantity,
-				chance: shipwreck.petChance,
-				activity: `salvaging ${shipwreck.name}`
-			});
 			const xpRes = await user.addXP({
 				skillName: 'sailing',
-				amount: salvageXP + passiveActions.totalXP,
+				amount: salvageXP + sortingXP + passiveActions.totalXP,
 				duration
 			});
 
-			let str = `${user}, ${user.minionName} finished salvaging ${quantity}x ${shipwreck.name}. ${xpRes}\nStored salvage: ${quantity.toLocaleString()}x ${shipwreck.salvageName}.`;
+			let str = `${user}, ${user.minionName} finished salvaging ${quantity}x ${shipwreck.name}. ${xpRes}`;
+			str += hasSalvagingStation
+				? `\nThe salvaging station sorted ${quantity.toLocaleString()}x ${shipwreck.salvageName} while at sea.`
+				: `\nStored salvage: ${quantity.toLocaleString()}x ${shipwreck.salvageName}.`;
 			for (const message of formatPassiveSailingActions(passiveActions)) {
 				str += `\n${message}`;
 			}
@@ -391,100 +502,6 @@ export const sailingTask: MinionTask = {
 			});
 		}
 
-		const variant = data.variant ? activity.variants?.find(v => v.id === data.variant) : undefined;
-		const difficulty = data.difficulty ? SailingDifficultyById.get(data.difficulty) : undefined;
-
-		const xpMultiplier = (variant?.xpMultiplier ?? 1) * (difficulty?.xpMultiplier ?? 1);
-		const lootMultiplier = (variant?.lootMultiplier ?? 1) * (difficulty?.lootMultiplier ?? 1);
-		const baseRiskOverride = difficulty ? activity.baseRisk + difficulty.riskBonus : undefined;
-
-		const result = calcSailingTripResult({
-			activity,
-			quantity,
-			ship,
-			sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
-			xpMultiplier,
-			lootMultiplier,
-			baseRiskOverride
-		});
-
-		const shipState = await getOrCreateUserShip(user.id);
-		const passiveActions = await applyPassiveSailingActions({ user, data, loot: result.loot, rng });
-
-		const encounterResult = rollOceanEncounters({
-			duration,
-			sailingLevel: user.skillsAsLevels.sailing,
-			clamItemId: getClamItemId(shipState),
-			user,
-			rng
-		});
-		if (encounterResult.loot.length > 0) {
-			result.loot.add(encounterResult.loot);
-		}
-
-		const xpRes = await user.addXP({
-			skillName: 'sailing',
-			amount: result.xpReceived + passiveActions.totalXP + encounterResult.xp,
-			duration
-		});
-
-		if (activity.id === 'port_tasks') {
-			const taskLevel = data.variant === 'bounty' ? 30 : 1;
-			const petChance = Math.round(6000 - (2850 / 98) * (taskLevel - 1));
-			await rollSoup({
-				user,
-				loot: result.loot,
-				rng,
-				rolls: result.successfulActions,
-				chance: petChance,
-				activity: activity.name
-			});
-		}
-
-		let str = `${user}, ${user.minionName} finished ${activity.name} for ${quantity} actions. ${xpRes}`;
-
-		if (variant?.lootTable && result.successfulActions > 0) {
-			const bonusLootRolls = Math.floor(result.successfulActions * lootMultiplier * 0.25);
-			if (bonusLootRolls > 0) {
-				result.loot.add(variant.lootTable.roll(bonusLootRolls));
-			}
-		}
-
-		const successRate = Math.round(result.successChance * 10000) / 100;
-		str += `\nSuccess rate: ${successRate}%.`;
-
-		if (result.bonusRolls > 0) {
-			str += `\nCargo bonus rolls: ${result.bonusRolls}.`;
-		}
-
-		if (encounterResult.encounters > 0) {
-			str += `\nOcean encounters: ${encounterResult.encounters} for ${encounterResult.xp} Sailing XP.`;
-			if (encounterResult.messages.length > 0) {
-				str += `\n${encounterResult.messages.join(' ')}`;
-			}
-		}
-		if (encounterResult.clamConsumed) {
-			await updateUpgradesBank(user.id, { clamItemId: null });
-		}
-
-		if (result.loot.length > 0) {
-			await user.transactItems({
-				itemsToAdd: result.loot,
-				collectionLog: true
-			});
-			str += `\nYou received: ${result.loot}.`;
-		}
-
-		for (const message of formatPassiveSailingActions(passiveActions)) {
-			str += `\n${message}`;
-		}
-
-		return handleTripFinish({
-			user,
-			channelId,
-			message: str,
-			data,
-			loot: result.loot.length > 0 ? result.loot : null
-		});
+		throw new Error(`Sailing activity has no result handler: ${activity.id}`);
 	}
 };

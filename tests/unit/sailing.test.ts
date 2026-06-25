@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { getMaxPortTasks } from '@/lib/skilling/skills/sailing/activities.js';
+import { getMaxPortTasks, getPortTaskXPHour } from '@/lib/skilling/skills/sailing/activities.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import {
@@ -9,11 +9,15 @@ import {
 	TrawlingNetById,
 	TrawlingShoalById
 } from '@/lib/skilling/skills/sailing/trawling.js';
-import { calculatePassiveSailingActions, getSailTierTrimData } from '@/lib/skilling/skills/sailing/upgrades.js';
+import { calculatePassiveSailingActions, STARTER_SAIL_TRIM_DATA } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 describe('Sailing data', () => {
-	test('uses OSRS port task slot thresholds', () => {
+	test('uses OSRS port-task slots and documented approximate rates', () => {
 		expect([1, 6, 7, 27, 28, 55, 56, 83, 84, 99].map(getMaxPortTasks)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+		expect(getPortTaskXPHour('courier', 46)).toBe(30_000);
+		expect(getPortTaskXPHour('courier', 84)).toBe(135_000);
+		expect(getPortTaskXPHour('bounty', 30)).toBe(35_000);
+		expect(getPortTaskXPHour('bounty', 80)).toBe(150_000);
 	});
 
 	test('uses OSRS trawling requirements and catch chances', () => {
@@ -47,16 +51,14 @@ describe('Sailing data', () => {
 		expect(SailingFacilitiesById.get('keg')).toMatchObject({ level: 33, constructionLevel: 25 });
 	});
 
-	test('uses the first five OSRS sail trim tiers', () => {
-		expect(getSailTierTrimData(1)).toEqual({ level: 1, xp: 10.5 });
-		expect(getSailTierTrimData(5)).toEqual({ level: 68, xp: 64 });
+	test('uses the starter sail trim XP until real sail parts are modelled', () => {
+		expect(STARTER_SAIL_TRIM_DATA).toEqual({ level: 1, xp: 10.5 });
 	});
 
 	test('automatically trims sails and releases generated motes', () => {
 		expect(
 			calculatePassiveSailingActions({
 				duration: 120_000,
-				sailsTier: 1,
 				sailingLevel: 99,
 				facilities: ['wind_catcher']
 			})
@@ -73,7 +75,6 @@ describe('Sailing data', () => {
 		expect(
 			calculatePassiveSailingActions({
 				duration: 126_000,
-				sailsTier: 1,
 				sailingLevel: 99,
 				facilities: ['wind_catcher', 'crystal_extractor']
 			})

@@ -13,30 +13,13 @@ import {
 } from '@/lib/skilling/skills/sailing/salvaging.js';
 import {
 	getBarracudaTrialsProgress,
-	getClamItemId,
+	getClamItem,
 	getInstalledFacilities,
 	getOrCreateUserShip,
-	getShipBonusesFromSnapshot,
-	getShipPartTier,
 	getStoredSalvage,
-	snapshotShip,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
 import { isTrawlingNetFacility } from '@/lib/skilling/skills/sailing/trawling.js';
-import {
-	getShipUpgradeCost,
-	MAX_SHIP_TIER,
-	SHIP_PARTS,
-	type ShipPart
-} from '@/lib/skilling/skills/sailing/upgrades.js';
-
-const prettyPartName: Record<ShipPart, string> = {
-	hull: 'Hull',
-	sails: 'Sails',
-	crew: 'Crew',
-	navigation: 'Navigation',
-	cargo: 'Cargo'
-};
 
 export const shipCommand = defineCommand({
 	name: 'ship',
@@ -58,30 +41,6 @@ export const shipCommand = defineCommand({
 					description: 'The facility to install.',
 					required: true,
 					choices: SailingFacilities.map(f => ({ name: f.name, value: f.id }))
-				}
-			]
-		},
-		{
-			type: 'Subcommand',
-			name: 'clam',
-			description: 'Feed the giant clam an item or check its status.',
-			options: [
-				{
-					type: 'String',
-					name: 'item',
-					description: 'The item to feed the clam (tradeable). Leave empty to check status.',
-					required: false,
-					autocomplete: async ({ value }: StringAutoComplete) => {
-						if (!value) return [{ name: 'Type something!', value: Items.getId('Coins').toString() }];
-						return Array.from(
-							Items.filter(item => item.name.toLowerCase().includes(value.toLowerCase())).values()
-						)
-							.slice(0, 25)
-							.map(i => ({
-								name: `${i.name} (ID: ${i.id})`,
-								value: i.id.toString()
-							}));
-					}
 				}
 			]
 		},
@@ -111,23 +70,22 @@ export const shipCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
-			name: 'upgrade',
-			description: 'Upgrade a ship part.',
+			name: 'clam',
+			description: 'Feed the giant clam an item or check its status.',
 			options: [
 				{
 					type: 'String',
-					name: 'part',
-					description: 'The part to upgrade.',
-					required: true,
-					choices: SHIP_PARTS.map(part => ({ name: prettyPartName[part], value: part }))
-				},
-				{
-					type: 'Integer',
-					name: 'tiers',
-					description: 'How many tiers to upgrade (default 1).',
+					name: 'item',
+					description: 'A tradeable, alchable item to feed the clam.',
 					required: false,
-					min_value: 1,
-					max_value: MAX_SHIP_TIER
+					autocomplete: async ({ value }: StringAutoComplete) => {
+						if (!value) return [{ name: 'Type something!', value: Items.getId('Coins').toString() }];
+						return Array.from(
+							Items.filter(item => item.name.toLowerCase().includes(value.toLowerCase())).values()
+						)
+							.slice(0, 25)
+							.map(item => ({ name: `${item.name} (ID: ${item.id})`, value: item.id.toString() }));
+					}
 				}
 			]
 		},
@@ -149,8 +107,6 @@ export const shipCommand = defineCommand({
 		const ship = await getOrCreateUserShip(user.id);
 
 		if (options.status) {
-			const snapshot = snapshotShip(ship);
-			const bonuses = getShipBonusesFromSnapshot(snapshot);
 			const name = ship.ship_name ?? 'Unnamed ship';
 			const facilities = getInstalledFacilities(ship).map(f => SailingFacilitiesById.get(f)?.name ?? f);
 			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship));
@@ -167,47 +123,7 @@ export const shipCommand = defineCommand({
 				return `${trial.name}: ${ranks}`;
 			}).join('\n');
 
-			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBarracuda Trials:\n${barracudaStatus}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
-		}
-
-		if (options.clam) {
-			const stored = getClamItemId(ship);
-			const itemInput = options.clam.item?.trim();
-
-			if (!itemInput) {
-				return stored
-					? `Your giant clam is holding: ${Items.get(stored)?.name ?? stored}.`
-					: 'Your giant clam is not holding any item yet.';
-			}
-
-			if (user.skillsAsLevels.sailing < 40) {
-				return `${user.minionName} needs 40 Sailing to feed the giant clam.`;
-			}
-
-			if (stored) {
-				return 'Your giant clam is already holding an item. You must claim its pearl before feeding another.';
-			}
-
-			let item: Item;
-			try {
-				item = Items.getOrThrow(itemInput);
-			} catch {
-				return 'That is not a valid item.';
-			}
-
-			if (!item.tradeable && !item.tradeable_on_ge) {
-				return 'The giant clam only accepts tradeable items.';
-			}
-
-			const cost = new Bank().add(item.id, 1);
-			if (!user.owns(cost)) {
-				return `You don't have any ${item.name}.`;
-			}
-
-			await user.transactItems({ itemsToRemove: cost });
-			await updateUpgradesBank(user.id, { clamItemId: item.id });
-
-			return `You fed the giant clam a ${item.name}. It will return a pearl on your next encounter.`;
+			return `**${name}**\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBarracuda Trials:\n${barracudaStatus}`;
 		}
 
 		if (options.sort_salvage) {
@@ -277,6 +193,39 @@ export const shipCommand = defineCommand({
 			return `Sorted ${sortedParts.join(', ')}. ${xpRes}${loot.length > 0 ? `\nYou received: ${loot}.` : ''}`;
 		}
 
+		if (options.clam) {
+			const stored = getClamItem(ship);
+			const itemInput = options.clam.item?.trim();
+			if (!itemInput) {
+				if (!stored.itemId) return 'You have not prepared an item for the giant clam.';
+				const readyAt = (stored.fedAt ?? Date.now()) + 60 * 60 * 1000;
+				const ready = Date.now() >= readyAt;
+				return `Prepared item: ${Items.get(stored.itemId)?.name ?? stored.itemId}. It is ${ready ? 'ready' : 'still being polished'} for the next giant clam encounter.`;
+			}
+			if (user.skillsAsLevels.sailing < 40) {
+				return `${user.minionName} needs 40 Sailing to use the giant clam.`;
+			}
+			if (stored.itemId) {
+				return 'The giant clam is already polishing an item.';
+			}
+
+			let item: Item;
+			try {
+				item = Items.getOrThrow(itemInput);
+			} catch {
+				return 'That is not a valid item.';
+			}
+			if ((!item.tradeable && !item.tradeable_on_ge) || (!item.highalch && item.name !== 'Coins')) {
+				return 'The giant clam only accepts tradeable, alchable items.';
+			}
+			const cost = new Bank().add(item.id);
+			if (!user.owns(cost)) return `You don't have a ${item.name}.`;
+
+			await user.transactItems({ itemsToRemove: cost });
+			await updateUpgradesBank(user.id, { clamItemId: item.id, clamFedAt: Date.now() });
+			return `Prepared a ${item.name} for the giant clam. It can produce a pearl after at least one hour and a future ocean encounter.`;
+		}
+
 		if (options.install) {
 			const facility = SailingFacilitiesById.get(options.install.facility);
 			if (!facility) return 'Unknown facility.';
@@ -329,40 +278,6 @@ export const shipCommand = defineCommand({
 				data: { ship_name: newName }
 			});
 			return `Your ship has been renamed to **${newName}**.`;
-		}
-
-		if (options.upgrade) {
-			const part = options.upgrade.part as ShipPart;
-			const currentTier = getShipPartTier(ship, part);
-			const tiersRequested = options.upgrade.tiers ?? 1;
-			const targetTier = Math.min(MAX_SHIP_TIER, currentTier + tiersRequested);
-
-			if (currentTier >= MAX_SHIP_TIER) {
-				return `${prettyPartName[part]} is already at max tier.`;
-			}
-			if (targetTier === currentTier) {
-				return 'Invalid tier selection.';
-			}
-
-			const cost = getShipUpgradeCost(part, currentTier, targetTier);
-
-			if (!user.owns(cost)) {
-				return `You don't have the required items to upgrade ${prettyPartName[part]} to tier ${targetTier}.\nYou need: ${cost}.`;
-			}
-
-			await user.transactItems({
-				itemsToRemove: cost
-			});
-
-			const updateData: Record<string, number> = {};
-			updateData[`${part}_tier`] = targetTier;
-
-			await prisma.userShip.update({
-				where: { user_id: user.id },
-				data: updateData
-			});
-
-			return `Upgraded ${prettyPartName[part]} to tier ${targetTier}. Cost: ${cost}.`;
 		}
 
 		return 'Invalid command.';

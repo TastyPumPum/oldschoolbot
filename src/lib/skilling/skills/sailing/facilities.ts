@@ -53,7 +53,7 @@ export const SailingFacilities: SailingFacility[] = [
 		level: 42,
 		constructionLevel: 34,
 		cost: new Bank({ 'Teak plank': 4, 'Steel nails': 16 }),
-		description: 'Allows salvage to be sorted aboard the ship.'
+		description: 'Automatically sorts salvage while shipwreck salvaging at sea.'
 	},
 	{
 		id: 'wind_catcher',
@@ -94,9 +94,9 @@ export const SailingFacilities: SailingFacility[] = [
 		cost: new Bank({
 			'Ironwood plank': 6,
 			'Cupronickel bar': 5,
-			'Magic stone': 2,
-			'Heart of Ithell': 1
+			'Magic stone': 2
 		}),
+		requiredItems: new Bank({ 'Heart of ithell': 1 }),
 		description: 'Automatically grants periodic Sailing XP and extractor motes during trips.'
 	},
 	...TrawlingNets.map(net => ({

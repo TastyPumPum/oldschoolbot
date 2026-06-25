@@ -2,7 +2,7 @@ import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
-import { getMaxPortTasks, SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
 import {
 	type BarracudaRank,
 	BarracudaTrialById,
@@ -12,7 +12,6 @@ import {
 	getPreviousBarracudaRank,
 	isBarracudaTrialId
 } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
-import { SailingDifficulties, SailingDifficultyById } from '@/lib/skilling/skills/sailing/difficulties.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import {
 	getBestSalvagingShipwreckForLevel,
@@ -25,7 +24,6 @@ import {
 	getCompletedChartingTaskIds,
 	getInstalledFacilities,
 	getOrCreateUserShip,
-	getShipPartTier,
 	hasFacility,
 	snapshotShip
 } from '@/lib/skilling/skills/sailing/ship.js';
@@ -70,16 +68,6 @@ export const sailCommand = defineCommand({
 			].map(v => ({ name: v, value: v }))
 		},
 		{
-			type: 'String',
-			name: 'difficulty',
-			description: 'Activity difficulty.',
-			required: false,
-			choices: SailingDifficulties.map(difficulty => ({
-				name: difficulty.name,
-				value: difficulty.id
-			}))
-		},
-		{
 			type: 'Integer',
 			name: 'quantity',
 			description: 'The number of actions to perform (optional).',
@@ -105,23 +93,6 @@ export const sailCommand = defineCommand({
 				: activity.variants?.[0]?.id);
 		if (variant && !activity.variants?.some(v => v.id === variant)) {
 			return 'That is not a valid variant for this activity.';
-		}
-
-		const difficulty = SailingDifficultyById.get(
-			options.difficulty ?? activity.allowedDifficulties?.[0] ?? 'standard'
-		);
-		if (!difficulty) return 'That is not a valid Sailing difficulty.';
-		if (activity.allowedDifficulties && !activity.allowedDifficulties.includes(difficulty.id)) {
-			return `${activity.name} cannot be done at ${difficulty.name} difficulty.`;
-		}
-		if (activity.id === 'sea_charting' && difficulty.id === 'standard') {
-			const hasCurrentAffairs = user.user.finished_quest_ids?.includes(QuestID.CurrentAffairs) ?? false;
-			if (!hasCurrentAffairs) {
-				return {
-					content: `${user.minionName} needs to complete the Current Affairs quest to do Sea charting at Standard difficulty.`,
-					components: [makeStartQuestButton('Current Affairs')]
-				};
-			}
 		}
 
 		if (user.skillsAsLevels.sailing < activity.level) {
@@ -174,14 +145,6 @@ export const sailCommand = defineCommand({
 				facility => SailingFacilitiesById.get(facility)?.name ?? facility
 			);
 			return `${activity.name} requires one of these facilities: ${facilities.join(', ')}. Install one with \`/ship install\`.`;
-		}
-		if (activity.requiredShipTiers) {
-			for (const [part, tier] of Object.entries(activity.requiredShipTiers)) {
-				const currentTier = getShipPartTier(ship, part as 'hull' | 'sails' | 'crew' | 'navigation' | 'cargo');
-				if (currentTier < (tier ?? 1)) {
-					return `Your ${part} tier is too low for ${activity.name}. You need ${part} tier ${tier}.`;
-				}
-			}
 		}
 		if (activity.requiredItems && activity.requiredItems.length > 0) {
 			const requiredBank = new Bank();
@@ -236,7 +199,6 @@ export const sailCommand = defineCommand({
 				iQty: options.quantity ? options.quantity : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
-				difficulty: difficulty.id,
 				variant: rank.id satisfies BarracudaRank
 			});
 
@@ -263,9 +225,7 @@ export const sailCommand = defineCommand({
 			const chartingTrip = calcSailingTripStart({
 				activity,
 				maxTripLength,
-				quantityInput: requestedQuantity,
-				ship: shipSnapshot,
-				timeMultiplier: difficulty.timeMultiplier
+				quantityInput: requestedQuantity
 			});
 			const selectedTasks = eligibleTasks.slice(0, chartingTrip.quantity);
 
@@ -279,17 +239,12 @@ export const sailCommand = defineCommand({
 				iQty: options.quantity ? options.quantity : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
-				difficulty: difficulty.id,
 				chartingTaskIds: selectedTasks.map(task => task.id)
 			});
 
-			let response = `${user.minionName} is now doing Sea charting (${chartingTrip.quantity} tasks), it'll take around ${formatDuration(
+			return `${user.minionName} is now doing Sea charting (${chartingTrip.quantity} tasks), it'll take around ${formatDuration(
 				chartingTrip.duration
 			)} to finish.`;
-			if (chartingTrip.boosts.length > 0) {
-				response += `\n\n**Boosts:** ${chartingTrip.boosts.join(', ')}.`;
-			}
-			return response;
 		}
 
 		if (activity.id === 'deep_sea_trawling') {
@@ -308,7 +263,6 @@ export const sailCommand = defineCommand({
 				iQty: options.quantity ? options.quantity : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
-				difficulty: difficulty.id,
 				variant,
 				trawlingNet
 			});
@@ -316,23 +270,12 @@ export const sailCommand = defineCommand({
 			return `${user.minionName} is now deep sea trawling at ${shoal.name} with ${TrawlingNetById.get(trawlingNet!)?.name} (${quantity.toLocaleString()} rolls), it'll take around ${formatDuration(duration)} to finish.`;
 		}
 
-		const quantityInput =
-			activity.id === 'port_tasks'
-				? Math.min(
-						options.quantity ?? getMaxPortTasks(user.skillsAsLevels.sailing),
-						getMaxPortTasks(user.skillsAsLevels.sailing)
-					)
-				: options.quantity;
-		const {
-			quantity: tripQuantity,
-			duration: tripDuration,
-			boosts
-		} = calcSailingTripStart({
+		const quantityInput = options.quantity;
+		const { quantity: tripQuantity, duration: tripDuration } = calcSailingTripStart({
 			activity,
 			maxTripLength,
 			quantityInput,
-			ship: shipSnapshot,
-			timeMultiplier: (variantData?.timeMultiplier ?? 1) * difficulty.timeMultiplier
+			timeMultiplier: variantData?.timeMultiplier ?? 1
 		});
 
 		await ActivityManager.startTrip<SailingActivityTaskOptions>({
@@ -345,19 +288,12 @@ export const sailCommand = defineCommand({
 			iQty: quantityInput,
 			ship: shipSnapshot,
 			sailingLevel: user.skillsAsLevels.sailing,
-			difficulty: difficulty.id,
 			variant,
 			trawlingNet
 		});
 
-		let response = `${user.minionName} is now doing ${activity.name}${
+		return `${user.minionName} is now doing ${activity.name}${
 			variantData ? ` (${variantData.name})` : ''
-		} at ${difficulty.name} difficulty (${tripQuantity} actions), it'll take around ${formatDuration(tripDuration)} to finish.`;
-
-		if (boosts.length > 0) {
-			response += `\n\n**Boosts:** ${boosts.join(', ')}.`;
-		}
-
-		return response;
+		} (${tripQuantity} actions), it'll take around ${formatDuration(tripDuration)} to finish.`;
 	}
 });

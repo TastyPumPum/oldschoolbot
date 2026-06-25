@@ -32,7 +32,6 @@ import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getF
 import { Skills } from '@/lib/skilling/skills/index.js';
 import { SailingFacilities } from '@/lib/skilling/skills/sailing/facilities.js';
 import { updateUpgradesBank } from '@/lib/skilling/skills/sailing/ship.js';
-import { MAX_SHIP_TIER } from '@/lib/skilling/skills/sailing/upgrades.js';
 import { slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
@@ -768,50 +767,31 @@ export const testPotatoCommand = globalConfig.isProduction
 				if (options.sailing) {
 					const { action } = options.sailing;
 					if (action === 'max_ship') {
-						await prisma.userShip.update({
-							where: { user_id: user.id },
-							data: {
-								hull_tier: MAX_SHIP_TIER,
-								sails_tier: MAX_SHIP_TIER,
-								crew_tier: MAX_SHIP_TIER,
-								navigation_tier: MAX_SHIP_TIER,
-								cargo_tier: MAX_SHIP_TIER
-							}
-						});
 						await updateUpgradesBank(user.id, {
 							facilities: SailingFacilities.map(f => f.id)
 						});
-						return 'Maxed ship tiers and installed all facilities.';
+						return 'Installed all Sailing facilities.';
 					}
 
 					if (action === 'reset_ship') {
 						await prisma.userShip.update({
 							where: { user_id: user.id },
 							data: {
-								hull_tier: 1,
-								sails_tier: 1,
-								crew_tier: 1,
-								navigation_tier: 1,
-								cargo_tier: 1,
 								upgrades_bank: {}
 							}
 						});
-						return 'Reset ship tiers and upgrades.';
+						return 'Reset Sailing facilities and progress.';
 					}
 
 					if (action === 'give_items') {
 						await user.addItemsToBank({
 							items: new Bank()
-								.add('Heart of Ithell')
+								.add('Heart of ithell')
 								.add('Ironwood logs', 200)
 								.add('Ironwood plank', 200)
 								.add('Nickel ore', 200)
 								.add('Cupronickel bar', 200)
 								.add('Magic stone', 50)
-								.add('Wind mote', 500)
-								.add('Gale mote', 500)
-								.add('Wind catcher')
-								.add('Gale catcher')
 						});
 						return 'Added sailing materials and items to your bank.';
 					}

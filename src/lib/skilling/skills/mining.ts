@@ -123,7 +123,7 @@ const ores: Ore[] = [
 		xp: 40.5,
 		id: itemID('Lead ore'),
 		name: 'Lead ore',
-		respawnTime: 10,
+		respawnTime: 6,
 		bankingTime: 33,
 		slope: 65 / 98,
 		intercept: 44 - 65 / 98,

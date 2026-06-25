@@ -1,31 +1,16 @@
 import type { UserShip } from '@/prisma/main.js';
 import type { BarracudaTrialsProgress } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
-import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
 import type { StoredSalvage } from '@/lib/skilling/skills/sailing/salvaging.js';
-import { MAX_SHIP_TIER, type ShipPart } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 export type SailingShipSnapshot = {
-	hullTier: number;
-	sailsTier: number;
-	crewTier: number;
-	navigationTier: number;
-	cargoTier: number;
 	facilities: SailingFacilityId[];
-};
-
-export type SailingShipBonuses = {
-	speedMultiplier: number;
-	successBonus: number;
-	lootBonus: number;
 };
 
 export type SailingUpgradesBank = {
 	facilities?: SailingFacilityId[];
-	reputation?: number;
-	charts?: number;
-	unlockedRegions?: SailingRegionId[];
 	clamItemId?: number | null;
+	clamFedAt?: number | null;
 	completedChartingTaskIds?: number[];
 	claimedChartingCompletionBonuses?: string[];
 	salvage?: StoredSalvage;
@@ -41,28 +26,16 @@ export function getInstalledFacilities(ship: UserShip): SailingFacilityId[] {
 	return getUpgradesBank(ship).facilities ?? [];
 }
 
+export function getClamItem(ship: UserShip) {
+	const upgrades = getUpgradesBank(ship);
+	return {
+		itemId: upgrades.clamItemId ?? null,
+		fedAt: upgrades.clamFedAt ?? null
+	};
+}
+
 export function hasFacility(ship: UserShip, facility: SailingFacilityId): boolean {
 	return getInstalledFacilities(ship).includes(facility);
-}
-
-export function getShipReputation(ship: UserShip): number {
-	return getUpgradesBank(ship).reputation ?? 0;
-}
-
-export function getShipCharts(ship: UserShip): number {
-	return getUpgradesBank(ship).charts ?? 0;
-}
-
-export function getUnlockedRegions(ship: UserShip): SailingRegionId[] {
-	return getUpgradesBank(ship).unlockedRegions ?? ['starter_sea'];
-}
-
-export function hasUnlockedRegion(ship: UserShip, region: SailingRegionId): boolean {
-	return getUnlockedRegions(ship).includes(region);
-}
-
-export function getClamItemId(ship: UserShip): number | null {
-	return getUpgradesBank(ship).clamItemId ?? null;
 }
 
 export function getCompletedChartingTaskIds(ship: UserShip): number[] {
@@ -94,47 +67,9 @@ export async function updateUpgradesBank(userID: string, updates: Partial<Sailin
 	});
 }
 
-export function getShipPartTier(ship: UserShip, part: ShipPart): number {
-	switch (part) {
-		case 'hull':
-			return ship.hull_tier;
-		case 'sails':
-			return ship.sails_tier;
-		case 'crew':
-			return ship.crew_tier;
-		case 'navigation':
-			return ship.navigation_tier;
-		case 'cargo':
-			return ship.cargo_tier;
-		default:
-			return 1;
-	}
-}
-
-export function clampShipTier(tier: number): number {
-	return Math.max(1, Math.min(MAX_SHIP_TIER, tier));
-}
-
 export function snapshotShip(ship: UserShip): SailingShipSnapshot {
 	return {
-		hullTier: ship.hull_tier,
-		sailsTier: ship.sails_tier,
-		crewTier: ship.crew_tier,
-		navigationTier: ship.navigation_tier,
-		cargoTier: ship.cargo_tier,
 		facilities: getInstalledFacilities(ship)
-	};
-}
-
-export function getShipBonusesFromSnapshot(snapshot: SailingShipSnapshot): SailingShipBonuses {
-	const speedBonus = Math.min(0.35, (snapshot.hullTier - 1) * 0.02 + (snapshot.sailsTier - 1) * 0.04);
-	const successBonus = Math.min(0.25, (snapshot.crewTier - 1) * 0.03 + (snapshot.navigationTier - 1) * 0.03);
-	const lootBonus = Math.min(0.2, (snapshot.cargoTier - 1) * 0.04);
-
-	return {
-		speedMultiplier: Math.max(0.65, 1 - speedBonus),
-		successBonus,
-		lootBonus
 	};
 }
 
