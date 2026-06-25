@@ -68,7 +68,7 @@ export const SailingFacilities: SailingFacility[] = [
 			'Air rune': 10_000
 		}),
 		requiredItems: new Bank({ 'Captured wind mote': 1 }),
-		description: 'Stores two wind motes for Sailing speed boosts.'
+		description: 'Automatically catches and releases wind motes during Sailing trips.'
 	},
 	{
 		id: 'gale_catcher',
@@ -84,7 +84,7 @@ export const SailingFacilities: SailingFacility[] = [
 			'Swift albatross feather': 5
 		}),
 		requiredItems: new Bank({ 'Captured wind mote': 1 }),
-		description: 'Stores three wind motes for Sailing speed boosts.'
+		description: 'Automatically catches and releases stronger wind motes during Sailing trips.'
 	},
 	{
 		id: 'crystal_extractor',
@@ -97,7 +97,7 @@ export const SailingFacilities: SailingFacility[] = [
 			'Magic stone': 2,
 			'Heart of Ithell': 1
 		}),
-		description: 'Grants periodic Sailing XP during trips.'
+		description: 'Automatically grants periodic Sailing XP and extractor motes during trips.'
 	},
 	...TrawlingNets.map(net => ({
 		id: net.id,

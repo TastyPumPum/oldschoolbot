@@ -1017,6 +1017,17 @@
 		"output_multiple": 1
 	},
 	{
+		"name": "Lead bar",
+		"level": 25,
+		"xp": 15.5,
+		"id": 32889,
+		"input_ores": {
+			"31716": 2
+		},
+		"chance_of_fail": 0,
+		"time_to_use": 3000
+	},
+	{
 		"name": "Mith grapple tip",
 		"level": 59,
 		"xp": 50,

@@ -12,7 +12,6 @@ import {
 	SalvagingShipwrecks
 } from '@/lib/skilling/skills/sailing/salvaging.js';
 import {
-	addStoredWindMotes,
 	getBarracudaTrialsProgress,
 	getClamItemId,
 	getInstalledFacilities,
@@ -20,16 +19,11 @@ import {
 	getShipBonusesFromSnapshot,
 	getShipPartTier,
 	getStoredSalvage,
-	getStoredWindMotes,
-	getUpgradesBank,
-	getWindCatcherType,
-	getWindMoteCapacity,
 	snapshotShip,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
 import { isTrawlingNetFacility } from '@/lib/skilling/skills/sailing/trawling.js';
 import {
-	getSailTierTrimData,
 	getShipUpgradeCost,
 	MAX_SHIP_TIER,
 	SHIP_PARTS,
@@ -117,16 +111,6 @@ export const shipCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
-			name: 'trim_sails',
-			description: 'Trim the sails during a Sailing trip.'
-		},
-		{
-			type: 'Subcommand',
-			name: 'release_mote',
-			description: 'Release one stored wind mote.'
-		},
-		{
-			type: 'Subcommand',
 			name: 'upgrade',
 			description: 'Upgrade a ship part.',
 			options: [
@@ -161,7 +145,7 @@ export const shipCommand = defineCommand({
 			]
 		}
 	],
-	run: async ({ options, user, rng }) => {
+	run: async ({ options, user }) => {
 		const ship = await getOrCreateUserShip(user.id);
 
 		if (options.status) {
@@ -170,8 +154,6 @@ export const shipCommand = defineCommand({
 			const name = ship.ship_name ?? 'Unnamed ship';
 			const facilities = getInstalledFacilities(ship).map(f => SailingFacilitiesById.get(f)?.name ?? f);
 			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship));
-			const windMotes = getStoredWindMotes(ship);
-			const windMoteCapacity = getWindMoteCapacity(ship);
 			const barracudaProgress = getBarracudaTrialsProgress(ship);
 			const barracudaStatus = BarracudaTrials.map(trial => {
 				const progress = getBarracudaTrialProgress(barracudaProgress, trial.id);
@@ -185,7 +167,7 @@ export const shipCommand = defineCommand({
 				return `${trial.name}: ${ranks}`;
 			}).join('\n');
 
-			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\nWind motes: ${windMotes.normal + windMotes.extractor}/${windMoteCapacity} (${windMotes.extractor} from extractor)\n\nBarracuda Trials:\n${barracudaStatus}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
+			return `**${name}**\nHull: ${ship.hull_tier}/${MAX_SHIP_TIER}\nSails: ${ship.sails_tier}/${MAX_SHIP_TIER}\nCrew: ${ship.crew_tier}/${MAX_SHIP_TIER}\nNavigation: ${ship.navigation_tier}/${MAX_SHIP_TIER}\nCargo: ${ship.cargo_tier}/${MAX_SHIP_TIER}\n\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBarracuda Trials:\n${barracudaStatus}\n\nBonuses:\nSpeed: ${Math.round((1 - bonuses.speedMultiplier) * 100)}%\nSuccess: ${Math.round(bonuses.successBonus * 100)}%\nLoot: ${Math.round(bonuses.lootBonus * 100)}%`;
 		}
 
 		if (options.clam) {
@@ -293,70 +275,6 @@ export const shipCommand = defineCommand({
 			}
 
 			return `Sorted ${sortedParts.join(', ')}. ${xpRes}${loot.length > 0 ? `\nYou received: ${loot}.` : ''}`;
-		}
-
-		if (options.trim_sails) {
-			const currentTask = await ActivityManager.getActivityOfUser(user.id);
-			if (!currentTask || currentTask.type !== 'Sailing') {
-				return 'You can only trim the sails during a Sailing trip.';
-			}
-			const trimData = getSailTierTrimData(ship.sails_tier);
-			if (user.skillsAsLevels.sailing < trimData.level) {
-				return `${user.minionName} needs ${trimData.level} Sailing to trim these sails.`;
-			}
-			const upgrades = getUpgradesBank(ship);
-			const now = Date.now();
-			const trimCooldown = 30_000;
-			const timeSinceLastTrim = now - (upgrades.lastSailTrimAt ?? 0);
-			if (timeSinceLastTrim < trimCooldown) {
-				return `You can trim the sails again in ${Math.ceil((trimCooldown - timeSinceLastTrim) / 1000)} seconds.`;
-			}
-
-			const catcher = getWindCatcherType(ship);
-			const xp = catcher ? trimData.xp * 0.75 : trimData.xp;
-			const nextMotes = catcher ? addStoredWindMotes(ship, 1, 'normal') : getStoredWindMotes(ship);
-			await updateUpgradesBank(user.id, {
-				lastSailTrimAt: now,
-				windMotes: nextMotes
-			});
-			const xpRes = await user.addXP({ skillName: 'sailing', amount: xp });
-			let response = `You trimmed the sails. ${xpRes}`;
-			if (catcher) {
-				const before = getStoredWindMotes(ship);
-				const stored =
-					(nextMotes?.normal ?? 0) + (nextMotes?.extractor ?? 0) - before.normal - before.extractor;
-				response += stored > 0 ? '\nStored one wind mote.' : '\nThe wind catcher is full.';
-			}
-			if (!user.owns('Soup') && rng.roll(120_000)) {
-				await user.transactItems({ itemsToAdd: new Bank().add('Soup'), collectionLog: true });
-				globalClient.emit(
-					Events.ServerNotification,
-					`${skillEmoji.sailing} **${user.badgedUsername}'s** minion, ${user.minionName}, just received Soup while trimming sails!`
-				);
-				response += '\nYou received: Soup.';
-			}
-			return response;
-		}
-
-		if (options.release_mote) {
-			const currentTask = await ActivityManager.getActivityOfUser(user.id);
-			if (!currentTask || currentTask.type !== 'Sailing') {
-				return 'You can only release wind motes during a Sailing trip.';
-			}
-			const catcher = getWindCatcherType(ship);
-			if (!catcher) return 'Your ship needs a wind catcher or gale catcher.';
-			const stored = getStoredWindMotes(ship);
-			if (stored.normal + stored.extractor === 0) return 'Your wind catcher has no stored motes.';
-
-			const useNormalMote = stored.normal > 0;
-			const nextMotes = {
-				normal: stored.normal - (useNormalMote ? 1 : 0),
-				extractor: stored.extractor - (useNormalMote ? 0 : 1)
-			};
-			await updateUpgradesBank(user.id, { windMotes: nextMotes });
-			const xp = useNormalMote ? (catcher === 'gale_catcher' ? 70 : 40) : 10;
-			const xpRes = await user.addXP({ skillName: 'sailing', amount: xp });
-			return `Released one wind mote. ${xpRes}`;
 		}
 
 		if (options.install) {

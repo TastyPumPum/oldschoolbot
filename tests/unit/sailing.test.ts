@@ -1,30 +1,15 @@
 import { describe, expect, test } from 'vitest';
 
-import type { UserShip } from '@/prisma/main.js';
 import { getMaxPortTasks } from '@/lib/skilling/skills/sailing/activities.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
-import { addStoredWindMotes, getStoredWindMotes, getWindMoteCapacity } from '@/lib/skilling/skills/sailing/ship.js';
 import {
 	canTrawlAtDepth,
 	getTrawlingCatchChance,
 	TrawlingNetById,
 	TrawlingShoalById
 } from '@/lib/skilling/skills/sailing/trawling.js';
-import { getSailTierTrimData } from '@/lib/skilling/skills/sailing/upgrades.js';
-
-function mockShip(upgrades: Record<string, unknown>): UserShip {
-	return {
-		user_id: '1',
-		ship_name: null,
-		hull_tier: 1,
-		sails_tier: 1,
-		crew_tier: 1,
-		navigation_tier: 1,
-		cargo_tier: 1,
-		upgrades_bank: upgrades
-	} as UserShip;
-}
+import { calculatePassiveSailingActions, getSailTierTrimData } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 describe('Sailing data', () => {
 	test('uses OSRS port task slot thresholds', () => {
@@ -62,16 +47,41 @@ describe('Sailing data', () => {
 		expect(SailingFacilitiesById.get('keg')).toMatchObject({ level: 33, constructionLevel: 25 });
 	});
 
-	test('stores wind motes up to catcher capacity', () => {
-		const ship = mockShip({ facilities: ['wind_catcher'], windMotes: { normal: 1, extractor: 0 } });
-		expect(getWindMoteCapacity(ship)).toBe(2);
-		expect(addStoredWindMotes(ship, 5, 'extractor')).toEqual({ normal: 1, extractor: 1 });
-		expect(getStoredWindMotes(ship)).toEqual({ normal: 1, extractor: 0 });
-	});
-
 	test('uses the first five OSRS sail trim tiers', () => {
 		expect(getSailTierTrimData(1)).toEqual({ level: 1, xp: 10.5 });
 		expect(getSailTierTrimData(5)).toEqual({ level: 68, xp: 64 });
+	});
+
+	test('automatically trims sails and releases generated motes', () => {
+		expect(
+			calculatePassiveSailingActions({
+				duration: 120_000,
+				sailsTier: 1,
+				sailingLevel: 99,
+				facilities: ['wind_catcher']
+			})
+		).toEqual({
+			trims: 4,
+			trimXP: 31.5,
+			trimMoteXP: 160,
+			extractorHarvests: 0,
+			extractorXP: 0,
+			extractorMoteXP: 0,
+			totalXP: 191.5
+		});
+
+		expect(
+			calculatePassiveSailingActions({
+				duration: 126_000,
+				sailsTier: 1,
+				sailingLevel: 99,
+				facilities: ['wind_catcher', 'crystal_extractor']
+			})
+		).toMatchObject({
+			extractorHarvests: 2,
+			extractorXP: 500,
+			extractorMoteXP: 20
+		});
 	});
 
 	test('constructs all supported salvage tables at their sourced weights', () => {

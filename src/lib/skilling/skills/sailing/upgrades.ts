@@ -1,5 +1,7 @@
 import { Bank } from 'oldschooljs';
 
+import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
+
 export type ShipPart = 'hull' | 'sails' | 'crew' | 'navigation' | 'cargo';
 
 export const SHIP_PARTS: ShipPart[] = ['hull', 'sails', 'crew', 'navigation', 'cargo'];
@@ -16,6 +18,41 @@ export const SAIL_TIER_TRIM_DATA = [
 
 export function getSailTierTrimData(tier: number) {
 	return SAIL_TIER_TRIM_DATA[Math.max(0, Math.min(SAIL_TIER_TRIM_DATA.length - 1, tier - 1))];
+}
+
+export function calculatePassiveSailingActions({
+	duration,
+	sailsTier,
+	sailingLevel,
+	facilities
+}: {
+	duration: number;
+	sailsTier: number;
+	sailingLevel: number;
+	facilities: SailingFacilityId[];
+}) {
+	const trimData = getSailTierTrimData(sailsTier);
+	const trims = sailingLevel >= trimData.level ? Math.floor(duration / 30_000) : 0;
+	const catcher = facilities.includes('gale_catcher')
+		? 'gale_catcher'
+		: facilities.includes('wind_catcher')
+			? 'wind_catcher'
+			: null;
+	const trimXP = trims * trimData.xp * (catcher ? 0.75 : 1);
+	const trimMoteXP = catcher ? trims * (catcher === 'gale_catcher' ? 70 : 40) : 0;
+	const extractorHarvests = facilities.includes('crystal_extractor') ? Math.floor(duration / 63_000) : 0;
+	const extractorXP = extractorHarvests * 250;
+	const extractorMoteXP = catcher ? extractorHarvests * 10 : 0;
+
+	return {
+		trims,
+		trimXP,
+		trimMoteXP,
+		extractorHarvests,
+		extractorXP,
+		extractorMoteXP,
+		totalXP: trimXP + trimMoteXP + extractorXP + extractorMoteXP
+	};
 }
 
 const baseCosts: Record<ShipPart, Array<Bank>> = {

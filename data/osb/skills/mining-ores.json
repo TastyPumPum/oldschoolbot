@@ -121,6 +121,18 @@
 		"clue_scroll_chance": 741600
 	},
 	{
+		"level": 25,
+		"xp": 40.5,
+		"id": 31716,
+		"name": "Lead ore",
+		"respawn_time": 10,
+		"banking_time": 33,
+		"slope": 0.6632653061224489,
+		"intercept": 43.33673469387755,
+		"pet_chance": 741600,
+		"clue_scroll_chance": 741600
+	},
+	{
 		"level": 55,
 		"xp": 80,
 		"id": 447,

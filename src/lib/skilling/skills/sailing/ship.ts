@@ -11,6 +11,7 @@ export type SailingShipSnapshot = {
 	crewTier: number;
 	navigationTier: number;
 	cargoTier: number;
+	facilities: SailingFacilityId[];
 };
 
 export type SailingShipBonuses = {
@@ -29,11 +30,6 @@ export type SailingUpgradesBank = {
 	claimedChartingCompletionBonuses?: string[];
 	salvage?: StoredSalvage;
 	barracudaTrials?: BarracudaTrialsProgress;
-	windMotes?: {
-		normal?: number;
-		extractor?: number;
-	};
-	lastSailTrimAt?: number;
 };
 
 export function getUpgradesBank(ship: UserShip): SailingUpgradesBank {
@@ -85,41 +81,6 @@ export function getBarracudaTrialsProgress(ship: UserShip): BarracudaTrialsProgr
 	return getUpgradesBank(ship).barracudaTrials ?? {};
 }
 
-export function getStoredWindMotes(ship: UserShip) {
-	const stored = getUpgradesBank(ship).windMotes;
-	return {
-		normal: stored?.normal ?? 0,
-		extractor: stored?.extractor ?? 0
-	};
-}
-
-export function getWindMoteCapacity(ship: UserShip) {
-	if (hasFacility(ship, 'gale_catcher')) return 3;
-	if (hasFacility(ship, 'wind_catcher')) return 2;
-	return 0;
-}
-
-export function getWindCatcherType(ship: UserShip): 'wind_catcher' | 'gale_catcher' | null {
-	if (hasFacility(ship, 'gale_catcher')) return 'gale_catcher';
-	if (hasFacility(ship, 'wind_catcher')) return 'wind_catcher';
-	return null;
-}
-
-export function addStoredWindMotes(
-	ship: UserShip,
-	amount: number,
-	source: 'normal' | 'extractor'
-): SailingUpgradesBank['windMotes'] {
-	const current = getStoredWindMotes(ship);
-	const capacity = getWindMoteCapacity(ship);
-	const space = Math.max(0, capacity - current.normal - current.extractor);
-	const amountToStore = Math.min(space, amount);
-	return {
-		...current,
-		[source]: current[source] + amountToStore
-	};
-}
-
 export async function updateUpgradesBank(userID: string, updates: Partial<SailingUpgradesBank>) {
 	const ship = await getOrCreateUserShip(userID);
 	const current = getUpgradesBank(ship);
@@ -160,7 +121,8 @@ export function snapshotShip(ship: UserShip): SailingShipSnapshot {
 		sailsTier: ship.sails_tier,
 		crewTier: ship.crew_tier,
 		navigationTier: ship.navigation_tier,
-		cargoTier: ship.cargo_tier
+		cargoTier: ship.cargo_tier,
+		facilities: getInstalledFacilities(ship)
 	};
 }
 

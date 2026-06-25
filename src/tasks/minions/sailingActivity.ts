@@ -28,14 +28,12 @@ import {
 	seaChartingTaskXP
 } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
-	addStoredWindMotes,
 	getBarracudaTrialsProgress,
 	getClaimedChartingCompletionBonuses,
 	getClamItemId,
 	getCompletedChartingTaskIds,
 	getOrCreateUserShip,
 	getStoredSalvage,
-	hasFacility,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
 import {
@@ -44,6 +42,7 @@ import {
 	TrawlingShoalById,
 	type TrawlingShoalId
 } from '@/lib/skilling/skills/sailing/trawling.js';
+import { calculatePassiveSailingActions } from '@/lib/skilling/skills/sailing/upgrades.js';
 import { calcSailingTripResult } from '@/lib/skilling/skills/sailing/util.js';
 import type { SailingActivityTaskOptions } from '@/lib/types/minions.js';
 
@@ -62,7 +61,7 @@ async function rollSoup({
 	chance: number;
 	activity: string;
 }) {
-	if (user.owns('Soup')) return false;
+	if (user.owns('Soup') || loot.has('Soup')) return false;
 	for (let i = 0; i < rolls; i++) {
 		if (!rng.roll(chance)) continue;
 		loot.add('Soup');
@@ -75,22 +74,57 @@ async function rollSoup({
 	return false;
 }
 
-async function applyCrystalExtractor(user: MUser, duration: number) {
-	const shipState = await getOrCreateUserShip(user.id);
-	if (!hasFacility(shipState, 'crystal_extractor')) return { xp: 0, motesStored: 0 };
-	const ticks = Math.floor(duration / 63_000);
-	if (ticks === 0) return { xp: 0, motesStored: 0 };
-	const currentMotes = addStoredWindMotes(shipState, 0, 'extractor');
-	const nextMotes = addStoredWindMotes(shipState, ticks, 'extractor');
-	const motesStored =
-		(nextMotes?.normal ?? 0) +
-		(nextMotes?.extractor ?? 0) -
-		(currentMotes?.normal ?? 0) -
-		(currentMotes?.extractor ?? 0);
-	if (motesStored > 0) {
-		await updateUpgradesBank(user.id, { windMotes: nextMotes });
+async function applyPassiveSailingActions({
+	user,
+	data,
+	loot,
+	rng
+}: {
+	user: MUser;
+	data: SailingActivityTaskOptions;
+	loot: Bank;
+	rng: RNGProvider;
+}) {
+	const result = calculatePassiveSailingActions({
+		duration: data.duration,
+		sailsTier: data.ship.sailsTier,
+		sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
+		facilities: data.ship.facilities ?? []
+	});
+	await rollSoup({
+		user,
+		loot,
+		rng,
+		rolls: result.trims,
+		chance: 120_000,
+		activity: 'automatically trimming sails'
+	});
+	return result;
+}
+
+function formatPassiveSailingActions(result: ReturnType<typeof calculatePassiveSailingActions>) {
+	const messages: string[] = [];
+	if (result.trims > 0) {
+		messages.push(
+			`Automatic sail trimming: ${result.trims.toLocaleString()} trims for ${result.trimXP.toLocaleString()} Sailing XP.`
+		);
 	}
-	return { xp: ticks * 250, motesStored };
+	if (result.trimMoteXP > 0) {
+		messages.push(
+			`Automatically released ${result.trims.toLocaleString()} caught wind mote${result.trims === 1 ? '' : 's'} for ${result.trimMoteXP.toLocaleString()} Sailing XP.`
+		);
+	}
+	if (result.extractorHarvests > 0) {
+		messages.push(
+			`Crystal extractor: ${result.extractorHarvests.toLocaleString()} harvests for ${result.extractorXP.toLocaleString()} Sailing XP.`
+		);
+	}
+	if (result.extractorMoteXP > 0) {
+		messages.push(
+			`Automatically released ${result.extractorHarvests.toLocaleString()} extractor mote${result.extractorHarvests === 1 ? '' : 's'} for ${result.extractorMoteXP.toLocaleString()} Sailing XP.`
+		);
+	}
+	return messages;
 }
 
 export const sailingTask: MinionTask = {
@@ -141,9 +175,9 @@ export const sailingTask: MinionTask = {
 				claimedChartingCompletionBonuses: [...claimedCompletionBonuses]
 			});
 
-			const extractor = await applyCrystalExtractor(user, duration);
-			xpReceived += extractor.xp;
 			const loot = new Bank();
+			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
+			xpReceived += passiveActions.totalXP;
 			await rollSoup({
 				user,
 				loot,
@@ -162,11 +196,8 @@ export const sailingTask: MinionTask = {
 			if (completedBonusMessages.length > 0) {
 				str += `\nCompleted charting bonuses: ${completedBonusMessages.join(', ')}.`;
 			}
-			if (extractor.xp > 0) {
-				str += `\nCrystal extractor XP: ${extractor.xp}.`;
-			}
-			if (extractor.motesStored > 0) {
-				str += `\nCrystal extractor stored ${extractor.motesStored} wind mote${extractor.motesStored === 1 ? '' : 's'}.`;
+			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
 				await user.transactItems({ itemsToAdd: loot, collectionLog: true });
@@ -222,6 +253,7 @@ export const sailingTask: MinionTask = {
 				chance: rank.petChance,
 				activity: `${trial.name} at ${rank.name} rank`
 			});
+			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
 
 			await updateUpgradesBank(user.id, {
 				barracudaTrials: setBarracudaTrialProgress(
@@ -232,8 +264,7 @@ export const sailingTask: MinionTask = {
 				)
 			});
 
-			const extractor = await applyCrystalExtractor(user, duration);
-			const xpReceived = quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0) + extractor.xp;
+			const xpReceived = quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0) + passiveActions.totalXP;
 			const xpRes = await user.addXP({
 				skillName: 'sailing',
 				amount: xpReceived,
@@ -248,11 +279,8 @@ export const sailingTask: MinionTask = {
 			if (newlyCompletedRank) {
 				str += `\nNew rank achieved: ${rank.name}. Bonus XP: ${rank.bonusXP.toLocaleString()}.`;
 			}
-			if (extractor.xp > 0) {
-				str += `\nCrystal extractor XP: ${extractor.xp}.`;
-			}
-			if (extractor.motesStored > 0) {
-				str += `\nCrystal extractor stored ${extractor.motesStored} wind mote${extractor.motesStored === 1 ? '' : 's'}.`;
+			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
 				await user.transactItems({
@@ -281,9 +309,9 @@ export const sailingTask: MinionTask = {
 			const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, quantity);
 			await updateUpgradesBank(user.id, { salvage: nextSalvage });
 
-			const extractor = await applyCrystalExtractor(user, duration);
 			const salvageXP = Math.floor(quantity * shipwreck.salvagingXP);
 			const loot = new Bank();
+			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
 			await rollSoup({
 				user,
 				loot,
@@ -294,16 +322,13 @@ export const sailingTask: MinionTask = {
 			});
 			const xpRes = await user.addXP({
 				skillName: 'sailing',
-				amount: salvageXP + extractor.xp,
+				amount: salvageXP + passiveActions.totalXP,
 				duration
 			});
 
 			let str = `${user}, ${user.minionName} finished salvaging ${quantity}x ${shipwreck.name}. ${xpRes}\nStored salvage: ${quantity.toLocaleString()}x ${shipwreck.salvageName}.`;
-			if (extractor.xp > 0) {
-				str += `\nCrystal extractor XP: ${extractor.xp}.`;
-			}
-			if (extractor.motesStored > 0) {
-				str += `\nCrystal extractor stored ${extractor.motesStored} wind mote${extractor.motesStored === 1 ? '' : 's'}.`;
+			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
 				await user.transactItems({ itemsToAdd: loot, collectionLog: true });
@@ -343,16 +368,15 @@ export const sailingTask: MinionTask = {
 				chance: 360_000,
 				activity: `deep sea trawling at ${shoal.name}`
 			});
-			const extractor = await applyCrystalExtractor(user, duration);
-			const sailingXP = quantity * net.sailingXP + extractor.xp;
+			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
+			const sailingXP = quantity * net.sailingXP + passiveActions.totalXP;
 			const fishingXP = successfulCatches * shoal.fishingXP;
 			const sailingXPRes = await user.addXP({ skillName: 'sailing', amount: sailingXP, duration });
 			const fishingXPRes = await user.addXP({ skillName: 'fishing', amount: fishingXP, duration });
 
 			let str = `${user}, ${user.minionName} finished ${quantity.toLocaleString()} trawling rolls at ${shoal.name}. ${sailingXPRes}\n${fishingXPRes}\nSuccessful catches: ${successfulCatches.toLocaleString()} (${catchChance.toFixed(2)}%).`;
-			if (extractor.xp > 0) str += `\nCrystal extractor XP: ${extractor.xp}.`;
-			if (extractor.motesStored > 0) {
-				str += `\nCrystal extractor stored ${extractor.motesStored} wind mote${extractor.motesStored === 1 ? '' : 's'}.`;
+			for (const message of formatPassiveSailingActions(passiveActions)) {
+				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
 				await user.transactItems({ itemsToAdd: loot, collectionLog: true });
@@ -385,7 +409,7 @@ export const sailingTask: MinionTask = {
 		});
 
 		const shipState = await getOrCreateUserShip(user.id);
-		const extractor = await applyCrystalExtractor(user, duration);
+		const passiveActions = await applyPassiveSailingActions({ user, data, loot: result.loot, rng });
 
 		const encounterResult = rollOceanEncounters({
 			duration,
@@ -400,7 +424,7 @@ export const sailingTask: MinionTask = {
 
 		const xpRes = await user.addXP({
 			skillName: 'sailing',
-			amount: result.xpReceived + extractor.xp + encounterResult.xp,
+			amount: result.xpReceived + passiveActions.totalXP + encounterResult.xp,
 			duration
 		});
 
@@ -451,11 +475,8 @@ export const sailingTask: MinionTask = {
 			str += `\nYou received: ${result.loot}.`;
 		}
 
-		if (extractor.xp > 0) {
-			str += `\nCrystal extractor XP: ${extractor.xp}.`;
-		}
-		if (extractor.motesStored > 0) {
-			str += `\nCrystal extractor stored ${extractor.motesStored} wind mote${extractor.motesStored === 1 ? '' : 's'}.`;
+		for (const message of formatPassiveSailingActions(passiveActions)) {
+			str += `\n${message}`;
 		}
 
 		return handleTripFinish({
