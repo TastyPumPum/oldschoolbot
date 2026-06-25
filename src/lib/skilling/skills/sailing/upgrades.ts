@@ -6,6 +6,18 @@ export const SHIP_PARTS: ShipPart[] = ['hull', 'sails', 'crew', 'navigation', 'c
 
 export const MAX_SHIP_TIER = 5;
 
+export const SAIL_TIER_TRIM_DATA = [
+	{ level: 1, xp: 10.5 },
+	{ level: 24, xp: 19.5 },
+	{ level: 36, xp: 30 },
+	{ level: 52, xp: 48 },
+	{ level: 68, xp: 64 }
+] as const;
+
+export function getSailTierTrimData(tier: number) {
+	return SAIL_TIER_TRIM_DATA[Math.max(0, Math.min(SAIL_TIER_TRIM_DATA.length - 1, tier - 1))];
+}
+
 const baseCosts: Record<ShipPart, Array<Bank>> = {
 	hull: [
 		new Bank({ Plank: 20, 'Iron nails': 50, Rope: 2 }),

@@ -1,13 +1,16 @@
 import { Bank } from 'oldschooljs';
 
+import { type TrawlingNetId, TrawlingNets } from '@/lib/skilling/skills/sailing/trawling.js';
+
 export type SailingFacilityId =
 	| 'salvaging_hook'
-	| 'fishing_station'
-	| 'racing_sails'
 	| 'inoculation_station'
+	| 'salvaging_station'
+	| 'keg'
 	| 'wind_catcher'
 	| 'gale_catcher'
-	| 'crystal_extractor';
+	| 'crystal_extractor'
+	| TrawlingNetId;
 
 export interface SailingFacility {
 	id: SailingFacilityId;
@@ -29,26 +32,28 @@ export const SailingFacilities: SailingFacility[] = [
 		description: 'Enables shipwreck salvaging.'
 	},
 	{
-		id: 'fishing_station',
-		name: 'Fishing station',
-		level: 20,
-		cost: new Bank({ 'Fishing net': 2, Rope: 6, Sails: 1 }),
-		description: 'Enables deep sea trawling.'
-	},
-	{
-		id: 'racing_sails',
-		name: 'Racing sails',
-		level: 25,
-		cost: new Bank({ Sails: 1, Rope: 6, 'Bolt of cloth': 20 }),
-		description: 'Enables Barracuda Trials.'
-	},
-	{
 		id: 'inoculation_station',
 		name: 'Inoculation station',
-		level: 50,
-		constructionLevel: 55,
-		cost: new Bank({ 'Mithril bar': 6, Rope: 6, 'Oak plank': 12 }),
-		description: 'Required for higher-tier Barracuda Trials.'
+		level: 40,
+		constructionLevel: 37,
+		cost: new Bank({ 'Teak plank': 8, 'Steel nails': 32, "Relicym's balm(4)": 6 }),
+		description: 'Protects the ship from fetid waters and is required for The Jubbly Jive.'
+	},
+	{
+		id: 'keg',
+		name: 'Keg',
+		level: 33,
+		constructionLevel: 25,
+		cost: new Bank({ 'Oak plank': 5, 'Iron nails': 20, 'Barrel stand': 1 }),
+		description: 'Stores charting ales. Ale effects are not yet modelled.'
+	},
+	{
+		id: 'salvaging_station',
+		name: 'Salvaging station',
+		level: 42,
+		constructionLevel: 34,
+		cost: new Bank({ 'Teak plank': 4, 'Steel nails': 16 }),
+		description: 'Allows salvage to be sorted aboard the ship.'
 	},
 	{
 		id: 'wind_catcher',
@@ -89,11 +94,19 @@ export const SailingFacilities: SailingFacility[] = [
 		cost: new Bank({
 			'Ironwood plank': 6,
 			'Cupronickel bar': 5,
-			'Magic stone': 2
+			'Magic stone': 2,
+			'Heart of Ithell': 1
 		}),
-		requiredItems: new Bank({ 'Heart of Ithell': 1 }),
 		description: 'Grants periodic Sailing XP during trips.'
-	}
+	},
+	...TrawlingNets.map(net => ({
+		id: net.id,
+		name: net.name,
+		level: net.level,
+		constructionLevel: net.constructionLevel,
+		cost: net.cost,
+		description: `Enables deep sea trawling at ${net.depths.join(', ')} depths.`
+	}))
 ];
 
 export const SailingFacilitiesById = new Map(SailingFacilities.map(f => [f.id, f]));

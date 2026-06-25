@@ -13,6 +13,8 @@ Sailing is in active development. This page documents the current bot implementa
 - `/ship install` - Install a Sailing facility.
 - `/ship upgrade` - Upgrade generic ship tiers.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
+- `/ship trim_sails` - Trim sails during a Sailing trip. Sails can be trimmed once every 30 seconds.
+- `/ship release_mote` - Release a stored wind mote during a Sailing trip.
 - `/ship clam` - Feed/check the giant clam used by Sailing ocean encounters.
 
 ### Access
@@ -50,7 +52,7 @@ Supported shipwrecks:
 - Fremennik shipwreck - 80 Sailing
 - Merchant shipwreck - 87 Sailing
 
-Salvaging stores unsorted salvage on the ship. `/ship sort_salvage` converts stored salvage into the OSRS sorting XP. Salvage item loot tables are not implemented yet.
+Salvaging stores unsorted salvage on the ship. `/ship sort_salvage` converts stored salvage into the OSRS sorting XP and rolls the corresponding OSRS salvage loot table. Drops absent from the bot's current item cache are omitted until the item data is updated.
 
 ### Barracuda Trials
 
@@ -83,12 +85,26 @@ Gwenith Glide requires Regicide in OSRS. In the bot this is mimicked with 10 Cra
 Facilities are installed on your ship to unlock content.
 
 - Bronze salvaging hook - unlocks shipwreck salvaging.
-- Fishing station - unlocks deep sea trawling.
-- Racing sails - existing generic facility retained for Sailing content.
-- Inoculation station - required for The Jubbly Jive.
+- Keg - built with the Barrel stand from The Tempor Tantrum. Ale effects are not yet modelled.
+- Inoculation station - protects against fetid waters and is required for The Jubbly Jive.
+- Salvaging station - allows salvage sorting aboard the ship.
+- Rope, linen, hemp, and cotton trawling nets - unlock increasingly deep trawling shoals.
 - Wind catcher - stores two wind motes; requires Captured wind mote to build.
 - Gale catcher - stores three wind motes; requires Captured wind mote to build.
-- Crystal extractor - grants periodic Sailing XP during trips; requires Heart of Ithell to build.
+- Crystal extractor - grants 250 Sailing XP and produces an extractor wind mote every 63 seconds during Sailing trips; requires Heart of Ithell to build.
+
+### Deep Sea Trawling
+
+Deep sea trawling starts at 56 Sailing and requires an installed trawling net. Shoals use their OSRS Fishing requirements, Fishing XP, catch chances, depths, and raw fish:
+
+- Giant krill - 69 Fishing
+- Haddock - 73 Fishing
+- Yellowfin - 79 Fishing
+- Halibut - 83 Fishing
+- Bluefin - 87 Fishing
+- Marlin - 91 Fishing
+
+Trawling rolls occur every three ticks. Better nets increase the maximum fish caught per successful roll and unlock moderate or deep shoals.
 
 ### Ocean Encounters
 
@@ -102,6 +118,8 @@ These encounters are not applied to Sea charting, Shipwreck salvaging, or Barrac
 - Skiff-only and OSRS boat-part requirements are documented in activity messages but cannot be fully checked yet.
 - Crewmate restrictions for Barracuda Trials are not enforced because crewmates are not modelled as OSRS ship crew.
 - The Gale catcher schematic requirement is not checked because the schematic item is not currently in the item data.
-- Salvage sorting gives XP only; salvage loot tables are not implemented.
+- The salvaging station schematic and several salvage pre-roll items are not checked because those items are not currently in the item data.
 - Barracuda route movement, hazards, and player skill are not simulated.
+- Sail trimming and released motes grant their sourced XP and store/use charges, but their live navigation speed effects are not represented by the trip timer.
+- Keg ale effects, trawling bait, mixed shoals, trophy fish, fish crates, and crewmate-operated nets are not modelled.
 - Regicide itself is not added as a named bot quest; Gwenith checks the mimicked Regicide requirements instead.

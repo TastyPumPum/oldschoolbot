@@ -15,6 +15,7 @@ export interface BarracudaTrialRank {
 	bonusXP: number;
 	targetTime: number;
 	reward: Bank;
+	petChance: number;
 	objectives?: string[];
 }
 
@@ -64,7 +65,8 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				xp: 595,
 				bonusXP: 1000,
 				targetTime: Time.Minute + Time.Second * 48,
-				reward: new Bank().add('Stormy key')
+				reward: new Bank().add('Stormy key'),
+				petChance: 16_000
 			},
 			{
 				id: 'shark',
@@ -72,7 +74,8 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				xp: 1025,
 				bonusXP: 2000,
 				targetTime: Time.Minute * 2 + Time.Second * 51,
-				reward: new Bank().add('Barrel stand').add('Whirlpool surprise')
+				reward: new Bank().add('Barrel stand').add('Whirlpool surprise'),
+				petChance: 8000
 			},
 			{
 				id: 'marlin',
@@ -80,7 +83,8 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				xp: 1790,
 				bonusXP: 3000,
 				targetTime: Time.Minute * 4 + Time.Second * 30,
-				reward: new Bank().add("Ralph's fabric roll")
+				reward: new Bank().add("Ralph's fabric roll"),
+				petChance: 5334
 			}
 		]
 	},
@@ -101,6 +105,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				bonusXP: 5000,
 				targetTime: Time.Minute * 2 + Time.Second * 3,
 				reward: new Bank().add('Fetid key'),
+				petChance: 11_500,
 				objectives: ['Coerce 1 Jubbly bird to Gurtob', 'Collect 20 boxes']
 			},
 			{
@@ -110,6 +115,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				bonusXP: 7500,
 				targetTime: Time.Minute * 3,
 				reward: new Bank().add('Captured wind mote'),
+				petChance: 5750,
 				objectives: ['Coerce 2 Jubbly birds to Gurtob', 'Collect 38 boxes']
 			},
 			{
@@ -119,6 +125,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				bonusXP: 10_000,
 				targetTime: Time.Minute * 5 + Time.Second * 21,
 				reward: new Bank().add("Gurtob's fabric roll"),
+				petChance: 3834,
 				objectives: ['Coerce 3 Jubbly birds to Gurtob', 'Collect 56 boxes']
 			}
 		]
@@ -149,6 +156,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				bonusXP: 25_000,
 				targetTime: Time.Minute * 2,
 				reward: new Bank().add('Serrated key'),
+				petChance: 9000,
 				objectives: [
 					"Collect the rank's lost supplies",
 					'Traverse portals to imbue the Crystals of Ithell',
@@ -162,6 +170,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				bonusXP: 35_000,
 				targetTime: Time.Minute * 3 + Time.Second * 42,
 				reward: new Bank().add('Heart of Ithell'),
+				petChance: 4500,
 				objectives: [
 					"Collect the rank's lost supplies",
 					'Traverse portals to imbue the Crystals of Ithell',
@@ -175,6 +184,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				bonusXP: 50_000,
 				targetTime: Time.Minute * 6 + Time.Second * 9,
 				reward: new Bank().add("Gwyna's fabric roll"),
+				petChance: 3000,
 				objectives: [
 					"Collect the rank's lost supplies",
 					'Traverse portals to imbue the Crystals of Ithell',

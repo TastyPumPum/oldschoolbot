@@ -119,6 +119,19 @@ const ores: Ore[] = [
 		aliases: ['ash', 'volcanic']
 	},
 	{
+		level: 25,
+		xp: 40.5,
+		id: itemID('Lead ore'),
+		name: 'Lead ore',
+		respawnTime: 10,
+		bankingTime: 33,
+		slope: 65 / 98,
+		intercept: 44 - 65 / 98,
+		petChance: 741_600,
+		clueScrollChance: 741_600,
+		aliases: ['lead']
+	},
+	{
 		level: 30,
 		xp: 5,
 		id: 7936,

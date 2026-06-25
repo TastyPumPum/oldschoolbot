@@ -1404,7 +1404,7 @@ export const allPetsCL = resolveItems([
 	'Tangleroot',
 	'Rocky',
 	'Rift guardian',
-	'Sea snake',
+	'Soup',
 	'Herbi',
 	'Chompy chick',
 	'Sraracha',
@@ -1625,7 +1625,7 @@ export const skillingPetsCL = resolveItems([
 	'Tangleroot',
 	'Rocky',
 	'Rift guardian',
-	'Sea snake'
+	'Soup'
 ]);
 export const slayerCL = resolveItems([
 	// Crawling hand

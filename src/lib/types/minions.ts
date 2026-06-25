@@ -12,6 +12,7 @@ import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities
 import type { SailingDifficultyId } from '@/lib/skilling/skills/sailing/difficulties.js';
 import type { SailingRegionId } from '@/lib/skilling/skills/sailing/regions.js';
 import type { SailingShipSnapshot } from '@/lib/skilling/skills/sailing/ship.js';
+import type { TrawlingNetId } from '@/lib/skilling/skills/sailing/trawling.js';
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
 import type { Peak } from '@/lib/util/peaks.js';
 
@@ -194,6 +195,7 @@ export interface SailingActivityTaskOptions extends ActivityTaskOptions {
 	variant?: string;
 	sailingLevel?: number;
 	chartingTaskIds?: number[];
+	trawlingNet?: TrawlingNetId;
 	iQty?: number;
 }
 

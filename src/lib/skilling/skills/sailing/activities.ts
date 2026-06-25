@@ -4,6 +4,7 @@ import { LootTable } from 'oldschooljs';
 import { BarracudaTrials } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import { type SalvagingShipwreckId, SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
+import { type TrawlingShoalId, TrawlingShoals } from '@/lib/skilling/skills/sailing/trawling.js';
 import type { ShipPart } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 export type SailingActivityId =
@@ -29,7 +30,7 @@ export interface SailingActivity {
 	allowedDifficulties?: ReadonlyArray<'easy' | 'standard' | 'hard' | 'elite'>;
 	hazards?: Array<{ name: string; chance: number; effect: 'fail' | 'delay' | 'damage' }>;
 	variants?: Array<{
-		id: 'courier' | 'bounty' | 'swordfish' | 'shark' | 'marlin' | SalvagingShipwreckId;
+		id: 'courier' | 'bounty' | 'swordfish' | 'shark' | 'marlin' | SalvagingShipwreckId | TrawlingShoalId;
 		name: string;
 		xpMultiplier: number;
 		lootMultiplier: number;
@@ -53,14 +54,6 @@ const PortTasksTable = new LootTable()
 	.add('Coconut', 1, 1)
 	.add('Shipping order', 1, 1)
 	.oneIn(120, 'Shipping contract');
-
-const DeepSeaTrawlingTable = new LootTable()
-	.add('Raw shark', [1, 3], 4)
-	.add('Raw manta ray', [1, 2], 2)
-	.add('Seaweed', [5, 10], 3)
-	.add('Harpoonfish', 1, 1)
-	.oneIn(140, 'Clue bottle (easy)')
-	.oneIn(220, "Trawler's trust");
 
 export const SailingActivities: SailingActivity[] = [
 	{
@@ -150,17 +143,31 @@ export const SailingActivities: SailingActivity[] = [
 	{
 		id: 'deep_sea_trawling',
 		name: 'Deep sea trawling',
-		level: 35,
-		xp: 360,
-		baseTime: Time.Minute * 4,
-		baseRisk: 0.14,
-		lootTable: DeepSeaTrawlingTable,
-		petChance: 200_000,
+		level: 56,
+		xp: 0,
+		baseTime: Time.Second * 1.8,
+		baseRisk: 0,
+		lootTable: new LootTable(),
+		petChance: 0,
 		reputation: 0,
 		allowedDifficulties: ['standard'],
-		requiredFacility: 'fishing_station',
-		requiredReputation: undefined
+		requiredAnyFacilities: ['rope_trawling_net', 'linen_trawling_net', 'hemp_trawling_net', 'cotton_trawling_net'],
+		variants: TrawlingShoals.map(shoal => ({
+			id: shoal.id,
+			name: shoal.name,
+			xpMultiplier: 1,
+			lootMultiplier: 1,
+			lootTable: new LootTable()
+		}))
 	}
 ];
 
 export const SailingActivityById = new Map(SailingActivities.map(activity => [activity.id, activity]));
+
+export function getMaxPortTasks(sailingLevel: number) {
+	if (sailingLevel >= 84) return 5;
+	if (sailingLevel >= 56) return 4;
+	if (sailingLevel >= 28) return 3;
+	if (sailingLevel >= 7) return 2;
+	return 1;
+}

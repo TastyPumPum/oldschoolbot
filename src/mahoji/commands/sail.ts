@@ -2,7 +2,7 @@ import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { QuestID } from '@/lib/minions/data/quests.js';
-import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import { getMaxPortTasks, SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
 import {
 	type BarracudaRank,
 	BarracudaTrialById,
@@ -23,11 +23,20 @@ import { getEligibleSeaChartingTasks } from '@/lib/skilling/skills/sailing/seaCh
 import {
 	getBarracudaTrialsProgress,
 	getCompletedChartingTaskIds,
+	getInstalledFacilities,
 	getOrCreateUserShip,
 	getShipPartTier,
 	hasFacility,
 	snapshotShip
 } from '@/lib/skilling/skills/sailing/ship.js';
+import {
+	canTrawlAtDepth,
+	getBestInstalledTrawlingNet,
+	TrawlingNetById,
+	type TrawlingNetId,
+	TrawlingShoalById,
+	type TrawlingShoalId
+} from '@/lib/skilling/skills/sailing/trawling.js';
 import { calcSailingTripStart } from '@/lib/skilling/skills/sailing/util.js';
 import type { SailingActivityTaskOptions } from '@/lib/types/minions.js';
 import { makeStartQuestButton } from '@/lib/util/interactions.js';
@@ -125,6 +134,9 @@ export const sailCommand = defineCommand({
 				return `${user.minionName} needs ${shipwreck.level} Sailing to salvage from ${shipwreck.name}.`;
 			}
 		}
+		if (activity.id === 'port_tasks' && variant === 'bounty' && user.skillsAsLevels.sailing < 30) {
+			return `${user.minionName} needs 30 Sailing to do bounty tasks.`;
+		}
 		if (isBarracudaTrialId(activity.id)) {
 			const trial = BarracudaTrialById.get(activity.id);
 			const rank = trial ? getBarracudaRank(trial, variant) : undefined;
@@ -179,6 +191,21 @@ export const sailCommand = defineCommand({
 			}
 		}
 		const shipSnapshot = snapshotShip(ship);
+		let trawlingNet: TrawlingNetId | undefined;
+
+		if (activity.id === 'deep_sea_trawling') {
+			const shoal = TrawlingShoalById.get(variant as TrawlingShoalId);
+			if (!shoal) return 'That is not a valid trawling shoal.';
+			if (user.skillsAsLevels.fishing < shoal.fishingLevel) {
+				return `${user.minionName} needs ${shoal.fishingLevel} Fishing to trawl at ${shoal.name}.`;
+			}
+			const net = getBestInstalledTrawlingNet(getInstalledFacilities(ship));
+			if (!net) return 'Deep sea trawling requires a trawling net.';
+			if (!canTrawlAtDepth(net, shoal.depth)) {
+				return `${shoal.name} requires a net capable of trawling at ${shoal.depth} depth.`;
+			}
+			trawlingNet = net.id;
+		}
 
 		const maxTripLength = await user.calcMaxTripLength('Sailing');
 
@@ -265,10 +292,45 @@ export const sailCommand = defineCommand({
 			return response;
 		}
 
-		const { quantity, duration, boosts } = calcSailingTripStart({
+		if (activity.id === 'deep_sea_trawling') {
+			const maxQuantity = Math.max(1, Math.floor(maxTripLength / activity.baseTime));
+			const quantity = Math.min(options.quantity ?? maxQuantity, maxQuantity);
+			const duration = quantity * activity.baseTime;
+			const shoal = TrawlingShoalById.get(variant as TrawlingShoalId)!;
+
+			await ActivityManager.startTrip<SailingActivityTaskOptions>({
+				userID: user.id,
+				channelId,
+				duration,
+				type: 'Sailing',
+				activity: activity.id,
+				quantity,
+				iQty: options.quantity ? options.quantity : undefined,
+				ship: shipSnapshot,
+				sailingLevel: user.skillsAsLevels.sailing,
+				difficulty: difficulty.id,
+				variant,
+				trawlingNet
+			});
+
+			return `${user.minionName} is now deep sea trawling at ${shoal.name} with ${TrawlingNetById.get(trawlingNet!)?.name} (${quantity.toLocaleString()} rolls), it'll take around ${formatDuration(duration)} to finish.`;
+		}
+
+		const quantityInput =
+			activity.id === 'port_tasks'
+				? Math.min(
+						options.quantity ?? getMaxPortTasks(user.skillsAsLevels.sailing),
+						getMaxPortTasks(user.skillsAsLevels.sailing)
+					)
+				: options.quantity;
+		const {
+			quantity: tripQuantity,
+			duration: tripDuration,
+			boosts
+		} = calcSailingTripStart({
 			activity,
 			maxTripLength,
-			quantityInput: options.quantity,
+			quantityInput,
 			ship: shipSnapshot,
 			timeMultiplier: (variantData?.timeMultiplier ?? 1) * difficulty.timeMultiplier
 		});
@@ -276,20 +338,21 @@ export const sailCommand = defineCommand({
 		await ActivityManager.startTrip<SailingActivityTaskOptions>({
 			userID: user.id,
 			channelId,
-			duration,
+			duration: tripDuration,
 			type: 'Sailing',
 			activity: activity.id,
-			quantity,
-			iQty: options.quantity ? options.quantity : undefined,
+			quantity: tripQuantity,
+			iQty: quantityInput,
 			ship: shipSnapshot,
 			sailingLevel: user.skillsAsLevels.sailing,
 			difficulty: difficulty.id,
-			variant
+			variant,
+			trawlingNet
 		});
 
 		let response = `${user.minionName} is now doing ${activity.name}${
 			variantData ? ` (${variantData.name})` : ''
-		} at ${difficulty.name} difficulty (${quantity} actions), it'll take around ${formatDuration(duration)} to finish.`;
+		} at ${difficulty.name} difficulty (${tripQuantity} actions), it'll take around ${formatDuration(tripDuration)} to finish.`;
 
 		if (boosts.length > 0) {
 			response += `\n\n**Boosts:** ${boosts.join(', ')}.`;
