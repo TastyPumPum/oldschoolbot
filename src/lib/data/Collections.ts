@@ -1286,6 +1286,18 @@ export const allCollectionLogs: ICollection = {
 					'Beaver',
 					'Giant squirrel'
 				])
+			},
+			Sailing: {
+				counts: false,
+				alias: ['sail'],
+				items: uniqueArr([
+					...barracudaTrialsCL,
+					...boatPaintCL,
+					...oceanEncountersCL,
+					...seaTreasuresCL,
+					...resolveItems(['Soup', 'Sailing hood', 'Sailing cape', 'Sailing cape(t)'])
+				]),
+				fmtProg: skillProg('sailing')
 			}
 		}
 	}
