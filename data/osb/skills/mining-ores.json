@@ -121,6 +121,18 @@
 		"clue_scroll_chance": 741600
 	},
 	{
+		"level": 25,
+		"xp": 40.5,
+		"id": 31716,
+		"name": "Lead ore",
+		"respawn_time": 6,
+		"banking_time": 33,
+		"slope": 0.6632653061224489,
+		"intercept": 43.33673469387755,
+		"pet_chance": 741600,
+		"clue_scroll_chance": 741600
+	},
+	{
 		"level": 55,
 		"xp": 80,
 		"id": 447,
@@ -131,6 +143,18 @@
 		"intercept": 0.59,
 		"pet_chance": 148320,
 		"clue_scroll_chance": 148320
+	},
+	{
+		"level": 74,
+		"xp": 105,
+		"id": 31719,
+		"name": "Nickel ore",
+		"respawn_time": 12,
+		"banking_time": 33,
+		"slope": 0.15,
+		"intercept": -0.2,
+		"pet_chance": 80000,
+		"clue_scroll_chance": 80000
 	},
 	{
 		"level": 30,

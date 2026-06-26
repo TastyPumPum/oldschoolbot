@@ -30,6 +30,9 @@ import {
 } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getFarmingInfo.js';
 import { Skills } from '@/lib/skilling/skills/index.js';
+import { SailingFacilities } from '@/lib/skilling/skills/sailing/facilities.js';
+import { type SailingConfiguredShip, updateUpgradesBank } from '@/lib/skilling/skills/sailing/ship.js';
+import type { SailingShipType } from '@/lib/skilling/skills/sailing/shipParts.js';
 import { slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
@@ -339,12 +342,74 @@ const thingsToWipe = [
 	'giveaways'
 ] as const;
 
+const maxSailingShipSetups = {
+	raft: {
+		parts: {
+			shipType: 'raft',
+			hull: 'rosewood',
+			helm: 'dragon',
+			mast_sails: 'rosewood_cotton'
+		},
+		facilities: ['dragon_salvaging_hook']
+	},
+	skiff: {
+		parts: {
+			shipType: 'skiff',
+			hull: 'rosewood',
+			helm: 'dragon',
+			keel: 'dragon',
+			mast_sails: 'rosewood_cotton'
+		},
+		facilities: [
+			'dragon_salvaging_hook',
+			'cotton_trawling_net',
+			'gale_catcher',
+			'crystal_extractor',
+			'inoculation_station',
+			'salvaging_station',
+			'keg'
+		]
+	},
+	sloop: {
+		parts: {
+			shipType: 'sloop',
+			hull: 'rosewood',
+			helm: 'dragon',
+			keel: 'dragon',
+			mast_sails: 'rosewood_cotton'
+		},
+		facilities: SailingFacilities.map(f => f.id)
+	}
+} satisfies Record<SailingShipType, SailingConfiguredShip>;
+
 export const testPotatoCommand = globalConfig.isProduction
 	? null
 	: defineCommand({
 			name: 'testpotato',
 			description: 'Commands for making testing easier and faster.',
 			options: [
+				{
+					type: 'Subcommand',
+					name: 'sailing',
+					description: 'Sailing testing helpers.',
+					options: [
+						{
+							type: 'String',
+							name: 'action',
+							description: 'The sailing action to perform.',
+							required: true,
+							choices: [
+								{ name: 'Max all ships', value: 'max_all_ships' },
+								{ name: 'Max active ship', value: 'max_ship' },
+								{ name: 'Max raft', value: 'max_raft' },
+								{ name: 'Max skiff', value: 'max_skiff' },
+								{ name: 'Max sloop', value: 'max_sloop' },
+								{ name: 'Reset ship', value: 'reset_ship' },
+								{ name: 'Give sailing items', value: 'give_items' }
+							]
+						}
+					]
+				},
 				{
 					type: 'Subcommand',
 					name: 'party',
@@ -743,6 +808,67 @@ export const testPotatoCommand = globalConfig.isProduction
 						ironmanAllowed: true
 					});
 					return `The party has now started with the following users: ${party.map(i => i.username).join(', ')}`;
+				}
+				if (options.sailing) {
+					const { action } = options.sailing;
+					if (
+						action === 'max_ship' ||
+						action === 'max_all_ships' ||
+						action === 'max_raft' ||
+						action === 'max_skiff' ||
+						action === 'max_sloop'
+					) {
+						const shipType =
+							action === 'max_raft'
+								? 'raft'
+								: action === 'max_skiff'
+									? 'skiff'
+									: action === 'max_sloop'
+										? 'sloop'
+										: undefined;
+						const currentShip = await prisma.userShip.findUnique({ where: { user_id: user.id } });
+						const activeShipType = ((
+							currentShip?.upgrades_bank as { activeShipType?: SailingShipType } | null
+						)?.activeShipType ?? 'raft') satisfies SailingShipType;
+						const ships =
+							action === 'max_all_ships'
+								? maxSailingShipSetups
+								: {
+										[shipType ?? activeShipType]: maxSailingShipSetups[shipType ?? activeShipType]
+									};
+						await updateUpgradesBank(user.id, {
+							activeShipType: shipType ?? (action === 'max_all_ships' ? 'sloop' : activeShipType),
+							ships
+						});
+						return action === 'max_all_ships'
+							? 'Maxed all Sailing ships and selected your sloop.'
+							: `Maxed your ${shipType ?? activeShipType}.`;
+					}
+
+					if (action === 'reset_ship') {
+						await prisma.userShip.update({
+							where: { user_id: user.id },
+							data: {
+								upgrades_bank: {}
+							}
+						});
+						return 'Reset Sailing facilities and progress.';
+					}
+
+					if (action === 'give_items') {
+						await user.addItemsToBank({
+							items: new Bank()
+								.add('Heart of ithell')
+								.add('Ironwood logs', 200)
+								.add('Ironwood plank', 200)
+								.add('Nickel ore', 200)
+								.add('Cupronickel bar', 200)
+								.add('Magic stone', 50)
+						});
+						return 'Added sailing materials and items to your bank.';
+					}
+
+					return 'Invalid sailing action.';
 				}
 				if (options.ping) {
 					return {
