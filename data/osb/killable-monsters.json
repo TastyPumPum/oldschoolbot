@@ -3189,6 +3189,25 @@
 		]
 	},
 	{
+		"id": 14922,
+		"name": "Frost Dragon",
+		"time_to_finish": 30000,
+		"wildy": false,
+		"difficulty_rating": 4,
+		"items_required": ["Anti-dragon shield"],
+		"notify_drops": ["Draconic visage", "Dragon metal sheet", "Dragon nails"],
+		"qp_required": 0,
+		"level_requirements": {
+			"sailing": 87
+		},
+		"heal_amount_needed": 80,
+		"attack_style_to_use": "attack_crush",
+		"attack_styles_used": ["attack_crush"],
+		"can_cannon": false,
+		"cannon_multi": false,
+		"can_barrage": false
+	},
+	{
 		"id": 13728,
 		"name": "Frost Nagua",
 		"time_to_finish": 28200,

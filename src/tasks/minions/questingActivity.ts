@@ -25,9 +25,11 @@ export const questingTask: MinionTask = {
 			qpReceived -= newQP - MAX_QP;
 		}
 
-		let str = `${user}, ${user.minionName
-			} finished questing, you received ${qpReceived.toLocaleString()} QP. Your current QP is ${currentQP + qpReceived
-			}.`;
+		let str = `${user}, ${
+			user.minionName
+		} finished questing, you received ${qpReceived.toLocaleString()} QP. Your current QP is ${
+			currentQP + qpReceived
+		}.`;
 
 		const hasMaxQP = newQP >= MAX_QP;
 		if (hasMaxQP) {

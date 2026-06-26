@@ -7503,6 +7503,51 @@
 					"Tangleroot",
 					"Unidentified minerals"
 				]
+			},
+			"sailing": {
+				"counts": false,
+				"items": [
+					"Angler's paint",
+					"Barracuda paint",
+					"Barrel stand",
+					"Big pearl",
+					"Bright pearl",
+					"Brilliant pearl",
+					"Broken compass",
+					"Broken sextant",
+					"Captured wind mote",
+					"Dragon cannon barrel",
+					"Dragon cannonball",
+					"Dragon nails",
+					"Dull knife",
+					"Enormous pearl",
+					"Fetid key",
+					"Glistening pearl",
+					"Gurtob's fabric roll",
+					"Gwyna's fabric roll",
+					"Heart of ithell",
+					"Huge pearl",
+					"Mouldy block",
+					"Mouldy doll",
+					"Radiant pearl",
+					"Ralph's fabric roll",
+					"Rusty coin",
+					"Rusty locket",
+					"Sailing cape",
+					"Sailing cape(t)",
+					"Sailing hood",
+					"Salvor's paint",
+					"Serrated key",
+					"Shark paint",
+					"Shimmering pearl",
+					"Shiny pearl",
+					"Small pearl",
+					"Smashed mirror",
+					"Soup",
+					"Stormy key",
+					"Tiny pearl",
+					"Whirlpool surprise"
+				]
 			}
 		}
 	}
