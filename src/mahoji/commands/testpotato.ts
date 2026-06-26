@@ -31,7 +31,7 @@ import {
 import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getFarmingInfo.js';
 import { Skills } from '@/lib/skilling/skills/index.js';
 import { SailingFacilities } from '@/lib/skilling/skills/sailing/facilities.js';
-import { updateUpgradesBank } from '@/lib/skilling/skills/sailing/ship.js';
+import { type SailingConfiguredShip, updateUpgradesBank } from '@/lib/skilling/skills/sailing/ship.js';
 import type { SailingShipType } from '@/lib/skilling/skills/sailing/shipParts.js';
 import { slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
@@ -380,7 +380,7 @@ const maxSailingShipSetups = {
 		},
 		facilities: SailingFacilities.map(f => f.id)
 	}
-} satisfies Record<SailingShipType, { parts: NonNullable<unknown>; facilities: string[] }>;
+} satisfies Record<SailingShipType, SailingConfiguredShip>;
 
 export const testPotatoCommand = globalConfig.isProduction
 	? null
@@ -811,16 +811,38 @@ export const testPotatoCommand = globalConfig.isProduction
 				}
 				if (options.sailing) {
 					const { action } = options.sailing;
-					if (action === 'max_ship') {
+					if (
+						action === 'max_ship' ||
+						action === 'max_all_ships' ||
+						action === 'max_raft' ||
+						action === 'max_skiff' ||
+						action === 'max_sloop'
+					) {
+						const shipType =
+							action === 'max_raft'
+								? 'raft'
+								: action === 'max_skiff'
+									? 'skiff'
+									: action === 'max_sloop'
+										? 'sloop'
+										: undefined;
+						const currentShip = await prisma.userShip.findUnique({ where: { user_id: user.id } });
+						const activeShipType = ((
+							currentShip?.upgrades_bank as { activeShipType?: SailingShipType } | null
+						)?.activeShipType ?? 'raft') satisfies SailingShipType;
+						const ships =
+							action === 'max_all_ships'
+								? maxSailingShipSetups
+								: {
+										[shipType ?? activeShipType]: maxSailingShipSetups[shipType ?? activeShipType]
+									};
 						await updateUpgradesBank(user.id, {
-							activeShipType: 'sloop',
-							ships: {
-								sloop: {
-									facilities: SailingFacilities.map(f => f.id)
-								}
-							}
+							activeShipType: shipType ?? (action === 'max_all_ships' ? 'sloop' : activeShipType),
+							ships
 						});
-						return 'Installed all Sailing facilities.';
+						return action === 'max_all_ships'
+							? 'Maxed all Sailing ships and selected your sloop.'
+							: `Maxed your ${shipType ?? activeShipType}.`;
 					}
 
 					if (action === 'reset_ship') {
