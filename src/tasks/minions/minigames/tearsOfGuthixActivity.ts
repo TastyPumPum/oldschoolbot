@@ -1,8 +1,9 @@
 import { increaseNumByPercent } from '@oldschoolgg/toolkit';
 
-import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
+import { canGainSailingXP, sailingXPUnlockMessage } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import { type SkillNameType, SkillsArray } from '@/lib/skilling/types.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
+import { makeStartQuestButton } from '@/lib/util/interactions.js';
 
 interface TearsOfGuthixSkillUser {
 	user: {
@@ -38,6 +39,8 @@ export const togTask: MinionTask = {
 			last_tears_of_guthix_timestamp: Date.now()
 		});
 
+		const skippedSailing = !canGainSailingXP(user);
+
 		// Find lowest level skill
 		const lowestSkill = getLowestTearsOfGuthixSkill(user);
 
@@ -72,8 +75,17 @@ export const togTask: MinionTask = {
 			user.minionName
 		} finished telling Juna a story and drinking from the Tears of Guthix and collected ${tears} tears.\nLowest XP skill is ${lowestSkill}.\n${xpStr.toLocaleString()}.${
 			hasDiary ? '\n10% XP bonus for Lumbridge & Draynor Hard diary.' : ''
+		}${
+			skippedSailing
+				? `\nSailing was skipped as a Tears of Guthix target because ${sailingXPUnlockMessage(user)}`
+				: ''
 		}`;
 
-		return handleTripFinish({ user, channelId, message, data });
+		return handleTripFinish({
+			user,
+			channelId,
+			message: skippedSailing ? { content: message, components: [makeStartQuestButton('Pandemonium')] } : message,
+			data
+		});
 	}
 };

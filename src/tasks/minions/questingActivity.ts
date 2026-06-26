@@ -11,7 +11,7 @@ export const questingTask: MinionTask = {
 		const currentQP = user.QP;
 
 		// This assumes you do quests in order of scaling difficulty, ~115 hours for max qp
-		let qpReceived = rng.randInt(1, 3);
+		let qpReceived = rng.randInt(10, 30);
 		if (currentQP >= 200) {
 			qpReceived = 1;
 		} else if (currentQP >= 100) {
@@ -25,11 +25,9 @@ export const questingTask: MinionTask = {
 			qpReceived -= newQP - MAX_QP;
 		}
 
-		let str = `${user}, ${
-			user.minionName
-		} finished questing, you received ${qpReceived.toLocaleString()} QP. Your current QP is ${
-			currentQP + qpReceived
-		}.`;
+		let str = `${user}, ${user.minionName
+			} finished questing, you received ${qpReceived.toLocaleString()} QP. Your current QP is ${currentQP + qpReceived
+			}.`;
 
 		const hasMaxQP = newQP >= MAX_QP;
 		if (hasMaxQP) {
