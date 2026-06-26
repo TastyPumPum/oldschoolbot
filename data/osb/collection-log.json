@@ -5168,6 +5168,23 @@
 					"Youngllef"
 				]
 			},
+			"barracuda_trials": {
+				"items": [
+					"Barrel stand",
+					"Captured wind mote",
+					"Fetid key",
+					"Gurtob's fabric roll",
+					"Gwyna's fabric roll",
+					"Heart of ithell",
+					"Ralph's fabric roll",
+					"Serrated key",
+					"Stormy key",
+					"Whirlpool surprise"
+				]
+			},
+			"boat_paint": {
+				"items": ["Angler's paint", "Barracuda paint", "Salvor's paint", "Shark paint"]
+			},
 			"camdozaal": {
 				"items": [
 					"Ancient astroscope",
@@ -5566,6 +5583,21 @@
 			"my_notes": {
 				"items": ["Ancient page"]
 			},
+			"ocean_encounters": {
+				"items": [
+					"Big pearl",
+					"Bright pearl",
+					"Brilliant pearl",
+					"Enormous pearl",
+					"Glistening pearl",
+					"Huge pearl",
+					"Radiant pearl",
+					"Shimmering pearl",
+					"Shiny pearl",
+					"Small pearl",
+					"Tiny pearl"
+				]
+			},
 			"random_events": {
 				"items": [
 					"Beekeeper's boots",
@@ -5688,6 +5720,22 @@
 					"Shayzien platebody (2)",
 					"Shayzien platebody (3)",
 					"Shayzien platebody (4)"
+				]
+			},
+			"sea_treasures": {
+				"items": [
+					"Broken compass",
+					"Broken sextant",
+					"Dragon cannon barrel",
+					"Dragon cannonball",
+					"Dragon nails",
+					"Dull knife",
+					"Mouldy block",
+					"Mouldy doll",
+					"Rusty coin",
+					"Rusty locket",
+					"Salvor's paint",
+					"Smashed mirror"
 				]
 			},
 			"shooting_stars": {

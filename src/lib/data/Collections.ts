@@ -22,7 +22,9 @@ import {
 	amoxliatlCL,
 	araxxorCL,
 	barbarianAssaultCL,
+	barracudaTrialsCL,
 	barrowsChestCL,
+	boatPaintCL,
 	brimhavenAgilityArenaCL,
 	bryophytaCL,
 	callistoCL,
@@ -92,6 +94,7 @@ import {
 	myNotesCL,
 	NexCL,
 	oborCL,
+	oceanEncountersCL,
 	pestControlCL,
 	questCL,
 	randomEventsCL,
@@ -100,6 +103,7 @@ import {
 	rooftopAgilityCL,
 	sarachnisCL,
 	scorpiaCL,
+	seaTreasuresCL,
 	shadesOfMorttonCL,
 	shayzienArmourCL,
 	skillingPetsCL,
@@ -974,6 +978,14 @@ export const allCollectionLogs: ICollection = {
 				alias: ['pet', 'pets'],
 				items: allPetsCL
 			},
+			'Barracuda Trials': {
+				alias: ['barracuda', 'barracuda trials'],
+				items: barracudaTrialsCL
+			},
+			'Boat Paint': {
+				alias: ['boat paint', 'paints'],
+				items: boatPaintCL
+			},
 			Camdozaal: {
 				items: camdozaalCL
 			},
@@ -1042,6 +1054,10 @@ export const allCollectionLogs: ICollection = {
 				alias: ['my notes'],
 				items: myNotesCL
 			},
+			'Ocean Encounters': {
+				alias: ['ocean encounters', 'giant clam', 'pearls'],
+				items: oceanEncountersCL
+			},
 			'Random Events': {
 				alias: ['random'],
 				items: randomEventsCL
@@ -1091,6 +1107,10 @@ export const allCollectionLogs: ICollection = {
 			},
 			'Shayzien Armour': {
 				items: shayzienArmourCL
+			},
+			'Sea Treasures': {
+				alias: ['sea treasures', 'shipwreck salvage', 'salvage'],
+				items: seaTreasuresCL
 			},
 			'Shooting Stars': { items: resolveItems(['Celestial ring (uncharged)', 'Star fragment']) },
 			'Skilling Pets': {

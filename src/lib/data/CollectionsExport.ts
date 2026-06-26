@@ -1363,6 +1363,46 @@ export const aerialFishingCL = resolveItems([
 	'Fish sack',
 	...ItemGroups.anglerOutfit
 ]);
+export const barracudaTrialsCL = resolveItems([
+	'Stormy key',
+	'Barrel stand',
+	'Whirlpool surprise',
+	"Ralph's fabric roll",
+	'Fetid key',
+	'Captured wind mote',
+	"Gurtob's fabric roll",
+	'Serrated key',
+	'Heart of ithell',
+	"Gwyna's fabric roll"
+]);
+export const boatPaintCL = resolveItems(['Barracuda paint', 'Shark paint', "Angler's paint", "Salvor's paint"]);
+export const oceanEncountersCL = resolveItems([
+	'Tiny pearl',
+	'Small pearl',
+	'Shiny pearl',
+	'Bright pearl',
+	'Big pearl',
+	'Huge pearl',
+	'Enormous pearl',
+	'Shimmering pearl',
+	'Glistening pearl',
+	'Brilliant pearl',
+	'Radiant pearl'
+]);
+export const seaTreasuresCL = resolveItems([
+	'Rusty locket',
+	'Mouldy block',
+	'Dull knife',
+	'Broken compass',
+	'Rusty coin',
+	'Broken sextant',
+	'Smashed mirror',
+	'Dragon cannonball',
+	'Dragon nails',
+	'Mouldy doll',
+	'Dragon cannon barrel',
+	"Salvor's paint"
+]);
 export const allPetsCL = resolveItems([
 	'Abyssal orphan',
 	'Ikkle hydra',
