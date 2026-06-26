@@ -101,6 +101,7 @@ import {
 	revenantsCL,
 	roguesDenCL,
 	rooftopAgilityCL,
+	sailingMiscellaneousCL,
 	sarachnisCL,
 	scorpiaCL,
 	seaTreasuresCL,
@@ -132,8 +133,7 @@ import {
 	vorkathCL,
 	wintertodtCL,
 	zalcanoCL,
-	zulrahCL,
-	sailingMiscellaneousCL
+	zulrahCL
 } from '@/lib/data/CollectionsExport.js';
 import Createables from '@/lib/data/createables.js';
 import { leagueBuyables } from '@/lib/data/leaguesBuyables.js';

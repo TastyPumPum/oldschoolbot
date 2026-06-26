@@ -3,6 +3,11 @@ import { Bank } from 'oldschooljs';
 
 import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
+import type {
+	SailingShipType,
+	SailingStructuralSlot,
+	SailingStructuralTier
+} from '@/lib/skilling/skills/sailing/shipParts.js';
 import type { Skills } from '@/lib/types/index.js';
 
 export type BarracudaTrialId = Extract<SailingActivityId, 'tempor_tantrum' | 'jubbly_jive' | 'gwenith_glide'>;
@@ -27,6 +32,10 @@ export interface BarracudaTrial {
 	location: string;
 	requiredFacility?: SailingFacilityId;
 	requiredAnyFacilities?: SailingFacilityId[];
+	shipRequirement?: {
+		shipType?: SailingShipType;
+		parts?: Partial<Record<SailingStructuralSlot, SailingStructuralTier>>;
+	};
 	mimickedQuestRequirement?: {
 		name: string;
 		qpReq?: number;
@@ -56,7 +65,13 @@ export const BarracudaTrials: BarracudaTrial[] = [
 		level: 30,
 		trialMaster: 'Rum-dashed Ralph',
 		location: 'The Storm Tempor',
-		unsupportedRequirementNotes: ['Requires a skiff with an iron helm and oak mast in OSRS.'],
+		shipRequirement: {
+			shipType: 'skiff',
+			parts: {
+				helm: 'iron',
+				mast_sails: 'oak_linen'
+			}
+		},
 		paintChance: 240,
 		ranks: [
 			{
@@ -95,7 +110,12 @@ export const BarracudaTrials: BarracudaTrial[] = [
 		trialMaster: 'Gurtob',
 		location: 'Backwater',
 		requiredFacility: 'inoculation_station',
-		unsupportedRequirementNotes: ['Requires a skiff with at least a mithril helm in OSRS.'],
+		shipRequirement: {
+			shipType: 'skiff',
+			parts: {
+				helm: 'mithril'
+			}
+		},
 		paintChance: 220,
 		ranks: [
 			{
@@ -145,8 +165,12 @@ export const BarracudaTrials: BarracudaTrial[] = [
 				ranged: 25
 			}
 		},
-		requiredAnyFacilities: ['wind_catcher', 'gale_catcher'],
-		unsupportedRequirementNotes: ['Requires a skiff with an adamant keel or better in OSRS.'],
+		shipRequirement: {
+			shipType: 'skiff',
+			parts: {
+				keel: 'adamant'
+			}
+		},
 		paintChance: 400,
 		ranks: [
 			{

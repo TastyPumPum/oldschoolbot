@@ -10,7 +10,8 @@ Sailing is in active development. Activities and rewards come from OSRS. Where l
 
 - `/sail` - Start a Sailing activity through subcommands for Sea charting, port tasks, shipwreck salvaging, Barracuda Trials, and deep sea trawling.
 - `/ship status` - View installed facilities, stored salvage, charting progress, and Barracuda Trial ranks.
-- `/ship install` - Install a Sailing facility.
+- `/ship install` - Install a Sailing facility by choosing a facility type, then a specific variant.
+- `/ship install_part` - Install a structural ship part such as a hull, helm, keel, or mast and sails.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
 - `/ship clam` - Prepare a tradeable, alchable item for a future giant clam encounter.
 - `/ship rename` - Rename your ship.
@@ -66,13 +67,19 @@ Each salvage attempt recovers multiple pieces of salvage. With a salvaging stati
 
 ### Barracuda Trials
 
-The bot models Barracuda Trials as successful rank completions using OSRS target times, XP, first-completion bonus XP, one-time rewards, rank progression, and Barracuda paint rolls.
+The bot models Barracuda Trials as successful rank completions using OSRS target times, XP, first-completion bonus XP, one-time rewards, rank progression, structural ship requirements, and Barracuda paint rolls.
 
 Supported trials:
 
 - The Tempor Tantrum - 30 Sailing
 - The Jubbly Jive - 55 Sailing
 - The Gwenith Glide - 72 Sailing
+
+Trial ship requirements:
+
+- The Tempor Tantrum - Skiff, iron helm or better, and oak mast with linen sails or better.
+- The Jubbly Jive - Skiff, mithril helm or better, and an Inoculation station.
+- The Gwenith Glide - Skiff and adamant keel or better, plus the Regicide mimic requirements below.
 
 Each trial supports Swordfish, Shark, and Marlin ranks. Swordfish must be completed before Shark, and Shark before Marlin. Completed ranks and best target times are stored on the ship.
 
@@ -96,7 +103,9 @@ Barracuda Trials only roll strong winds from ocean encounters; other random enco
 
 Facilities are installed on your ship to unlock content.
 
-- Bronze salvaging hook - unlocks shipwreck salvaging.
+- Rafts have 1 facility hotspot, skiffs have 7, and sloops have 13.
+- `/ship install` groups facilities by type: salvaging hooks, trawling nets, wind catchers, and station/utility facilities.
+- Bronze through dragon salvaging hooks - unlock and improve shipwreck salvaging.
 - Keg - built with the Barrel stand from The Tempor Tantrum. Ale effects are not yet modelled.
 - Inoculation station - protects against fetid waters and is required for The Jubbly Jive.
 - Salvaging station - automatically sorts salvage while salvaging at sea.
@@ -104,6 +113,24 @@ Facilities are installed on your ship to unlock content.
 - Wind catcher - automatically catches and releases wind motes for 40 Sailing XP; requires Captured wind mote to build.
 - Gale catcher - automatically catches and releases wind motes for 70 Sailing XP; requires Captured wind mote to build.
 - Crystal extractor - automatically grants 250 Sailing XP every 63 seconds. Its motes are automatically released for 10 Sailing XP when a catcher is installed; requires a Heart of ithell, which is not consumed.
+
+### Structural Ship Parts
+
+Ships have OSRS-style structural parts. Rafts have a hull, helm, and mast with sails. Skiffs and sloops also have a keel. Installing a hull can change ship type, while other structural parts install for the current ship type.
+
+Supported ship types:
+
+- Raft - 1 Sailing, 1 facility hotspot, no keel, no Barracuda Trials.
+- Skiff - 15 Sailing, 7 facility hotspots, required for Barracuda Trials.
+- Sloop - 50 Sailing, 13 facility hotspots.
+
+Supported structural tiers:
+
+- Hulls: wooden, oak, teak, mahogany, camphor, ironwood, and rosewood.
+- Helms and keels: bronze, iron, steel, mithril, adamant, rune, and dragon.
+- Mast and sails: wooden/linen, oak/linen, teak/canvas, mahogany/canvas, camphor/canvas, ironwood/cotton, and rosewood/cotton.
+
+Recipes are kept close to OSRS. If an OSRS recipe component is not in the bot's current item data yet, the command leaves that component uncharged and reports it instead of inventing an item.
 
 ### Passive Sailing Actions
 
@@ -143,7 +170,7 @@ Implemented encounters are strong winds, mysterious glows, lost crates, castaway
 - Lost-crate tier selection and loot within each real OSRS loot category are simplified.
 - The giant clam is prepared through `/ship clam` because feeding it during a random AFK encounter is not interactive.
 - OSRS hulls, masts, sails, helms, keels, cargo holds, and crew layout are not yet modelled. Generic ship tiers and their invented bonuses have been removed.
-- Skiff-only and OSRS boat-part requirements are documented in activity messages but cannot be fully checked yet.
+- Cargo holds and typed hotspot placement are not fully modelled yet; facility hotspot counts are enforced by ship type.
 - Crewmate restrictions for Barracuda Trials are not enforced because crewmates are not modelled as OSRS ship crew.
 - The Gale catcher schematic requirement is not checked because the schematic item is not currently in the item data.
 - The salvaging station schematic and several salvage pre-roll items are not checked because those items are not currently in the item data.

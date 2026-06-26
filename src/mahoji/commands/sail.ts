@@ -13,7 +13,7 @@ import {
 	getPreviousBarracudaRank,
 	isBarracudaTrialId
 } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
-import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
+import { isSalvagingHookFacility, SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import {
 	getBestSalvagingShipwreckForLevel,
@@ -27,9 +27,17 @@ import {
 	getCompletedChartingTaskIds,
 	getInstalledFacilities,
 	getOrCreateUserShip,
+	getShipParts,
 	hasFacility,
 	snapshotShip
 } from '@/lib/skilling/skills/sailing/ship.js';
+import {
+	getInstalledStructuralPart,
+	normaliseShipParts,
+	SailingShipTypeById,
+	type SailingStructuralSlot,
+	tierMeetsRequirement
+} from '@/lib/skilling/skills/sailing/shipParts.js';
 import {
 	canTrawlAtDepth,
 	getBestInstalledTrawlingNet,
@@ -254,7 +262,14 @@ export const sailCommand = defineCommand({
 		}
 
 		const ship = await getOrCreateUserShip(user.id);
-		if (activity.requiredFacility && !hasFacility(ship, activity.requiredFacility)) {
+		const installedFacilities = getInstalledFacilities(ship);
+		const hasRequiredFacility =
+			activity.requiredFacility === 'salvaging_hook'
+				? installedFacilities.some(isSalvagingHookFacility)
+				: activity.requiredFacility
+					? hasFacility(ship, activity.requiredFacility)
+					: true;
+		if (activity.requiredFacility && !hasRequiredFacility) {
 			const facility = SailingFacilitiesById.get(activity.requiredFacility);
 			return `${activity.name} requires the ${facility?.name ?? activity.requiredFacility} facility. Install it with \`/ship install\`.`;
 		}
@@ -266,6 +281,32 @@ export const sailCommand = defineCommand({
 				facility => SailingFacilitiesById.get(facility)?.name ?? facility
 			);
 			return `${activity.name} requires one of these facilities: ${facilities.join(', ')}. Install one with \`/ship install\`.`;
+		}
+		if (isBarracudaTrialId(activity.id)) {
+			const trial = BarracudaTrialById.get(activity.id)!;
+			const requirement = trial.shipRequirement;
+			if (requirement) {
+				const parts = normaliseShipParts(getShipParts(ship));
+				if (requirement.shipType && parts.shipType !== requirement.shipType) {
+					const shipType = SailingShipTypeById.get(requirement.shipType)!;
+					return `${trial.name} requires a ${shipType.name}. Install a ${shipType.name.toLowerCase()} hull with \`/ship install_part\`.`;
+				}
+				const missingParts: string[] = [];
+				for (const [slot, requiredTier] of Object.entries(requirement.parts ?? {})) {
+					const structuralSlot = slot as SailingStructuralSlot;
+					if (!tierMeetsRequirement(structuralSlot, parts[structuralSlot], requiredTier)) {
+						const installed = getInstalledStructuralPart(parts, structuralSlot);
+						missingParts.push(
+							`${requiredTier.replace('_', ' ')} ${structuralSlot.replace('_', ' ')} or better${
+								installed ? ` (current: ${installed.name})` : ''
+							}`
+						);
+					}
+				}
+				if (missingParts.length > 0) {
+					return `${trial.name} requires ${missingParts.join(', ')}. Install ship parts with \`/ship install_part\`.`;
+				}
+			}
 		}
 		if (activity.requiredItems && activity.requiredItems.length > 0) {
 			const requiredBank = new Bank();
@@ -283,7 +324,7 @@ export const sailCommand = defineCommand({
 			if (user.skillsAsLevels.fishing < shoal.fishingLevel) {
 				return `${user.minionName} needs ${shoal.fishingLevel} Fishing to trawl at ${shoal.name}.`;
 			}
-			const net = getBestInstalledTrawlingNet(getInstalledFacilities(ship));
+			const net = getBestInstalledTrawlingNet(installedFacilities);
 			if (!net) return 'Deep sea trawling requires a trawling net.';
 			if (!canTrawlAtDepth(net, shoal.depth)) {
 				return `${shoal.name} requires a net capable of trawling at ${shoal.depth} depth.`;

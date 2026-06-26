@@ -4,10 +4,22 @@ import { describe, expect, test } from 'vitest';
 import { capesCL, skillingPetsCL } from '@/lib/data/CollectionsExport.js';
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { getMaxPortTasks, getPortTaskXPHour } from '@/lib/skilling/skills/sailing/activities.js';
-import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
+import { BarracudaTrialById } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
+import {
+	isSalvagingHookFacility,
+	SailingFacilities,
+	SailingFacilitiesById
+} from '@/lib/skilling/skills/sailing/facilities.js';
 import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getSeaChartingProgress } from '@/lib/skilling/skills/sailing/seaCharting.js';
+import {
+	bankFromSailingCost,
+	normaliseShipParts,
+	SailingShipTypeById,
+	SailingStructuralParts,
+	tierMeetsRequirement
+} from '@/lib/skilling/skills/sailing/shipParts.js';
 import {
 	canTrawlAtDepth,
 	getTrawlingCatchChance,
@@ -103,6 +115,17 @@ describe('Sailing data', () => {
 	test('uses corrected facilities and removes invented facilities', () => {
 		expect(SailingFacilitiesById.has('fishing_station' as never)).toBe(false);
 		expect(SailingFacilitiesById.has('racing_sails' as never)).toBe(false);
+		expect(
+			SailingFacilities.filter(facility => isSalvagingHookFacility(facility.id)).map(facility => facility.id)
+		).toEqual([
+			'salvaging_hook',
+			'iron_salvaging_hook',
+			'steel_salvaging_hook',
+			'mithril_salvaging_hook',
+			'adamant_salvaging_hook',
+			'rune_salvaging_hook',
+			'dragon_salvaging_hook'
+		]);
 		expect(SailingFacilitiesById.get('inoculation_station')).toMatchObject({
 			level: 40,
 			constructionLevel: 37
@@ -112,6 +135,64 @@ describe('Sailing data', () => {
 			constructionLevel: 34
 		});
 		expect(SailingFacilitiesById.get('keg')).toMatchObject({ level: 33, constructionLevel: 25 });
+	});
+
+	test('models OSRS ship types and structural part requirements', () => {
+		expect(SailingShipTypeById.get('raft')).toMatchObject({ sailingLevel: 1, facilityHotspots: 1 });
+		expect(SailingShipTypeById.get('skiff')).toMatchObject({ sailingLevel: 15, facilityHotspots: 7 });
+		expect(SailingShipTypeById.get('sloop')).toMatchObject({ sailingLevel: 50, facilityHotspots: 13 });
+		expect(normaliseShipParts()).toEqual({
+			shipType: 'raft',
+			hull: 'wooden',
+			helm: 'bronze',
+			mast_sails: 'wooden_linen',
+			keel: undefined
+		});
+
+		expect(tierMeetsRequirement('helm', 'mithril', 'iron')).toBe(true);
+		expect(tierMeetsRequirement('helm', 'iron', 'mithril')).toBe(false);
+		expect(tierMeetsRequirement('keel', 'adamant', 'adamant')).toBe(true);
+		expect(tierMeetsRequirement('mast_sails', 'oak_linen', 'oak_linen')).toBe(true);
+		expect(tierMeetsRequirement('mast_sails', 'wooden_linen', 'oak_linen')).toBe(false);
+	});
+
+	test('stores OSRS structural recipes without inventing missing items', () => {
+		const adamantSkiffKeel = SailingStructuralParts.find(part => part.id === 'adamant_skiff_keel')!;
+		expect(adamantSkiffKeel).toMatchObject({
+			name: 'Adamant skiff keel',
+			level: 66,
+			constructionLevel: 62,
+			cost: {
+				'Adamant skiff keel parts': 10,
+				'Lead bar': 5
+			}
+		});
+		const { bank, missingItems } = bankFromSailingCost(adamantSkiffKeel.cost);
+		expect(bank.toString()).toBe('5x Lead bar');
+		expect(missingItems).toEqual(['10x Adamant skiff keel parts']);
+	});
+
+	test('uses structural ship requirements for Barracuda Trials', () => {
+		expect(BarracudaTrialById.get('tempor_tantrum')?.shipRequirement).toEqual({
+			shipType: 'skiff',
+			parts: {
+				helm: 'iron',
+				mast_sails: 'oak_linen'
+			}
+		});
+		expect(BarracudaTrialById.get('jubbly_jive')?.shipRequirement).toEqual({
+			shipType: 'skiff',
+			parts: {
+				helm: 'mithril'
+			}
+		});
+		expect(BarracudaTrialById.get('gwenith_glide')?.shipRequirement).toEqual({
+			shipType: 'skiff',
+			parts: {
+				keel: 'adamant'
+			}
+		});
+		expect(BarracudaTrialById.get('gwenith_glide')?.requiredAnyFacilities).toBeUndefined();
 	});
 
 	test('uses the starter sail trim XP until real sail parts are modelled', () => {

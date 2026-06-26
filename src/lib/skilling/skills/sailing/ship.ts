@@ -2,13 +2,16 @@ import type { UserShip } from '@/prisma/main.js';
 import type { BarracudaTrialsProgress } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import type { StoredSalvage } from '@/lib/skilling/skills/sailing/salvaging.js';
+import { normaliseShipParts, type SailingShipParts } from '@/lib/skilling/skills/sailing/shipParts.js';
 
 export type SailingShipSnapshot = {
 	facilities: SailingFacilityId[];
+	parts: SailingShipParts;
 };
 
 export type SailingUpgradesBank = {
 	facilities?: SailingFacilityId[];
+	parts?: SailingShipParts;
 	clamItemId?: number | null;
 	clamFedAt?: number | null;
 	completedChartingTaskIds?: number[];
@@ -24,6 +27,10 @@ export function getUpgradesBank(ship: UserShip): SailingUpgradesBank {
 
 export function getInstalledFacilities(ship: UserShip): SailingFacilityId[] {
 	return getUpgradesBank(ship).facilities ?? [];
+}
+
+export function getShipParts(ship: UserShip): SailingShipParts {
+	return normaliseShipParts(getUpgradesBank(ship).parts);
 }
 
 export function getClamItem(ship: UserShip) {
@@ -69,7 +76,8 @@ export async function updateUpgradesBank(userID: string, updates: Partial<Sailin
 
 export function snapshotShip(ship: UserShip): SailingShipSnapshot {
 	return {
-		facilities: getInstalledFacilities(ship)
+		facilities: getInstalledFacilities(ship),
+		parts: getShipParts(ship)
 	};
 }
 

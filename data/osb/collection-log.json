@@ -5722,6 +5722,20 @@
 					"Shayzien platebody (4)"
 				]
 			},
+			"sailing_miscellaneous": {
+				"items": [
+					"Bottled storm",
+					"Broken dragon hook",
+					"Dragon cannon barrel",
+					"Dragon cannonball",
+					"Dragon metal sheet",
+					"Dragon nails",
+					"Echo pearl",
+					"Narwhal horn",
+					"Ray barbs",
+					"Swift albatross feather"
+				]
+			},
 			"sea_treasures": {
 				"items": [
 					"Broken compass",
@@ -7511,15 +7525,19 @@
 					"Barracuda paint",
 					"Barrel stand",
 					"Big pearl",
+					"Bottled storm",
 					"Bright pearl",
 					"Brilliant pearl",
 					"Broken compass",
+					"Broken dragon hook",
 					"Broken sextant",
 					"Captured wind mote",
 					"Dragon cannon barrel",
 					"Dragon cannonball",
+					"Dragon metal sheet",
 					"Dragon nails",
 					"Dull knife",
+					"Echo pearl",
 					"Enormous pearl",
 					"Fetid key",
 					"Glistening pearl",
@@ -7529,8 +7547,10 @@
 					"Huge pearl",
 					"Mouldy block",
 					"Mouldy doll",
+					"Narwhal horn",
 					"Radiant pearl",
 					"Ralph's fabric roll",
+					"Ray barbs",
 					"Rusty coin",
 					"Rusty locket",
 					"Sailing cape",
@@ -7545,6 +7565,7 @@
 					"Smashed mirror",
 					"Soup",
 					"Stormy key",
+					"Swift albatross feather",
 					"Tiny pearl",
 					"Whirlpool surprise"
 				]
