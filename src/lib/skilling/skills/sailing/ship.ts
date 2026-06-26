@@ -1,4 +1,4 @@
-import type { UserShip } from '@/prisma/main.js';
+import { Prisma, type UserShip } from '@/prisma/main.js';
 import type { BarracudaTrialsProgress } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import type { StoredSalvage } from '@/lib/skilling/skills/sailing/salvaging.js';
@@ -90,16 +90,44 @@ export function getShips(upgrades: SailingUpgradesBank): Partial<Record<SailingS
 	return upgrades.ships ?? {};
 }
 
-export async function updateUpgradesBank(userID: string, updates: Partial<SailingUpgradesBank>) {
-	const ship = await getOrCreateUserShip(userID);
-	const current = getUpgradesBank(ship);
-	const next = {
-		...current,
-		...updates
-	};
-	return prisma.userShip.update({
+async function runSerializableShipUpdate<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+	for (let attempt = 1; attempt <= 3; attempt++) {
+		try {
+			return await prisma.$transaction(operation, {
+				isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+			});
+		} catch (error) {
+			if (attempt === 3 || (error as { code?: string }).code !== 'P2034') {
+				throw error;
+			}
+		}
+	}
+	throw new Error('Failed to update Sailing ship state.');
+}
+
+async function getOrCreateUserShipWithClient(
+	client: Pick<typeof prisma, 'userShip'>,
+	userID: string
+): Promise<UserShip> {
+	return client.userShip.upsert({
 		where: { user_id: userID },
-		data: { upgrades_bank: next }
+		create: { user_id: userID },
+		update: {}
+	});
+}
+
+export async function updateUpgradesBank(userID: string, updates: Partial<SailingUpgradesBank>) {
+	return runSerializableShipUpdate(async tx => {
+		const ship = await getOrCreateUserShipWithClient(tx, userID);
+		const current = getUpgradesBank(ship);
+		const next = {
+			...current,
+			...updates
+		};
+		return tx.userShip.update({
+			where: { user_id: userID },
+			data: { upgrades_bank: next }
+		});
 	});
 }
 
@@ -108,26 +136,28 @@ export async function updateConfiguredShip(
 	shipType: SailingShipType,
 	updates: Partial<SailingConfiguredShip>
 ) {
-	const ship = await getOrCreateUserShip(userID);
-	const current = getUpgradesBank(ship);
-	const currentShips = getShips(current);
-	const currentShip = currentShips[shipType] ?? {
-		parts: getDefaultShipParts(shipType)
-	};
-	return prisma.userShip.update({
-		where: { user_id: userID },
-		data: {
-			upgrades_bank: {
-				...current,
-				ships: {
-					...currentShips,
-					[shipType]: {
-						...currentShip,
-						...updates
+	return runSerializableShipUpdate(async tx => {
+		const ship = await getOrCreateUserShipWithClient(tx, userID);
+		const current = getUpgradesBank(ship);
+		const currentShips = getShips(current);
+		const currentShip = currentShips[shipType] ?? {
+			parts: getDefaultShipParts(shipType)
+		};
+		return tx.userShip.update({
+			where: { user_id: userID },
+			data: {
+				upgrades_bank: {
+					...current,
+					ships: {
+						...currentShips,
+						[shipType]: {
+							...currentShip,
+							...updates
+						}
 					}
 				}
 			}
-		}
+		});
 	});
 }
 
@@ -141,13 +171,5 @@ export function snapshotShip(ship: UserShip): SailingShipSnapshot {
 }
 
 export async function getOrCreateUserShip(userID: string): Promise<UserShip> {
-	let ship = await prisma.userShip.findUnique({
-		where: { user_id: userID }
-	});
-	if (!ship) {
-		ship = await prisma.userShip.create({
-			data: { user_id: userID }
-		});
-	}
-	return ship;
+	return getOrCreateUserShipWithClient(prisma, userID);
 }

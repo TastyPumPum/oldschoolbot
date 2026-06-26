@@ -9,6 +9,7 @@ import {
 	SailingFacilitiesById,
 	type SailingFacilityId
 } from '@/lib/skilling/skills/sailing/facilities.js';
+import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import {
 	formatStoredSalvage,
 	removeStoredSalvage,
@@ -39,6 +40,7 @@ import {
 	type SailingStructuralTier
 } from '@/lib/skilling/skills/sailing/shipParts.js';
 import { isTrawlingNetFacility } from '@/lib/skilling/skills/sailing/trawling.js';
+import { makeStartQuestButton } from '@/lib/util/interactions.js';
 
 type SailingFacilityInstallType = 'hook' | 'net' | 'catcher' | 'station';
 
@@ -96,6 +98,22 @@ function getInstallTypeFromAutocompleteOptions(rawOptions: StringAutoComplete['r
 	return typeOption && 'value' in typeOption
 		? (typeOption.value as SailingFacilityInstallType | undefined)
 		: undefined;
+}
+
+function getNextShipAction(user: MUser, activeShipType: string) {
+	if (user.skillsAsLevels.sailing < 30) {
+		return 'Use `/sail port_tasks type:Courier tasks` to train towards Barracuda Trials.';
+	}
+	if (activeShipType !== 'skiff') {
+		return 'Use `/ship select type:Skiff` to prepare for Barracuda Trials.';
+	}
+	if (user.skillsAsLevels.sailing < 55) {
+		return 'Use `/sail barracuda_trial` to complete The Tempor Tantrum ranks.';
+	}
+	if (user.skillsAsLevels.sailing < 72) {
+		return 'Use `/sail barracuda_trial` to complete The Jubbly Jive ranks.';
+	}
+	return 'Use `/sail barracuda_trial` to complete The Gwenith Glide ranks, or keep training with your best available activity.';
 }
 
 export const shipCommand = defineCommand({
@@ -239,6 +257,13 @@ export const shipCommand = defineCommand({
 		}
 	],
 	run: async ({ options, user }) => {
+		if (!canGainSailingXP(user)) {
+			return {
+				content: `${user.minionName} needs to have completed the Pandemonium quest to access the sailing skill.\n\nYou can complete this quest by using the command: \`/activities quest name:Pandemonium\``,
+				components: [makeStartQuestButton('Pandemonium')]
+			};
+		}
+
 		const ship = await getOrCreateUserShip(user.id);
 		const activeShipType = getActiveShipType(ship);
 
@@ -267,7 +292,7 @@ export const shipCommand = defineCommand({
 				return `${trial.name}: ${ranks}`;
 			}).join('\n');
 
-			return `**${name}**\nShip type: ${shipType.name} (${shipType.facilityHotspots} facility hotspots)\nStructural parts: ${formatStructuralParts(parts)}\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nCharting progress (${chartingProgress.completed.toLocaleString()}/${chartingProgress.total.toLocaleString()}):\n${chartingStatus}\n\nBarracuda Trials:\n${barracudaStatus}`;
+			return `**${name}**\nShip type: ${shipType.name} (${shipType.facilityHotspots} facility hotspots)\nStructural parts: ${formatStructuralParts(parts)}\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\nNext action: ${getNextShipAction(user, activeShipType)}\n\nCharting progress (${chartingProgress.completed.toLocaleString()}/${chartingProgress.total.toLocaleString()}):\n${chartingStatus}\n\nBarracuda Trials:\n${barracudaStatus}`;
 		}
 
 		if (options.select) {
@@ -458,14 +483,6 @@ export const shipCommand = defineCommand({
 				return `You need to own ${facility.requiredItems} to install ${facility.name}.`;
 			}
 
-			if (!user.owns(facility.cost)) {
-				return `You don't have the required items to install ${facility.name}.\nYou need: ${facility.cost}.`;
-			}
-
-			await user.transactItems({
-				itemsToRemove: facility.cost
-			});
-
 			const facilitiesToKeep = isTrawlingNetFacility(facility.id)
 				? installed.filter(installedFacility => !isTrawlingNetFacility(installedFacility))
 				: isSalvagingHookFacility(facility.id)
@@ -480,6 +497,15 @@ export const shipCommand = defineCommand({
 			if (facilitiesToKeep.length + 1 > shipType.facilityHotspots) {
 				return `${shipType.name} ships only have ${shipType.facilityHotspots} facility hotspot${shipType.facilityHotspots === 1 ? '' : 's'}. Select a larger ship type first.`;
 			}
+
+			if (!user.owns(facility.cost)) {
+				return `You don't have the required items to install ${facility.name}.\nYou need: ${facility.cost}.`;
+			}
+
+			await user.transactItems({
+				itemsToRemove: facility.cost
+			});
+
 			await updateConfiguredShip(user.id, activeShipType, {
 				facilities: [...facilitiesToKeep, facility.id]
 			});

@@ -1,5 +1,5 @@
-import { itemID, resolveItems } from 'oldschooljs';
-import { describe, expect, test } from 'vitest';
+import { Bank, itemID, resolveItems } from 'oldschooljs';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { capesCL, skillingPetsCL } from '@/lib/data/CollectionsExport.js';
 import { QuestID } from '@/lib/minions/data/quests.js';
@@ -13,7 +13,12 @@ import {
 import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getSeaChartingProgress } from '@/lib/skilling/skills/sailing/seaCharting.js';
-import { getActiveShipType, getInstalledFacilities, getShipParts } from '@/lib/skilling/skills/sailing/ship.js';
+import {
+	getActiveShipType,
+	getInstalledFacilities,
+	getShipParts,
+	updateConfiguredShip
+} from '@/lib/skilling/skills/sailing/ship.js';
 import {
 	bankFromSailingCost,
 	normaliseShipParts,
@@ -30,6 +35,45 @@ import {
 import { calculatePassiveSailingActions, STARTER_SAIL_TRIM_DATA } from '@/lib/skilling/skills/sailing/upgrades.js';
 import { type SkillNameType, SkillsArray } from '@/lib/skilling/types.js';
 import { getLowestTearsOfGuthixSkill } from '@/tasks/minions/minigames/tearsOfGuthixActivity.js';
+
+const originalPrisma = globalThis.prisma;
+const originalDefineCommand = globalThis.defineCommand;
+
+afterEach(() => {
+	globalThis.prisma = originalPrisma;
+	globalThis.defineCommand = originalDefineCommand;
+	vi.restoreAllMocks();
+});
+
+async function getShipCommandForTest() {
+	globalThis.defineCommand = (<T>(command: T) => command) as typeof globalThis.defineCommand;
+	return (await import('@/mahoji/commands/ship.js')).shipCommand;
+}
+
+function mockShipCommandUser({
+	finishedPandemonium = true,
+	sailingLevel = 99,
+	constructionLevel = 99
+}: {
+	finishedPandemonium?: boolean;
+	sailingLevel?: number;
+	constructionLevel?: number;
+} = {}) {
+	return {
+		id: '123',
+		minionName: 'Testminion',
+		user: {
+			finished_quest_ids: finishedPandemonium ? [QuestID.Pandemonium] : []
+		},
+		skillsAsLevels: {
+			sailing: sailingLevel,
+			construction: constructionLevel
+		},
+		owns: vi.fn(() => true),
+		transactItems: vi.fn(),
+		minionIsBusy: vi.fn(async () => false)
+	};
+}
 
 describe('Sailing data', () => {
 	test('requires Pandemonium before Sailing XP can be gained', () => {
@@ -181,6 +225,71 @@ describe('Sailing data', () => {
 		expect(getShipParts(ship)).toMatchObject({ shipType: 'skiff', helm: 'mithril', keel: 'bronze' });
 	});
 
+	test('updates configured ship state in a serializable transaction without dropping other JSON data', async () => {
+		const update = vi.fn(async ({ data }) => ({
+			user_id: '123',
+			ship_name: null,
+			upgrades_bank: data.upgrades_bank
+		}));
+		const tx = {
+			userShip: {
+				upsert: vi.fn(async () => ({
+					user_id: '123',
+					ship_name: null,
+					upgrades_bank: {
+						activeShipType: 'skiff',
+						ships: {
+							raft: { facilities: ['salvaging_hook'] }
+						},
+						completedChartingTaskIds: [1, 2]
+					}
+				})),
+				update
+			}
+		};
+		const transaction = vi.fn(async operation => operation(tx));
+		globalThis.prisma = { $transaction: transaction } as never;
+
+		await updateConfiguredShip('123', 'skiff', { facilities: ['inoculation_station'] });
+
+		expect(transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: 'Serializable' });
+		expect(update).toHaveBeenCalledWith({
+			where: { user_id: '123' },
+			data: {
+				upgrades_bank: {
+					activeShipType: 'skiff',
+					ships: {
+						raft: { facilities: ['salvaging_hook'] },
+						skiff: expect.objectContaining({ facilities: ['inoculation_station'] })
+					},
+					completedChartingTaskIds: [1, 2]
+				}
+			}
+		});
+	});
+
+	test('retries serializable ship updates when the database reports a write conflict', async () => {
+		const tx = {
+			userShip: {
+				upsert: vi.fn(async () => ({ user_id: '123', ship_name: null, upgrades_bank: {} })),
+				update: vi.fn(async ({ data }) => ({
+					user_id: '123',
+					ship_name: null,
+					upgrades_bank: data.upgrades_bank
+				}))
+			}
+		};
+		const transaction = vi
+			.fn()
+			.mockRejectedValueOnce({ code: 'P2034' })
+			.mockImplementationOnce(async operation => operation(tx));
+		globalThis.prisma = { $transaction: transaction } as never;
+
+		await updateConfiguredShip('123', 'raft', { facilities: ['salvaging_hook'] });
+
+		expect(transaction).toHaveBeenCalledTimes(2);
+	});
+
 	test('stores OSRS structural recipes without inventing missing items', () => {
 		const adamantSkiffKeel = SailingStructuralParts.find(part => part.id === 'adamant_skiff_keel')!;
 		expect(adamantSkiffKeel).toMatchObject({
@@ -261,5 +370,75 @@ describe('Sailing data', () => {
 			expect(shipwreck.salvagePerAction).toBe(12);
 		}
 		expect(SalvagingShipwrecks.find(shipwreck => shipwreck.id === 'barracuda')?.lootTable.totalWeight).toBe(27_151);
+	});
+});
+
+describe('Sailing ship command', () => {
+	test('requires Pandemonium before reading or creating ship state', async () => {
+		const shipCommand = await getShipCommandForTest();
+		const upsert = vi.fn();
+		globalThis.prisma = {
+			userShip: {
+				upsert
+			}
+		} as never;
+
+		const result = await shipCommand.run({
+			options: { status: {} },
+			user: mockShipCommandUser({ finishedPandemonium: false })
+		} as never);
+
+		expect(result).toMatchObject({
+			content: expect.stringContaining('Pandemonium')
+		});
+		expect(upsert).not.toHaveBeenCalled();
+	});
+
+	test('does not charge items when a new facility cannot fit on the active ship', async () => {
+		const shipCommand = await getShipCommandForTest();
+		globalThis.prisma = {
+			userShip: {
+				upsert: vi.fn(async () => ({
+					user_id: '123',
+					ship_name: null,
+					upgrades_bank: {
+						activeShipType: 'raft',
+						ships: {
+							raft: { facilities: ['salvaging_hook'] }
+						}
+					}
+				}))
+			}
+		} as never;
+		const user = mockShipCommandUser();
+
+		const result = await shipCommand.run({
+			options: { install: { type: 'station', variant: 'keg' } },
+			user
+		} as never);
+
+		expect(result).toContain('Raft ships only have 1 facility hotspot');
+		expect(user.owns).not.toHaveBeenCalledWith(expect.any(Bank));
+		expect(user.transactItems).not.toHaveBeenCalled();
+	});
+
+	test('includes the next practical action in ship status', async () => {
+		const shipCommand = await getShipCommandForTest();
+		globalThis.prisma = {
+			userShip: {
+				upsert: vi.fn(async () => ({
+					user_id: '123',
+					ship_name: null,
+					upgrades_bank: {}
+				}))
+			}
+		} as never;
+
+		const result = await shipCommand.run({
+			options: { status: {} },
+			user: mockShipCommandUser({ sailingLevel: 1 })
+		} as never);
+
+		expect(result).toContain('Next action: Use `/sail port_tasks type:Courier tasks`');
 	});
 });

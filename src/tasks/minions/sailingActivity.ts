@@ -145,7 +145,7 @@ function formatOceanEncounters(result: ReturnType<typeof rollOceanEncounters>) {
 		.map(([encounter, count]) => `${count} ${labels[encounter]}`)
 		.join(', ');
 	return [
-		`Ocean encounters: ${result.encounters.toLocaleString()} (+${result.xp.toLocaleString()} XP)${breakdown ? ` — ${breakdown}` : ''}.`
+		`Ocean encounters: ${result.encounters.toLocaleString()} (+${result.xp.toLocaleString()} XP)${breakdown ? ` - ${breakdown}` : ''}.`
 	];
 }
 

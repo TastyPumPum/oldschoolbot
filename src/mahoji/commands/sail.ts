@@ -289,7 +289,7 @@ export const sailCommand = defineCommand({
 				const parts = normaliseShipParts(getShipParts(ship));
 				if (requirement.shipType && parts.shipType !== requirement.shipType) {
 					const shipType = SailingShipTypeById.get(requirement.shipType)!;
-					return `${trial.name} requires a ${shipType.name}. Install a ${shipType.name.toLowerCase()} hull with \`/ship install_part\`.`;
+					return `${trial.name} requires a ${shipType.name}. Select a ${shipType.name.toLowerCase()} with \`/ship select\`.`;
 				}
 				const missingParts: string[] = [];
 				for (const [slot, requiredTier] of Object.entries(requirement.parts ?? {})) {
