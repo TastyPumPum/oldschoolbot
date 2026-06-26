@@ -40,7 +40,7 @@ const giantClamPearls = [
 	{ name: 'Radiant pearl', min: 540_000, max: Number.POSITIVE_INFINITY }
 ];
 
-type OceanEncounter =
+export type OceanEncounter =
 	| 'strong_winds'
 	| 'mysterious_glow'
 	| 'lost_crate'
@@ -70,10 +70,14 @@ const lostCrateTiers = [
 	{ level: 95, xp: 450, loot: ['Dragon arrow', 'Ironwood plank', 'Spirit seed', 'Dragon metal sheet'] }
 ];
 
-function rollEncounter(rng: RNGProvider): OceanEncounter {
-	const totalWeight = encounterWeights.reduce((total, entry) => total + entry.weight, 0);
+function rollEncounter(rng: RNGProvider, allowedEncounters?: OceanEncounter[]): OceanEncounter {
+	const availableWeights = allowedEncounters
+		? encounterWeights.filter(entry => allowedEncounters.includes(entry.encounter))
+		: encounterWeights;
+	if (availableWeights.length === 0) return 'strong_winds';
+	const totalWeight = availableWeights.reduce((total, entry) => total + entry.weight, 0);
 	let roll = rng.randInt(1, totalWeight);
-	for (const entry of encounterWeights) {
+	for (const entry of availableWeights) {
 		roll -= entry.weight;
 		if (roll <= 0) return entry.encounter;
 	}
@@ -139,7 +143,8 @@ export function rollOceanEncounters({
 	clamItemId,
 	clamFedAt,
 	user,
-	rng
+	rng,
+	allowedEncounters
 }: {
 	duration: number;
 	sailingLevel: number;
@@ -148,6 +153,7 @@ export function rollOceanEncounters({
 	clamFedAt?: number | null;
 	user: MUser;
 	rng: RNGProvider;
+	allowedEncounters?: OceanEncounter[];
 }) {
 	const loot = new Bank();
 	const messages: string[] = [];
@@ -157,7 +163,7 @@ export function rollOceanEncounters({
 	const encounterCounts: Partial<Record<OceanEncounter, number>> = {};
 
 	for (let i = 0; i < encounters; i++) {
-		const encounter = rollEncounter(rng);
+		const encounter = rollEncounter(rng, allowedEncounters);
 		encounterCounts[encounter] = (encounterCounts[encounter] ?? 0) + 1;
 		switch (encounter) {
 			case 'strong_winds': {

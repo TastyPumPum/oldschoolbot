@@ -21,6 +21,7 @@ export interface SalvagingShipwreck {
 	salvagingXP: number;
 	sortingXP: number;
 	averageDuration: number;
+	salvagePerAction: number;
 	petChance: number;
 	lootTable: LootTable;
 }
@@ -243,6 +244,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 10,
 		sortingXP: 5.5,
 		averageDuration: Time.Minute,
+		salvagePerAction: 12,
 		petChance: 800_000,
 		lootTable: SmallSalvageTable
 	},
@@ -254,6 +256,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 17,
 		sortingXP: 9,
 		averageDuration: Time.Minute * 3,
+		salvagePerAction: 12,
 		petChance: 500_000,
 		lootTable: FishySalvageTable
 	},
@@ -265,6 +268,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 31,
 		sortingXP: 15.5,
 		averageDuration: Time.Minute * 3,
+		salvagePerAction: 12,
 		petChance: 300_000,
 		lootTable: BarracudaSalvageTable
 	},
@@ -276,6 +280,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 48,
 		sortingXP: 24,
 		averageDuration: Time.Minute * 3,
+		salvagePerAction: 12,
 		petChance: 280_000,
 		lootTable: LargeSalvageTable
 	},
@@ -287,6 +292,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 76,
 		sortingXP: 31.5,
 		averageDuration: Time.Minute * 3,
+		salvagePerAction: 12,
 		petChance: 275_000,
 		lootTable: PlunderedSalvageTable
 	},
@@ -298,6 +304,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 138,
 		sortingXP: 63.5,
 		averageDuration: Time.Minute * 3.25,
+		salvagePerAction: 12,
 		petChance: 260_000,
 		lootTable: MartialSalvageTable
 	},
@@ -309,6 +316,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 162,
 		sortingXP: 75,
 		averageDuration: Time.Minute * 3 + Time.Second * 40,
+		salvagePerAction: 12,
 		petChance: 230_000,
 		lootTable: FremennikSalvageTable
 	},
@@ -320,6 +328,7 @@ export const SalvagingShipwrecks: SalvagingShipwreck[] = [
 		salvagingXP: 200,
 		sortingXP: 95,
 		averageDuration: Time.Minute * 4,
+		salvagePerAction: 12,
 		petChance: 160_000,
 		lootTable: OpulentSalvageTable
 	}

@@ -7,6 +7,7 @@ import { getMaxPortTasks, getPortTaskXPHour } from '@/lib/skilling/skills/sailin
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
+import { getSeaChartingProgress } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
 	canTrawlAtDepth,
 	getTrawlingCatchChance,
@@ -54,8 +55,32 @@ describe('Sailing data', () => {
 		expect([1, 6, 7, 27, 28, 55, 56, 83, 84, 99].map(getMaxPortTasks)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
 		expect(getPortTaskXPHour('courier', 46)).toBe(30_000);
 		expect(getPortTaskXPHour('courier', 84)).toBe(135_000);
-		expect(getPortTaskXPHour('bounty', 30)).toBe(35_000);
-		expect(getPortTaskXPHour('bounty', 80)).toBe(150_000);
+		expect(getPortTaskXPHour('bounty', 30)).toBe(18_000);
+		expect(getPortTaskXPHour('bounty', 80)).toBe(95_000);
+	});
+
+	test('summarises Sea charting progress by ocean', () => {
+		const progress = getSeaChartingProgress([0, 1, 2, 343]);
+
+		expect(progress.completed).toBe(4);
+		expect(progress.total).toBe(358);
+		expect(progress.oceans.map(ocean => ocean.ocean)).toEqual([
+			'Ardent Ocean',
+			'Sunset Ocean',
+			'Unquiet Ocean',
+			'Western Ocean',
+			'Shrouded Ocean',
+			'Northern Ocean',
+			'Bonus charts'
+		]);
+		expect(progress.oceans.find(ocean => ocean.ocean === 'Ardent Ocean')).toMatchObject({
+			completed: 2,
+			total: 69
+		});
+		expect(progress.oceans.find(ocean => ocean.ocean === 'Bonus charts')).toMatchObject({
+			completed: 1,
+			total: 33
+		});
 	});
 
 	test('uses OSRS trawling requirements and catch chances', () => {
@@ -127,6 +152,7 @@ describe('Sailing data', () => {
 		for (const shipwreck of SalvagingShipwrecks) {
 			expect(shipwreck.lootTable.totalWeight).toBeLessThanOrEqual(shipwreck.lootTable.limit!);
 			expect(shipwreck.lootTable.allItems.length).toBeGreaterThan(0);
+			expect(shipwreck.salvagePerAction).toBe(12);
 		}
 		expect(SalvagingShipwrecks.find(shipwreck => shipwreck.id === 'barracuda')?.lootTable.totalWeight).toBe(27_151);
 	});

@@ -9,7 +9,7 @@ Sailing is in active development. Activities and rewards come from OSRS. Where l
 ### Commands
 
 - `/sail` - Start a Sailing activity through subcommands for Sea charting, port tasks, shipwreck salvaging, Barracuda Trials, and deep sea trawling.
-- `/ship status` - View installed facilities, stored salvage, and Barracuda Trial ranks.
+- `/ship status` - View installed facilities, stored salvage, charting progress, and Barracuda Trial ranks.
 - `/ship install` - Install a Sailing facility.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
 - `/ship clam` - Prepare a tradeable, alchable item for a future giant clam encounter.
@@ -37,11 +37,13 @@ Implemented Sailing activities:
 
 Sea charting uses one-off OSRS charting tasks and completion bonuses. The bot selects eligible unfinished tasks, respecting each task's Sailing level, quest, and diving equipment requirements.
 
+Charting progress is stored per task and shown on `/ship status` with a per-ocean breakdown.
+
 ### Port Tasks
 
 Courier tasks are available from level 1 and bounty tasks from level 30. They run as ten-minute AFK task cycles rather than simulating notice boards, cargo handling, ship combat, and individual routes.
 
-The bot uses approximate XP/hour bands from the Sailing training guide. Rewards follow OSRS: coins equal the base Sailing XP gained, plus a 1/36 chance of shark paint per completed cycle. Concurrent task capacity increases at levels 7, 28, 56, and 84 and is included in the rate shown at trip completion.
+The bot uses approximate XP/hour bands from the Sailing training guide, with bounty tasks tuned below Barracuda Trial pacing. Rewards follow OSRS: coins equal the base Sailing XP gained, plus a 1/36 chance of shark paint per completed cycle. Bounty tasks also roll low-mid sailing combat loot. Concurrent task capacity increases at levels 7, 28, 56, and 84 and is included in the rate shown at trip completion.
 
 ### Shipwreck Salvaging
 
@@ -60,7 +62,7 @@ Supported shipwrecks:
 
 Without a salvaging station facility, salvaging stores unsorted salvage on the ship. `/ship sort_salvage` sorts it at port for the OSRS sorting XP and loot table.
 
-With a salvaging station facility installed before the trip starts, salvage is automatically sorted during the AFK trip. This represents the facility's OSRS ability to sort salvage while at sea.
+Each salvage attempt recovers multiple pieces of salvage. With a salvaging station facility installed before the trip starts, salvage is automatically sorted during the AFK trip. This represents the facility's OSRS ability to sort salvage while at sea.
 
 ### Barracuda Trials
 
@@ -87,6 +89,8 @@ Rewards currently implemented:
 - Gwenith Marlin: Gwyna's fabric roll, with Barracuda paint chance
 
 Gwenith Glide requires Regicide in OSRS. In the bot this is mimicked with 10 Crafting, 56 Agility, 25 Ranged, and 50 quest points.
+
+Barracuda Trials only roll strong winds from ocean encounters; other random encounters, encounter loot, and encounter XP are suppressed during trials.
 
 ### Facilities
 
@@ -127,7 +131,7 @@ The command quantity is the number of shoal stops. Each stop uses the shoal's OS
 
 ### Ocean Encounters
 
-Moving activities such as Sea charting, port tasks, and Barracuda Trials can trigger ocean encounters. The bot uses the OSRS 72-second checks with escalating 1/6 through 6/6 spawn odds and the published encounter rarity weights.
+Moving activities such as Sea charting and port tasks can trigger ocean encounters. Barracuda Trials only trigger strong winds. The bot uses the OSRS 72-second checks with escalating 1/6 through 6/6 spawn odds and the published encounter rarity weights.
 
 Implemented encounters are strong winds, mysterious glows, lost crates, castaways, giant clams, clue turtles, Ocean Man, and lost caskets. Lost crates award real items from their OSRS loot categories rather than creating crate items. Lost caskets award one roll from the appropriate clue reward table.
 

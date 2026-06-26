@@ -11,9 +11,11 @@ import {
 	type SalvagingShipwreckId,
 	SalvagingShipwrecks
 } from '@/lib/skilling/skills/sailing/salvaging.js';
+import { getSeaChartingProgress } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
 	getBarracudaTrialsProgress,
 	getClamItem,
+	getCompletedChartingTaskIds,
 	getInstalledFacilities,
 	getOrCreateUserShip,
 	getStoredSalvage,
@@ -110,6 +112,10 @@ export const shipCommand = defineCommand({
 			const name = ship.ship_name ?? 'Unnamed ship';
 			const facilities = getInstalledFacilities(ship).map(f => SailingFacilitiesById.get(f)?.name ?? f);
 			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship));
+			const chartingProgress = getSeaChartingProgress(getCompletedChartingTaskIds(ship));
+			const chartingStatus = chartingProgress.oceans
+				.map(ocean => `${ocean.ocean}: ${ocean.completed.toLocaleString()}/${ocean.total.toLocaleString()}`)
+				.join('\n');
 			const barracudaProgress = getBarracudaTrialsProgress(ship);
 			const barracudaStatus = BarracudaTrials.map(trial => {
 				const progress = getBarracudaTrialProgress(barracudaProgress, trial.id);
@@ -123,7 +129,7 @@ export const shipCommand = defineCommand({
 				return `${trial.name}: ${ranks}`;
 			}).join('\n');
 
-			return `**${name}**\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nBarracuda Trials:\n${barracudaStatus}`;
+			return `**${name}**\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nCharting progress (${chartingProgress.completed.toLocaleString()}/${chartingProgress.total.toLocaleString()}):\n${chartingStatus}\n\nBarracuda Trials:\n${barracudaStatus}`;
 		}
 
 		if (options.sort_salvage) {

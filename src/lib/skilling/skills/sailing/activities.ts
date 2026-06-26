@@ -1,4 +1,5 @@
 import { Time } from '@oldschoolgg/toolkit';
+import { LootTable } from 'oldschooljs';
 
 import { BarracudaTrials } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
@@ -98,11 +99,11 @@ export function getMaxPortTasks(sailingLevel: number) {
 
 export function getPortTaskXPHour(variant: 'courier' | 'bounty', sailingLevel: number) {
 	if (variant === 'bounty') {
-		if (sailingLevel >= 80) return 150_000;
-		if (sailingLevel >= 65) return 130_000;
-		if (sailingLevel >= 55) return 90_000;
-		if (sailingLevel >= 40) return 60_000;
-		return 35_000;
+		if (sailingLevel >= 80) return 95_000;
+		if (sailingLevel >= 65) return 65_000;
+		if (sailingLevel >= 55) return 42_000;
+		if (sailingLevel >= 40) return 24_000;
+		return 18_000;
 	}
 	if (sailingLevel >= 84) return 135_000;
 	if (sailingLevel >= 76) return 120_000;
@@ -112,3 +113,15 @@ export function getPortTaskXPHour(variant: 'courier' | 'bounty', sailingLevel: n
 	if (sailingLevel >= 30) return 15_000;
 	return 8_000;
 }
+
+export const BountyPortTaskLootTable = new LootTable()
+	.add('Crab meat', [1, 3], 30)
+	.add('Raw lobster', [1, 2], 20)
+	.add('Raw swordfish', 1, 18)
+	.add('Swamp paste', [2, 8], 15)
+	.add('Bronze cannonball', [5, 15], 12)
+	.add('Iron cannonball', [4, 12], 10)
+	.add('Steel arrow', [8, 20], 10)
+	.add('Teak repair kit', 1, 5)
+	.add('Raw shark', 1, 4)
+	.add('Rum', 1, 3);

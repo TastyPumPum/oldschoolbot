@@ -2,7 +2,12 @@ import { Events, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { skillEmoji } from '@/lib/data/emojis.js';
-import { getMaxPortTasks, getPortTaskXPHour, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import {
+	BountyPortTaskLootTable,
+	getMaxPortTasks,
+	getPortTaskXPHour,
+	SailingActivityById
+} from '@/lib/skilling/skills/sailing/activities.js';
 import {
 	type BarracudaRank,
 	BarracudaTrialById,
@@ -296,7 +301,8 @@ export const sailingTask: MinionTask = {
 				clamItemId: clam.itemId,
 				clamFedAt: clam.fedAt,
 				user,
-				rng
+				rng,
+				allowedEncounters: ['strong_winds']
 			});
 			loot.add(encounters.loot);
 			if (encounters.clamConsumed) {
@@ -360,6 +366,9 @@ export const sailingTask: MinionTask = {
 			for (let i = 0; i < quantity; i++) {
 				if (rng.roll(36)) loot.add('Shark paint');
 			}
+			if (variant === 'bounty') {
+				loot.add(BountyPortTaskLootTable.roll(quantity));
+			}
 			await rollSoup({
 				user,
 				loot,
@@ -414,13 +423,14 @@ export const sailingTask: MinionTask = {
 			}
 
 			const shipState = await getOrCreateUserShip(user.id);
-			const salvageXP = Math.floor(quantity * shipwreck.salvagingXP);
+			const salvageQuantity = quantity * shipwreck.salvagePerAction;
+			const salvageXP = Math.floor(salvageQuantity * shipwreck.salvagingXP);
 			const loot = new Bank();
 			const hasSalvagingStation = data.ship.facilities.includes('salvaging_station');
 			let sortingXP = 0;
 			if (hasSalvagingStation) {
-				sortingXP = Math.floor(quantity * shipwreck.sortingXP);
-				loot.add(shipwreck.lootTable.roll(quantity));
+				sortingXP = Math.floor(salvageQuantity * shipwreck.sortingXP);
+				loot.add(shipwreck.lootTable.roll(salvageQuantity));
 				const soupQuantity = loot.amount('Soup');
 				if (user.owns('Soup') && soupQuantity > 0) {
 					loot.remove('Soup', soupQuantity);
@@ -434,7 +444,7 @@ export const sailingTask: MinionTask = {
 					);
 				}
 			} else {
-				const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, quantity);
+				const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, salvageQuantity);
 				await updateUpgradesBank(user.id, { salvage: nextSalvage });
 			}
 			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
@@ -444,10 +454,10 @@ export const sailingTask: MinionTask = {
 				duration
 			});
 
-			let str = `${user}, ${user.minionName} finished salvaging ${quantity}x ${shipwreck.name}. ${xpRes}`;
+			let str = `${user}, ${user.minionName} finished ${quantity}x ${shipwreck.name} salvage attempts. ${xpRes}`;
 			str += hasSalvagingStation
-				? `\nThe salvaging station sorted ${quantity.toLocaleString()}x ${shipwreck.salvageName} while at sea.`
-				: `\nStored salvage: ${quantity.toLocaleString()}x ${shipwreck.salvageName}.`;
+				? `\nThe salvaging station sorted ${salvageQuantity.toLocaleString()}x ${shipwreck.salvageName} while at sea.`
+				: `\nStored salvage: ${salvageQuantity.toLocaleString()}x ${shipwreck.salvageName}.`;
 			for (const message of formatPassiveSailingActions(passiveActions)) {
 				str += `\n${message}`;
 			}

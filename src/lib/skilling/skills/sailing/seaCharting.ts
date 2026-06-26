@@ -161,6 +161,16 @@ export const seaChartingCompletionBonuses: SeaChartingCompletionBonus[] = rawSea
 
 export const seaChartingTaskById = new Map(seaChartingTasks.map(task => [task.id, task]));
 
+const seaChartingOceanOrder = [
+	'Ardent Ocean',
+	'Sunset Ocean',
+	'Unquiet Ocean',
+	'Western Ocean',
+	'Shrouded Ocean',
+	'Northern Ocean',
+	'Bonus charts'
+];
+
 export function userCanDoSeaChartingTask(user: MUser, task: SeaChartingTask) {
 	if (user.skillsAsLevels.sailing < task.level) return false;
 	const requiredQuest = seaChartingTaskRequiredQuest[task.type];
@@ -174,6 +184,37 @@ export function userCanDoSeaChartingTask(user: MUser, task: SeaChartingTask) {
 export function getEligibleSeaChartingTasks(user: MUser, completedTaskIds: number[]) {
 	const completed = new Set(completedTaskIds);
 	return seaChartingTasks.filter(task => !completed.has(task.id) && userCanDoSeaChartingTask(user, task));
+}
+
+export function getSeaChartingProgress(completedTaskIds: number[]) {
+	const completed = new Set(completedTaskIds);
+	const totals = new Map<string, { completed: number; total: number }>();
+	for (const task of seaChartingTasks) {
+		const current = totals.get(task.ocean) ?? { completed: 0, total: 0 };
+		current.total++;
+		if (completed.has(task.id)) current.completed++;
+		totals.set(task.ocean, current);
+	}
+
+	const oceans = [...totals.entries()]
+		.map(([ocean, progress]) => ({ ocean, ...progress }))
+		.sort((a, b) => {
+			const aIndex = seaChartingOceanOrder.indexOf(a.ocean);
+			const bIndex = seaChartingOceanOrder.indexOf(b.ocean);
+			if (aIndex !== -1 || bIndex !== -1) {
+				return (
+					(aIndex === -1 ? Number.POSITIVE_INFINITY : aIndex) -
+					(bIndex === -1 ? Number.POSITIVE_INFINITY : bIndex)
+				);
+			}
+			return a.ocean.localeCompare(b.ocean);
+		});
+
+	return {
+		completed: oceans.reduce((sum, ocean) => sum + ocean.completed, 0),
+		total: oceans.reduce((sum, ocean) => sum + ocean.total, 0),
+		oceans
+	};
 }
 
 export function getSeaChartingCompletionKey(bonus: SeaChartingCompletionBonus) {

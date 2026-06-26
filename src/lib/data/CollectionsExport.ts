@@ -36,9 +36,9 @@ export interface ILeftListStatus {
 
 export interface IKCActivity {
 	[key: string]:
-		| string
-		| string[]
-		| ((user: MUser, minigameScores: MinigameScore[], stats: MUserStats) => Promise<number>);
+	| string
+	| string[]
+	| ((user: MUser, minigameScores: MinigameScore[], stats: MUserStats) => Promise<number>);
 }
 
 export type FormatProgressFunction = ({
@@ -1388,6 +1388,18 @@ export const oceanEncountersCL = resolveItems([
 	'Glistening pearl',
 	'Brilliant pearl',
 	'Radiant pearl'
+]);
+export const sailingMiscellaneousCL = resolveItems([
+	'Dragon metal sheet',
+	'Dragon nails',
+	'Dragon cannonball',
+	'Echo pearl',
+	'Swift albatross feather',
+	'Narwhal horn',
+	'Ray barbs',
+	'Broken dragon hook',
+	'Bottled storm',
+	'Dragon cannon barrel'
 ]);
 export const seaTreasuresCL = resolveItems([
 	'Rusty locket',

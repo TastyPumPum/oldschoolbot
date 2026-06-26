@@ -132,7 +132,8 @@ import {
 	vorkathCL,
 	wintertodtCL,
 	zalcanoCL,
-	zulrahCL
+	zulrahCL,
+	sailingMiscellaneousCL
 } from '@/lib/data/CollectionsExport.js';
 import Createables from '@/lib/data/createables.js';
 import { leagueBuyables } from '@/lib/data/leaguesBuyables.js';
@@ -1108,6 +1109,10 @@ export const allCollectionLogs: ICollection = {
 			'Shayzien Armour': {
 				items: shayzienArmourCL
 			},
+			'Sailing Miscellaneous': {
+				alias: ['sailing misc', 'sailing miscellaneous'],
+				items: sailingMiscellaneousCL
+			},
 			'Sea Treasures': {
 				alias: ['sea treasures', 'shipwreck salvage', 'salvage'],
 				items: seaTreasuresCL
@@ -1294,6 +1299,7 @@ export const allCollectionLogs: ICollection = {
 					...barracudaTrialsCL,
 					...boatPaintCL,
 					...oceanEncountersCL,
+					...sailingMiscellaneousCL,
 					...seaTreasuresCL,
 					...resolveItems(['Soup', 'Sailing hood', 'Sailing cape', 'Sailing cape(t)'])
 				]),
