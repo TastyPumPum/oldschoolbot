@@ -103,23 +103,21 @@ async function applyPassiveSailingActions({
 function formatPassiveSailingActions(result: ReturnType<typeof calculatePassiveSailingActions>) {
 	const messages: string[] = [];
 	if (result.trims > 0) {
-		messages.push(
-			`Automatic sail trimming: ${result.trims.toLocaleString()} trims for ${result.trimXP.toLocaleString()} Sailing XP.`
-		);
+		messages.push(`Sail trimming: ${result.trims.toLocaleString()} (+${result.trimXP.toLocaleString()} XP).`);
 	}
 	if (result.trimMoteXP > 0) {
 		messages.push(
-			`Automatically released ${result.trims.toLocaleString()} caught wind mote${result.trims === 1 ? '' : 's'} for ${result.trimMoteXP.toLocaleString()} Sailing XP.`
+			`Wind motes: ${result.trims.toLocaleString()} released (+${result.trimMoteXP.toLocaleString()} XP).`
 		);
 	}
 	if (result.extractorHarvests > 0) {
 		messages.push(
-			`Crystal extractor: ${result.extractorHarvests.toLocaleString()} harvests for ${result.extractorXP.toLocaleString()} Sailing XP.`
+			`Crystal extractor: ${result.extractorHarvests.toLocaleString()} harvests (+${result.extractorXP.toLocaleString()} XP).`
 		);
 	}
 	if (result.extractorMoteXP > 0) {
 		messages.push(
-			`Automatically released ${result.extractorHarvests.toLocaleString()} extractor mote${result.extractorHarvests === 1 ? '' : 's'} for ${result.extractorMoteXP.toLocaleString()} Sailing XP.`
+			`Extractor motes: ${result.extractorHarvests.toLocaleString()} released (+${result.extractorMoteXP.toLocaleString()} XP).`
 		);
 	}
 	return messages;
@@ -127,9 +125,22 @@ function formatPassiveSailingActions(result: ReturnType<typeof calculatePassiveS
 
 function formatOceanEncounters(result: ReturnType<typeof rollOceanEncounters>) {
 	if (result.encounters === 0) return [];
+	const labels = {
+		strong_winds: 'strong winds',
+		mysterious_glow: 'mysterious glows',
+		lost_crate: 'lost crates',
+		castaway: 'castaways',
+		giant_clam: 'giant clams',
+		clue_turtle: 'clue turtles',
+		ocean_man: 'Ocean Man',
+		lost_casket: 'lost caskets'
+	} as const;
+	const breakdown = Object.entries(result.encounterCounts)
+		.filter((entry): entry is [keyof typeof labels, number] => entry[1] !== undefined)
+		.map(([encounter, count]) => `${count} ${labels[encounter]}`)
+		.join(', ');
 	return [
-		`Ocean encounters: ${result.encounters.toLocaleString()} (${result.xp.toLocaleString()} Sailing XP).`,
-		...result.messages
+		`Ocean encounters: ${result.encounters.toLocaleString()} (+${result.xp.toLocaleString()} XP)${breakdown ? ` — ${breakdown}` : ''}.`
 	];
 }
 
@@ -381,7 +392,7 @@ export const sailingTask: MinionTask = {
 			});
 			await user.transactItems({ itemsToAdd: loot, collectionLog: true });
 
-			let str = `${user}, ${user.minionName} finished ${quantity.toLocaleString()} ${variant} task cycles using ${getMaxPortTasks(sailingLevel)} concurrent task slot${getMaxPortTasks(sailingLevel) === 1 ? '' : 's'}. ${xpRes}\nApproximate base rate: ${xpPerHour.toLocaleString()} Sailing XP/hr.\nYou received: ${loot}.`;
+			let str = `${user}, ${user.minionName} finished ${quantity.toLocaleString()} ${variant} task cycles (${getMaxPortTasks(sailingLevel)} task slots, ~${xpPerHour.toLocaleString()} base XP/hr). ${xpRes}\nYou received: ${loot}.`;
 			for (const message of formatPassiveSailingActions(passiveActions)) {
 				str += `\n${message}`;
 			}

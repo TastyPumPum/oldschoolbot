@@ -154,9 +154,11 @@ export function rollOceanEncounters({
 	let xp = 0;
 	let clamConsumed = false;
 	const encounters = rollEncounterCount(duration, rng);
+	const encounterCounts: Partial<Record<OceanEncounter, number>> = {};
 
 	for (let i = 0; i < encounters; i++) {
 		const encounter = rollEncounter(rng);
+		encounterCounts[encounter] = (encounterCounts[encounter] ?? 0) + 1;
 		switch (encounter) {
 			case 'strong_winds': {
 				const catcher = facilities.includes('gale_catcher')
@@ -245,5 +247,5 @@ export function rollOceanEncounters({
 		}
 	}
 
-	return { encounters, loot, xp, messages, clamConsumed };
+	return { encounters, encounterCounts, loot, xp, messages, clamConsumed };
 }

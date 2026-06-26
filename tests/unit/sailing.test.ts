@@ -1,7 +1,11 @@
+import { itemID, resolveItems } from 'oldschooljs';
 import { describe, expect, test } from 'vitest';
 
+import { capesCL, skillingPetsCL } from '@/lib/data/CollectionsExport.js';
+import { QuestID } from '@/lib/minions/data/quests.js';
 import { getMaxPortTasks, getPortTaskXPHour } from '@/lib/skilling/skills/sailing/activities.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
+import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import {
 	canTrawlAtDepth,
@@ -10,8 +14,42 @@ import {
 	TrawlingShoalById
 } from '@/lib/skilling/skills/sailing/trawling.js';
 import { calculatePassiveSailingActions, STARTER_SAIL_TRIM_DATA } from '@/lib/skilling/skills/sailing/upgrades.js';
+import { type SkillNameType, SkillsArray } from '@/lib/skilling/types.js';
+import { getLowestTearsOfGuthixSkill } from '@/tasks/minions/minigames/tearsOfGuthixActivity.js';
 
 describe('Sailing data', () => {
+	test('requires Pandemonium before Sailing XP can be gained', () => {
+		expect(canGainSailingXP({ user: { finished_quest_ids: [] } })).toBe(false);
+		expect(canGainSailingXP({ user: { finished_quest_ids: [QuestID.Pandemonium] } })).toBe(true);
+	});
+
+	test('does not pick Sailing for Tears of Guthix before Pandemonium', () => {
+		const skillsAsXP = Object.fromEntries(
+			SkillsArray.map(skill => [skill, skill === 'sailing' ? 0 : 1000])
+		) as Record<SkillNameType, number>;
+		const skillsAsLevels = Object.fromEntries(
+			SkillsArray.map(skill => [skill, skill === 'sailing' ? 1 : 10])
+		) as Record<SkillNameType, number>;
+
+		expect(getLowestTearsOfGuthixSkill({ user: { finished_quest_ids: [] }, skillsAsLevels, skillsAsXP })).toBe(
+			'agility'
+		);
+		expect(
+			getLowestTearsOfGuthixSkill({
+				user: { finished_quest_ids: [QuestID.Pandemonium] },
+				skillsAsLevels,
+				skillsAsXP
+			})
+		).toBe('sailing');
+	});
+
+	test('includes Sailing collection log entries', () => {
+		expect(capesCL).toEqual(
+			expect.arrayContaining(resolveItems(['Sailing hood', 'Sailing cape', 'Sailing cape(t)']))
+		);
+		expect(skillingPetsCL).toContain(itemID('Soup'));
+	});
+
 	test('uses OSRS port-task slots and documented approximate rates', () => {
 		expect([1, 6, 7, 27, 28, 55, 56, 83, 84, 99].map(getMaxPortTasks)).toEqual([1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
 		expect(getPortTaskXPHour('courier', 46)).toBe(30_000);

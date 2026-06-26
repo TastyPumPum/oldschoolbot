@@ -1,7 +1,6 @@
 import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
-import { QuestID } from '@/lib/minions/data/quests.js';
 import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
 import {
 	type BarracudaRank,
@@ -13,6 +12,7 @@ import {
 	isBarracudaTrialId
 } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
+import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import {
 	getBestSalvagingShipwreckForLevel,
 	SalvagingShipwreckById,
@@ -76,8 +76,7 @@ export const sailCommand = defineCommand({
 		}
 	],
 	run: async ({ options, user, channelId }) => {
-		const hasPandemonium = user.user.finished_quest_ids?.includes(QuestID.Pandemonium) ?? false;
-		if (!hasPandemonium) {
+		if (!canGainSailingXP(user)) {
 			return {
 				content: `${user.minionName} needs to have completed the Pandemonium quest to access the sailing skill.\n\nYou can complete this quest by using the command: \`/activities quest name:Pandemonium\``,
 				components: [makeStartQuestButton('Pandemonium')]
