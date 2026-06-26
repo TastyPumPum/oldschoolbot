@@ -41,6 +41,7 @@ import {
 } from '@/lib/skilling/skills/sailing/shipParts.js';
 import { isTrawlingNetFacility } from '@/lib/skilling/skills/sailing/trawling.js';
 import { makeStartQuestButton } from '@/lib/util/interactions.js';
+import { makeBankImage } from '@/lib/util/makeBankImage.js';
 
 type SailingFacilityInstallType = 'hook' | 'net' | 'catcher' | 'station';
 
@@ -359,9 +360,10 @@ export const shipCommand = defineCommand({
 				amount: xpReceived
 			});
 
-			if (loot.length > 0) {
-				await user.transactItems({ itemsToAdd: loot, collectionLog: true });
-			}
+			const previousCL =
+				loot.length > 0
+					? (await user.transactItems({ itemsToAdd: loot, collectionLog: true })).previousCL
+					: undefined;
 			if (receivedSoup) {
 				globalClient.emit(
 					Events.ServerNotification,
@@ -369,7 +371,19 @@ export const shipCommand = defineCommand({
 				);
 			}
 
-			return `Sorted ${sortedParts.join(', ')}. ${xpRes}${loot.length > 0 ? `\nYou received: ${loot}.` : ''}`;
+			const content = `Sorted ${sortedParts.join(', ')}. ${xpRes}${loot.length > 0 ? `\nYou received: ${loot}.` : ''}`;
+			if (loot.length === 0) return content;
+			return {
+				content,
+				files: [
+					await makeBankImage({
+						bank: loot,
+						title: 'Sorted Salvage Loot',
+						user,
+						previousCL
+					})
+				]
+			};
 		}
 
 		if (options.install_part) {

@@ -34,7 +34,12 @@ import {
 } from '@/lib/skilling/skills/sailing/trawling.js';
 import { calculatePassiveSailingActions, STARTER_SAIL_TRIM_DATA } from '@/lib/skilling/skills/sailing/upgrades.js';
 import { type SkillNameType, SkillsArray } from '@/lib/skilling/types.js';
+import { makeBankImage } from '@/lib/util/makeBankImage.js';
 import { getLowestTearsOfGuthixSkill } from '@/tasks/minions/minigames/tearsOfGuthixActivity.js';
+
+vi.mock('@/lib/util/makeBankImage.js', () => ({
+	makeBankImage: vi.fn(async () => ({ name: 'bank.png', buffer: Buffer.from('loot') }))
+}));
 
 const originalPrisma = globalThis.prisma;
 const originalDefineCommand = globalThis.defineCommand;
@@ -70,7 +75,8 @@ function mockShipCommandUser({
 			construction: constructionLevel
 		},
 		owns: vi.fn(() => true),
-		transactItems: vi.fn(),
+		transactItems: vi.fn(async () => ({ previousCL: new Bank() })),
+		addXP: vi.fn(async () => 'Added XP.'),
 		minionIsBusy: vi.fn(async () => false)
 	};
 }
@@ -440,5 +446,48 @@ describe('Sailing ship command', () => {
 		} as never);
 
 		expect(result).toContain('Next action: Use `/sail port_tasks type:Courier tasks`');
+	});
+
+	test('attaches a loot image when sorting salvage gives loot', async () => {
+		const shipCommand = await getShipCommandForTest();
+		const ship = {
+			user_id: '123',
+			ship_name: null,
+			upgrades_bank: {
+				ships: {
+					raft: { salvage: { small: 1 } }
+				}
+			}
+		};
+		const update = vi.fn(async ({ data }) => ({ ...ship, upgrades_bank: data.upgrades_bank }));
+		const tx = {
+			userShip: {
+				upsert: vi.fn(async () => ship),
+				update
+			}
+		};
+		globalThis.prisma = {
+			userShip: {
+				upsert: vi.fn(async () => ship)
+			},
+			$transaction: vi.fn(async operation => operation(tx))
+		} as never;
+		const user = mockShipCommandUser();
+
+		const result = await shipCommand.run({
+			options: { sort_salvage: { type: 'small', quantity: 1 } },
+			user
+		} as never);
+
+		expect(result).toMatchObject({
+			content: expect.stringContaining('Sorted 1x Small salvage.'),
+			files: [{ name: 'bank.png' }]
+		});
+		expect(makeBankImage).toHaveBeenCalledWith(
+			expect.objectContaining({
+				title: 'Sorted Salvage Loot',
+				user
+			})
+		);
 	});
 });
