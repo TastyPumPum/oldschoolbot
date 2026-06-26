@@ -1,10 +1,12 @@
 import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
-import { SailingActivities, SailingActivityById } from '@/lib/skilling/skills/sailing/activities.js';
+import { SailingActivityById, type SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
 import {
 	type BarracudaRank,
+	BarracudaRankOrder,
 	BarracudaTrialById,
+	BarracudaTrials,
 	formatBarracudaRankObjectives,
 	getBarracudaRank,
 	getBarracudaTrialProgress,
@@ -16,7 +18,8 @@ import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.
 import {
 	getBestSalvagingShipwreckForLevel,
 	SalvagingShipwreckById,
-	type SalvagingShipwreckId
+	type SalvagingShipwreckId,
+	SalvagingShipwrecks
 } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getEligibleSeaChartingTasks } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
@@ -33,7 +36,8 @@ import {
 	TrawlingNetById,
 	type TrawlingNetId,
 	TrawlingShoalById,
-	type TrawlingShoalId
+	type TrawlingShoalId,
+	TrawlingShoals
 } from '@/lib/skilling/skills/sailing/trawling.js';
 import { calcSailingTripStart } from '@/lib/skilling/skills/sailing/util.js';
 import type { SailingActivityTaskOptions } from '@/lib/types/minions.js';
@@ -45,34 +49,128 @@ export const sailCommand = defineCommand({
 	attributes: {
 		requiresMinion: true,
 		requiresMinionNotBusy: true,
-		examples: ['/sail activity:Port contracts']
+		examples: ['/sail port_tasks type:Courier tasks']
 	},
 	options: [
 		{
-			type: 'String',
-			name: 'activity',
-			description: 'The Sailing activity to do.',
-			required: true,
-			choices: SailingActivities.map(activity => ({
-				name: activity.name,
-				value: activity.id
-			}))
+			type: 'Subcommand',
+			name: 'sea_charting',
+			description: 'Complete eligible Sea charting tasks.',
+			options: [
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'The number of tasks to complete (optional).',
+					required: false,
+					min_value: 1
+				}
+			]
 		},
 		{
-			type: 'String',
-			name: 'variant',
-			description: 'Activity variant (e.g. courier, bounty, swordfish, shark, marlin).',
-			required: false,
-			choices: [
-				...new Set(SailingActivities.flatMap(activity => activity.variants?.map(variant => variant.id) ?? []))
-			].map(v => ({ name: v, value: v }))
+			type: 'Subcommand',
+			name: 'port_tasks',
+			description: 'Complete port courier or bounty tasks.',
+			options: [
+				{
+					type: 'String',
+					name: 'type',
+					description: 'The type of port task to complete.',
+					required: true,
+					choices: [
+						{ name: 'Courier tasks', value: 'courier' },
+						{ name: 'Bounty tasks', value: 'bounty' }
+					]
+				},
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'The number of task cycles to complete (optional).',
+					required: false,
+					min_value: 1
+				}
+			]
 		},
 		{
-			type: 'Integer',
-			name: 'quantity',
-			description: 'The number of actions to perform (optional).',
-			required: false,
-			min_value: 1
+			type: 'Subcommand',
+			name: 'shipwreck_salvaging',
+			description: 'Salvage from shipwrecks.',
+			options: [
+				{
+					type: 'String',
+					name: 'shipwreck',
+					description: 'The shipwreck to salvage. Defaults to your best option.',
+					required: false,
+					choices: SalvagingShipwrecks.map(shipwreck => ({
+						name: shipwreck.name,
+						value: shipwreck.id
+					}))
+				},
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'The number of salvages to perform (optional).',
+					required: false,
+					min_value: 1
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'barracuda_trial',
+			description: 'Attempt a Barracuda Trial.',
+			options: [
+				{
+					type: 'String',
+					name: 'trial',
+					description: 'The Barracuda Trial to attempt.',
+					required: true,
+					choices: BarracudaTrials.map(trial => ({
+						name: trial.name,
+						value: trial.id
+					}))
+				},
+				{
+					type: 'String',
+					name: 'rank',
+					description: 'The rank to attempt.',
+					required: true,
+					choices: BarracudaRankOrder.map(rank => ({
+						name: rank,
+						value: rank
+					}))
+				},
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'The number of completions to attempt (optional).',
+					required: false,
+					min_value: 1
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'deep_sea_trawling',
+			description: 'Trawl at deep sea shoals.',
+			options: [
+				{
+					type: 'String',
+					name: 'shoal',
+					description: 'The shoal to trawl.',
+					required: true,
+					choices: TrawlingShoals.map(shoal => ({
+						name: shoal.name,
+						value: shoal.id
+					}))
+				},
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'The number of trawling rolls to perform (optional).',
+					required: false,
+					min_value: 1
+				}
+			]
 		}
 	],
 	run: async ({ options, user, channelId }) => {
@@ -82,14 +180,38 @@ export const sailCommand = defineCommand({
 				components: [makeStartQuestButton('Pandemonium')]
 			};
 		}
-		const activity = SailingActivityById.get(options.activity);
+
+		let activityId: SailingActivityId | undefined;
+		let variant: string | undefined;
+		let quantityInput: number | undefined;
+
+		if (options.sea_charting) {
+			activityId = 'sea_charting';
+			quantityInput = options.sea_charting.quantity;
+		} else if (options.port_tasks) {
+			activityId = 'port_tasks';
+			variant = options.port_tasks.type;
+			quantityInput = options.port_tasks.quantity;
+		} else if (options.shipwreck_salvaging) {
+			activityId = 'shipwreck_salvaging';
+			variant =
+				options.shipwreck_salvaging.shipwreck ??
+				getBestSalvagingShipwreckForLevel(user.skillsAsLevels.sailing)?.id;
+			quantityInput = options.shipwreck_salvaging.quantity;
+		} else if (options.barracuda_trial) {
+			activityId = options.barracuda_trial.trial as SailingActivityId;
+			variant = options.barracuda_trial.rank;
+			quantityInput = options.barracuda_trial.quantity;
+		} else if (options.deep_sea_trawling) {
+			activityId = 'deep_sea_trawling';
+			variant = options.deep_sea_trawling.shoal;
+			quantityInput = options.deep_sea_trawling.quantity;
+		}
+
+		if (!activityId) return 'Invalid Sailing subcommand.';
+		const activity = SailingActivityById.get(activityId);
 		if (!activity) return 'That is not a valid Sailing activity.';
 
-		const variant =
-			options.variant ??
-			(activity.id === 'shipwreck_salvaging'
-				? getBestSalvagingShipwreckForLevel(user.skillsAsLevels.sailing)?.id
-				: activity.variants?.[0]?.id);
 		if (variant && !activity.variants?.some(v => v.id === variant)) {
 			return 'That is not a valid variant for this activity.';
 		}
@@ -185,7 +307,7 @@ export const sailCommand = defineCommand({
 			}
 
 			const maxQuantity = Math.max(1, Math.floor(maxTripLength / rank.targetTime));
-			const quantity = Math.min(options.quantity ?? maxQuantity, maxQuantity);
+			const quantity = Math.min(quantityInput ?? maxQuantity, maxQuantity);
 			const duration = quantity * rank.targetTime;
 
 			await ActivityManager.startTrip<SailingActivityTaskOptions>({
@@ -195,7 +317,7 @@ export const sailCommand = defineCommand({
 				type: 'Sailing',
 				activity: activity.id,
 				quantity,
-				iQty: options.quantity ? options.quantity : undefined,
+				iQty: quantityInput ? quantityInput : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
 				variant: rank.id satisfies BarracudaRank
@@ -220,7 +342,7 @@ export const sailCommand = defineCommand({
 				return `${user.minionName} has no eligible Sea charting tasks to complete right now.`;
 			}
 
-			const requestedQuantity = Math.min(options.quantity ?? eligibleTasks.length, eligibleTasks.length);
+			const requestedQuantity = Math.min(quantityInput ?? eligibleTasks.length, eligibleTasks.length);
 			const chartingTrip = calcSailingTripStart({
 				activity,
 				maxTripLength,
@@ -235,7 +357,7 @@ export const sailCommand = defineCommand({
 				type: 'Sailing',
 				activity: activity.id,
 				quantity: chartingTrip.quantity,
-				iQty: options.quantity ? options.quantity : undefined,
+				iQty: quantityInput ? quantityInput : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
 				chartingTaskIds: selectedTasks.map(task => task.id)
@@ -248,7 +370,7 @@ export const sailCommand = defineCommand({
 
 		if (activity.id === 'deep_sea_trawling') {
 			const maxQuantity = Math.max(1, Math.floor(maxTripLength / activity.baseTime));
-			const quantity = Math.min(options.quantity ?? maxQuantity, maxQuantity);
+			const quantity = Math.min(quantityInput ?? maxQuantity, maxQuantity);
 			const duration = quantity * activity.baseTime;
 			const shoal = TrawlingShoalById.get(variant as TrawlingShoalId)!;
 
@@ -259,7 +381,7 @@ export const sailCommand = defineCommand({
 				type: 'Sailing',
 				activity: activity.id,
 				quantity,
-				iQty: options.quantity ? options.quantity : undefined,
+				iQty: quantityInput ? quantityInput : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
 				variant,
@@ -269,7 +391,6 @@ export const sailCommand = defineCommand({
 			return `${user.minionName} is now deep sea trawling at ${shoal.name} with ${TrawlingNetById.get(trawlingNet!)?.name} (${quantity.toLocaleString()} rolls), it'll take around ${formatDuration(duration)} to finish.`;
 		}
 
-		const quantityInput = options.quantity;
 		const { quantity: tripQuantity, duration: tripDuration } = calcSailingTripStart({
 			activity,
 			maxTripLength,

@@ -1,6 +1,6 @@
 {
-	"hash": "90c38eef92f5487f4b2ccc89f5c84a6a",
-	"date": "2026-06-25T17:20:13.003Z",
+	"hash": "8ad9cc9303495a692c7da5a8582736ae",
+	"date": "2026-06-26T08:01:06.756Z",
 	"data": [
 		{
 			"name": "activities",
@@ -467,8 +467,8 @@
 		{
 			"name": "sail",
 			"desc": "Send your minion on a Sailing activity.",
-			"examples": ["/sail activity:Port contracts"],
-			"subOptions": []
+			"examples": ["/sail port_tasks type:Courier tasks"],
+			"subOptions": ["barracuda_trial", "deep_sea_trawling", "port_tasks", "sea_charting", "shipwreck_salvaging"]
 		},
 		{
 			"name": "sell",
