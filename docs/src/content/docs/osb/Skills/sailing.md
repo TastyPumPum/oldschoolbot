@@ -10,6 +10,7 @@ Sailing is in active development. Activities and rewards come from OSRS. Where l
 
 - `/sail` - Start a Sailing activity through subcommands for Sea charting, port tasks, shipwreck salvaging, Barracuda Trials, and deep sea trawling.
 - `/ship status` - View installed facilities, stored salvage, charting progress, and Barracuda Trial ranks.
+- `/ship select` - Select which ship type is active.
 - `/ship install` - Install a Sailing facility by choosing a facility type, then a specific variant.
 - `/ship install_part` - Install a structural ship part such as a hull, helm, keel, or mast and sails.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
@@ -116,7 +117,9 @@ Facilities are installed on your ship to unlock content.
 
 ### Structural Ship Parts
 
-Ships have OSRS-style structural parts. Rafts have a hull, helm, and mast with sails. Skiffs and sloops also have a keel. Installing a hull can change ship type, while other structural parts install for the current ship type.
+Ships have OSRS-style structural parts. Rafts have a hull, helm, and mast with sails. Skiffs and sloops also have a keel. Structural parts install on the currently active ship.
+
+Each user has one raft, one skiff, and one sloop. `/ship select` chooses the active ship, and Sailing commands use that active ship's structural parts, facilities, and stored salvage.
 
 Supported ship types:
 

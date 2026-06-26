@@ -583,21 +583,28 @@ export function tierMeetsRequirement(
 	return order.indexOf(current as never) >= order.indexOf(required as never);
 }
 
-export function getDefaultShipParts(): Required<Pick<SailingShipParts, 'shipType' | 'hull' | 'helm' | 'mast_sails'>> &
-	Pick<SailingShipParts, 'keel'> {
+export function getDefaultShipParts(
+	shipType: SailingShipType = 'raft'
+): Required<Pick<SailingShipParts, 'shipType' | 'hull' | 'helm' | 'mast_sails'>> & Pick<SailingShipParts, 'keel'> {
 	return {
-		shipType: 'raft',
+		shipType,
 		hull: 'wooden',
 		helm: 'bronze',
-		mast_sails: 'wooden_linen'
+		mast_sails: 'wooden_linen',
+		keel: shipType === 'raft' ? undefined : 'bronze'
 	};
 }
 
-export function normaliseShipParts(parts?: SailingShipParts): SailingShipParts {
+export function normaliseShipParts(
+	parts?: SailingShipParts,
+	fallbackShipType: SailingShipType = 'raft'
+): SailingShipParts {
+	const shipType = parts?.shipType ?? fallbackShipType;
 	return {
-		...getDefaultShipParts(),
+		...getDefaultShipParts(shipType),
 		...parts,
-		keel: parts?.shipType === 'raft' ? undefined : parts?.keel
+		shipType,
+		keel: shipType === 'raft' ? undefined : (parts?.keel ?? 'bronze')
 	};
 }
 

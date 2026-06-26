@@ -38,6 +38,7 @@ import {
 	getCompletedChartingTaskIds,
 	getOrCreateUserShip,
 	getStoredSalvage,
+	updateConfiguredShip,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
 import {
@@ -444,8 +445,12 @@ export const sailingTask: MinionTask = {
 					);
 				}
 			} else {
-				const nextSalvage = addStoredSalvage(getStoredSalvage(shipState), shipwreck.id, salvageQuantity);
-				await updateUpgradesBank(user.id, { salvage: nextSalvage });
+				const nextSalvage = addStoredSalvage(
+					getStoredSalvage(shipState, data.ship.shipType),
+					shipwreck.id,
+					salvageQuantity
+				);
+				await updateConfiguredShip(user.id, data.ship.shipType, { salvage: nextSalvage });
 			}
 			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
 			const xpRes = await user.addXP({

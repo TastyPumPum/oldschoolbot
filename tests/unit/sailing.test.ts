@@ -13,6 +13,7 @@ import {
 import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import { SalvagingShipwrecks } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getSeaChartingProgress } from '@/lib/skilling/skills/sailing/seaCharting.js';
+import { getActiveShipType, getInstalledFacilities, getShipParts } from '@/lib/skilling/skills/sailing/ship.js';
 import {
 	bankFromSailingCost,
 	normaliseShipParts,
@@ -148,12 +149,36 @@ describe('Sailing data', () => {
 			mast_sails: 'wooden_linen',
 			keel: undefined
 		});
+		expect(normaliseShipParts(undefined, 'skiff')).toMatchObject({
+			shipType: 'skiff',
+			hull: 'wooden',
+			helm: 'bronze',
+			mast_sails: 'wooden_linen',
+			keel: 'bronze'
+		});
 
 		expect(tierMeetsRequirement('helm', 'mithril', 'iron')).toBe(true);
 		expect(tierMeetsRequirement('helm', 'iron', 'mithril')).toBe(false);
 		expect(tierMeetsRequirement('keel', 'adamant', 'adamant')).toBe(true);
 		expect(tierMeetsRequirement('mast_sails', 'oak_linen', 'oak_linen')).toBe(true);
 		expect(tierMeetsRequirement('mast_sails', 'wooden_linen', 'oak_linen')).toBe(false);
+	});
+
+	test('defaults active ship data to the raft and keeps configured ships separate', () => {
+		const ship = {
+			upgrades_bank: {
+				activeShipType: 'skiff',
+				ships: {
+					raft: { facilities: ['salvaging_hook'] },
+					skiff: { facilities: ['inoculation_station'], parts: { shipType: 'skiff', helm: 'mithril' } }
+				}
+			}
+		} as never;
+
+		expect(getActiveShipType(ship)).toBe('skiff');
+		expect(getInstalledFacilities(ship)).toEqual(['inoculation_station']);
+		expect(getInstalledFacilities(ship, 'raft')).toEqual(['salvaging_hook']);
+		expect(getShipParts(ship)).toMatchObject({ shipType: 'skiff', helm: 'mithril', keel: 'bronze' });
 	});
 
 	test('stores OSRS structural recipes without inventing missing items', () => {

@@ -32,6 +32,7 @@ import { getFarmingInfoFromUser } from '@/lib/skilling/skills/farming/utils/getF
 import { Skills } from '@/lib/skilling/skills/index.js';
 import { SailingFacilities } from '@/lib/skilling/skills/sailing/facilities.js';
 import { updateUpgradesBank } from '@/lib/skilling/skills/sailing/ship.js';
+import type { SailingShipType } from '@/lib/skilling/skills/sailing/shipParts.js';
 import { slayerMasterChoices } from '@/lib/slayer/constants.js';
 import { slayerMasters } from '@/lib/slayer/slayerMasters.js';
 import { SlayerRewardsShop } from '@/lib/slayer/slayerUnlocks.js';
@@ -341,6 +342,46 @@ const thingsToWipe = [
 	'giveaways'
 ] as const;
 
+const maxSailingShipSetups = {
+	raft: {
+		parts: {
+			shipType: 'raft',
+			hull: 'rosewood',
+			helm: 'dragon',
+			mast_sails: 'rosewood_cotton'
+		},
+		facilities: ['dragon_salvaging_hook']
+	},
+	skiff: {
+		parts: {
+			shipType: 'skiff',
+			hull: 'rosewood',
+			helm: 'dragon',
+			keel: 'dragon',
+			mast_sails: 'rosewood_cotton'
+		},
+		facilities: [
+			'dragon_salvaging_hook',
+			'cotton_trawling_net',
+			'gale_catcher',
+			'crystal_extractor',
+			'inoculation_station',
+			'salvaging_station',
+			'keg'
+		]
+	},
+	sloop: {
+		parts: {
+			shipType: 'sloop',
+			hull: 'rosewood',
+			helm: 'dragon',
+			keel: 'dragon',
+			mast_sails: 'rosewood_cotton'
+		},
+		facilities: SailingFacilities.map(f => f.id)
+	}
+} satisfies Record<SailingShipType, { parts: NonNullable<unknown>; facilities: string[] }>;
+
 export const testPotatoCommand = globalConfig.isProduction
 	? null
 	: defineCommand({
@@ -358,7 +399,11 @@ export const testPotatoCommand = globalConfig.isProduction
 							description: 'The sailing action to perform.',
 							required: true,
 							choices: [
-								{ name: 'Max ship', value: 'max_ship' },
+								{ name: 'Max all ships', value: 'max_all_ships' },
+								{ name: 'Max active ship', value: 'max_ship' },
+								{ name: 'Max raft', value: 'max_raft' },
+								{ name: 'Max skiff', value: 'max_skiff' },
+								{ name: 'Max sloop', value: 'max_sloop' },
 								{ name: 'Reset ship', value: 'reset_ship' },
 								{ name: 'Give sailing items', value: 'give_items' }
 							]
@@ -768,7 +813,12 @@ export const testPotatoCommand = globalConfig.isProduction
 					const { action } = options.sailing;
 					if (action === 'max_ship') {
 						await updateUpgradesBank(user.id, {
-							facilities: SailingFacilities.map(f => f.id)
+							activeShipType: 'sloop',
+							ships: {
+								sloop: {
+									facilities: SailingFacilities.map(f => f.id)
+								}
+							}
 						});
 						return 'Installed all Sailing facilities.';
 					}

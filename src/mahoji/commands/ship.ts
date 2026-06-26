@@ -18,6 +18,7 @@ import {
 } from '@/lib/skilling/skills/sailing/salvaging.js';
 import { getSeaChartingProgress } from '@/lib/skilling/skills/sailing/seaCharting.js';
 import {
+	getActiveShipType,
 	getBarracudaTrialsProgress,
 	getClamItem,
 	getCompletedChartingTaskIds,
@@ -25,13 +26,13 @@ import {
 	getOrCreateUserShip,
 	getShipParts,
 	getStoredSalvage,
+	updateConfiguredShip,
 	updateUpgradesBank
 } from '@/lib/skilling/skills/sailing/ship.js';
 import {
 	bankFromSailingCost,
 	getInstalledStructuralPart,
 	normaliseShipParts,
-	type SailingShipType,
 	SailingShipTypeById,
 	SailingStructuralParts,
 	type SailingStructuralSlot,
@@ -108,6 +109,24 @@ export const shipCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
+			name: 'select',
+			description: 'Select your active ship.',
+			options: [
+				{
+					type: 'String',
+					name: 'type',
+					description: 'The ship to use for Sailing activities.',
+					required: true,
+					choices: [
+						{ name: 'Raft', value: 'raft' },
+						{ name: 'Skiff', value: 'skiff' },
+						{ name: 'Sloop', value: 'sloop' }
+					]
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
 			name: 'install',
 			description: 'Install a ship facility.',
 			options: [
@@ -157,17 +176,6 @@ export const shipCommand = defineCommand({
 					description: 'The part tier to install.',
 					required: true,
 					choices: structuralTierChoices
-				},
-				{
-					type: 'String',
-					name: 'ship_type',
-					description: 'The ship type for hull installs.',
-					required: false,
-					choices: [
-						{ name: 'Raft', value: 'raft' },
-						{ name: 'Skiff', value: 'skiff' },
-						{ name: 'Sloop', value: 'sloop' }
-					]
 				}
 			]
 		},
@@ -232,13 +240,16 @@ export const shipCommand = defineCommand({
 	],
 	run: async ({ options, user }) => {
 		const ship = await getOrCreateUserShip(user.id);
+		const activeShipType = getActiveShipType(ship);
 
 		if (options.status) {
 			const name = ship.ship_name ?? 'Unnamed ship';
-			const facilities = getInstalledFacilities(ship).map(f => SailingFacilitiesById.get(f)?.name ?? f);
-			const parts = normaliseShipParts(getShipParts(ship));
-			const shipType = SailingShipTypeById.get(parts.shipType ?? 'raft')!;
-			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship));
+			const facilities = getInstalledFacilities(ship, activeShipType).map(
+				f => SailingFacilitiesById.get(f)?.name ?? f
+			);
+			const parts = normaliseShipParts(getShipParts(ship, activeShipType), activeShipType);
+			const shipType = SailingShipTypeById.get(activeShipType)!;
+			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship, activeShipType));
 			const chartingProgress = getSeaChartingProgress(getCompletedChartingTaskIds(ship));
 			const chartingStatus = chartingProgress.oceans
 				.map(ocean => `${ocean.ocean}: ${ocean.completed.toLocaleString()}/${ocean.total.toLocaleString()}`)
@@ -259,10 +270,20 @@ export const shipCommand = defineCommand({
 			return `**${name}**\nShip type: ${shipType.name} (${shipType.facilityHotspots} facility hotspots)\nStructural parts: ${formatStructuralParts(parts)}\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\n\nCharting progress (${chartingProgress.completed.toLocaleString()}/${chartingProgress.total.toLocaleString()}):\n${chartingStatus}\n\nBarracuda Trials:\n${barracudaStatus}`;
 		}
 
+		if (options.select) {
+			const shipType = SailingShipTypeById.get(options.select.type);
+			if (!shipType) return 'That is not a valid ship type.';
+			if (user.skillsAsLevels.sailing < shipType.sailingLevel) {
+				return `${user.minionName} needs ${shipType.sailingLevel} Sailing to use a ${shipType.name}.`;
+			}
+			await updateUpgradesBank(user.id, { activeShipType: shipType.id });
+			return `Selected your ${shipType.name} as your active ship.`;
+		}
+
 		if (options.sort_salvage) {
 			if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
 
-			const stored = getStoredSalvage(ship);
+			const stored = getStoredSalvage(ship, activeShipType);
 			const salvageType = options.sort_salvage.type as SalvagingShipwreckId | undefined;
 			const quantityInput = options.sort_salvage.quantity;
 
@@ -307,7 +328,7 @@ export const shipCommand = defineCommand({
 				loot.remove('Soup', soupQuantity - 1);
 			}
 
-			await updateUpgradesBank(user.id, { salvage: nextStored });
+			await updateConfiguredShip(user.id, activeShipType, { salvage: nextStored });
 			const xpRes = await user.addXP({
 				skillName: 'sailing',
 				amount: xpReceived
@@ -329,13 +350,8 @@ export const shipCommand = defineCommand({
 		if (options.install_part) {
 			const slot = options.install_part.slot as SailingStructuralSlot;
 			const tier = options.install_part.tier as SailingStructuralTier;
-			const currentParts = normaliseShipParts(getShipParts(ship));
-			const shipType =
-				slot === 'hull'
-					? ((options.install_part.ship_type as SailingShipType | undefined) ??
-						currentParts.shipType ??
-						'raft')
-					: (currentParts.shipType ?? 'raft');
+			const currentParts = normaliseShipParts(getShipParts(ship, activeShipType), activeShipType);
+			const shipType = activeShipType;
 			const shipTypeDefinition = SailingShipTypeById.get(shipType);
 			if (!shipTypeDefinition) return 'That is not a valid ship type.';
 			if (!shipTypeDefinition.structuralSlots.includes(slot)) {
@@ -377,7 +393,7 @@ export const shipCommand = defineCommand({
 			if (slot === 'keel') {
 				nextParts.keel = tier as typeof nextParts.keel;
 			}
-			await updateUpgradesBank(user.id, { parts: nextParts });
+			await updateConfiguredShip(user.id, shipType, { parts: nextParts });
 
 			const missingCostMessage =
 				missingItems.length > 0
@@ -433,7 +449,7 @@ export const shipCommand = defineCommand({
 				return `${user.minionName} needs ${facility.constructionLevel} Construction to install ${facility.name}.`;
 			}
 
-			const installed = getInstalledFacilities(ship);
+			const installed = getInstalledFacilities(ship, activeShipType);
 			if (installed.includes(facility.id)) {
 				return `${facility.name} is already installed.`;
 			}
@@ -460,11 +476,11 @@ export const shipCommand = defineCommand({
 									installedFacility !== 'wind_catcher' && installedFacility !== 'gale_catcher'
 							)
 						: installed;
-			const shipType = SailingShipTypeById.get(normaliseShipParts(getShipParts(ship)).shipType ?? 'raft')!;
+			const shipType = SailingShipTypeById.get(activeShipType)!;
 			if (facilitiesToKeep.length + 1 > shipType.facilityHotspots) {
-				return `${shipType.name} ships only have ${shipType.facilityHotspots} facility hotspot${shipType.facilityHotspots === 1 ? '' : 's'}. Upgrade your hull to a larger ship type first.`;
+				return `${shipType.name} ships only have ${shipType.facilityHotspots} facility hotspot${shipType.facilityHotspots === 1 ? '' : 's'}. Select a larger ship type first.`;
 			}
-			await updateUpgradesBank(user.id, {
+			await updateConfiguredShip(user.id, activeShipType, {
 				facilities: [...facilitiesToKeep, facility.id]
 			});
 
