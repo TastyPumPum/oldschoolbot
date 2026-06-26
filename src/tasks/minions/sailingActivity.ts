@@ -31,7 +31,6 @@ import {
 	getClaimedChartingCompletionBonuses,
 	getClamItem,
 	getCompletedChartingTaskIds,
-	getInstalledFacilities,
 	getOrCreateUserShip,
 	getStoredSalvage,
 	updateUpgradesBank
@@ -417,7 +416,7 @@ export const sailingTask: MinionTask = {
 			const shipState = await getOrCreateUserShip(user.id);
 			const salvageXP = Math.floor(quantity * shipwreck.salvagingXP);
 			const loot = new Bank();
-			const hasSalvagingStation = getInstalledFacilities(shipState).includes('salvaging_station');
+			const hasSalvagingStation = data.ship.facilities.includes('salvaging_station');
 			let sortingXP = 0;
 			if (hasSalvagingStation) {
 				sortingXP = Math.floor(quantity * shipwreck.sortingXP);
@@ -476,7 +475,9 @@ export const sailingTask: MinionTask = {
 			const loot = new Bank();
 			let successfulCatches = 0;
 			const catchChance = getTrawlingCatchChance(shoal, user.skillsAsLevels.fishing);
-			for (let i = 0; i < quantity; i++) {
+			const rollsPerStop = Math.max(1, Math.floor(shoal.stopDuration / activity.baseTime));
+			const totalRolls = quantity * rollsPerStop;
+			for (let i = 0; i < totalRolls; i++) {
 				if (rng.randInt(1, 10_000) > Math.round(catchChance * 100)) continue;
 				successfulCatches++;
 				loot.add(shoal.fish, rng.randInt(1, net.maxFishPerCatch));
@@ -486,17 +487,17 @@ export const sailingTask: MinionTask = {
 				user,
 				loot,
 				rng,
-				rolls: quantity,
+				rolls: totalRolls,
 				chance: 360_000,
 				activity: `deep sea trawling at ${shoal.name}`
 			});
 			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
-			const sailingXP = quantity * net.sailingXP + passiveActions.totalXP;
+			const sailingXP = totalRolls * net.sailingXP + passiveActions.totalXP;
 			const fishingXP = successfulCatches * shoal.fishingXP;
 			const sailingXPRes = await user.addXP({ skillName: 'sailing', amount: sailingXP, duration });
 			const fishingXPRes = await user.addXP({ skillName: 'fishing', amount: fishingXP, duration });
 
-			let str = `${user}, ${user.minionName} finished ${quantity.toLocaleString()} trawling rolls at ${shoal.name}. ${sailingXPRes}\n${fishingXPRes}\nSuccessful catches: ${successfulCatches.toLocaleString()} (${catchChance.toFixed(2)}%).`;
+			let str = `${user}, ${user.minionName} finished ${quantity.toLocaleString()} trawling stops at ${shoal.name} (${totalRolls.toLocaleString()} rolls). ${sailingXPRes}\n${fishingXPRes}\nSuccessful catches: ${successfulCatches.toLocaleString()} (${catchChance.toFixed(2)}%).`;
 			for (const message of formatPassiveSailingActions(passiveActions)) {
 				str += `\n${message}`;
 			}

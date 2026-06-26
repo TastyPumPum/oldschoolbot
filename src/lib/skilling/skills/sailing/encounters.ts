@@ -211,7 +211,10 @@ export function rollOceanEncounters({
 				xp += 50;
 				const clueTier = getClueTierForLevel(sailingLevel, rng);
 				if (!clueTier) break;
-				const clueStack = ClueTiers.reduce((total, tier) => total + user.bank.amount(tier.scrollID), 0);
+				const clueStack = ClueTiers.reduce(
+					(total, tier) => total + user.bank.amount(tier.scrollID) + loot.amount(tier.scrollID),
+					0
+				);
 				if (clueStack < MAX_CLUES_DROPPED) {
 					loot.add(clueTier.scrollID);
 					messages.push(`Clue turtle: ${clueTier.name} clue scroll.`);

@@ -8,7 +8,7 @@ Sailing is in active development. Activities and rewards come from OSRS. Where l
 
 ### Commands
 
-- `/sail` - Start a Sailing activity. Supports `activity`, `variant`, and `quantity`.
+- `/sail` - Start a Sailing activity through subcommands for Sea charting, port tasks, shipwreck salvaging, Barracuda Trials, and deep sea trawling.
 - `/ship status` - View installed facilities, stored salvage, and Barracuda Trial ranks.
 - `/ship install` - Install a Sailing facility.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
@@ -60,7 +60,7 @@ Supported shipwrecks:
 
 Without a salvaging station facility, salvaging stores unsorted salvage on the ship. `/ship sort_salvage` sorts it at port for the OSRS sorting XP and loot table.
 
-With a salvaging station facility installed, salvage is automatically sorted during the AFK trip. This represents the facility's OSRS ability to sort salvage while at sea.
+With a salvaging station facility installed before the trip starts, salvage is automatically sorted during the AFK trip. This represents the facility's OSRS ability to sort salvage while at sea.
 
 ### Barracuda Trials
 
@@ -123,7 +123,7 @@ Deep sea trawling starts at 56 Sailing and requires an installed trawling net. S
 - Bluefin - 87 Fishing
 - Marlin - 91 Fishing
 
-Trawling rolls occur every three ticks. Better nets increase the maximum fish caught per successful roll and unlock moderate or deep shoals.
+The command quantity is the number of shoal stops. Each stop uses the shoal's OSRS stop duration, and catch rolls occur every three ticks during that stop. Better nets increase the maximum fish caught per successful roll and unlock moderate or deep shoals.
 
 ### Ocean Encounters
 

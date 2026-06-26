@@ -166,7 +166,7 @@ export const sailCommand = defineCommand({
 				{
 					type: 'Integer',
 					name: 'quantity',
-					description: 'The number of trawling rolls to perform (optional).',
+					description: 'The number of trawling stops to perform (optional).',
 					required: false,
 					min_value: 1
 				}
@@ -369,10 +369,10 @@ export const sailCommand = defineCommand({
 		}
 
 		if (activity.id === 'deep_sea_trawling') {
-			const maxQuantity = Math.max(1, Math.floor(maxTripLength / activity.baseTime));
-			const quantity = Math.min(quantityInput ?? maxQuantity, maxQuantity);
-			const duration = quantity * activity.baseTime;
 			const shoal = TrawlingShoalById.get(variant as TrawlingShoalId)!;
+			const maxQuantity = Math.max(1, Math.floor(maxTripLength / shoal.stopDuration));
+			const quantity = Math.min(quantityInput ?? maxQuantity, maxQuantity);
+			const duration = quantity * shoal.stopDuration;
 
 			await ActivityManager.startTrip<SailingActivityTaskOptions>({
 				userID: user.id,
@@ -388,7 +388,7 @@ export const sailCommand = defineCommand({
 				trawlingNet
 			});
 
-			return `${user.minionName} is now deep sea trawling at ${shoal.name} with ${TrawlingNetById.get(trawlingNet!)?.name} (${quantity.toLocaleString()} rolls), it'll take around ${formatDuration(duration)} to finish.`;
+			return `${user.minionName} is now deep sea trawling at ${shoal.name} with ${TrawlingNetById.get(trawlingNet!)?.name} (${quantity.toLocaleString()} stops), it'll take around ${formatDuration(duration)} to finish.`;
 		}
 
 		const { quantity: tripQuantity, duration: tripDuration } = calcSailingTripStart({
