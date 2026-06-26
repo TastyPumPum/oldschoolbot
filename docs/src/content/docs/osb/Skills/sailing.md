@@ -19,6 +19,28 @@ Sailing is in active development. Activities and rewards come from OSRS. Where l
 
 Sailing trips are fully AFK. Sail trimming, wind mote releases, and crystal extractor harvesting are calculated automatically when the trip finishes.
 
+### Fastest 1-99 Guide
+
+The fastest route assumes you have completed Pandemonium, keep your best eligible ship parts installed, and can meet the Barracuda Trial requirements as soon as they unlock. Barracuda Trial ranks must be completed in order, so do Swordfish, then Shark, then repeat Marlin for the best repeatable XP.
+
+| Levels | Fastest activity | Notes |
+| --- | --- | --- |
+| 1-30 | Courier port tasks | Use `/sail port_tasks type:Courier tasks`. Courier tasks are the best early repeatable XP and rise from about 8,000 to 15,000 base XP/hr before level 30. |
+| 30-46 | The Tempor Tantrum | Select a skiff and install the required iron helm and oak mast with linen sails. Complete Swordfish and Shark once, then repeat Marlin. |
+| 46-55 | Courier port tasks | Courier tasks become about 30,000 base XP/hr at level 46, beating Tempor Marlin repeats. |
+| 55-72 | The Jubbly Jive | Install a mithril helm and an Inoculation station. Complete Swordfish and Shark once, then repeat Marlin. |
+| 72-99 | The Gwenith Glide | Requires the mimicked Regicide requirements, a skiff, and an adamant keel or better. Complete Swordfish and Shark once, then repeat Marlin. This is the best repeatable Sailing XP currently implemented. |
+
+Useful unlocks while following the route:
+
+- At 7, 28, 56, and 84 Sailing, port-task capacity increases. This improves port tasks when you cannot do the fastest Barracuda Trial available.
+- At 15 Sailing, select a skiff with `/ship select type:Skiff` when you need Barracuda Trials.
+- At 30, 55, and 72 Sailing, do each new Barracuda Trial rank once for the first-completion bonus XP and unlocks, then repeat the highest Marlin rank available.
+- At 55 Sailing, Jubbly Shark gives the Captured wind mote used for a Wind catcher, which improves passive XP on future Sailing trips.
+- At 72 Sailing, Gwenith Shark gives the Heart of ithell used for the Crystal extractor, which adds more passive XP on future Sailing trips.
+- If you cannot meet a trial's ship, facility, quest-point, or skill requirements, do courier port tasks until you can. Bounty tasks and shipwreck salvaging are useful for loot and collection goals, but they are not the fastest pure Sailing XP route in the current implementation.
+- Deep sea trawling is mainly a Fishing-and-loot activity. Its Sailing XP comes from net rolls and passive actions, so it is not competitive with the fastest Barracuda Trial or courier-task training.
+
 ### Access
 
 Sailing requires the Pandemonium quest. When content is locked by a named quest, the bot can show a Start Quest button where that quest exists in the bot.
