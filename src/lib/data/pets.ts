@@ -737,6 +737,15 @@ const pets: Pet[] = [
 	},
 	{
 		id: 64,
+		chance: 3333,
+		name: 'Maggot marquess',
+		type: 'BOSS',
+		altNames: ['MAGGOTMARQUESS', 'MAGGOTKING', 'MAGGOT'],
+		formatFinish: (num: number) => `You had to kill Maggot King ${fm(num)} times to get Maggot marquess! :pet:`,
+		bossKeys: ['maggotKing']
+	},
+	{
+		id: 65,
 		chance: 2500,
 		name: 'Yami',
 		type: 'BOSS',
@@ -744,7 +753,7 @@ const pets: Pet[] = [
 		formatFinish: (num: number) => `You had to defeat Yama ${fm(num)} times to get Yami! :pet:`
 	},
 	{
-		id: 65,
+		id: 66,
 		chance: 1000,
 		name: 'Dom',
 		type: 'BOSS',
@@ -752,7 +761,7 @@ const pets: Pet[] = [
 		formatFinish: (num: number) => `You had to defeat Doom of Mokhaiotl ${fm(num)} times to get Dom! :pet:`
 	},
 	{
-		id: 66,
+		id: 67,
 		chance: 4691,
 		name: 'Soup',
 		type: 'SKILL',

@@ -1050,6 +1050,277 @@ export const miscBossKillables: KillableMonster[] = [
 		]
 	},
 	{
+		id: Monsters.MaggotKing.id,
+		name: Monsters.MaggotKing.name,
+		aliases: Monsters.MaggotKing.aliases,
+		timeToFinish: Time.Minute * 4,
+		respawnTime: Time.Second * 6,
+		table: Monsters.MaggotKing,
+		wildy: false,
+		difficultyRating: 9,
+		notifyDrops: resolveItems(['Maggot marquess', 'Elder venator fang', 'Crimson kisten']),
+		deathProps: {
+			hardness: 0.25,
+			steepness: 0.99
+		},
+		equippedItemBoosts: [
+			{
+				items: [
+					{ boostPercent: 15, itemID: itemID('Harmonised nightmare staff') },
+					{ boostPercent: 12, itemID: itemID("Tumeken's shadow") },
+					{ boostPercent: 8, itemID: itemID('Twinflame staff') }
+				],
+				gearSetup: 'mage'
+			},
+			{
+				items: [{ boostPercent: 5, itemID: itemID('Tome of fire') }],
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 6, itemID: itemID('Occult necklace') },
+					{ boostPercent: 2, itemID: itemID('Amulet of fury') }
+				],
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 4, itemID: itemID('Ancestral hat') },
+					{ boostPercent: 3, itemID: itemID('Virtus mask') },
+					{ boostPercent: 2, itemID: itemID('Blue moon helm') }
+				],
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: resolveItems(['Imbued saradomin cape', 'Imbued guthix cape', 'Imbued zamorak cape']).map(id => ({
+					boostPercent: 4,
+					itemID: id
+				})),
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID('Ancestral robe top') },
+					{ boostPercent: 3, itemID: itemID('Virtus robe top') },
+					{ boostPercent: 2, itemID: itemID('Blue moon chestplate') }
+				],
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID('Ancestral robe bottom') },
+					{ boostPercent: 3, itemID: itemID('Virtus robe bottom') },
+					{ boostPercent: 2, itemID: itemID('Blue moon tassets') }
+				],
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID('Confliction gauntlets') },
+					{ boostPercent: 3, itemID: itemID('Tormented bracelet') }
+				],
+				gearSetup: 'mage',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 6, itemID: itemID('Scythe of vitur') },
+					{ boostPercent: 5, itemID: itemID('Soulreaper axe') },
+					{ boostPercent: 4, itemID: itemID('Abyssal bludgeon') },
+					{ boostPercent: 2, itemID: itemID('Zombie axe') }
+				],
+				gearSetup: 'melee'
+			},
+			{
+				items: [
+					{ boostPercent: 6, itemID: itemID('Amulet of blood fury') },
+					{ boostPercent: 5, itemID: itemID('Amulet of rancour') },
+					{ boostPercent: 3, itemID: itemID('Amulet of torture') },
+					{ boostPercent: 1, itemID: itemID('Amulet of fury') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID('Infernal cape') },
+					{ boostPercent: 2, itemID: itemID('Fire cape') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID("Inquisitor's great helm") },
+					{ boostPercent: 4, itemID: itemID('Torva full helm') },
+					{ boostPercent: 2, itemID: itemID('Blood moon helm') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID("Inquisitor's hauberk") },
+					{ boostPercent: 4, itemID: itemID('Torva platebody') },
+					{ boostPercent: 2, itemID: itemID('Blood moon chestplate') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID("Inquisitor's plateskirt") },
+					{ boostPercent: 4, itemID: itemID('Torva platelegs') },
+					{ boostPercent: 2, itemID: itemID('Blood moon tassets') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID('Avernic defender') },
+					{ boostPercent: 2, itemID: itemID('Dragon defender') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 5, itemID: itemID('Ferocious gloves') },
+					{ boostPercent: 2, itemID: itemID('Barrows gloves') }
+				],
+				gearSetup: 'melee',
+				required: false
+			},
+			{
+				items: [
+					{ boostPercent: 4, itemID: itemID('Avernic treads (max)') },
+					{ boostPercent: 3, itemID: itemID('Primordial boots') },
+					{ boostPercent: 1, itemID: itemID('Dragon boots') }
+				],
+				gearSetup: 'melee',
+				required: false
+			}
+		],
+		itemInBankBoosts: [
+			{
+				[itemID('Crimson kisten')]: 5,
+				[itemID('Elder maul')]: 4,
+				[itemID('Dragon warhammer')]: 3
+			},
+			{
+				[itemID('Accursed sceptre')]: 4,
+				[itemID('Eye of ayak')]: 3
+			}
+		],
+		degradeableItemUsage: [
+			{
+				required: false,
+				gearSetup: 'melee',
+				items: [
+					{
+						itemID: itemID('Scythe of vitur'),
+						boostPercent: 18
+					}
+				]
+			},
+			{
+				required: false,
+				gearSetup: 'melee',
+				items: [
+					{
+						itemID: itemID('Amulet of blood fury'),
+						boostPercent: 6
+					}
+				]
+			}
+		],
+		levelRequirements: {
+			prayer: 43,
+			attack: 75,
+			strength: 75,
+			defence: 75,
+			hitpoints: 75,
+			magic: 75
+		},
+		attackStyleToUse: GearStat.AttackMagic,
+		attackStylesUsed: [GearStat.AttackMagic, GearStat.AttackRanged, GearStat.AttackCrush],
+		defaultAttackStyles: ['magic', 'attack'],
+		healAmountNeeded: 50 * 10,
+		minimumGearRequirements: {
+			melee: {
+				...new Gear({
+					neck: 'Amulet of fury',
+					cape: 'Fire cape',
+					body: 'Blood moon chestplate',
+					legs: 'Blood moon tassets',
+					hands: 'Barrows gloves',
+					feet: 'Dragon boots',
+					ring: 'Berserker ring (i)',
+					ammo: "Rada's blessing 3"
+				}).stats,
+				attack_ranged: -100,
+				attack_magic: -100,
+				defence_magic: 0,
+				prayer: 0,
+				defence_crush: 0,
+				defence_ranged: 0,
+				defence_slash: 0,
+				defence_stab: 0
+			},
+			mage: {
+				...new Gear({
+					neck: 'Occult necklace',
+					cape: 'Imbued saradomin cape',
+					body: 'Blue moon chestplate',
+					legs: 'Blue moon tassets',
+					hands: 'Tormented bracelet',
+					feet: 'Infinity boots',
+					ring: 'Brimstone ring',
+					ammo: "Rada's blessing 3"
+				}).stats,
+				attack_stab: -100,
+				attack_slash: -100,
+				attack_crush: -100,
+				attack_ranged: -100,
+				melee_strength: -100,
+				defence_magic: 0,
+				prayer: 0,
+				defence_crush: 0,
+				defence_ranged: 0,
+				defence_slash: 0,
+				defence_stab: 0
+			}
+		},
+		combatXpMultiplier: 1.45,
+		itemCost: [
+			{
+				itemCost: new Bank().add('Super restore(4)'),
+				qtyPerKill: 0.25,
+				alternativeConsumables: [
+					{
+						itemCost: new Bank().add('Prayer potion(4)'),
+						qtyPerKill: 0.25
+					}
+				]
+			},
+			{
+				itemCost: new Bank().add('Cooked karambwan'),
+				qtyPerKill: 0.3
+			},
+			{
+				itemCost: new Bank().add('Anglerfish'),
+				qtyPerKill: 0.15
+			}
+		]
+	},
+	{
 		id: Monsters.Branda.id,
 		name: Monsters.Branda.name,
 		aliases: Monsters.Branda.aliases,

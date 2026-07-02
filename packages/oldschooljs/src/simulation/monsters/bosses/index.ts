@@ -17,6 +17,7 @@ import { GiantMole } from './GiantMole.js';
 import { KalphiteQueen } from './KalphiteQueen.js';
 import { Kreearra } from './Kreearra.js';
 import { KrilTsutsaroth } from './KrilTsutsaroth.js';
+import { MaggotKing } from './MaggotKing.js';
 import { Obor } from './Obor.js';
 import { PhantomMuspah } from './PhantomMuspah.js';
 import { Branda, Eldric, RoyalTitans } from './RoyalTitans.js';
@@ -64,6 +65,7 @@ export const allBosses: Record<string, SimpleMonster> = {
 	Scurrius,
 	TheHueycoatl,
 	Amoxliatl,
+	MaggotKing,
 	Branda,
 	Eldric,
 	RoyalTitans,

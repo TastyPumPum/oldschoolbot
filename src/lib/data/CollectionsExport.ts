@@ -2230,6 +2230,7 @@ export const araxxorCL = resolveItems([
 ]);
 
 export const amoxliatlCL = resolveItems(['Moxi', 'Glacial temotli', 'Pendant of ates (inert)', 'Frozen tear']);
+export const maggotKingCL = resolveItems(['Maggot marquess', 'Elder venator fang', 'Crimson kisten']);
 
 export const chompyHats = [
 	[Items.getOrThrow('Chompy bird hat (ogre bowman)'), 30],

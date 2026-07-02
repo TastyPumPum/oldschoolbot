@@ -170,6 +170,21 @@ export const bossTasks: AssignableSlayerTask[] = [
 		isBoss: true
 	},
 	{
+		monster: Monsters.MaggotKing,
+		amount: [3, 35],
+		weight: 1,
+		levelRequirements: {
+			prayer: 43,
+			attack: 75,
+			strength: 75,
+			defence: 75,
+			hitpoints: 75,
+			magic: 75
+		},
+		monsters: [Monsters.MaggotKing.id],
+		isBoss: true
+	},
+	{
 		monster: Monsters.Sarachnis,
 		amount: [3, 35],
 		weight: 1,

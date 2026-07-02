@@ -239,6 +239,36 @@
 				],
 				"items": ["Frozen tear", "Glacial temotli", "Moxi", "Pendant of ates (inert)"]
 			},
+			"maggot_king": {
+				"all_items": [
+					"Blood sac",
+					"Crimson kisten",
+					"Dull ancient medal",
+					"Elder venator fang",
+					"Gold ore",
+					"Leechfin",
+					"Letvek",
+					"Maggot marquess",
+					"Mithril ore",
+					"Mort myre fungus",
+					"Orikalkum gravel",
+					"Runite ore",
+					"Stymphike feather",
+					"Stymphike tartare",
+					"Tarnished 2h sword",
+					"Tarnished amulet",
+					"Tarnished battleaxe",
+					"Tarnished halberd",
+					"Tarnished longsword",
+					"Tarnished necklace",
+					"Tarnished ring",
+					"Tarnished spear",
+					"Uncut ruby",
+					"Venator fang",
+					"Venator tooth"
+				],
+				"items": ["Crimson kisten", "Elder venator fang", "Maggot marquess"]
+			},
 			"araxxor": {
 				"all_items": [
 					"Adamant javelin",

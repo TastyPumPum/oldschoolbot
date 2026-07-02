@@ -83,6 +83,7 @@ import {
 	kreeArraCL,
 	krilTsutsarothCL,
 	lastManStandingCL,
+	maggotKingCL,
 	magicTrainingArenaCL,
 	mahoganyHomesCL,
 	miscellaneousCL,
@@ -190,6 +191,12 @@ export const allCollectionLogs: ICollection = {
 				allItems: uniqueArr([...amoxliatlCL, ...Monsters.Amoxliatl.allItems]),
 				items: amoxliatlCL,
 				fmtProg: kcProg(Monsters.Amoxliatl)
+			},
+			'Maggot King': {
+				alias: Monsters.MaggotKing.aliases,
+				allItems: uniqueArr([...maggotKingCL, ...Monsters.MaggotKing.allItems]),
+				items: maggotKingCL,
+				fmtProg: kcProg(Monsters.MaggotKing)
 			},
 			Araxxor: {
 				alias: [...Monsters.Araxxor.aliases, 'rax'],

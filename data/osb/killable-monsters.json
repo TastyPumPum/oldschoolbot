@@ -4434,6 +4434,413 @@
 		"attack_styles_used": ["attack_slash"]
 	},
 	{
+		"id": 15742,
+		"name": "Maggot King",
+		"time_to_finish": 240000,
+		"respawn_time": 6000,
+		"wildy": false,
+		"difficulty_rating": 9,
+		"notify_drops": ["Crimson kisten", "Elder venator fang", "Maggot marquess"],
+		"death_props": {
+			"hardness": 0.25,
+			"steepness": 0.99
+		},
+		"equipped_item_boosts": [
+			{
+				"items": [
+					{
+						"boost_percent": 15,
+						"item_id": 24423
+					},
+					{
+						"boost_percent": 12,
+						"item_id": 27275
+					},
+					{
+						"boost_percent": 8,
+						"item_id": 30634
+					}
+				],
+				"gear_setup": "mage"
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 20714
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 6,
+						"item_id": 12002
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 6585
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 4,
+						"item_id": 21018
+					},
+					{
+						"boost_percent": 3,
+						"item_id": 26241
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 29019
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 4,
+						"item_id": 21791
+					},
+					{
+						"boost_percent": 4,
+						"item_id": 21793
+					},
+					{
+						"boost_percent": 4,
+						"item_id": 21795
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 21021
+					},
+					{
+						"boost_percent": 3,
+						"item_id": 26243
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 29013
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 21024
+					},
+					{
+						"boost_percent": 3,
+						"item_id": 26245
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 29016
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 31106
+					},
+					{
+						"boost_percent": 3,
+						"item_id": 19544
+					}
+				],
+				"gear_setup": "mage",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 6,
+						"item_id": 22325
+					},
+					{
+						"boost_percent": 5,
+						"item_id": 25484
+					},
+					{
+						"boost_percent": 4,
+						"item_id": 13263
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 28810
+					}
+				],
+				"gear_setup": "melee"
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 6,
+						"item_id": 24780
+					},
+					{
+						"boost_percent": 5,
+						"item_id": 29801
+					},
+					{
+						"boost_percent": 3,
+						"item_id": 19553
+					},
+					{
+						"boost_percent": 1,
+						"item_id": 6585
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 21295
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 6570
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 24419
+					},
+					{
+						"boost_percent": 4,
+						"item_id": 26382
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 29028
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 24420
+					},
+					{
+						"boost_percent": 4,
+						"item_id": 26384
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 29022
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 24421
+					},
+					{
+						"boost_percent": 4,
+						"item_id": 26386
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 29025
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 22322
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 12954
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 5,
+						"item_id": 22981
+					},
+					{
+						"boost_percent": 2,
+						"item_id": 7462
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			},
+			{
+				"items": [
+					{
+						"boost_percent": 4,
+						"item_id": 31097
+					},
+					{
+						"boost_percent": 3,
+						"item_id": 13239
+					},
+					{
+						"boost_percent": 1,
+						"item_id": 11840
+					}
+				],
+				"gear_setup": "melee",
+				"required": false
+			}
+		],
+		"item_in_bank_boosts": [
+			{
+				"13576": 3,
+				"21003": 4,
+				"33631": 5
+			},
+			{
+				"27665": 4,
+				"31113": 3
+			}
+		],
+		"degradeable_item_usage": [
+			{
+				"required": false,
+				"gear_setup": "melee",
+				"items": [
+					{
+						"item_id": 22325,
+						"boost_percent": 18
+					}
+				]
+			},
+			{
+				"required": false,
+				"gear_setup": "melee",
+				"items": [
+					{
+						"item_id": 24780,
+						"boost_percent": 6
+					}
+				]
+			}
+		],
+		"level_requirements": {
+			"prayer": 43,
+			"attack": 75,
+			"strength": 75,
+			"defence": 75,
+			"hitpoints": 75,
+			"magic": 75
+		},
+		"attack_style_to_use": "attack_magic",
+		"attack_styles_used": ["attack_magic", "attack_ranged", "attack_crush"],
+		"default_attack_styles": ["magic", "attack"],
+		"heal_amount_needed": 500,
+		"minimum_gear_requirements": {
+			"melee": {
+				"attack_stab": 23,
+				"attack_slash": 23,
+				"attack_crush": 23,
+				"attack_magic": -100,
+				"attack_ranged": -100,
+				"defence_stab": 0,
+				"defence_slash": 0,
+				"defence_crush": 0,
+				"defence_magic": 0,
+				"defence_ranged": 0,
+				"melee_strength": 42,
+				"ranged_strength": 0,
+				"magic_damage": 0,
+				"prayer": 0
+			},
+			"mage": {
+				"attack_stab": -100,
+				"attack_slash": -100,
+				"attack_crush": -100,
+				"attack_magic": 100,
+				"attack_ranged": -100,
+				"defence_stab": 0,
+				"defence_slash": 0,
+				"defence_crush": 0,
+				"defence_magic": 0,
+				"defence_ranged": 0,
+				"melee_strength": -100,
+				"ranged_strength": 0,
+				"magic_damage": 14,
+				"prayer": 0
+			}
+		},
+		"combat_xp_multiplier": 1.45,
+		"item_cost": [
+			{
+				"item_cost": {
+					"3024": 1
+				},
+				"qty_per_kill": 0.25,
+				"alternative_consumables": [
+					{
+						"item_cost": {
+							"2434": 1
+						},
+						"qty_per_kill": 0.25
+					}
+				]
+			},
+			{
+				"item_cost": {
+					"3144": 1
+				},
+				"qty_per_kill": 0.3
+			},
+			{
+				"item_cost": {
+					"13441": 1
+				},
+				"qty_per_kill": 0.15
+			}
+		]
+	},
+	{
 		"id": 2844,
 		"name": "Magic axe",
 		"time_to_finish": 20000,

@@ -1,6 +1,6 @@
 {
-	"hash": "117af84ead8737c866ad5ecb2234ce21",
-	"date": "2026-05-09T10:48:36.665Z",
+	"hash": "04107d53c342622a04f0a6a50d281f09",
+	"date": "2026-07-02T09:09:47.564Z",
 	"data": [
 		{
 			"id": 2,
@@ -3338,6 +3338,33 @@
 			],
 			"qp_required": 2,
 			"item_in_bank_boosts": [],
+			"can_barrage": false,
+			"can_chin": false,
+			"can_cannon": false,
+			"cannon_multi": false
+		},
+		{
+			"id": 15742,
+			"name": "Maggot King",
+			"base_kill_time_ms": 240000,
+			"respawn_time_ms": 6000,
+			"is_wildy": false,
+			"is_slayer_only": false,
+			"can_be_pked": false,
+			"is_wildy_multi": false,
+			"items_required": [],
+			"qp_required": 0,
+			"item_in_bank_boosts": [
+				{
+					"Crimson kisten": 5,
+					"Dragon warhammer": 3,
+					"Elder maul": 4
+				},
+				{
+					"Accursed sceptre": 4,
+					"Eye of ayak": 3
+				}
+			],
 			"can_barrage": false,
 			"can_chin": false,
 			"can_cannon": false,
