@@ -52,6 +52,12 @@
 		"all_items": ["Flax"]
 	},
 	{
+		"name": "Barrel of demonic tallow (full)",
+		"id": 30795,
+		"opened_item": "Barrel of demonic tallow (full)",
+		"all_items": ["Demonic tallow"]
+	},
+	{
 		"name": "Bird nest",
 		"id": 5070,
 		"opened_item": "Bird nest",

@@ -643,6 +643,14 @@ export const allOpenables: UnifiedOpenable[] = [
 		allItems: BaleOfFlax.allItems
 	},
 	{
+		name: 'Barrel of demonic tallow (full)',
+		id: itemID('Barrel of demonic tallow (full)'),
+		openedItem: Items.getOrThrow('Barrel of demonic tallow (full)'),
+		aliases: ['barrel of demonic tallow', 'demonic tallow barrel'],
+		output: new LootTable().every('Demonic tallow', 100),
+		allItems: resolveItems(['Demonic tallow'])
+	},
+	{
 		name: 'Soft clay pack',
 		id: itemID('Soft clay pack'),
 		openedItem: Items.getOrThrow('Soft clay pack'),
