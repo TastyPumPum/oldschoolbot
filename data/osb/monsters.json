@@ -1,6 +1,6 @@
 {
-	"hash": "846a28b827c304707b076c8f3366fafb",
-	"date": "2026-04-28T10:43:28.262Z",
+	"hash": "117af84ead8737c866ad5ecb2234ce21",
+	"date": "2026-05-09T10:48:36.665Z",
 	"data": [
 		{
 			"id": 2,
@@ -4614,7 +4614,7 @@
 			"id": 12596,
 			"name": "Royal Titans (Branda)",
 			"base_kill_time_ms": 150000,
-			"respawn_time_ms": 500,
+			"respawn_time_ms": 10000,
 			"is_wildy": false,
 			"is_slayer_only": false,
 			"can_be_pked": false,
@@ -4640,7 +4640,7 @@
 			"id": 14147,
 			"name": "Royal Titans (Eldric)",
 			"base_kill_time_ms": 150000,
-			"respawn_time_ms": 500,
+			"respawn_time_ms": 10000,
 			"is_wildy": false,
 			"is_slayer_only": false,
 			"can_be_pked": false,
@@ -4666,7 +4666,7 @@
 			"id": 14148,
 			"name": "Royal Titans (sacrifice)",
 			"base_kill_time_ms": 150000,
-			"respawn_time_ms": 500,
+			"respawn_time_ms": 10000,
 			"is_wildy": false,
 			"is_slayer_only": false,
 			"can_be_pked": false,
@@ -6157,32 +6157,6 @@
 			"items_required": ["Boots of stone"],
 			"qp_required": 0,
 			"item_in_bank_boosts": [],
-			"can_barrage": false,
-			"can_chin": false,
-			"can_cannon": false,
-			"cannon_multi": false
-		},
-		{
-			"id": 14176,
-			"name": "Yama",
-			"base_kill_time_ms": 480000,
-			"respawn_time_ms": 5000,
-			"is_wildy": false,
-			"is_slayer_only": false,
-			"can_be_pked": false,
-			"is_wildy_multi": false,
-			"items_required": [],
-			"qp_required": 115,
-			"item_in_bank_boosts": [
-				{
-					"Arclight": 10,
-					"Darklight": 6,
-					"Emberlight": 15
-				},
-				{
-					"Lightbearer": 2
-				}
-			],
 			"can_barrage": false,
 			"can_chin": false,
 			"can_cannon": false,

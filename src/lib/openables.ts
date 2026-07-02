@@ -5,6 +5,7 @@ import {
 	BrimstoneChest,
 	BronzeHAMChest,
 	Dossier,
+	CastleWarsSupplyCrate,
 	EItem,
 	EliteMimicTable,
 	ElvenCrystalChest,
@@ -106,11 +107,11 @@ export interface UnifiedOpenable {
 	id: number;
 	openedItem: Item;
 	output:
-		| LootTable
-		| ((args: OpenArgs) => Promise<{
-				bank: Bank;
-				message?: string;
-		  }>);
+	| LootTable
+	| ((args: OpenArgs) => Promise<{
+		bank: Bank;
+		message?: string;
+	}>);
 	emoji?: string;
 	aliases: string[];
 	allItems: number[];
@@ -165,9 +166,8 @@ for (const clueTier of ClueTiers) {
 				}
 			}
 
-			const message = `${quantity}x ${clueTier.name} Clue Casket${quantity > 1 ? 's' : ''} ${
-				mimicNumber > 0 ? `with ${mimicNumber} mimic${mimicNumber > 1 ? 's' : ''}` : ''
-			}`;
+			const message = `${quantity}x ${clueTier.name} Clue Casket${quantity > 1 ? 's' : ''} ${mimicNumber > 0 ? `with ${mimicNumber} mimic${mimicNumber > 1 ? 's' : ''}` : ''
+				}`;
 
 			const stats = await user.fetchStats();
 			const nthCasket = ((stats.openable_scores as ItemBank)[clueTier.id] ?? 0) + quantity;
@@ -497,6 +497,16 @@ const osjsOpenables: UnifiedOpenable[] = [
 		aliases: ['zombie pirate key', 'zombie pirate locker', 'pirate locker'],
 		output: ZombiePiratesLocker.table,
 		allItems: ZombiePiratesLocker.table.allItems
+	},
+	{
+		name: 'Castle wars supply crate',
+		id: 30_690,
+		openedItem: Items.getOrThrow(30_690),
+		aliases: ['castle wars supply crate'],
+		output: async (args: OpenArgs): Promise<{ bank: Bank }> => ({
+			bank: CastleWarsSupplyCrate.open(args.quantity)
+		}),
+		allItems: CastleWarsSupplyCrate.table.allItems
 	}
 ];
 
@@ -614,6 +624,14 @@ export const allOpenables: UnifiedOpenable[] = [
 		aliases: ['frozen cache'],
 		output: FrozenCacheTable,
 		allItems: FrozenCacheTable.allItems
+	},
+	{
+		name: 'Olive oil pack',
+		id: itemID('Olive oil pack'),
+		openedItem: Items.getOrThrow('Olive oil pack'),
+		aliases: ['olive oil pack', 'olive oil'],
+		output: new LootTable().every('Olive oil(4)', 100),
+		allItems: resolveItems(['Olive oil(4)'])
 	},
 	{
 		name: 'Bale of flax',
