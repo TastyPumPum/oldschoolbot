@@ -4,8 +4,8 @@ import {
 	Bank,
 	BrimstoneChest,
 	BronzeHAMChest,
-	Dossier,
 	CastleWarsSupplyCrate,
+	Dossier,
 	EItem,
 	EliteMimicTable,
 	ElvenCrystalChest,
@@ -107,11 +107,11 @@ export interface UnifiedOpenable {
 	id: number;
 	openedItem: Item;
 	output:
-	| LootTable
-	| ((args: OpenArgs) => Promise<{
-		bank: Bank;
-		message?: string;
-	}>);
+		| LootTable
+		| ((args: OpenArgs) => Promise<{
+				bank: Bank;
+				message?: string;
+		  }>);
 	emoji?: string;
 	aliases: string[];
 	allItems: number[];
@@ -166,8 +166,9 @@ for (const clueTier of ClueTiers) {
 				}
 			}
 
-			const message = `${quantity}x ${clueTier.name} Clue Casket${quantity > 1 ? 's' : ''} ${mimicNumber > 0 ? `with ${mimicNumber} mimic${mimicNumber > 1 ? 's' : ''}` : ''
-				}`;
+			const message = `${quantity}x ${clueTier.name} Clue Casket${quantity > 1 ? 's' : ''} ${
+				mimicNumber > 0 ? `with ${mimicNumber} mimic${mimicNumber > 1 ? 's' : ''}` : ''
+			}`;
 
 			const stats = await user.fetchStats();
 			const nthCasket = ((stats.openable_scores as ItemBank)[clueTier.id] ?? 0) + quantity;
