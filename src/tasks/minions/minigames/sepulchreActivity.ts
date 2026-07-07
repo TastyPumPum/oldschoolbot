@@ -1,4 +1,3 @@
-import { roll } from 'node-rng';
 import { Bank, GrandHallowedCoffin, type Item, Items } from 'oldschooljs';
 
 import { XpGainSource } from '@/prisma/main/enums.js';
@@ -36,7 +35,7 @@ export const sepulchreTask: MinionTask = {
 				agilityXP += floor.xp;
 				thievingXP = 200 * numCoffinsOpened;
 			}
-			if (roll(highestCompletedFloor.petChance)) {
+			if (rng.roll(highestCompletedFloor.petChance)) {
 				loot.add('Giant squirrel');
 			}
 		}
@@ -67,7 +66,8 @@ export const sepulchreTask: MinionTask = {
 
 			const { savedRunes, savedBank } = calculateBryophytaRuneSavings({
 				user,
-				quantity: alchQuantity
+				quantity: alchQuantity,
+				rng
 			});
 			savedRunesFromAlching = savedRunes;
 			if (savedBank) {

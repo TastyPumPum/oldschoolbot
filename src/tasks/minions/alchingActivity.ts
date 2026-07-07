@@ -5,7 +5,7 @@ import { calculateBryophytaRuneSavings } from '@/lib/util/bryophytaRuneSavings.j
 
 export const alchingTask: MinionTask = {
 	type: 'Alching',
-	async run(data: AlchingActivityTaskOptions, { user, handleTripFinish }) {
+	async run(data: AlchingActivityTaskOptions, { user, handleTripFinish, rng }) {
 		const { itemID, quantity, channelId, alchValue, duration } = data;
 		const loot = new Bank({ Coins: alchValue });
 
@@ -13,7 +13,7 @@ export const alchingTask: MinionTask = {
 
 		// If bryophyta's staff is equipped when starting the alch activity
 		// calculate how many runes have been saved
-		const { savedRunes, savedBank } = calculateBryophytaRuneSavings({ user, quantity });
+		const { savedRunes, savedBank } = calculateBryophytaRuneSavings({ user, quantity, rng });
 		if (savedBank) {
 			loot.add(savedBank);
 		}

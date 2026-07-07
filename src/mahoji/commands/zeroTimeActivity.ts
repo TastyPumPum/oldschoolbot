@@ -141,10 +141,41 @@ function getStoredTypeFromUser(
 	return null;
 }
 
-function getAutocompleteOptions(value: string, user: MUser, focusedOptionName: 'primary_item' | 'fallback_item') {
-	const storedType = getStoredTypeFromUser(user, focusedOptionName);
+function findRawStringOptionValue(options: StringAutoComplete['rawOptions'], optionName: string): string | null {
+	for (const option of options ?? []) {
+		if (option.name === optionName && 'value' in option && typeof option.value === 'string') {
+			return option.value;
+		}
+		if ('options' in option) {
+			const nested = findRawStringOptionValue(option.options, optionName);
+			if (nested !== null) {
+				return nested;
+			}
+		}
+	}
+	return null;
+}
 
-	if (storedType === 'alch') {
+function getSelectedTypeFromRawOptions(
+	rawOptions: StringAutoComplete['rawOptions'],
+	focusedOptionName: 'primary_item' | 'fallback_item'
+): ZeroTimeActivityType | null {
+	const typeOptionName = focusedOptionName === 'primary_item' ? 'primary_type' : 'fallback_type';
+	const rawType = findRawStringOptionValue(rawOptions, typeOptionName)?.toLowerCase();
+	return zeroTimeTypes.includes(rawType as ZeroTimeActivityType) ? (rawType as ZeroTimeActivityType) : null;
+}
+
+function getAutocompleteOptions({
+	value,
+	user,
+	rawOptions,
+	focusedOptionName
+}: StringAutoComplete & { focusedOptionName: 'primary_item' | 'fallback_item' }) {
+	const selectedType = getSelectedTypeFromRawOptions(rawOptions, focusedOptionName);
+	const storedType = getStoredTypeFromUser(user, focusedOptionName);
+	const type = selectedType ?? storedType;
+
+	if (type === 'alch') {
 		return getAlchAutocompleteOptions(value);
 	}
 
@@ -287,8 +318,8 @@ export const zeroTimeActivityCommand = defineCommand({
 					name: 'primary_item',
 					description: 'Optional item for the primary activity.',
 					required: false,
-					autocomplete: async ({ value, user }: StringAutoComplete) =>
-						getAutocompleteOptions(value, user, 'primary_item')
+					autocomplete: async (options: StringAutoComplete) =>
+						getAutocompleteOptions({ ...options, focusedOptionName: 'primary_item' })
 				},
 				{
 					type: 'String',
@@ -305,8 +336,8 @@ export const zeroTimeActivityCommand = defineCommand({
 					name: 'fallback_item',
 					description: 'Optional item for the fallback activity.',
 					required: false,
-					autocomplete: async ({ value, user }: StringAutoComplete) =>
-						getAutocompleteOptions(value, user, 'fallback_item')
+					autocomplete: async (options: StringAutoComplete) =>
+						getAutocompleteOptions({ ...options, focusedOptionName: 'fallback_item' })
 				}
 			]
 		},

@@ -2,11 +2,11 @@
 title: "Zero-time Activities"
 ---
 
-Zero-time activities let your minion cast High Alchemy or fletch stackable ammunition during trips without increasing the trip's duration. Configure them with [[/zero_time_activity]] before you start Agility laps, the Hallowed Sepulchre, or any other activity that supports zero-time actions.
+Zero-time activities let your minion cast High Alchemy or fletch stackable ammunition during trips without increasing the trip's duration. Configure them with [[/zero_time_activity set primary_type\:alch]] or [[/zero_time_activity set primary_type\:fletch primary_item\:"Rune dart"]] before you start Agility laps, the Hallowed Sepulchre, or any other activity that supports zero-time actions.
 
 ## Configuring `/zero_time_activity`
 
-- Use [[/zero_time_activity]] (or [[/zero_time_activity overview]]) to see your saved preferences, readiness, and any blockers.
+- Use [[/zero_time_activity overview]] to see your saved preferences, readiness, and any blockers.
 - Configure your primary preference with [[/zero_time_activity set primary_type\:alch]] or [[/zero_time_activity set primary_type\:fletch primary_item\:"Rune dart"]]. Autocomplete now lists every valid fletchable alongside the required level and Slayer unlocks.
 - Add a fallback with [[/zero_time_activity set primary_type\:alch fallback_type\:fletch fallback_item\:"Rune dart"]] so trips automatically swap to the next viable option if the primary setup is unavailable.
 - Keep `Alch (automatic favourites)` stocked by adding favourite alchs via [[/config user favorite_alchs add\:Rune platebody]].

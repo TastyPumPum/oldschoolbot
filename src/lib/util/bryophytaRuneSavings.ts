@@ -1,9 +1,16 @@
-import { roll } from 'node-rng';
 import { Bank, itemID } from 'oldschooljs';
 
 const bryophytasStaffId = itemID("Bryophyta's staff");
 
-export function calculateBryophytaRuneSavings({ user, quantity }: { user: MUser; quantity: number }): {
+export function calculateBryophytaRuneSavings({
+	user,
+	quantity,
+	rng
+}: {
+	user: MUser;
+	quantity: number;
+	rng: { roll(chance: number): boolean };
+}): {
 	savedRunes: number;
 	savedBank: Bank | null;
 } {
@@ -13,7 +20,7 @@ export function calculateBryophytaRuneSavings({ user, quantity }: { user: MUser;
 
 	let savedRunes = 0;
 	for (let i = 0; i < quantity; i++) {
-		if (roll(15)) savedRunes++;
+		if (rng.roll(15)) savedRunes++;
 	}
 
 	if (savedRunes === 0) {

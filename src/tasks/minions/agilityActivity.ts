@@ -1,5 +1,4 @@
 import { Emoji, Events, increaseNumByPercent, Time } from '@oldschoolgg/toolkit';
-import { percentChance, randInt, roll } from 'node-rng';
 import { addItemToBank, Bank, type ItemBank, Items } from 'oldschooljs';
 
 import { XpGainSource } from '@/prisma/main/enums.js';
@@ -20,7 +19,7 @@ function chanceOfFailingAgilityPyramid(user: MUser) {
 
 export const agilityTask: MinionTask = {
 	type: 'Agility',
-	async run(data: AgilityActivityTaskOptions, { user, handleTripFinish }) {
+	async run(data: AgilityActivityTaskOptions, { user, handleTripFinish, rng }) {
 		const { courseID, quantity, channelId, duration, alch, fletch, zeroTimePreferenceRole } = data;
 		const loot = new Bank();
 		const currentLevel = user.skillsAsLevels.agility;
@@ -32,13 +31,13 @@ export const agilityTask: MinionTask = {
 		if (!course.cantFail) {
 			if (course.name === 'Agility Pyramid') {
 				for (let t = 0; t < quantity; t++) {
-					if (randInt(1, 100) < chanceOfFailingAgilityPyramid(user)) {
+					if (rng.randInt(1, 100) < chanceOfFailingAgilityPyramid(user)) {
 						lapsFailed += 1;
 					}
 				}
 			} else {
 				for (let t = 0; t < quantity; t++) {
-					if (randInt(1, 100) > (100 * user.skillsAsLevels.agility) / (course.level + 5)) {
+					if (rng.randInt(1, 100) > (100 * user.skillsAsLevels.agility) / (course.level + 5)) {
 						lapsFailed += 1;
 					}
 				}
@@ -69,7 +68,7 @@ export const agilityTask: MinionTask = {
 		if (course.marksPer60) {
 			const markChance = Math.floor(course.marksPer60 * (quantity / maxQuantity));
 			for (let i = 0; i < markChance; i++) {
-				if (roll(2)) totalMarks++;
+				if (rng.roll(2)) totalMarks++;
 			}
 			if (course.id !== 5 && user.skillsAsLevels.agility >= course.level + 20) {
 				totalMarks = Math.ceil(totalMarks / 5);
@@ -88,10 +87,10 @@ export const agilityTask: MinionTask = {
 		}
 		if (course.name === 'Colossal Wyrm Agility Course') {
 			for (let i = 0; i < quantity; i++) {
-				if (roll(3)) {
-					loot.add('termites', randInt(8, 10));
-					if (percentChance(75)) {
-						loot.add('blessed bone shards', randInt(22, 28));
+				if (rng.roll(3)) {
+					loot.add('termites', rng.randInt(8, 10));
+					if (rng.percentChance(75)) {
+						loot.add('blessed bone shards', rng.randInt(22, 28));
 					}
 				}
 			}
@@ -149,7 +148,8 @@ export const agilityTask: MinionTask = {
 			loot.add('Coins', alchGP);
 			const { savedRunes, savedBank } = calculateBryophytaRuneSavings({
 				user,
-				quantity: alch.quantity
+				quantity: alch.quantity,
+				rng
 			});
 			savedRunesFromAlching = savedRunes;
 			if (savedBank) {
@@ -191,7 +191,7 @@ export const agilityTask: MinionTask = {
 			'agility',
 			typeof course.petChance === 'number' ? course.petChance : course.petChance(currentLevel)
 		);
-		if (roll(petDropRate / quantity)) {
+		if (rng.roll(petDropRate / quantity)) {
 			loot.add('Giant squirrel');
 			globalClient.emit(
 				Events.ServerNotification,

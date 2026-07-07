@@ -110,6 +110,20 @@ export interface AttemptZeroTimeActivityOutcome {
 	failures: AttemptZeroTimeActivityFailure[];
 }
 
+export type ZeroTimeFletchResult = Extract<ZeroTimeActivityResult, { type: 'fletch' }>;
+export type ZeroTimeAlchResult = Extract<ZeroTimeActivityResult, { type: 'alch' }>;
+
+export interface PrepareZeroTimeActivityTripOptions extends AttemptZeroTimeActivityOptions {
+	removeItems?: boolean;
+}
+
+export interface PreparedZeroTimeActivityTrip {
+	fletchResult: ZeroTimeFletchResult | null;
+	alchResult: ZeroTimeAlchResult | null;
+	infoMessages: string[];
+	zeroTimePreferenceRole: ZeroTimePreferenceRole | null;
+}
+
 export function getZeroTimePreferenceLabel(preference: ZeroTimeActivityPreference): string {
 	const roleLabel = preference.role === 'primary' ? 'Primary' : 'Fallback';
 	const typeLabel = preference.type === 'alch' ? 'alch' : 'fletch';
@@ -486,4 +500,67 @@ export function attemptZeroTimeActivity(options: AttemptZeroTimeActivityOptions)
 	}
 
 	return { result: null, failures };
+}
+
+export async function prepareZeroTimeActivityTrip(
+	options: PrepareZeroTimeActivityTripOptions
+): Promise<PreparedZeroTimeActivityTrip> {
+	let fletchResult: ZeroTimeFletchResult | null = null;
+	let alchResult: ZeroTimeAlchResult | null = null;
+	const infoMessages: string[] = [];
+	let zeroTimePreferenceRole: ZeroTimePreferenceRole | null = null;
+
+	if (options.preferences.length === 0) {
+		return { fletchResult, alchResult, infoMessages, zeroTimePreferenceRole };
+	}
+
+	const hasPrimaryPreference = options.preferences.some(pref => pref.role === 'primary');
+	const outcome = attemptZeroTimeActivity(options);
+
+	if (outcome.result?.type === 'fletch') {
+		fletchResult = outcome.result;
+	} else if (outcome.result?.type === 'alch') {
+		alchResult = outcome.result;
+	}
+
+	const actualPreferenceRole: ZeroTimePreferenceRole | null = outcome.result
+		? getEffectivePreferenceRole(outcome.result.preference.role, hasPrimaryPreference)
+		: null;
+
+	const formattedFailures = outcome.failures
+		.filter(failure => failure.message)
+		.map(failure => {
+			const effectiveRole = getEffectivePreferenceRole(failure.preference.role, hasPrimaryPreference);
+			const preferenceForLabel: ZeroTimeActivityPreference = {
+				...failure.preference,
+				role: effectiveRole
+			};
+			return `${getZeroTimePreferenceLabel(preferenceForLabel)}: ${failure.message}`;
+		});
+
+	if (outcome.result) {
+		if (actualPreferenceRole === 'fallback') {
+			const fallbackDescription = describeZeroTimePreference(outcome.result.preference);
+			const prefix = formattedFailures.length > 0 ? `${formattedFailures.join(' ')} ` : '';
+			infoMessages.push(`${prefix}Falling back to ${fallbackDescription}.`.trim());
+		}
+	} else if (formattedFailures.length > 0) {
+		infoMessages.push(...formattedFailures);
+	}
+
+	if (actualPreferenceRole) {
+		zeroTimePreferenceRole = actualPreferenceRole;
+	}
+
+	if (options.removeItems) {
+		if (fletchResult) {
+			await options.user.removeItemsFromBank(fletchResult.itemsToRemove);
+		}
+		if (alchResult) {
+			await options.user.removeItemsFromBank(alchResult.bankToRemove);
+			await ClientSettings.updateBankSetting('magic_cost_bank', alchResult.bankToRemove);
+		}
+	}
+
+	return { fletchResult, alchResult, infoMessages, zeroTimePreferenceRole };
 }
