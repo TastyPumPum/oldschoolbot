@@ -11,12 +11,18 @@ import type { SharkLureQuantity } from '@/lib/skilling/skills/fishing/fishingUti
 import type { TwitcherGloves } from '@/lib/skilling/skills/woodcutting/woodcutting.js';
 import type { Peak } from '@/lib/util/peaks.js';
 
+export interface ActivityTaskMetadata {
+	activityID?: string;
+	nonRepeatable?: boolean;
+}
+
 export interface ActivityTaskOptions {
 	userID: string;
 	duration: number;
 	id: number;
 	finishDate: number;
 	channelId: string;
+	metadata?: ActivityTaskMetadata;
 }
 
 export interface ActivityTaskOptionsWithNoChanges extends ActivityTaskOptions {
@@ -570,6 +576,7 @@ export interface CollectingOptions extends ActivityTaskOptions {
 	collectableID: number;
 	quantity: number;
 	noStaminas?: boolean;
+	lootQuantityOverride?: number;
 }
 
 export interface KourendFavourActivityTaskOptions extends ActivityTaskOptions {
