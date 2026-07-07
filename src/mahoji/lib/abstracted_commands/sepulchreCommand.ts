@@ -3,6 +3,7 @@ import { formatDuration, reduceNumByPercent, sumArr, Time } from '@oldschoolgg/t
 import { sepulchreBoosts, sepulchreFloors } from '@/lib/minions/data/sepulchre.js';
 import type { ActivityTaskData } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import {
 	attemptZeroTimeActivity,
 	describeZeroTimePreference,
@@ -14,7 +15,6 @@ import {
 	type ZeroTimeActivityResult,
 	type ZeroTimePreferenceRole
 } from '@/lib/util/zeroTimeActivity.js';
-import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 const SEPULCHRE_ALCHES_PER_HOUR = 1000;
 
@@ -131,8 +131,9 @@ export async function sepulchreCommand(user: MUser, channelId: string) {
 
 	await addSubTaskToActivityTask(task);
 
-	let str = `${user.minionName} is now doing ${maxLaps} laps of the Sepulchre, in each lap they are doing floors ${completableFloors[0].number
-		}-${completableFloors[completableFloors.length - 1].number}, the trip will return in about ${formatTripDuration(user, tripLength)}, with each lap taking ${formatDuration(lapLength)}.`;
+	let str = `${user.minionName} is now doing ${maxLaps} laps of the Sepulchre, in each lap they are doing floors ${
+		completableFloors[0].number
+	}-${completableFloors[completableFloors.length - 1].number}, the trip will return in about ${formatTripDuration(user, tripLength)}, with each lap taking ${formatDuration(lapLength)}.`;
 
 	if (fletchResult) {
 		const setsText = fletchResult.fletchable.outputMultiple ? ' sets of' : '';

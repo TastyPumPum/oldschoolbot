@@ -3,8 +3,8 @@ import { Bank, Items, toKMB } from 'oldschooljs';
 import { clamp } from 'remeda';
 
 import type { AlchingActivityTaskOptions } from '@/lib/types/minions.js';
-import { unlimitedFireRuneProviders } from '@/lib/util/unlimitedFireRuneProviders.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
+import { unlimitedFireRuneProviders } from '@/lib/util/unlimitedFireRuneProviders.js';
 
 // 5 tick action
 export const timePerAlch = Time.Second * 3;

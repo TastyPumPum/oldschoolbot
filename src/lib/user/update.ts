@@ -89,16 +89,16 @@ export type FullUserUpdateInput = Partial<
 		minion_farmingPreferredContract: boolean;
 		minion_farmingPreferredSeeds: FarmingPreferredSeeds | null;
 	} & Record<PrismaIntArrayKeys, PrismaArrayUpdateInput<number>> &
-	Record<PrismaStringArrayKeys, PrismaArrayUpdateInput<string>> &
-	Record<PrismaNullableIntKeys, number | null> &
-	Record<PrismaIntKeys, PrismaIntUpdateInput> &
-	Record<PrismaBigIntKeys, PrismaBigIntUpdateInput> &
-	Record<PrismaItemBankKeys, ItemBank> &
-	Record<FarmingPatchSettingsKey, PatchTypes.IPatchData> &
-	Record<PrismaDateKeys, Date | null> &
-	Record<PrismaNullableStringKeys, string | null> &
-	Record<PrismaBooleanKeys, boolean> &
-	Record<GearColumns, GearSetup | null>
+		Record<PrismaStringArrayKeys, PrismaArrayUpdateInput<string>> &
+		Record<PrismaNullableIntKeys, number | null> &
+		Record<PrismaIntKeys, PrismaIntUpdateInput> &
+		Record<PrismaBigIntKeys, PrismaBigIntUpdateInput> &
+		Record<PrismaItemBankKeys, ItemBank> &
+		Record<FarmingPatchSettingsKey, PatchTypes.IPatchData> &
+		Record<PrismaDateKeys, Date | null> &
+		Record<PrismaNullableStringKeys, string | null> &
+		Record<PrismaBooleanKeys, boolean> &
+		Record<GearColumns, GearSetup | null>
 >;
 
 export type SafeUserUpdateInput = Omit<
