@@ -165,7 +165,8 @@ export enum BitField {
 	UnlimitedGiveaways = 51,
 	ServerSupport = 52,
 	DisabledPassiveImplings = 53,
-	DisableAutoFarmButton = 54
+	DisableAutoFarmButton = 54,
+	HasRiteOfVileTransference = 55
 }
 
 export interface IBitFieldData {
@@ -302,6 +303,11 @@ export const BitFieldData: Record<BitField, IBitFieldData> = {
 
 	[BitField.HasDeadeyeScroll]: { name: 'Deadeye Scroll Used', protected: false, userConfigurable: false },
 	[BitField.HasMysticVigourScroll]: { name: 'Mystic Vigour Scroll Used', protected: false, userConfigurable: false },
+	[BitField.HasRiteOfVileTransference]: {
+		name: 'Rite of vile transference Used',
+		protected: false,
+		userConfigurable: false
+	},
 	[BitField.ToggleAutoRummage]: { name: 'Auto Rummage Vale Offerings', protected: false, userConfigurable: true },
 	[BitField.WikiContributor]: { name: 'Wiki Contributor', protected: false, userConfigurable: false },
 	[BitField.UnlimitedGiveaways]: { name: 'Unlimited Giveaways', protected: false, userConfigurable: false },
