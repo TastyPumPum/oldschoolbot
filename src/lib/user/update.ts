@@ -10,6 +10,7 @@ import type {
 } from '@/prisma/main.js';
 import type { PatchTypes } from '@/lib/skilling/skills/farming/index.js';
 import type { FarmingPatchSettingsKey } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
+import type { FarmingPreferredSeeds } from '@/lib/skilling/skills/farming/utils/types.js';
 import type { SkillNameType } from '@/lib/skilling/types.js';
 import type { DegradeableItemColumns, GearColumns } from '@/lib/user/userTypes.js';
 
@@ -85,17 +86,19 @@ export type FullUserUpdateInput = Partial<
 		minion_defaultCompostToUse: CropUpgradeType;
 		zero_time_activity_primary_type: zero_time_activity_type_enum | null;
 		zero_time_activity_fallback_type: zero_time_activity_type_enum | null;
+		minion_farmingPreferredContract: boolean;
+		minion_farmingPreferredSeeds: FarmingPreferredSeeds | null;
 	} & Record<PrismaIntArrayKeys, PrismaArrayUpdateInput<number>> &
-		Record<PrismaStringArrayKeys, PrismaArrayUpdateInput<string>> &
-		Record<PrismaNullableIntKeys, number | null> &
-		Record<PrismaIntKeys, PrismaIntUpdateInput> &
-		Record<PrismaBigIntKeys, PrismaBigIntUpdateInput> &
-		Record<PrismaItemBankKeys, ItemBank> &
-		Record<FarmingPatchSettingsKey, PatchTypes.IPatchData> &
-		Record<PrismaDateKeys, Date | null> &
-		Record<PrismaNullableStringKeys, string | null> &
-		Record<PrismaBooleanKeys, boolean> &
-		Record<GearColumns, GearSetup | null>
+	Record<PrismaStringArrayKeys, PrismaArrayUpdateInput<string>> &
+	Record<PrismaNullableIntKeys, number | null> &
+	Record<PrismaIntKeys, PrismaIntUpdateInput> &
+	Record<PrismaBigIntKeys, PrismaBigIntUpdateInput> &
+	Record<PrismaItemBankKeys, ItemBank> &
+	Record<FarmingPatchSettingsKey, PatchTypes.IPatchData> &
+	Record<PrismaDateKeys, Date | null> &
+	Record<PrismaNullableStringKeys, string | null> &
+	Record<PrismaBooleanKeys, boolean> &
+	Record<GearColumns, GearSetup | null>
 >;
 
 export type SafeUserUpdateInput = Omit<

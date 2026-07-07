@@ -4,6 +4,7 @@ import { clamp } from 'remeda';
 
 import type { AlchingActivityTaskOptions } from '@/lib/types/minions.js';
 import { unlimitedFireRuneProviders } from '@/lib/util/unlimitedFireRuneProviders.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 // 5 tick action
 export const timePerAlch = Time.Second * 3;
@@ -80,7 +81,8 @@ export async function alchCommand(
 		type: 'Alching'
 	});
 
-	const response = `${user.minionName} is now alching ${quantity}x ${osItem.name}, it'll take around ${formatDuration(
+	const response = `${user.minionName} is now alching ${quantity}x ${osItem.name}, it'll take around ${formatTripDuration(
+		user,
 		duration
 	)} to finish.`;
 

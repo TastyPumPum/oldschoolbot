@@ -12,11 +12,14 @@ import { BitField, CONSTANTS, PerkTier } from '@/lib/constants.js';
 import { handleGrowablePetGrowth } from '@/lib/growablePets.js';
 import { handlePassiveImplings } from '@/lib/implings.js';
 import { triggerRandomEvent } from '@/lib/randomEvents.js';
+import { canShowAutoFarmButton } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { ActivityTaskData } from '@/lib/types/minions.js';
 import { MUserClass } from '@/lib/user/MUser.js';
 import { displayCluesAndPets } from '@/lib/util/displayCluesAndPets.js';
 import {
 	makeAutoContractButton,
+	makeAutoFarmButton,
+	makeAutoRummageToggleButton,
 	makeAutoSlayButton,
 	makeBirdHouseTripButton,
 	makeClaimDailyButton,
@@ -145,6 +148,16 @@ const tripFinishEffects: TripFinishEffect[] = [
 		}
 	},
 	{
+		name: 'Autofarm Button',
+		requiredPerkTier: PerkTier.Two,
+		fn: async ({ user, components }) => {
+			if (user.bitfield.includes(BitField.DisableAutoFarmButton)) return;
+			const canShow = await canShowAutoFarmButton(user);
+			if (!canShow) return;
+			components.push(makeAutoFarmButton());
+		}
+	},
+	{
 		name: 'Claim Daily Button',
 		requiredPerkTier: PerkTier.Two,
 		fn: async ({ user, components }) => {
@@ -200,6 +213,14 @@ const tripFinishEffects: TripFinishEffect[] = [
 		fn: async ({ components, loot }) => {
 			if (loot?.has('Seed pack')) {
 				components.push(makeOpenSeedPackButton());
+			}
+		}
+	},
+	{
+		name: 'Vale Offerings - Toggle Auto Rummage',
+		fn: async ({ components, data }) => {
+			if (data.type === 'ValeTotems') {
+				components.push(makeAutoRummageToggleButton());
 			}
 		}
 	}
@@ -310,8 +331,9 @@ export async function handleTripFinish(
 	}
 
 	if (_messages) messages.push(..._messages);
-	if (messages.length > 0) {
-		message.addContent(`\n**Messages:** ${messages.join(', ')}`);
+	const displayedMessages = messages.map(msg => msg.trim()).filter(msg => msg.length > 0);
+	if (displayedMessages.length > 0) {
+		message.addContent(`\n**Messages:** ${displayedMessages.join(', ')}`);
 	}
 
 	message.addContent(displayCluesAndPets(user, loot));

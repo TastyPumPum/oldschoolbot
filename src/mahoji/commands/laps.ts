@@ -15,6 +15,7 @@ import {
 	type ZeroTimeActivityResult,
 	type ZeroTimePreferenceRole
 } from '@/lib/util/zeroTimeActivity.js';
+import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { timePerAlchAgility } from '@/mahoji/lib/abstracted_commands/alchCommand.js';
 
 const AGILITY_ALCHES_PER_HOUR = Time.Hour / timePerAlchAgility;
@@ -99,9 +100,8 @@ export const lapsCommand = defineCommand({
 			)}.`;
 		}
 
-		let response = `${user.minionName} is now doing ${quantity}x ${
-			course.name
-		} laps, it'll take around ${formatDuration(duration)} to finish.`;
+		let response = `${user.minionName} is now doing ${quantity}x ${course.name
+			} laps, it'll take around ${formatTripDuration(user, duration)} to finish.`;
 
 		type FletchResult = Extract<ZeroTimeActivityResult, { type: 'fletch' }>;
 		type AlchResult = Extract<ZeroTimeActivityResult, { type: 'alch' }>;
