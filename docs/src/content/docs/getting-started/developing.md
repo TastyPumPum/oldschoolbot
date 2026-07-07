@@ -51,11 +51,20 @@ If the SHA has changed, update the pinned SHA in `fetchRawItems.ts`, then run:
 pnpm --dir packages/oldschooljs generate
 ```
 
-If the pinned source is already current but new OSRS items exist in MOID/the wiki, use the scraper instead:
+If the pinned source is already current but new OSRS items exist in MOID/the wiki, use the scraper instead. By default, the scraper only adds IDs higher than the current highest ID in `item_data.json`, so it should not backfill old missing items:
 
 ```sh
 cd packages/oldschooljs
 pnpm exec tsx --tsconfig scripts/tsconfig.json scripts/item-scraper.ts
+pnpm exec tsx --tsconfig scripts/tsconfig.json scripts/itemsPostProcess.ts
+cd ../..
+```
+
+To intentionally backfill specific older items, pass their item IDs explicitly:
+
+```sh
+cd packages/oldschooljs
+pnpm exec tsx --tsconfig scripts/tsconfig.json scripts/item-scraper.ts 12345 12346
 pnpm exec tsx --tsconfig scripts/tsconfig.json scripts/itemsPostProcess.ts
 cd ../..
 ```
@@ -71,7 +80,7 @@ pnpm --dir packages/oldschooljs enum
 pnpm --filter oldschooljs build
 ```
 
-If `pnpm spritesheet` fails because `https://cdn.oldschool.gg/icons/items/` is missing new icons, download the missing IDs into `tmp/icons` from the fallback URL mentioned in `scripts/spritesheet.ts` (`https://chisel.weirdgloop.org/static/img/osrs-sprite/<item_id>.png`), then rerun `pnpm spritesheet`.
+`pnpm spritesheet` tries both `https://cdn.oldschool.gg/icons/items/` and `https://chisel.weirdgloop.org/static/img/osrs-sprite/` for missing icons. If both sources are missing a new icon, download the missing IDs into `tmp/icons`, then rerun `pnpm spritesheet`.
 
 Before opening the PR, run at least:
 

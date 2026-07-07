@@ -123,6 +123,7 @@ async function fetchItemWikiPage(itemId: number, moidItem?: MoidSourceItem): Pro
 async function main() {
 	const currentData = JSON.parse(await readFileSync('./src/assets/item_data.json', 'utf-8'));
 	const existingItemIDsMap = new Map(Object.keys(currentData).map(n => [Number(n), currentData[n]]));
+	const highestExistingItemID = Math.max(...existingItemIDsMap.keys());
 
 	const { moidSource, moidSourceMap } = await fetchMoidData();
 
@@ -130,7 +131,7 @@ async function main() {
 	const itemIdsToProcess: number[] = explicitItemIDs;
 	if (itemIdsToProcess.length === 0) {
 		for (const item of moidSource) {
-			if (item.id < 10_000) continue;
+			if (item.id <= highestExistingItemID) continue;
 			if (existingItemIDsMap.has(item.id)) continue;
 			if (item.name.trim().length === 0) continue;
 			if (item.name.toLowerCase() === 'null') continue;
@@ -138,6 +139,7 @@ async function main() {
 			if (['_riddle', '_skillguide_'].some(suffix => item.configName.toLowerCase().includes(suffix))) continue;
 			if (
 				[
+					'cargo_crate_',
 					'placeholder_',
 					'lost_schematic_',
 					'beta_',
