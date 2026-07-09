@@ -41,6 +41,7 @@ interface PlanRequest {
 	type: 'highest' | 'plant';
 	patch: IPatchDataDetailed;
 	plant?: Plant;
+	quantity?: number;
 }
 
 interface BuildSummaryResult {
@@ -178,6 +179,7 @@ export async function autoFarm(
 
 	const planRequests: PlanRequest[] = [];
 	for (const patch of patchesDetailed) {
+		const preferredQuantity = preferredSeeds.get(patch.patchName)?.quantity;
 		const resolved = resolveSeedForPatch({
 			patch,
 			preferContract,
@@ -192,7 +194,12 @@ export async function autoFarm(
 		}
 
 		if (resolved.type === 'plant') {
-			const planRequest: PlanRequest = { type: 'plant', patch, plant: resolved.plant };
+			const planRequest: PlanRequest = {
+				type: 'plant',
+				patch,
+				plant: resolved.plant,
+				quantity: preferredQuantity
+			};
 			if (resolved.reason === 'contract') {
 				// Always attempt the contract patch first when contract priority is enabled.
 				planRequests.unshift(planRequest);
@@ -202,7 +209,7 @@ export async function autoFarm(
 			continue;
 		}
 
-		planRequests.push({ type: 'highest', patch });
+		planRequests.push({ type: 'highest', patch, quantity: preferredQuantity });
 	}
 
 	for (const request of planRequests) {
@@ -220,7 +227,7 @@ export async function autoFarm(
 			const prepared = await prepareFarmingStep({
 				user,
 				plant: candidate,
-				quantity: null,
+				quantity: request.quantity ?? null,
 				pay: false,
 				patchDetailed: patch,
 				maxTripLength,
