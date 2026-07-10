@@ -1,6 +1,7 @@
 import { Events } from '@oldschoolgg/toolkit';
 import { Bank, type Item, Items } from 'oldschooljs';
 
+import { makeShipImage } from '@/lib/canvas/shipImage.js';
 import { skillEmoji } from '@/lib/data/emojis.js';
 import { BarracudaTrials, getBarracudaTrialProgress } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import {
@@ -121,6 +122,11 @@ export const shipCommand = defineCommand({
 	name: 'ship',
 	description: 'Manage your Sailing ship.',
 	options: [
+		{
+			type: 'Subcommand',
+			name: 'view',
+			description: 'View your Sailing ship.'
+		},
 		{
 			type: 'Subcommand',
 			name: 'status',
@@ -267,6 +273,17 @@ export const shipCommand = defineCommand({
 
 		const ship = await getOrCreateUserShip(user.id);
 		const activeShipType = getActiveShipType(ship);
+
+		if (options.view) {
+			return {
+				files: [
+					{
+						buffer: await makeShipImage(activeShipType),
+						name: 'ship.png'
+					}
+				]
+			};
+		}
 
 		if (options.status) {
 			const name = ship.ship_name ?? 'Unnamed ship';
