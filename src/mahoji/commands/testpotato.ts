@@ -44,7 +44,7 @@ import { getPOH } from '@/mahoji/lib/abstracted_commands/pohCommand.js';
 import { shades, shadesLogs } from '@/mahoji/lib/abstracted_commands/shadesOfMortonCommand.js';
 import { allUsableItems } from '@/mahoji/lib/abstracted_commands/useCommand.js';
 import { BingoManager } from '@/mahoji/lib/bingo/BingoManager.js';
-import { uniqueArr } from '../../../packages/util/dist/array.js';
+import { satisfyDiaryRequirements } from '@/mahoji/lib/testPotato/satisfyDiaryRequirements.js';
 
 export function getMaxUserValues(): SafeUserUpdateInput {
 	const updates: SafeUserUpdateInput = {};
@@ -208,6 +208,7 @@ async function setXP(user: MUser, skillName: string, xp: number) {
 	});
 	return `Set ${skill.name} XP to ${xp}.`;
 }
+
 const openablesBank = new Bank();
 for (const i of allOpenables.values()) {
 	openablesBank.add(i.id, 100);
@@ -1122,24 +1123,7 @@ export const testPotatoCommand = globalConfig.isProduction
 				}
 				if (options.setdiary) {
 					const setDiary = options.setdiary;
-					const selectedDiary = diaries.find(
-						diary =>
-							stringMatches(diary.name, setDiary.diary) ||
-							diary.alias?.some(alias => stringMatches(alias, setDiary.diary))
-					);
-					if (!selectedDiary) return 'Invalid diary.';
-					const tierOrder = ['easy', 'medium', 'hard', 'elite'] as const;
-					const selectedIndex = tierOrder.indexOf(setDiary.tier);
-					const diaryKeys = tierOrder
-						.slice(0, selectedIndex + 1)
-						.map(tier => `${selectedDiary.name}.${tier}`.replace(/\s/g, '').toLowerCase());
-					await user.update({
-						completed_achievement_diaries: uniqueArr([
-							...user.user.completed_achievement_diaries,
-							...diaryKeys
-						])
-					});
-					return `Marked ${selectedDiary.name} ${setDiary.tier} diary as completed.`;
+					return satisfyDiaryRequirements(user, setDiary.diary, setDiary.tier);
 				}
 				if (options.spawn) {
 					const { preset, collectionlog, item, items } = options.spawn;

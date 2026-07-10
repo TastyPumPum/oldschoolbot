@@ -45,6 +45,7 @@ const activitiesToTrackAsPVMGPSource: activity_type_enum[] = [
 	'Raids',
 	'ClueCompletion'
 ];
+const BERT_SAND_AUTO_DELIVERY_MESSAGE_PREFIX = 'Bert has delivered';
 
 interface TripFinishEffectOptions {
 	data: ActivityTaskData;
@@ -374,11 +375,17 @@ export async function handleTripFinish(
 
 	if (_messages) messages.push(..._messages);
 	const displayedMessages = messages.map(msg => msg.trim()).filter(msg => msg.length > 0);
-	if (displayedMessages.length > 0) {
-		message.addContent(`\n**Messages:** ${displayedMessages.join(', ')}`);
+	const bertSandMessages = displayedMessages.filter(msg => msg.startsWith(BERT_SAND_AUTO_DELIVERY_MESSAGE_PREFIX));
+	const regularMessages = displayedMessages.filter(msg => !msg.startsWith(BERT_SAND_AUTO_DELIVERY_MESSAGE_PREFIX));
+	if (regularMessages.length > 0) {
+		message.addContent(`\n**Messages:** ${regularMessages.join(', ')}`);
 	}
 
 	message.addContent(displayCluesAndPets(user, loot));
+
+	if (bertSandMessages.length > 0) {
+		message.addContent(`\n\n${bertSandMessages.join('\n')}`);
+	}
 
 	if (components.length > 0) {
 		message.addComponents(components);
