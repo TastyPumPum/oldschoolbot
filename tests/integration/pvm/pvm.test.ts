@@ -70,7 +70,7 @@ describe('PVM', async () => {
 			bank: new Bank(),
 			QP: 300,
 			maxed: true,
-			mageGear: resolveItems(['Trident of the seas', 'Ahrim hood', 'Ahrim robetop', 'Ahrim robeskirt']),
+			mageGear: resolveItems(['Trident of the seas', "Ahrim's hood", "Ahrim's robetop", "Ahrim's robeskirt"]),
 			rangeGear: resolveItems(['Magic shortbow', "Black d'hide body", "Black d'hide chaps"])
 		});
 		await user.setAttackStyle(['ranged']);
