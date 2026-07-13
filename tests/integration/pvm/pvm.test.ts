@@ -65,12 +65,28 @@ describe('PVM', async () => {
 		expect(foodResult.tripStartBank.amount('Shark')).toBeLessThan(100);
 	});
 
+	it('Should require food for food-using monsters', async () => {
+		const user = await client.mockUser({
+			bank: new Bank(),
+			QP: 300,
+			maxed: true,
+			mageGear: resolveItems(['Trident of the seas']),
+			rangeGear: resolveItems(['Magic shortbow'])
+		});
+		await user.setAttackStyle(['ranged']);
+
+		const result = await user.kill(EMonster.ZULRAH, { quantity: 1, shouldFail: true });
+		expect(result.commandResult).toContain("You don't have enough food to kill Zulrah");
+		expect(result.commandResult).not.toContain('5% for no food');
+	});
+
 	it('Should remove charges', async () => {
 		const user = await mockUser({
 			rangeGear: resolveItems(['Venator bow']),
 			rangeLevel: 70,
 			venatorBowCharges: 1000,
-			slayerLevel: 70
+			slayerLevel: 70,
+			bank: new Bank().add('Shark', 1000)
 		});
 		const { commandResult } = await user.runCmdAndTrip(minionKCommand, { name: 'bloodveld' });
 		expect(commandResult).toContain('now killing');
@@ -85,7 +101,8 @@ describe('PVM', async () => {
 			rangeGear: resolveItems(['Venator bow']),
 			rangeLevel: 70,
 			venatorBowCharges: 1000,
-			slayerLevel: 70
+			slayerLevel: 70,
+			bank: new Bank().add('Shark', 1000)
 		});
 		await prisma.slayerTask.deleteMany({
 			where: {
@@ -167,7 +184,11 @@ describe('PVM', async () => {
 	it('barrages abby demons', async () => {
 		const user = await client.mockUser({
 			slayerLevel: 99,
-			bank: new Bank().add('Blood rune', 1000).add('Death rune', 1000).add('Water rune', 10000000),
+			bank: new Bank()
+				.add('Blood rune', 1000)
+				.add('Death rune', 1000)
+				.add('Water rune', 10000000)
+				.add('Shark', 1000),
 			mageLevel: 99,
 			mageGear: resolveItems(['Ancient staff'])
 		});
@@ -183,7 +204,11 @@ describe('PVM', async () => {
 	it('should get kodai buff', async () => {
 		const user = await client.mockUser({
 			slayerLevel: 99,
-			bank: new Bank().add('Blood rune', 1000).add('Death rune', 1000).add('Water rune', 10000000),
+			bank: new Bank()
+				.add('Blood rune', 1000)
+				.add('Death rune', 1000)
+				.add('Water rune', 10000000)
+				.add('Shark', 1000),
 			mageLevel: 99,
 			mageGear: resolveItems(['Kodai wand'])
 		});
@@ -199,7 +224,11 @@ describe('PVM', async () => {
 	it('should get kodai buff even if forced to switch to mage', async () => {
 		const user = await client.mockUser({
 			slayerLevel: 99,
-			bank: new Bank().add('Blood rune', 1000).add('Death rune', 1000).add('Water rune', 10000000),
+			bank: new Bank()
+				.add('Blood rune', 1000)
+				.add('Death rune', 1000)
+				.add('Water rune', 10000000)
+				.add('Shark', 1000),
 			mageLevel: 99,
 			mageGear: resolveItems(['Kodai wand'])
 		});
@@ -257,7 +286,7 @@ describe('PVM', async () => {
 
 	it('should give poh boost', async () => {
 		const user = await client.mockUser({
-			bank: new Bank().add('Red chinchompa', 5000).add("Verac's plateskirt"),
+			bank: new Bank().add('Red chinchompa', 5000).add("Verac's plateskirt").add('Shark', 1000),
 			rangeLevel: 99,
 			QP: 300,
 			maxed: true,
@@ -278,13 +307,13 @@ describe('PVM', async () => {
 		});
 		const result = await user.kill(EMonster.KALPHITE_QUEEN);
 		expect(result.commandResult).toContain('10% for Rejuvenation pool');
-		expect(result.commandResult).toContain('5% for no food');
+		expect(result.commandResult).not.toContain('5% for no food');
 		expect(result.commandResult).toContain('15.00% for stats');
 	});
 
 	it('should only use 1 skotizo totem', async () => {
 		const user = await client.mockUser({
-			bank: new Bank().add('Dark totem', 100),
+			bank: new Bank().add('Dark totem', 100).add('Shark', 1000),
 			rangeLevel: 99,
 			QP: 300,
 			maxed: true,
@@ -312,7 +341,7 @@ describe('PVM', async () => {
 
 	test('salve and slayer helm shouldnt stack', async () => {
 		const user = await client.mockUser({
-			bank: new Bank().add('Dark totem', 100),
+			bank: new Bank().add('Dark totem', 100).add('Shark', 1000),
 			rangeLevel: 99,
 			QP: 300,
 			maxed: true,
