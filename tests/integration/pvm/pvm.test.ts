@@ -3,6 +3,7 @@ import { Bank, convertLVLtoXP, EItem, EMonster, itemID, Monsters, resolveItems }
 import { describe, expect, it, test } from 'vitest';
 
 import { CombatCannonItemBank } from '@/lib/minions/data/combatConstants.js';
+import { QuestID } from '@/lib/minions/data/quests.js';
 import { getPOHObject } from '@/lib/poh/index.js';
 import { Gear } from '@/lib/structures/Gear.js';
 import { minionKCommand } from '@/mahoji/commands/k.js';
@@ -24,6 +25,44 @@ describe('PVM', async () => {
 		expect(kc).toEqual(4);
 		expect(user.bank.amount('Shark')).toBeLessThan(1000);
 		expect(user.bank.amount('Big bones')).toEqual(kc);
+	});
+
+	it('Should require food for Amoxliatl', async () => {
+		const meleeGear = resolveItems([
+			'Abyssal bludgeon',
+			'Amulet of fury',
+			'Fire cape',
+			'Bandos chestplate',
+			'Bandos tassets',
+			'Ferocious gloves',
+			'Dragon boots',
+			'Berserker ring (i)',
+			"Rada's blessing 3"
+		]);
+		const userWithoutFood = await client.mockUser({
+			bank: new Bank().add('Prayer potion(4)', 100),
+			QP: 300,
+			maxed: true,
+			meleeGear
+		});
+		await userWithoutFood.update({ finished_quest_ids: [QuestID.TheHeartOfDarkness] });
+
+		const noFoodResult = await userWithoutFood.kill(EMonster.AMOXLIATL, { quantity: 1, shouldFail: true });
+		expect(noFoodResult.commandResult).toContain("You don't have enough food to kill Amoxliatl");
+		expect(noFoodResult.commandResult).not.toContain('5% for no food');
+
+		const userWithFood = await client.mockUser({
+			bank: new Bank().add('Prayer potion(4)', 100).add('Shark', 100),
+			QP: 300,
+			maxed: true,
+			meleeGear
+		});
+		await userWithFood.update({ finished_quest_ids: [QuestID.TheHeartOfDarkness] });
+
+		const foodResult = await userWithFood.kill(EMonster.AMOXLIATL, { quantity: 1 });
+		expect(foodResult.commandResult).toContain('is now killing 1x Amoxliatl');
+		expect(foodResult.commandResult).not.toContain('5% for no food');
+		expect(foodResult.tripStartBank.amount('Shark')).toBeLessThan(100);
 	});
 
 	it('Should remove charges', async () => {
