@@ -1,3 +1,5 @@
+import { EmbedBuilder } from '@oldschoolgg/discord';
+
 import { ownedItemOption } from '@/discord/index.js';
 import { Planks } from '@/lib/minions/data/planks.js';
 import Potions from '@/lib/minions/data/potions.js';
@@ -33,7 +35,6 @@ import { unchargeGloriesCommand } from '@/mahoji/lib/abstracted_commands/uncharg
 import { underwaterAgilityThievingCommand } from '@/mahoji/lib/abstracted_commands/underwaterCommand.js';
 import { warriorsGuildCommand } from '@/mahoji/lib/abstracted_commands/warriorsGuildCommand.js';
 import { collectables } from '@/mahoji/lib/collectables.js';
-import {EmbedBuilder} from "@oldschoolgg/discord";
 import { ancientMycologyCommand } from '../lib/abstracted_commands/ancientMycologyCommand.js';
 import { archaicMiningCommand } from '../lib/abstracted_commands/archaicMiningCommand.js';
 import { gemscaleBreakdownCommand } from '../lib/abstracted_commands/gemscaleBreakdownCommand.js';
