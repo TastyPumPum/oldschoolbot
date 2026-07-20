@@ -1,6 +1,6 @@
 {
-	"hash": "d46f9f4bbd08085b30f707573adb71b5",
-	"date": "2026-04-28T11:01:41.779Z",
+	"hash": "623aa3405585820b80e2889368f9475a",
+	"date": "2026-07-05T07:44:38.019Z",
 	"data": [
 		{
 			"name": "activities",
@@ -8,6 +8,7 @@
 			"subOptions": [
 				"aerial_fishing",
 				"alch",
+				"beach_combing",
 				"birdhouses",
 				"bury",
 				"camdozaal",
