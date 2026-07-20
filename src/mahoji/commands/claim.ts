@@ -10,7 +10,36 @@ import { getReclaimableItemsOfUser } from '@/lib/reclaimableItems.js';
 import { roboChimpUserFetch } from '@/lib/roboChimp.js';
 
 const independenceDay2Box = 'Independence Day 2 Box';
-const independenceDay2EndDate = new Date('2026-07-15T00:00:00.000Z');
+const independenceDay2EndDate = new Date('2026-07-20T00:00:00.000Z');
+
+function maxIndy2Boxes(user: MUser): number {
+	let maxBoxes = 1;
+
+	const clPercent = calcCLDetails(user).percent;
+	const accountAge = user.accountAgeInDays();
+	const legitTriggers = [
+		accountAge && accountAge >= 30,
+		user.totalLevel >= 300,
+		user.bitfield.includes(BitField.OriginalCyrSupporter),
+		user.bitfield.includes(BitField.BypassAgeRestriction),
+		user.perkTier >= 3
+	];
+	const authorized = legitTriggers.some(Boolean);
+
+	if (!authorized) {
+		return 0;
+	}
+
+	const fiveYearAccount = accountAge && accountAge > 365 * 5;
+	const ninetyPercentCl = clPercent >= 92;
+	if (fiveYearAccount) {
+		maxBoxes++;
+	}
+	if (ninetyPercentCl) {
+		maxBoxes++;
+	}
+	return maxBoxes;
+}
 
 const claimables = [
 	{
@@ -22,13 +51,24 @@ const claimables = [
 			if (Date.now() >= independenceDay2EndDate.getTime()) {
 				return 'This event is no longer claimable.';
 			}
-			if (user.cl.has(independenceDay2Box)) {
-				return 'You already claimed this.';
+
+			const maxBoxes = maxIndy2Boxes(user);
+			if (maxBoxes === 0) {
+				return `You need to be at least 30 days old to claim this. If you think this is a mistake, please ask a mod to fix your 'minion buy date', or bypass the age restriction.`;
+			}
+			if (user.cl.amount(independenceDay2Box) >= maxBoxes) {
+				return `You already claimed ${new Bank().add(independenceDay2Box, maxBoxes).toString()}.`;
 			}
 			return true;
 		},
 		action: async (user: MUser) => {
-			const loot = new Bank().add(independenceDay2Box);
+			const maxBoxes = maxIndy2Boxes(user);
+			const boxesReceived = user.cl.amount(independenceDay2Box);
+			const boxesRemaining = maxBoxes - boxesReceived;
+			if (boxesRemaining <= 0) {
+				return `Report to <@425134194436341760> for immediate punishment... I mean **fun**ishment...`;
+			}
+			const loot = new Bank().add(independenceDay2Box, boxesRemaining);
 			await user.addItemsToBank({ items: loot, collectionLog: true });
 			return `You claimed ${loot}.`;
 		}
