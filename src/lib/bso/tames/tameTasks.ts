@@ -46,7 +46,7 @@ export async function handleFinish({
 }) {
 	const results: string[] = [message];
 	const previousTameCl = tame.totalLoot.clone();
-	const crateRes = handleCrateSpawns(user, activity.duration);
+	const crateRes = handleCrateSpawns(user, activity.duration, 'tame');
 	if (crateRes !== null) lootToAdd.add(crateRes);
 
 	await prisma.tame.update({
@@ -89,7 +89,7 @@ export const arbitraryTameActivities: ArbitraryTameActivity[] = [
 		run: async ({ handleFinish, user, duration, tame, previousTameCL, activity }) => {
 			const quantity = Math.ceil(duration / (Time.Minute * 5));
 			const loot = getTemporossLoot(quantity, tame.maxGathererLevel + 15, previousTameCL);
-			handleFinish({
+			void handleFinish({
 				lootToAdd: loot,
 				message: `${user}, ${tame} finished defeating Tempoross ${quantity}x times.`,
 				user,
@@ -116,7 +116,7 @@ export const arbitraryTameActivities: ArbitraryTameActivity[] = [
 					})
 				);
 			}
-			handleFinish({
+			void handleFinish({
 				lootToAdd: loot,
 				message: `${user}, ${tame} finished defeating Wintertodt ${quantity}x times.`,
 				user,
