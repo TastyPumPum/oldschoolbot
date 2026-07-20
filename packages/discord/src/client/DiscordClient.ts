@@ -1,6 +1,16 @@
 import { makeURLSearchParams, REST } from '@discordjs/rest';
 import { CompressionMethod, WebSocketManager, WebSocketShardEvents, WorkerShardingStrategy } from '@discordjs/ws';
-import type { IChannel, IInteraction, IMember, IMessage, IRole, IWebhook } from '@oldschoolgg/schemas';
+import {
+	type IChannel,
+	type IInteraction,
+	type IMember,
+	type IMessage,
+	type IRichMember,
+	type IRole,
+	type IWebhook,
+	ZCreateWebhook,
+	ZWebhook
+} from '@oldschoolgg/schemas';
 import { uniqueArr } from '@oldschoolgg/util';
 import { AsyncEventEmitter } from '@vladfrangu/async_event_emitter';
 import {
@@ -36,6 +46,7 @@ import {
 } from '../interactions/interactionCollector.js';
 import type { MInteraction } from '../interactions/MInteraction.js';
 import { type PermissionKey, Permissions } from '../Permissions.js';
+import { imageFileToDataUri } from '../util.js';
 import {
 	type DiscordClientEventsMap,
 	type DiscordClientOptions,
@@ -178,8 +189,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 	}
 
 	private async fetchCommands() {
-		const commands = (await this.rest.get(this.apiCommandsRoute())) as APIApplicationCommand[];
-		this.applicationCommands = commands;
+		this.applicationCommands = (await this.rest.get(this.apiCommandsRoute())) as APIApplicationCommand[];
 	}
 
 	async memberHasPermissions(member: IMember, perms: PermissionKey[]): Promise<boolean> {
@@ -201,13 +211,15 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 		return res as IMessage;
 	}
 
-	async createWebhook(channelId: string): Promise<APIWebhook> {
-		const data = await this.rest.post(Routes.channelWebhooks(channelId), {
-			body: {
-				name: this.application!.name
-			}
+	async createWebhook(channelId: string, imagePath: string): Promise<IWebhook> {
+		const requestBody = ZCreateWebhook.parse({
+			name: this.application!.name,
+			avatar: await imageFileToDataUri(imagePath)
 		});
-		return data as APIWebhook;
+		const data: unknown = await this.rest.post(Routes.channelWebhooks(channelId), {
+			body: requestBody
+		});
+		return ZWebhook.parse(data);
 	}
 
 	async fetchWebhooks(channelId: string): Promise<APIWebhook[]> {
@@ -215,17 +227,18 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 		return data as APIWebhook[];
 	}
 
-	async sendWebhook(webhook: IWebhook, rawMessage: SendableMessage): Promise<void> {
+	async sendWebhook(webhook: IWebhook, rawMessage: SendableMessage): Promise<IMessage> {
 		const { files, message } = await this.sendableMsgToApiCreate(rawMessage);
 		const query = makeURLSearchParams({
 			wait: true
 		});
-		await this.rest.post(Routes.webhook(webhook.id, webhook.token), {
+		const res = await this.rest.post(Routes.webhook(webhook.id, webhook.token), {
 			body: message,
 			query,
 			files: files ?? undefined,
 			auth: false
 		});
+		return res as IMessage;
 	}
 
 	async sendMessage(channelId: string, rawMessage: SendableMessage): Promise<IMessage> {
@@ -323,7 +336,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 		return res as APIEmoji | null;
 	}
 
-	async fetchMainServerMember(userId: string): Promise<null | IMember> {
+	async fetchMainServerMember(userId: string): Promise<null | IRichMember> {
 		try {
 			const m = await this.fetchMember({ guildId: this.mainServerId, userId });
 			return m;
@@ -337,7 +350,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 		return res as APIUser;
 	}
 
-	async fetchMember({ guildId, userId }: { guildId: string; userId: string }): Promise<IMember> {
+	async fetchMember({ guildId, userId }: { guildId: string; userId: string }): Promise<IRichMember> {
 		const rawApiMember = (await this.rest.get(Routes.guildMember(guildId, userId))) as APIGuildMember | null;
 		if (!rawApiMember) throw new Error(`No member found for ${userId} in ${guildId}`);
 		const roles: IRole[] = (await this.fetchRolesOfGuild(guildId)).filter(_r => rawApiMember.roles.includes(_r.id));
@@ -347,6 +360,7 @@ export class DiscordClient extends AsyncEventEmitter<DiscordClientEventsMap> imp
 			user_id: rawApiMember.user.id,
 			guild_id: guildId,
 			roles: rawApiMember.roles,
+			roles_detailed: roles,
 			permissions
 		};
 	}

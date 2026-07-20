@@ -1,13 +1,12 @@
-import { cryptoRng } from '@oldschoolgg/rng/crypto';
 import type { IMember, IMessage, IUser } from '@oldschoolgg/schemas';
 import { sleep } from '@oldschoolgg/toolkit';
+import { cryptoRng } from 'node-rng/crypto';
 import { vi } from 'vitest';
 
 import { mockedId } from '../test-utils/misc.js';
 import { mockClient, TestClient } from '../test-utils/mockClient.js';
 import { createTestUser, mockUser, TestUser } from '../test-utils/mockUser.js';
-
-export const TEST_CHANNEL_ID = '1111111111111111';
+import { TEST_CHANNEL_ID } from './constants.js';
 
 export function mockIUser({ userId }: { userId: string }): IUser {
 	const mocked = {
@@ -52,13 +51,13 @@ export function mockMathRandom(value: number) {
 }
 
 export async function promiseAllRandom<T>(tasks: (() => Promise<T>)[], maxJitterMs = 5): Promise<T[]> {
-	const results: T[] = [];
 	const shuffled = cryptoRng.shuffle(tasks);
-	for (const fn of shuffled) {
-		await sleep(Math.random() * maxJitterMs);
-		results.push(await fn());
-	}
-	return results;
+	return Promise.all(
+		shuffled.map(async fn => {
+			await sleep(Math.random() * maxJitterMs);
+			return fn();
+		})
+	);
 }
 
 export { mockClient, mockedId, createTestUser, mockUser, TestUser, TestClient };

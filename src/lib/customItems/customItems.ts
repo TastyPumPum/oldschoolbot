@@ -113,7 +113,7 @@ setCustomItem(
 	{
 		tradeable: true,
 		tradeable_on_ge: true,
-		buy_limit: 75,
+		buy_limit: 250,
 		customItemData: {
 			cantDropFromMysteryBoxes: true
 		}
@@ -127,7 +127,7 @@ setCustomItem(
 	{
 		tradeable: true,
 		tradeable_on_ge: true,
-		buy_limit: 50,
+		buy_limit: 250,
 		customItemData: {
 			cantDropFromMysteryBoxes: true
 		}
@@ -141,7 +141,7 @@ setCustomItem(
 	{
 		tradeable: true,
 		tradeable_on_ge: true,
-		buy_limit: 50,
+		buy_limit: 100,
 		customItemData: {
 			cantDropFromMysteryBoxes: true
 		}
@@ -155,7 +155,7 @@ setCustomItem(
 	{
 		tradeable: true,
 		tradeable_on_ge: true,
-		buy_limit: 5,
+		buy_limit: 50,
 		customItemData: {
 			cantDropFromMysteryBoxes: true
 		}
@@ -169,7 +169,7 @@ setCustomItem(
 	{
 		tradeable: true,
 		tradeable_on_ge: true,
-		buy_limit: 2,
+		buy_limit: 25,
 		customItemData: {
 			cantDropFromMysteryBoxes: true
 		}
@@ -228,7 +228,7 @@ setCustomItem(516, 'Nuts of monkey', 'Rune platelegs');
 /**
  * Exclusive Items
  *
- * Items from 40_000 to 45_000 will not be dropped by any mystery box, and are untradeable
+ * Items from 40_000 to 45_000 will not be dropped by any mystery box and are untradeable
  */
 // Master capes
 setCustomItem(40_000, 'Construction master cape', 'Abyssal cape', {}, 200_000_000);
@@ -1230,7 +1230,6 @@ setCustomItem(
 			slot: EquipmentSlot.Neck,
 			requirements: {
 				defence: 99,
-				// @ts-expect-error dgg
 				dungeoneering: 99,
 				magic: 99
 			}
@@ -1261,7 +1260,6 @@ setCustomItem(
 			slot: EquipmentSlot.Neck,
 			requirements: {
 				defence: 99,
-				// @ts-expect-error dgg
 				dungeoneering: 99,
 				ranged: 99
 			}
@@ -1292,7 +1290,6 @@ setCustomItem(
 			slot: EquipmentSlot.Neck,
 			requirements: {
 				defence: 99,
-				// @ts-expect-error dgg
 				dungeoneering: 99
 			}
 		}
@@ -1510,6 +1507,25 @@ setCustomItem(48_226, 'Chimpling jar', 'Egg', {}, 100_000);
 setCustomItem(48_228, 'Monkey dye', 'Egg', {}, 10_000_000);
 setCustomItem(48_229, 'Marimbo statue', 'Egg', {}, 10_000_000);
 setCustomItem(48_230, 'Big banana', 'Bronze kiteshield', {}, 100_000);
+
+/**
+ * Independence Day 2 Box
+ */
+setCustomItem(48_231, 'Independence Day 2 Box', 'Mystery box', {}, 1_000_000);
+setCustomItem(
+	48_232,
+	'Sam',
+	'Herbi',
+	{
+		customItemData: {
+			isPet: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(48_233, 'Alien green card', 'Coal', {}, 1_000_000);
+setCustomItem(48_234, 'Stars and Stripeship', 'Coal', {}, 1_000_000);
+setCustomItem(48_235, 'Liber-ray-tor', 'Coal', {}, 1_000_000);
 
 setCustomItem(48_324, 'Blacksmith crate', 'Mystery box', { tradeable: true, tradeable_on_ge: true }, 100_000);
 
@@ -2971,8 +2987,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
-			cantDropFromMysteryBoxes: true,
-			isSuperUntradeable: true
+			cantDropFromMysteryBoxes: true
 		}
 	},
 	100_000_000
@@ -6814,6 +6829,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true
 		}
 	},
@@ -7276,6 +7292,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true,
 			cantBeSacrificed: true,
 			isDiscontinued: true
@@ -8490,6 +8507,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true,
 			isDiscontinued: true
 		}
@@ -8877,7 +8895,7 @@ setCustomItem(
 setCustomItem(
 	71_611,
 	'Cob cap',
-	'Bronze gloves',
+	'Bronze full helm',
 	{
 		customItemData: {
 			cantDropFromMysteryBoxes: true,
@@ -9794,6 +9812,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true
 		}
 	},
@@ -11680,6 +11699,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true,
 			isDiscontinued: true
 		}
@@ -12485,6 +12505,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true,
 			cantBeSacrificed: true,
 			isDiscontinued: true
@@ -12886,6 +12907,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true
 		}
 	},
@@ -13056,7 +13078,7 @@ setCustomItem(
 		customItemData: {
 			cantDropFromMysteryBoxes: true,
 			isSuperUntradeable: true,
-			superTradeableButTradeableOnGE: true
+			superUntradeableButTradeableOnGE: true
 		}
 	},
 	500_000
@@ -13070,7 +13092,7 @@ setCustomItem(
 		customItemData: {
 			cantDropFromMysteryBoxes: true,
 			isSuperUntradeable: true,
-			superTradeableButTradeableOnGE: true
+			superUntradeableButTradeableOnGE: true
 		}
 	},
 	500_000
@@ -13084,7 +13106,7 @@ setCustomItem(
 		customItemData: {
 			cantDropFromMysteryBoxes: true,
 			isSuperUntradeable: true,
-			superTradeableButTradeableOnGE: true
+			superUntradeableButTradeableOnGE: true
 		}
 	},
 	500_000
@@ -13470,6 +13492,7 @@ setCustomItem(
 	'Coal',
 	{
 		customItemData: {
+			dontTradeOnGE: true,
 			cantDropFromMysteryBoxes: true
 		}
 	},
@@ -14363,6 +14386,411 @@ setCustomItem(74_006, 'Ember', 'Herbi', {
 		cantDropFromMysteryBoxes: true
 	}
 });
+
+setCustomItem(
+	74_007,
+	'The whale card',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isDiscontinued: true
+		}
+	},
+	1_000_000
+);
+
+setCustomItem(
+	74_008,
+	'Wubbles',
+	'Herbi',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isDiscontinued: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	74_009,
+	'Wubufu',
+	'Herbi',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isDiscontinued: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	74_010,
+	'Wabbit eggs',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	74_011,
+	'Magnegg',
+	'Herbi',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_969,
+	'Radiant Magnabbit',
+	'Herbi',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isPet: true
+		}
+	},
+	1_000_000
+);
+
+setCustomItem(
+	74_012,
+	'Magnabbit',
+	'Herbi',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	74_013,
+	'The whale card (fake)',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isSuperUntradeable: true
+		}
+	},
+	1_000_000
+);
+
+setCustomItem(
+	73_968,
+	'Partycrab',
+	'Bronze full helm',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isPet: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_982,
+	'Patricia',
+	'Bronze full helm',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isPet: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_983,
+	'Old crab cage',
+	'Bronze kiteshield',
+	{
+		customItemData: {
+			isSuperUntradeable: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_984,
+	'Sun Scream',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_985,
+	'Lydia',
+	'Bronze full helm',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isSuperUntradeable: true,
+			dontTradeOnGE: true,
+			isPet: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_986,
+	'Mona',
+	'Bronze full helm',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true,
+			isSuperUntradeable: true,
+			dontTradeOnGE: true,
+			isPet: true
+		}
+	},
+	1_000_000
+);
+setCustomItem(
+	73_987,
+	'Gothic Dwarven warhammer',
+	'Dwarven warhammer',
+	{
+		customItemData: {
+			isSecret: true,
+			cantDropFromMysteryBoxes: true,
+			isSuperUntradeable: true
+		}
+	},
+	1_000_000_000
+);
+setCustomItem(
+	73_988,
+	'Purple sand dollar',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	250_000
+);
+setCustomItem(
+	73_989,
+	'Black shell',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	250_000
+);
+setCustomItem(
+	73_990,
+	'Purple dust',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	250_000
+);
+setCustomItem(
+	73_991,
+	'Sun Scream (unf)',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+setCustomItem(
+	73_992,
+	'Bottle of sea water',
+	'Bronze kiteshield',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	250_000
+);
+setCustomItem(
+	73_993,
+	'Mysterious bottle',
+	'Bronze kiteshield',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	250_000
+);
+setCustomItem(
+	73_970,
+	'Summer crate (s9)',
+	'Coal',
+	{
+		customItemData: {
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_971,
+	'Summer crate key (s9)',
+	'Coal',
+	{
+		customItemData: {
+			dontTradeOnGE: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_972,
+	'Imitation Crab Hat',
+	'Bronze full helm',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+
+setCustomItem(
+	73_973,
+	'Summer partyhat',
+	'Blue partyhat',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	1_000_000
+);
+
+setCustomItem(
+	73_974,
+	'Coral bikini top',
+	'Bronze platebody',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_975,
+	'Coral bikini bottom',
+	'Bronze platelegs',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_976,
+	'Palm board shorts',
+	'Bronze platelegs',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_977,
+	'Beach sandals',
+	'Bronze boots',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_978,
+	'Shell necklace',
+	'Amulet of strength',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_979,
+	'Beachball shield',
+	'Bronze kiteshield',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
+
+setCustomItem(
+	73_980,
+	'Beach pina colada',
+	'Coal',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	250_000
+);
+
+setCustomItem(
+	73_981,
+	'Whale floaty',
+	'Coal',
+	{
+		customItemData: {
+			isDiscontinued: true,
+			cantDropFromMysteryBoxes: true
+		}
+	},
+	500_000
+);
 
 export const discontinuedItems = resolveItems([
 	'Turkey',

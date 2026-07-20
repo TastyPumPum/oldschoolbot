@@ -1,27 +1,13 @@
-import { cryptoRng } from '@oldschoolgg/rng/crypto';
+import { cryptoRng } from 'node-rng/crypto';
 
-import type { NewUser } from '@/prisma/main.js';
 import { rawCommandHandlerInner } from '@/discord/commandHandler.js';
-
-export async function getNewUser(id: string): Promise<NewUser> {
-	const value = await prisma.newUser.findUnique({ where: { id } });
-	if (!value) {
-		return prisma.newUser.create({
-			data: {
-				id,
-				minigame: {}
-			}
-		});
-	}
-	return value;
-}
 
 export interface RunCommandArgs {
 	commandName: string;
 	args: CommandOptions;
 	user: MUser;
 	isContinue?: boolean;
-	interaction: MInteraction;
+	interaction: OSInteraction;
 	continueDeltaMillis: number | null;
 	ignoreUserIsBusy?: true;
 }
@@ -30,7 +16,9 @@ export async function runCommand({
 	commandName,
 	args,
 	interaction,
-	ignoreUserIsBusy
+	ignoreUserIsBusy,
+	isContinue,
+	continueDeltaMillis = null
 }: RunCommandArgs): CommandResponse {
 	const command = globalClient.allCommands.find(c => c.name === commandName)!;
 
@@ -39,7 +27,9 @@ export async function runCommand({
 		command,
 		options: args,
 		ignoreUserIsBusy,
-		rng: cryptoRng
+		rng: cryptoRng,
+		isContinue,
+		continueDeltaMs: continueDeltaMillis
 	});
 	return response;
 }

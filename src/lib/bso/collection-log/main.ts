@@ -106,7 +106,12 @@ export const discontinuedCustomPetsCL = resolveItems([
 	'Waddles',
 	'Tasty',
 	'Night-mare',
-	'Ember'
+	'Ember',
+	'Wubbles',
+	'Magnabbit',
+	'Partycrab',
+	'Patricia',
+	'Sam'
 ]);
 
 export const kingGoldemarCL = resolveItems([
