@@ -608,7 +608,6 @@ function calcSuppliesUsedForSmithing(itemsSmithed: Bank) {
 async function buildLeaguesTaskCheckContext(userID: string, includeRanking = false) {
 	const user = await mUserFetch(userID);
 	const roboChimpUser = await user.fetchRobochimpUser();
-	const completedTaskIDs = new Set(roboChimpUser.leagues_completed_tasks_ids);
 	const rankingPromise = includeRanking ? calcLeaguesRanking(roboChimpUser) : Promise.resolve(null);
 	const [
 		conStats,
@@ -773,6 +772,7 @@ export async function verifyLeaguesTasksForUser(userID: string): Promise<Leagues
 export async function leaguesCheckUser(userID: string) {
 	const { roboChimpUser, args, ranking } = await buildLeaguesTaskCheckContext(userID, true);
 	if (!ranking) throw new Error(`Missing leagues ranking for user ${userID}.`);
+	const completedTaskIDs = new Set(roboChimpUser.leagues_completed_tasks_ids);
 
 	let resStr = '\n';
 	let totalTasks = 0;
