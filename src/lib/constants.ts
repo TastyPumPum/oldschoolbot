@@ -28,6 +28,8 @@ const OLDSCHOOLGG_TESTING_SERVER_ID = '940758552425955348';
 const TEST_SERVER_ID = process.env.TESTING_SERVER ?? OLDSCHOOLGG_TESTING_SERVER_ID;
 const TEST_SERVER_LOG_CHANNEL = process.env.TESTING_LOG_CHANNEL ?? '1042760447830536212';
 export const DELETED_USER_ID = '111111111111111111';
+export const BOT_AVATAR_HASH =
+	BOT_TYPE === 'OSB' ? '99c10999dc733528115dea1e061f3209' : '26bf6ee2aee1402680862d26eeeef2b5';
 
 interface ChannelConfig {
 	ServerGeneral: string;
@@ -532,7 +534,8 @@ export const BadgesEnum = {
 	TopGiveawayer: 14,
 	Farmer: 15,
 	Hacktoberfest: 16,
-	CyrEarlySupporter: 17
+	CyrEarlySupporter: 17,
+	TopClueHunter: 18
 } as const;
 
 export const badges: { [key: number]: string } = {
@@ -553,7 +556,8 @@ export const badges: { [key: number]: string } = {
 	[BadgesEnum.TopGiveawayer]: Emoji.SantaHat,
 	[BadgesEnum.Farmer]: Emoji.Farming,
 	[BadgesEnum.Hacktoberfest]: '<:hacktoberfest:1304259875634942082>',
-	[BadgesEnum.CyrEarlySupporter]: Emoji.Seer
+	[BadgesEnum.CyrEarlySupporter]: Emoji.Seer,
+	[BadgesEnum.TopClueHunter]: Emoji.ClueScroll
 };
 
 export const MAX_XP = BOT_TYPE === 'OSB' ? 200_000_000 : 5_000_000_000;

@@ -6013,6 +6013,13 @@
 		"exclude_from_open_all": true
 	},
 	{
+		"name": "Independence Day 2 Box",
+		"id": 48231,
+		"opened_item": "Independence Day 2 Box",
+		"all_items": ["Alien green card", "Liber-ray-tor", "Sam", "Stars and Stripeship"],
+		"exclude_from_open_all": true
+	},
+	{
 		"name": "Infernal eel",
 		"id": 21293,
 		"opened_item": "Infernal eel",
