@@ -1755,6 +1755,18 @@
 		}
 	},
 	{
+		"id": 48233,
+		"name": "Alien green card",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 1000000
+	},
+	{
 		"id": 73762,
 		"name": "Ambush scroll",
 		"tradeable": true,
@@ -2576,7 +2588,7 @@
 		"highalch": 120,
 		"tradeable": true,
 		"tradeable_on_ge": true,
-		"buy_limit": 50,
+		"buy_limit": 100,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		},
@@ -3278,6 +3290,97 @@
 		"price": 1000000
 	},
 	{
+		"id": 73980,
+		"name": "Beach pina colada",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 250000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73977,
+		"name": "Beach sandals",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 24,
+		"lowalch": 9,
+		"highalch": 14,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -3,
+			"attack_ranged": -1,
+			"defence_stab": 1,
+			"defence_slash": 2,
+			"defence_crush": 3,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "feet",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73979,
+		"name": "Beachball shield",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 68,
+		"lowalch": 27,
+		"highalch": 40,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -8,
+			"attack_ranged": -3,
+			"defence_stab": 5,
+			"defence_slash": 7,
+			"defence_crush": 6,
+			"defence_magic": -1,
+			"defence_ranged": 6,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "shield",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 73618,
 		"name": "Beaver pouch",
 		"tradeable": true,
@@ -3521,6 +3624,7 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true,
 			"cantBeSacrificed": true,
 			"isDiscontinued": true
@@ -3538,6 +3642,7 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true,
 			"cantBeSacrificed": true,
 			"isDiscontinued": true
@@ -3866,6 +3971,21 @@
 			}
 		},
 		"price": 500,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73989,
+		"name": "Black shell",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 250000,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		}
@@ -4924,6 +5044,42 @@
 		"highalch": 27,
 		"buy_limit": 13000,
 		"price": 1,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73992,
+		"name": "Bottle of sea water",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 68,
+		"lowalch": 27,
+		"highalch": 40,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -8,
+			"attack_ranged": -3,
+			"defence_stab": 5,
+			"defence_slash": 7,
+			"defence_crush": 6,
+			"defence_magic": -1,
+			"defence_ranged": 6,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "shield",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 250000,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		}
@@ -8042,34 +8198,39 @@
 	{
 		"id": 71611,
 		"name": "Cob cap",
-		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
 		"equipable": true,
-		"cost": 100,
-		"lowalch": 40,
-		"highalch": 60,
+		"cost": 44,
+		"lowalch": 17,
+		"highalch": 26,
+		"buy_limit": 125,
 		"equipment": {
-			"attack_stab": 2,
-			"attack_slash": 2,
-			"attack_crush": 2,
-			"attack_magic": 1,
-			"attack_ranged": 2,
-			"defence_stab": 2,
-			"defence_slash": 2,
-			"defence_crush": 2,
-			"defence_magic": 1,
-			"defence_ranged": 2,
-			"melee_strength": 2,
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -6,
+			"attack_ranged": -3,
+			"defence_stab": 4,
+			"defence_slash": 5,
+			"defence_crush": 3,
+			"defence_magic": -1,
+			"defence_ranged": 4,
+			"melee_strength": 0,
 			"ranged_strength": 0,
 			"magic_damage": 0,
 			"prayer": 0,
-			"slot": "hands",
-			"requirements": null
+			"slot": "head",
+			"requirements": {
+				"defence": 1
+			}
 		},
+		"price": 10000,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true,
 			"isDiscontinued": true
-		},
-		"price": 10000
+		}
 	},
 	{
 		"id": 70204,
@@ -9207,6 +9368,80 @@
 		"buy_limit": 13000,
 		"price": 100,
 		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73975,
+		"name": "Coral bikini bottom",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 80,
+		"lowalch": 32,
+		"highalch": 48,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -21,
+			"attack_ranged": -11,
+			"defence_stab": 8,
+			"defence_slash": 7,
+			"defence_crush": 6,
+			"defence_magic": -4,
+			"defence_ranged": 7,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "legs",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73974,
+		"name": "Coral bikini top",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 160,
+		"lowalch": 64,
+		"highalch": 96,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -30,
+			"attack_ranged": -15,
+			"defence_stab": 15,
+			"defence_slash": 14,
+			"defence_crush": 9,
+			"defence_magic": -6,
+			"defence_ranged": 14,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "body",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
 			"cantDropFromMysteryBoxes": true
 		}
 	},
@@ -15623,6 +15858,7 @@
 		"buy_limit": 13000,
 		"price": 1,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true,
 			"isDiscontinued": true
 		}
@@ -18150,6 +18386,7 @@
 		"buy_limit": 13000,
 		"price": 1,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true
 		}
 	},
@@ -19828,6 +20065,7 @@
 		"buy_limit": 13000,
 		"price": 500000,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true
 		}
 	},
@@ -23645,6 +23883,50 @@
 		}
 	},
 	{
+		"id": 73987,
+		"name": "Gothic Dwarven warhammer",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 120000,
+		"lowalch": 48000,
+		"highalch": 72000,
+		"buy_limit": 8,
+		"equipment": {
+			"attack_stab": -4,
+			"attack_slash": -4,
+			"attack_crush": 95,
+			"attack_magic": -4,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 85,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "weapon",
+			"requirements": {
+				"attack": 60,
+				"strength": 99
+			}
+		},
+		"weapon": {
+			"attack_speed": 6,
+			"weapon_type": "blunt"
+		},
+		"price": 1000000000,
+		"customItemData": {
+			"isSecret": true,
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": true
+		}
+	},
+	{
 		"id": 62114,
 		"name": "Gr-egg-oyle special",
 		"tradeable": true,
@@ -25902,7 +26184,7 @@
 		"highalch": 120,
 		"tradeable": true,
 		"tradeable_on_ge": true,
-		"buy_limit": 2,
+		"buy_limit": 25,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		},
@@ -26292,6 +26574,43 @@
 		}
 	},
 	{
+		"id": 73972,
+		"name": "Imitation Crab Hat",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 44,
+		"lowalch": 17,
+		"highalch": 26,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -6,
+			"attack_ranged": -3,
+			"defence_stab": 4,
+			"defence_slash": 5,
+			"defence_crush": 3,
+			"defence_magic": -1,
+			"defence_ranged": 4,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 1000000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 73755,
 		"name": "Immense heat scroll",
 		"tradeable": true,
@@ -26532,6 +26851,13 @@
 		"highalch": 3000,
 		"buy_limit": 50000,
 		"price": 6000
+	},
+	{
+		"id": 48231,
+		"name": "Independence Day 2 Box",
+		"tradeable_on_ge": true,
+		"tradeable": true,
+		"price": 1000000
 	},
 	{
 		"id": 70033,
@@ -28001,7 +28327,7 @@
 		"highalch": 120,
 		"tradeable": true,
 		"tradeable_on_ge": true,
-		"buy_limit": 5,
+		"buy_limit": 50,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		},
@@ -28282,6 +28608,18 @@
 			"weapon_type": "stab_sword"
 		},
 		"price": 6000
+	},
+	{
+		"id": 48235,
+		"name": "Liber-ray-tor",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 1000000
 	},
 	{
 		"id": 70034,
@@ -28944,6 +29282,45 @@
 		"highalch": 1000,
 		"buy_limit": 50000,
 		"price": 1000
+	},
+	{
+		"id": 73985,
+		"name": "Lydia",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 44,
+		"lowalch": 17,
+		"highalch": 26,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -6,
+			"attack_ranged": -3,
+			"defence_stab": 4,
+			"defence_slash": 5,
+			"defence_crush": 3,
+			"defence_magic": -1,
+			"defence_ranged": 4,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 1000000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": true,
+			"dontTradeOnGE": true,
+			"isPet": true
+		}
 	},
 	{
 		"id": 70177,
@@ -30446,6 +30823,45 @@
 		}
 	},
 	{
+		"id": 73986,
+		"name": "Mona",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 44,
+		"lowalch": 17,
+		"highalch": 26,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -6,
+			"attack_ranged": -3,
+			"defence_stab": 4,
+			"defence_slash": 5,
+			"defence_crush": 3,
+			"defence_magic": -1,
+			"defence_ranged": 4,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 1000000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true,
+			"isSuperUntradeable": true,
+			"dontTradeOnGE": true,
+			"isPet": true
+		}
+	},
+	{
 		"id": 73212,
 		"name": "Monkey cape",
 		"tradeable": true,
@@ -30771,7 +31187,7 @@
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true,
 			"isSuperUntradeable": true,
-			"superTradeableButTradeableOnGE": true
+			"superUntradeableButTradeableOnGE": true
 		},
 		"price": 500000
 	},
@@ -30782,7 +31198,7 @@
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true,
 			"isSuperUntradeable": true,
-			"superTradeableButTradeableOnGE": true
+			"superUntradeableButTradeableOnGE": true
 		},
 		"price": 500000
 	},
@@ -30793,7 +31209,7 @@
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true,
 			"isSuperUntradeable": true,
-			"superTradeableButTradeableOnGE": true
+			"superUntradeableButTradeableOnGE": true
 		},
 		"price": 500000
 	},
@@ -31191,6 +31607,42 @@
 			}
 		},
 		"price": 1000
+	},
+	{
+		"id": 73993,
+		"name": "Mysterious bottle",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 68,
+		"lowalch": 27,
+		"highalch": 40,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -8,
+			"attack_ranged": -3,
+			"defence_stab": 5,
+			"defence_slash": 7,
+			"defence_crush": 6,
+			"defence_magic": -1,
+			"defence_ranged": 6,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "shield",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 250000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
 	},
 	{
 		"id": 71565,
@@ -33370,6 +33822,43 @@
 		"price": 10000
 	},
 	{
+		"id": 73983,
+		"name": "Old crab cage",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 68,
+		"lowalch": 27,
+		"highalch": 40,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -8,
+			"attack_ranged": -3,
+			"defence_stab": 5,
+			"defence_slash": 7,
+			"defence_crush": 6,
+			"defence_magic": -1,
+			"defence_ranged": 6,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "shield",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 1000000,
+		"customItemData": {
+			"isSuperUntradeable": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 122002,
 		"name": "Olof's gold",
 		"tradeable": true,
@@ -33761,6 +34250,43 @@
 		}
 	},
 	{
+		"id": 73976,
+		"name": "Palm board shorts",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 80,
+		"lowalch": 32,
+		"highalch": 48,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -21,
+			"attack_ranged": -11,
+			"defence_stab": 8,
+			"defence_slash": 7,
+			"defence_crush": 6,
+			"defence_magic": -4,
+			"defence_ranged": 7,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "legs",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 71912,
 		"name": "Pandora's box",
 		"tradeable": true,
@@ -33847,6 +34373,80 @@
 			"weapon_type": "stab_sword"
 		},
 		"price": 1000
+	},
+	{
+		"id": 73968,
+		"name": "Partycrab",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 44,
+		"lowalch": 17,
+		"highalch": 26,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -6,
+			"attack_ranged": -3,
+			"defence_stab": 4,
+			"defence_slash": 5,
+			"defence_crush": 3,
+			"defence_magic": -1,
+			"defence_ranged": 4,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 1000000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true,
+			"isPet": true
+		}
+	},
+	{
+		"id": 73982,
+		"name": "Patricia",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 44,
+		"lowalch": 17,
+		"highalch": 26,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": -6,
+			"attack_ranged": -3,
+			"defence_stab": 4,
+			"defence_slash": 5,
+			"defence_crush": 3,
+			"defence_magic": -1,
+			"defence_ranged": 4,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": {
+				"defence": 1
+			}
+		},
+		"price": 1000000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true,
+			"isPet": true
+		}
 	},
 	{
 		"id": 62122,
@@ -36249,6 +36849,21 @@
 		}
 	},
 	{
+		"id": 73990,
+		"name": "Purple dust",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 250000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 52618,
 		"name": "Purple flower crown",
 		"equipable": true,
@@ -36306,6 +36921,21 @@
 			}
 		},
 		"price": 100000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73988,
+		"name": "Purple sand dollar",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 250000,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		}
@@ -36797,7 +37427,8 @@
 		"name": "Radiant Magnabbit",
 		"members": true,
 		"customItemData": {
-			"cantDropFromMysteryBoxes": true
+			"cantDropFromMysteryBoxes": true,
+			"isPet": true
 		},
 		"price": 1000000
 	},
@@ -38732,6 +39363,15 @@
 		}
 	},
 	{
+		"id": 48232,
+		"name": "Sam",
+		"members": true,
+		"customItemData": {
+			"isPet": true
+		},
+		"price": 1000000
+	},
+	{
 		"id": 48214,
 		"name": "Sam's hat",
 		"tradeable": true,
@@ -39913,6 +40553,41 @@
 		}
 	},
 	{
+		"id": 73978,
+		"name": "Shell necklace",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"cost": 2025,
+		"lowalch": 810,
+		"highalch": 1215,
+		"buy_limit": 125,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 10,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "neck",
+			"requirements": null
+		},
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 3714,
 		"name": "Shelldon",
 		"members": true,
@@ -40858,6 +41533,7 @@
 		"buy_limit": 13000,
 		"price": 500000,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true
 		}
 	},
@@ -41498,7 +42174,7 @@
 		"highalch": 120,
 		"tradeable": true,
 		"tradeable_on_ge": true,
-		"buy_limit": 50,
+		"buy_limit": 250,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		},
@@ -43302,6 +43978,7 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true,
 			"isDiscontinued": true
 		}
@@ -43739,6 +44416,18 @@
 		}
 	},
 	{
+		"id": 48234,
+		"name": "Stars and Stripeship",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 1000000
+	},
+	{
 		"id": 70165,
 		"name": "Stealing creation token",
 		"members": true,
@@ -44015,6 +44704,69 @@
 		}
 	},
 	{
+		"id": 73970,
+		"name": "Summer crate (s9)",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 500000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73971,
+		"name": "Summer crate key (s9)",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 500000,
+		"customItemData": {
+			"dontTradeOnGE": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73973,
+		"name": "Summer partyhat",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"equipable": true,
+		"buy_limit": 5,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": null
+		},
+		"price": 1000000,
+		"customItemData": {
+			"isDiscontinued": true,
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
 		"id": 73673,
 		"name": "Summoning cape",
 		"tradeable": true,
@@ -44087,6 +44839,36 @@
 		"price": 1,
 		"customItemData": {
 			"tags": ["SUMMONING", "IN_UMB"]
+		}
+	},
+	{
+		"id": 73984,
+		"name": "Sun Scream",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 1000000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73991,
+		"name": "Sun Scream (unf)",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 500000,
+		"customItemData": {
+			"cantDropFromMysteryBoxes": true
 		}
 	},
 	{
@@ -44328,6 +45110,7 @@
 		"buy_limit": 13000,
 		"price": 100000,
 		"customItemData": {
+			"dontTradeOnGE": true,
 			"cantDropFromMysteryBoxes": true
 		}
 	},
@@ -45567,7 +46350,7 @@
 		"highalch": 120,
 		"tradeable": true,
 		"tradeable_on_ge": true,
-		"buy_limit": 75,
+		"buy_limit": 250,
 		"customItemData": {
 			"cantDropFromMysteryBoxes": true
 		},
@@ -50201,6 +50984,22 @@
 		},
 		"price": 100,
 		"customItemData": {
+			"cantDropFromMysteryBoxes": true
+		}
+	},
+	{
+		"id": 73981,
+		"name": "Whale floaty",
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"noteable": true,
+		"cost": 45,
+		"lowalch": 18,
+		"highalch": 27,
+		"buy_limit": 13000,
+		"price": 500000,
+		"customItemData": {
+			"isDiscontinued": true,
 			"cantDropFromMysteryBoxes": true
 		}
 	},
