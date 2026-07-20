@@ -1,6 +1,7 @@
 import { EmbedBuilder } from '@oldschoolgg/discord';
 
 import { ownedItemOption } from '@/discord/index.js';
+import { canvasToBuffer, loadImage } from '@/lib/canvas/canvasUtil.js';
 import { Planks } from '@/lib/minions/data/planks.js';
 import Potions from '@/lib/minions/data/potions.js';
 import { quests } from '@/lib/minions/data/quests.js';
@@ -601,13 +602,15 @@ export const activitiesCommand = defineCommand({
 		}
 		if (options.beach_combing) {
 			const content = 'This command is no longer available...';
-			const embed = new EmbedBuilder()
-				.setDescription('Please enjoy this AI generated good-bye!')
-				.setImage('https://cdn.discordapp.com/attachments/851273567416483861/1526174360979898398/image.png');
 
 			return {
 				content,
-				embeds: [embed]
+				files: [
+					{
+						name: 'byebyebeach.png',
+						buffer: await canvasToBuffer(await loadImage('src/lib/resources/images/byebyebeach.png'))
+					}
+				]
 			};
 		}
 		if (options.warriors_guild) {
