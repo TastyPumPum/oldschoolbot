@@ -1,5 +1,6 @@
 import { type APIChatInputApplicationCommandInteraction, SpecialResponse } from '@oldschoolgg/discord';
-import { cryptoRng } from '@oldschoolgg/rng/crypto';
+import { UserError } from '@oldschoolgg/toolkit';
+import { cryptoRng } from 'node-rng/crypto';
 
 import { convertAPIOptionsToCommandOptions } from '@/discord/index.js';
 import { preCommand } from '@/discord/preCommand.js';
@@ -11,13 +12,17 @@ export async function rawCommandHandlerInner({
 	command,
 	options,
 	ignoreUserIsBusy,
-	rng
+	rng,
+	isContinue,
+	continueDeltaMs
 }: {
-	interaction: MInteraction;
+	interaction: OSInteraction;
 	command: AnyCommand;
 	options: CommandOptions;
 	ignoreUserIsBusy?: true;
 	rng: RNGProvider;
+	isContinue?: boolean;
+	continueDeltaMs?: number | null;
 }): CommandResponse {
 	// Permissions
 	if (command.requiredPermissions) {
@@ -31,8 +36,7 @@ export async function rawCommandHandlerInner({
 			};
 		}
 	}
-	const user = await mUserFetch(interaction.userId);
-
+	const user = interaction.user;
 	RawSQL.updateUserLastCommandDate({ userId: interaction.userId }).catch(err => Logging.logError(err));
 
 	// TODO: remove later
@@ -40,7 +44,7 @@ export async function rawCommandHandlerInner({
 		user.syncCompletedAchievementDiaries().catch(err => Logging.logError(err));
 	}
 
-	const shouldIgnoreBusy = ignoreUserIsBusy || busyImmuneCommands.includes(command.name);
+	const shouldIgnoreBusy = user.isAdmin() || ignoreUserIsBusy || busyImmuneCommands.includes(command.name);
 
 	if (!shouldIgnoreBusy && (await user.getIsLocked())) {
 		return {
@@ -57,7 +61,9 @@ export async function rawCommandHandlerInner({
 			command,
 			interaction,
 			options,
-			user
+			user,
+			isContinue,
+			continueDeltaMs
 		});
 		if (inhibitedResponse) {
 			return {
@@ -88,11 +94,21 @@ export async function rawCommandHandlerInner({
 		return response;
 	} catch (err) {
 		if ((err as Error).message === SILENT_ERROR) return SpecialResponse.SilentErrorResponse;
+		const date = new Date();
 		Logging.logError({
 			err: err as Error,
-			interaction,
-			context: { command: command.name, options: JSON.stringify(options) }
+			context: {
+				type: 'COMMAND_ERROR',
+				user_id: interaction.userId,
+				command_name: command.name,
+				channel_id: interaction.channelId,
+				guild_id: interaction.guildId,
+				datetime: date.toISOString(),
+				timestamp: date.getTime(),
+				options: JSON.stringify(options)
+			}
 		});
+		if (err instanceof UserError) return SpecialResponse.RespondedManually;
 		return {
 			content: `An error occurred while running this command.`
 		};
@@ -105,7 +121,7 @@ export async function rawCommandHandlerInner({
 
 export async function commandHandler(
 	rawInteraction: APIChatInputApplicationCommandInteraction,
-	interaction: MInteraction
+	interaction: OSInteraction
 ) {
 	const command = globalClient.allCommands.find(c => c.name === rawInteraction.data.name)!;
 	const options = convertAPIOptionsToCommandOptions({

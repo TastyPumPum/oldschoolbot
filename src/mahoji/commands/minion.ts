@@ -15,7 +15,7 @@ import { effectiveMonsters } from '@/lib/minions/data/killableMonsters/index.js'
 import { blowpipeCommand, blowpipeDarts } from '@/lib/minions/functions/blowpipeCommand.js';
 import { degradeableItemsCommand } from '@/lib/minions/functions/degradeableItemsCommand.js';
 import { allPossibleStyles, trainCommand } from '@/lib/minions/functions/trainCommand.js';
-import { roboChimpUserFetch } from '@/lib/roboChimp.js';
+import { roboChimpUserFetchCached } from '@/lib/roboChimp.js';
 import { Minigames } from '@/lib/settings/minigames.js';
 import creatures from '@/lib/skilling/skills/hunter/creatures/index.js';
 import { Skills } from '@/lib/skilling/skills/index.js';
@@ -23,6 +23,7 @@ import { MUserStats } from '@/lib/structures/MUserStats.js';
 import { getAllKillCounts, getKCByName } from '@/lib/util/getKCByName.js';
 import { minionStatsEmbed } from '@/lib/util/minionStatsEmbed.js';
 import { getPeakTimesString } from '@/lib/util/peaks.js';
+import { refreshUserCache } from '@/lib/util/refreshCache.js';
 import { isValidNickname, patronMsg } from '@/lib/util/smallUtils.js';
 import {
 	achievementDiaryCommand,
@@ -47,7 +48,8 @@ const patMessages = [
 ];
 
 export async function getUserInfo(user: MUser) {
-	const roboChimpUser = await roboChimpUserFetch(user.id);
+	await refreshUserCache({ user });
+	const roboChimpUser = await roboChimpUserFetchCached(user.id);
 	const leaguesRanking = await roboChimpClient.user.count({
 		where: {
 			leagues_points_total: {
@@ -68,7 +70,7 @@ export async function getUserInfo(user: MUser) {
 	const taskText = task ? `${task.type}` : 'None';
 
 	const result = {
-		perkTier: await user.fetchPerkTier(),
+		perkTier: user.perkTier,
 		isBlacklisted: await user.isBlacklisted(),
 		badges: user.badgesString,
 		isIronman: user.isIronman,
@@ -82,7 +84,7 @@ export async function getUserInfo(user: MUser) {
 		2
 	);
 
-	const roboCache = await Cache.getRoboChimpUser(user.id);
+	const roboCache = await roboChimpUserFetchCached(user.id);
 	return {
 		...result,
 		everythingString: `${user.badgedUsername}[${user.id}]
@@ -440,7 +442,7 @@ export const minionCommand = defineCommand({
 		if (options.status) return minionStatusCommand(user, channelId);
 
 		if (options.stats) {
-			return { embeds: [await minionStatsEmbed(user)] };
+			return { embeds: [await minionStatsEmbed({ user, rng })] };
 		}
 
 		if (options.achievementdiary) {
@@ -558,7 +560,7 @@ export const minionCommand = defineCommand({
 			return degradeableItemsCommand(interaction, user, options.charge.item, options.charge.amount);
 		}
 		if (options.daily) {
-			return dailyCommand(interaction, user);
+			return dailyCommand(rng, interaction, user);
 		}
 		if (options.train) return trainCommand(user, options.train.style);
 		if (options.pat) return rng.pick(patMessages).replace('{name}', user.minionName);

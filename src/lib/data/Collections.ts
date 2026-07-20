@@ -62,9 +62,9 @@ import { pumpkinHeadUniqueTable } from '@/lib/bso/pumpkinHead.js';
 import { divinationEnergies, portents } from '@/lib/bso/skills/divination.js';
 import { inventionCL } from '@/lib/bso/skills/invention/inventions.js';
 import { slayerMasksHelmsCL } from '@/lib/bso/skills/slayer/slayerMaskHelms.js';
+import { beachOutfitTable } from '@/lib/bso/summerDays.js';
 import { getAllIgneTameKCs, tameKillableMonsters } from '@/lib/bso/tames/tames.js';
 
-import { CollectionLog } from '@oldschoolgg/collectionlog';
 import { calcWhatPercent, notEmpty, stringMatches, sumArr, uniqueArr } from '@oldschoolgg/toolkit';
 import {
 	Bank,
@@ -197,6 +197,7 @@ import {
 	tormentedDemonCL,
 	troubleBrewingCL,
 	tzHaarCL,
+	valeTotemsCL,
 	vardorvisCL,
 	venenatisCL,
 	vetionCL,
@@ -377,10 +378,9 @@ export const allCollectionLogs: ICollection = {
 				items: derangedArchaeologistCL,
 				fmtProg: kcProg(Monsters.DerangedArchaeologist)
 			},
-			'Doom of Mokhaiotl': {
-				unobtainable: true,
-				items: CollectionLog.DoomofMokhaiotl.items
-			},
+			///	'Doom of Mokhaiotl': {
+			///		items: CollectionLog.DoomofMokhaiotl.items
+			///	},
 			'Dagannoth Kings': {
 				alias: ['dagannoth kings', 'kings', 'dagga', 'dks'],
 				kcActivity: {
@@ -703,10 +703,9 @@ export const allCollectionLogs: ICollection = {
 				items: wintertodtCL,
 				fmtProg: mgProg('wintertodt')
 			},
-			Yami: {
-				unobtainable: true,
-				items: CollectionLog.Yami.items
-			},
+			///	Yama: {
+			///		items: CollectionLog.Yami.items
+			///	},
 			Zalcano: { items: zalcanoCL, fmtProg: ({ stats }) => `${stats.kcBank[EMonster.ZALCANO] ?? 0} KC` },
 			Zulrah: {
 				alias: Monsters.Zulrah.aliases,
@@ -1132,11 +1131,10 @@ export const allCollectionLogs: ICollection = {
 				items: uniqueArr([...cluesHardRareCL, ...cluesEliteRareCL, ...cluesMasterRareCL]),
 				isActivity: true,
 				fmtProg: clueProg(['Hard', 'Elite', 'Master'])
-			},
-			'Scroll Cases': {
-				unobtainable: true,
-				items: CollectionLog.ScrollCases.items
 			}
+			///	'Scroll Cases': {
+			///		items: CollectionLog.ScrollCases.items
+			///	}
 		}
 	},
 	Minigames: {
@@ -1237,10 +1235,9 @@ export const allCollectionLogs: ICollection = {
 				isActivity: true,
 				fmtProg: mgProg('mahogany_homes')
 			},
-			'Mastering Mixology': {
-				unobtainable: true,
-				items: CollectionLog.MasteringMixology.items
-			},
+			///	'Mastering Mixology': {
+			///		items: CollectionLog.MasteringMixology.items
+			///	},
 			'Pest Control': {
 				items: pestControlCL,
 				isActivity: true,
@@ -1292,8 +1289,10 @@ export const allCollectionLogs: ICollection = {
 				fmtProg: mgProg('trouble_brewing')
 			},
 			'Vale Totems': {
-				unobtainable: true,
-				items: CollectionLog.ValeTotems.items
+				alias: ['vt', 'vale', 'totems', 'vale totems'],
+				items: valeTotemsCL,
+				isActivity: true,
+				fmtProg: mgProg('vale_totems')
 			},
 			'Volcanic Mine': {
 				items: volcanicMineCL,
@@ -1399,10 +1398,9 @@ export const allCollectionLogs: ICollection = {
 				items: demonicGorillaCL,
 				fmtProg: kcProg(Monsters.DemonicGorilla)
 			},
-			'Hunter Guild': {
-				unobtainable: true,
-				items: CollectionLog.HunterGuild.items
-			},
+			///	'Hunter Guild': {
+			///		items: CollectionLog.HunterGuild.items
+			///	},
 			'Monkey Backpacks': {
 				alias: ['monkey', 'monkey bps', 'backpacks'],
 				kcActivity: {
@@ -1687,6 +1685,10 @@ export const allCollectionLogs: ICollection = {
 					'Waddles',
 					'Tasty'
 				]),
+				counts: false
+			},
+			'Easter 2026': {
+				items: resolveItems(['Wabbit eggs', 'Magnegg', 'Magnabbit']),
 				counts: false
 			},
 			'Thanksgiving 2021': {
@@ -1984,7 +1986,33 @@ export const allCollectionLogs: ICollection = {
 					'Golden cape',
 					'Golden shard',
 					'Golden partyhat',
-					'Black swan'
+					'Black swan',
+					'Wubufu',
+					'The whale card',
+					'Radiant magnabbit',
+					'Mona',
+					'Lydia'
+				]),
+				counts: false
+			},
+			'Summer 2026': {
+				alias: ['summer'],
+				items: resolveItems([
+					...beachOutfitTable.allItems,
+					'Summer Partyhat',
+					'Imitation crab hat',
+					'Partycrab',
+					'Patricia',
+					'Mona',
+					'Lydia',
+					'Old crab cage',
+					'Mysterious bottle',
+					'Bottle of sea water',
+					'Purple sand dollar',
+					'Black shell',
+					'Purple dust',
+					'Sun scream (unf)',
+					'Sun scream'
 				]),
 				counts: false
 			}
@@ -2222,8 +2250,7 @@ export async function getCollection(options: {
 			collectionObtained: userAmount,
 			collectionTotal: totalCl,
 			userItems: userCheckBank,
-			counts: false,
-			unobtainable: false
+			counts: false
 		};
 	}
 	if (stringMatches(search, 'overall')) {
@@ -2234,8 +2261,7 @@ export async function getCollection(options: {
 			collectionObtained: userAmount,
 			collectionTotal: totalCl,
 			userItems: userCheckBank,
-			counts: false,
-			unobtainable: false
+			counts: false
 		};
 	}
 
@@ -2252,8 +2278,7 @@ export async function getCollection(options: {
 				collectionTotal: totalCl,
 				leftList: getLeftList(userCheckBank, category, allItems, logType === 'sacrifice'),
 				userItems: userCheckBank,
-				counts: false,
-				unobtainable: false
+				counts: false
 			};
 		}
 		for (const [activityName, attributes] of Object.entries(entries.activities)) {
@@ -2307,8 +2332,7 @@ export async function getCollection(options: {
 						logType === 'sacrifice'
 					),
 					userItems: userCheckBank,
-					counts: attributes.counts ?? true,
-					unobtainable: attributes.unobtainable ?? false
+					counts: attributes.counts ?? true
 				};
 			}
 		}
@@ -2327,8 +2351,7 @@ export async function getCollection(options: {
 			collectionObtained: userAmount,
 			collectionTotal: totalCl,
 			userItems: userCheckBank,
-			counts: false,
-			unobtainable: false
+			counts: false
 		};
 	}
 

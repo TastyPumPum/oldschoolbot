@@ -1,5 +1,6 @@
 import type { MegaDuckLocation } from '@/lib/bso/megaDuck.js';
 
+import { PermissionFlags } from '@oldschoolgg/discord';
 import {
 	type IChannel,
 	type IEmoji,
@@ -7,19 +8,20 @@ import {
 	type IMember,
 	type IRole,
 	type IWebhook,
+	type IWebhookPermissions,
 	ZMember,
-	ZRole
+	ZRole,
+	ZWebhook,
+	ZWebhookPermissions
 } from '@oldschoolgg/schemas';
-import { Time } from '@oldschoolgg/toolkit';
-import { isValidDiscordSnowflake, RedisKeys } from '@oldschoolgg/util';
+import { cleanUsername, Time } from '@oldschoolgg/toolkit';
+import { isValidDiscordSnowflake, MockedRedis, RedisKeys } from '@oldschoolgg/util';
 import { Redis } from 'ioredis';
 
-import type { Guild } from '@/prisma/main.js';
-import { MockedRedis } from '@/lib/cache/redis-mock.js';
-import { BOT_TYPE, globalConfig } from '@/lib/constants.js';
+import type { Guild, Prisma } from '@/prisma/main.js';
+import { BitField, BOT_TYPE, globalConfig } from '@/lib/constants.js';
 import type { RobochimpUser } from '@/lib/roboChimp.js';
-import type { PrismaCompatibleJsonObject } from '@/lib/types/index.js';
-import { fetchUsernameAndCache } from '@/lib/util.js';
+import { makeBadgeString } from '@/lib/util/makeBadgeString.js';
 
 type LockStatus = 'locked' | 'unlocked';
 
@@ -34,15 +36,28 @@ type RatelimitConfig = {
 	max: number;
 };
 
-type RatelimitType = 'random_events' | 'global_buttons' | 'stats_command';
+type RatelimitType =
+	| 'random_events'
+	| 'global_buttons'
+	| 'stats_command'
+	| 'delay_member_fetch'
+	| 'delay_guild_fetch'
+	| 'delay_robochimp_fetch';
 
 const RATELIMITS: Record<RatelimitType, RatelimitConfig> = {
 	global_buttons: { windowSeconds: 2, max: 1 },
 	random_events: { windowSeconds: TTL.Hour * 3, max: 5 },
-	stats_command: { windowSeconds: 5, max: 1 }
+	stats_command: { windowSeconds: 5, max: 1 },
+	delay_member_fetch: { windowSeconds: 5 * 60, max: 1 },
+	delay_guild_fetch: { windowSeconds: 5 * 60, max: 1 },
+	delay_robochimp_fetch: { windowSeconds: 5 * 60, max: 1 }
 } as const;
 
 const BotKeys = RedisKeys[BOT_TYPE];
+type CachedGuildSettings = Pick<Guild, 'id' | 'disabledCommands' | 'petchannel' | 'staffOnlyChannels'>;
+type GuildUpdateInput = Partial<IGuild> & {
+	mega_duck_location?: MegaDuckLocation | Prisma.InputJsonValue;
+};
 
 class CacheManager {
 	private client: Redis;
@@ -52,7 +67,9 @@ class CacheManager {
 			this.client = new Redis();
 		} else {
 			try {
-				const redis = new Redis({ reconnectOnError: () => false });
+				const host: string = process.env.REDIS_HOST ?? 'localhost';
+				const port: number = Number(process.env.REDIS_PORT ?? 6379);
+				const redis = new Redis({ host, port });
 				redis.on('error', () => {
 					redis.disconnect();
 					this.client = new MockedRedis() as any as Redis;
@@ -70,6 +87,10 @@ class CacheManager {
 
 	private async setJson(key: string, value: object) {
 		await this.client.set(key, JSON.stringify(value));
+	}
+
+	private async setJsonWithTTL(key: string, value: object, ttlSeconds: number) {
+		await this.client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
 	}
 
 	private async getJson<T = unknown>(key: string): Promise<T | null> {
@@ -90,7 +111,7 @@ class CacheManager {
 		await pipeline.exec();
 	}
 
-	private async getGuildSettings(id: string): Promise<Omit<Guild, 'mega_duck_location'> | null> {
+	private async getGuildSettings(id: string): Promise<CachedGuildSettings | null> {
 		const guildSettings = await prisma.guild.findUnique({
 			where: { id },
 			select: {
@@ -104,9 +125,14 @@ class CacheManager {
 	}
 
 	async getGuild(guildId: string): Promise<IGuild> {
-		const key = BotKeys.GuildSettings(guildId);
-		const cached = await this.getJson<IGuild>(key);
-		if (cached) return cached;
+		const delayCheck = await this.tryRatelimit(guildId, 'delay_guild_fetch');
+		if (!delayCheck.success) {
+			// If we're under time out, it could be assumed to be cached, but...
+			const cacheGuild = await this.getJson<IGuild>(BotKeys.GuildSettings(guildId));
+			if (cacheGuild) {
+				return cacheGuild;
+			}
+		}
 
 		const guildSettings = await this.getGuildSettings(guildId);
 		const guild: IGuild = guildSettings
@@ -127,7 +153,7 @@ class CacheManager {
 		return guild;
 	}
 
-	public async updateGuild(guildId: string, updates: Partial<{ mega_duck_location: MegaDuckLocation } & IGuild>) {
+	public async updateGuild(guildId: string, updates: GuildUpdateInput) {
 		const guildSettings = await prisma.guild.upsert({
 			where: { id: guildId },
 			create: {
@@ -135,17 +161,13 @@ class CacheManager {
 				disabledCommands: updates.disabled_commands ?? undefined,
 				petchannel: updates.petchannel ?? undefined,
 				staffOnlyChannels: updates.staff_only_channels ?? undefined,
-				mega_duck_location: updates.mega_duck_location
-					? (updates.mega_duck_location as any as PrismaCompatibleJsonObject)
-					: undefined
+				mega_duck_location: updates.mega_duck_location as Prisma.InputJsonValue | undefined
 			},
 			update: {
 				disabledCommands: updates.disabled_commands ?? undefined,
 				petchannel: updates.petchannel ?? undefined,
 				staffOnlyChannels: updates.staff_only_channels ?? undefined,
-				mega_duck_location: updates.mega_duck_location
-					? (updates.mega_duck_location as any as PrismaCompatibleJsonObject)
-					: undefined
+				mega_duck_location: updates.mega_duck_location as Prisma.InputJsonValue | undefined
 			}
 		});
 
@@ -158,8 +180,44 @@ class CacheManager {
 		return this.setJson(BotKeys.GuildSettings(guildId), newGuild);
 	}
 
-	async getMember(guildId: string, userId: string) {
-		return this.getJson<IMember>(RedisKeys.Discord.Member(guildId, userId));
+	// We will only try to getMember's when guildId == SupportServerID, UNLESS forceFetch is true, in which case we will always fetch.
+	async getMember({
+		guildId,
+		userId,
+		cacheOnly,
+		refreshCache,
+		externalServer
+	}: {
+		guildId: string;
+		userId: string;
+		cacheOnly?: boolean;
+		refreshCache?: boolean;
+		externalServer?: boolean;
+	}): Promise<IMember | null> {
+		// If we cache this guild, lets check it
+		const cachedServer = globalConfig.guildIdsToCache.includes(guildId);
+		if (cachedServer) {
+			const key = `${guildId}:${userId}`;
+			if (refreshCache) return await globalClient.fetchMember({ guildId, userId });
+			const delayCheck = await Cache.tryRatelimit(key, 'delay_member_fetch');
+			if (cacheOnly || !delayCheck.success) {
+				// If we're under time out, it could be assumed to be cached, but...
+				const cacheMember = await this.getJson<IMember>(RedisKeys.Discord.Member(guildId, userId));
+				if (cacheMember) {
+					return cacheMember;
+				} else {
+					if (cacheOnly) return null;
+					const member = await globalClient.fetchMember({ guildId, userId });
+					await Cache.setMember(member);
+					return member;
+				}
+			}
+		}
+		if (cachedServer || externalServer) {
+			// We can fetch now
+			return await globalClient.fetchMember({ guildId, userId });
+		}
+		return null;
 	}
 
 	async getChannel(channelId: string): Promise<IChannel> {
@@ -210,8 +268,27 @@ class CacheManager {
 		await this.bulkSet(roles, r => RedisKeys.Discord.Role(r.guild_id, r.id));
 	}
 
+	async setRoboChimpUser(userID: string, user: RobochimpUser): Promise<void> {
+		await this.setJson(RedisKeys.RoboChimpUser(BigInt(userID)), user);
+	}
 	async getRoboChimpUser(userId: string): Promise<RobochimpUser | null> {
 		return this.getJson<RobochimpUser>(RedisKeys.RoboChimpUser(BigInt(userId)));
+	}
+
+	async setPerkTier(userId: string, tier: number): Promise<void> {
+		const ttlSeconds = TTL.Hour * 2 + Math.floor(Math.random() * TTL.Hour);
+		await this.setString(RedisKeys.Global.PerkTier(userId), tier.toString(), ttlSeconds);
+	}
+
+	async getPerkTier(userId: string): Promise<number | null> {
+		const cached = await this.getString(RedisKeys.Global.PerkTier(userId));
+		if (cached === null) return null;
+		const tier = Number(cached);
+		return Number.isInteger(tier) ? tier : null;
+	}
+
+	async resetPerkTier(userId: string): Promise<void> {
+		await this.client.del(RedisKeys.Global.PerkTier(userId));
 	}
 
 	// Users
@@ -228,38 +305,120 @@ class CacheManager {
 		await this.setString(BotKeys.User.LockStatus(userId), newStatus, 25);
 	}
 
-	async _getBadgedUsernameRaw(userId: string): Promise<string | null> {
-		return this.client.get(BotKeys.User.BadgedUsername(userId));
+	private async getExpiringString(fullKey: string): Promise<string | null> {
+		const ttl = await this.client.pttl(fullKey);
+		if (ttl === -2) {
+			return null;
+		}
+		if (ttl === -1) {
+			const delaySeconds = Math.floor(Math.random() * TTL.Hour);
+			if (delaySeconds <= TTL.Minute) {
+				await this.client.del(fullKey);
+				return null;
+			}
+			await this.client.pexpire(fullKey, delaySeconds * 1000);
+		}
+		return this.client.get(fullKey);
 	}
 
-	async getBadgedUsername(userId: string) {
+	private async setExpiringString(fullKey: string, value: string): Promise<void> {
+		const jitterSeconds = Math.floor(Math.random() * TTL.Hour * 2) - TTL.Hour;
+		await this.setString(fullKey, value, TTL.Day + jitterSeconds);
+	}
+
+	private expiringDayTTL(): number {
+		const jitterSeconds = Math.floor(Math.random() * TTL.Hour * 2) - TTL.Hour;
+		return TTL.Day + jitterSeconds;
+	}
+
+	async getUsername(userId: string): Promise<string> {
 		if (!isValidDiscordSnowflake(userId)) {
 			throw new Error(`Invalid userID: ${userId}`);
 		}
-		return fetchUsernameAndCache(userId);
+
+		const cached = await this.getExpiringString(RedisKeys.Discord.Username(userId));
+		if (cached) return cached;
+
+		let username: string | null = null;
+		const djsUser = await globalClient.fetchUser(userId).catch(() => null);
+		if (djsUser?.username) {
+			username = cleanUsername(djsUser.username);
+		}
+
+		const user = await prisma.user.upsert({
+			where: {
+				id: userId
+			},
+			create: {
+				id: userId,
+				username: username ?? undefined
+			},
+			update: username
+				? {
+						username
+					}
+				: {},
+			select: {
+				username: true
+			}
+		});
+
+		if (!user.username) return 'Unknown';
+
+		await this.setUsername(userId, user.username);
+		return user.username;
+	}
+
+	async setUsername(userId: string, username: string): Promise<void> {
+		await this.setExpiringString(RedisKeys.Discord.Username(userId), username);
+	}
+
+	async resetUsername(userId: string) {
+		await this.client.del(RedisKeys.Discord.Username(userId));
+		await this.client.del(BotKeys.User.BadgedUsername(userId));
+	}
+	async getBadgedUsername(userId: string): Promise<string> {
+		if (!isValidDiscordSnowflake(userId)) {
+			throw new Error(`Invalid userID: ${userId}`);
+		}
+		const key = BotKeys.User.BadgedUsername(userId);
+		const cached = await this.getExpiringString(key);
+		if (cached) return cached;
+
+		const username = await this.getUsername(userId);
+		const user = await prisma.user.findUnique({
+			where: {
+				id: userId
+			},
+			select: {
+				badges: true,
+				bitfield: true,
+				minion_ironman: true
+			}
+		});
+		const badgesString = user
+			? makeBadgeString(user.badges, user.minion_ironman, user.bitfield.includes(BitField.OriginalCyrSupporter))
+			: '';
+		const badgedUsername = `${badgesString} ${username}`.trim();
+		if (username !== 'Unknown') {
+			await this.setExpiringString(key, badgedUsername);
+		}
+		return badgedUsername;
 	}
 
 	async getBadgedUsernames(userIds: string[]): Promise<string[]> {
-		const result = await Promise.all(userIds.map(id => this.getBadgedUsername(id)));
-		return result;
+		return Promise.all(userIds.map(id => this.getBadgedUsername(id)));
 	}
 
-	async setBadgedUsername(userId: string, badgedUsername: string): Promise<void> {
-		await this.client.set(BotKeys.User.BadgedUsername(userId), badgedUsername);
-	}
-
-	private async doRatelimitCheck({
-		userId,
-		key: inputKey,
+	public async fullKeyRatelimitCheck({
+		key: fullKey,
 		windowSeconds,
 		max
 	}: {
-		userId: string;
 		key: string;
 		windowSeconds: number;
 		max: number;
 	}): Promise<{ success: true } | { success: false; timeRemainingMs: number }> {
-		const fullKey = BotKeys.User.Ratelimit(inputKey, userId);
 		const count = await this.client.incr(fullKey);
 
 		if (count === 1) await this.client.expire(fullKey, windowSeconds);
@@ -281,9 +440,9 @@ class CacheManager {
 		type: RatelimitType
 	): Promise<{ success: true } | { success: false; timeRemainingMs: number }> {
 		const cfg = RATELIMITS[type];
-		return this.doRatelimitCheck({
-			userId,
-			key: type,
+		const key = BotKeys.User.Ratelimit(type, userId);
+		return this.fullKeyRatelimitCheck({
+			key,
 			windowSeconds: cfg.windowSeconds,
 			max: cfg.max
 		});
@@ -326,11 +485,103 @@ class CacheManager {
 	}
 
 	async setWebhook(webhook: IWebhook): Promise<void> {
+		ZWebhook.parse(webhook);
 		await this.setJson(BotKeys.Webhook(webhook.channel_id), webhook);
 	}
 
 	async getWebhook(channelId: string): Promise<IWebhook | null> {
-		return this.getJson(BotKeys.Webhook(channelId));
+		const cached = await this.getJson<IWebhook>(BotKeys.Webhook(channelId));
+		if (cached) return ZWebhook.parse(cached);
+
+		const stored = await prisma.webhook.findUnique({
+			where: {
+				channel_id: channelId
+			}
+		});
+		if (!stored) return null;
+
+		const webhook = ZWebhook.parse({
+			id: stored.webhook_id,
+			token: stored.webhook_token,
+			channel_id: stored.channel_id
+		});
+		await this.setWebhook(webhook);
+		return webhook;
+	}
+
+	private permissionKeysToBits(permissions: (keyof typeof PermissionFlags)[]): bigint {
+		let bits = 0n;
+		for (const permission of permissions) {
+			bits |= PermissionFlags[permission];
+		}
+		return bits;
+	}
+
+	private async fetchCanCreateWebhook(channelId: string): Promise<boolean> {
+		try {
+			const rawChannel = await globalClient.fetchChannel(channelId);
+			if (!rawChannel || !('guild_id' in rawChannel) || !rawChannel.guild_id) return false;
+			if (!('permission_overwrites' in rawChannel)) return false;
+
+			const botUserId = globalClient.application?.bot?.id ?? globalConfig.clientID;
+			const member = await globalClient.fetchMember({ guildId: rawChannel.guild_id, userId: botUserId });
+			const everyoneRole = await globalClient.fetchRole(rawChannel.guild_id, rawChannel.guild_id);
+
+			let permissions =
+				this.permissionKeysToBits(everyoneRole?.permissions ?? []) |
+				this.permissionKeysToBits(member.roles_detailed.flatMap(role => role.permissions));
+			if ((permissions & PermissionFlags.ADMINISTRATOR) === PermissionFlags.ADMINISTRATOR) return true;
+
+			const overwrites = rawChannel.permission_overwrites ?? [];
+			const applyOverwrite = (deny: string, allow: string) => {
+				permissions &= ~BigInt(deny);
+				permissions |= BigInt(allow);
+			};
+
+			const everyoneOverwrite = overwrites.find(
+				overwrite => overwrite.type === 0 && overwrite.id === rawChannel.guild_id
+			);
+			if (everyoneOverwrite) applyOverwrite(everyoneOverwrite.deny, everyoneOverwrite.allow);
+
+			let roleDeny = 0n;
+			let roleAllow = 0n;
+			for (const overwrite of overwrites) {
+				if (overwrite.type !== 0 || !member.roles.includes(overwrite.id)) continue;
+				roleDeny |= BigInt(overwrite.deny);
+				roleAllow |= BigInt(overwrite.allow);
+			}
+			permissions &= ~roleDeny;
+			permissions |= roleAllow;
+
+			const memberOverwrite = overwrites.find(overwrite => overwrite.type === 1 && overwrite.id === botUserId);
+			if (memberOverwrite) applyOverwrite(memberOverwrite.deny, memberOverwrite.allow);
+
+			return (permissions & PermissionFlags.MANAGE_WEBHOOKS) === PermissionFlags.MANAGE_WEBHOOKS;
+		} catch (err) {
+			Logging.logError(err as Error);
+			return false;
+		}
+	}
+
+	async setWebhookPermissions(permissions: IWebhookPermissions): Promise<void> {
+		ZWebhookPermissions.parse(permissions);
+		await this.setJsonWithTTL(
+			BotKeys.WebhookPermissions(permissions.channel_id),
+			permissions,
+			this.expiringDayTTL()
+		);
+	}
+
+	async getWebhookPermissions(channelId: string): Promise<IWebhookPermissions> {
+		const cached = await this.getJson<IWebhookPermissions>(BotKeys.WebhookPermissions(channelId));
+		if (cached) return ZWebhookPermissions.parse(cached);
+
+		const permissions = ZWebhookPermissions.parse({
+			channel_id: channelId,
+			can_create_webhook: await this.fetchCanCreateWebhook(channelId)
+		});
+		await this.setWebhookPermissions(permissions);
+		return permissions;
 	}
 
 	async close() {

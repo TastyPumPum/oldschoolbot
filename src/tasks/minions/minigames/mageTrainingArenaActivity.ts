@@ -1,4 +1,3 @@
-import { randomVariation } from '@oldschoolgg/rng';
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
@@ -8,7 +7,7 @@ export const pizazzPointsPerHour = 100;
 
 export const mageTrainingTask: MinionTask = {
 	type: 'MageTrainingArena',
-	async run(data: MinigameActivityTaskOptionsWithNoChanges, { user, handleTripFinish }) {
+	async run(data: MinigameActivityTaskOptionsWithNoChanges, { user, handleTripFinish, rng }) {
 		const { channelId, quantity, duration } = data;
 
 		await user.incrementMinigameScore('magic_training_arena', quantity);
@@ -16,31 +15,28 @@ export const mageTrainingTask: MinionTask = {
 		const loot = new Bank();
 
 		const baseXP = (25_000 / (Time.Minute * 60)) * duration;
-		const xp = randomVariation(baseXP, 5);
+		const xp = rng.randomVariation(baseXP, 5);
 		const xpRes = await user.addXP({
 			skillName: 'magic',
 			amount: xp,
 			duration
 		});
 		const pizazzPoints = Math.floor((pizazzPointsPerHour / (Time.Minute * 60)) * duration);
-		await prisma.newUser.update({
-			where: { id: user.id },
-			data: {
-				pizazz_points: {
-					increment: pizazzPoints
-				}
-			}
-		});
-		const totalPizazzPoints = await prisma.newUser.findUnique({
-			where: { id: user.id },
-			select: {
-				pizazz_points: true
+		const totalPizazzPoints = await prisma.minigame.upsert({
+			where: { user_id: user.id },
+			update: {
+				pizazz_points: { increment: pizazzPoints }
+			},
+			select: { pizazz_points: true },
+			create: {
+				user_id: user.id,
+				pizazz_points: pizazzPoints
 			}
 		});
 
 		const str = `${user}, ${
 			user.minionName
-		} finished completing ${quantity}x Magic Training Arena rooms. You received **${pizazzPoints} Pizazz points**. You now have **${totalPizazzPoints?.pizazz_points.toLocaleString()} Pizazz points**. ${xpRes}`;
+		} finished completing ${quantity}x Magic Training Arena rooms. You received **${pizazzPoints} Pizazz points**. You now have **${totalPizazzPoints.pizazz_points.toLocaleString()} Pizazz points**. ${xpRes}`;
 
 		handleTripFinish({ user, channelId, message: str, data, loot });
 	}
