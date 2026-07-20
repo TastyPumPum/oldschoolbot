@@ -1,4 +1,5 @@
 import { ownedItemOption } from '@/discord/index.js';
+import { canvasToBuffer, loadImage } from '@/lib/canvas/canvasUtil.js';
 import { Planks } from '@/lib/minions/data/planks.js';
 import Potions from '@/lib/minions/data/potions.js';
 import { quests } from '@/lib/minions/data/quests.js';
@@ -7,10 +8,8 @@ import birdhouses from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
 import { Castables } from '@/lib/skilling/skills/magic/castables.js';
 import { Enchantables } from '@/lib/skilling/skills/magic/enchantables.js';
 import Prayer from '@/lib/skilling/skills/prayer.js';
-import type { BeachCombingMethod } from '@/lib/types/minions.js';
 import { aerialFishingCommand } from '@/mahoji/lib/abstracted_commands/aerialFishingCommand.js';
 import { alchCommand } from '@/mahoji/lib/abstracted_commands/alchCommand.js';
-import { beachCombingCommand } from '@/mahoji/lib/abstracted_commands/beachCombingCommand.js';
 import { birdhouseCheckCommand, birdhouseHarvestCommand } from '@/mahoji/lib/abstracted_commands/birdhousesCommand.js';
 import { buryCommand } from '@/mahoji/lib/abstracted_commands/buryCommand.js';
 import { butlerCommand } from '@/mahoji/lib/abstracted_commands/butlerCommand.js';
@@ -600,12 +599,17 @@ export const activitiesCommand = defineCommand({
 			return myNotesCommand(user, channelId);
 		}
 		if (options.beach_combing) {
-			return beachCombingCommand(
-				user,
-				channelId,
-				options.beach_combing.focus as BeachCombingMethod,
-				options.beach_combing.minutes
-			);
+			const content = 'This command is no longer available...';
+
+			return {
+				content,
+				files: [
+					{
+						name: 'byebyebeach.png',
+						buffer: await canvasToBuffer(await loadImage('src/lib/resources/images/byebyebeach.png'))
+					}
+				]
+			};
 		}
 		if (options.warriors_guild) {
 			return warriorsGuildCommand(

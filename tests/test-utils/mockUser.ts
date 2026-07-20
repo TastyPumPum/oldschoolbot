@@ -352,11 +352,6 @@ export async function mockUser(
 	if (options.maxed) {
 		await user.max();
 	}
-	await prisma.newUser.create({
-		data: {
-			id: user.id
-		}
-	});
 	return user;
 }
 
