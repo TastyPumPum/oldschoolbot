@@ -66,6 +66,7 @@ import type {
 	PuroPuroActivityTaskOptions,
 	RaidsOptions,
 	RunecraftActivityTaskOptions,
+	SailingActivityTaskOptions,
 	SawmillActivityTaskOptions,
 	ScatteringActivityTaskOptions,
 	SepulchreActivityTaskOptions,
@@ -785,6 +786,24 @@ const tripHandlers: {
 		args: () => ({
 			name: 'colosseum'
 		})
+	},
+	[activity_type_enum.Sailing]: {
+		commandName: 'sail',
+		args: (data: SailingActivityTaskOptions) => {
+			if (data.activity === 'sea_charting') {
+				return { sea_charting: { quantity: data.iQty } };
+			}
+			if (data.activity === 'port_tasks') {
+				return { port_tasks: { type: data.variant, quantity: data.iQty } };
+			}
+			if (data.activity === 'shipwreck_salvaging') {
+				return { shipwreck_salvaging: { shipwreck: data.variant, quantity: data.iQty } };
+			}
+			if (data.activity === 'deep_sea_trawling') {
+				return { deep_sea_trawling: { shoal: data.variant, quantity: data.iQty } };
+			}
+			return { barracuda_trial: { trial: data.activity, rank: data.variant, quantity: data.iQty } };
+		}
 	}
 } as const;
 

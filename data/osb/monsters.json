@@ -1,6 +1,6 @@
 {
-	"hash": "117af84ead8737c866ad5ecb2234ce21",
-	"date": "2026-05-09T10:48:36.665Z",
+	"hash": "667a1dfdd7e702f7b1b17bb355ef44c1",
+	"date": "2026-06-26T09:19:55.075Z",
 	"data": [
 		{
 			"id": 2,
@@ -2041,6 +2041,22 @@
 					"Primordial boots": 15
 				}
 			],
+			"can_barrage": false,
+			"can_chin": false,
+			"can_cannon": false,
+			"cannon_multi": false
+		},
+		{
+			"id": 14922,
+			"name": "Frost Dragon",
+			"base_kill_time_ms": 30000,
+			"is_wildy": false,
+			"is_slayer_only": false,
+			"can_be_pked": false,
+			"is_wildy_multi": false,
+			"items_required": ["Anti-dragon shield"],
+			"qp_required": 0,
+			"item_in_bank_boosts": [],
 			"can_barrage": false,
 			"can_chin": false,
 			"can_cannon": false,

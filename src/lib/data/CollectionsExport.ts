@@ -1363,6 +1363,58 @@ export const aerialFishingCL = resolveItems([
 	'Fish sack',
 	...ItemGroups.anglerOutfit
 ]);
+export const barracudaTrialsCL = resolveItems([
+	'Stormy key',
+	'Barrel stand',
+	'Whirlpool surprise',
+	"Ralph's fabric roll",
+	'Fetid key',
+	'Captured wind mote',
+	"Gurtob's fabric roll",
+	'Serrated key',
+	'Heart of ithell',
+	"Gwyna's fabric roll"
+]);
+export const boatPaintCL = resolveItems(['Barracuda paint', 'Shark paint', "Angler's paint", "Salvor's paint"]);
+export const oceanEncountersCL = resolveItems([
+	'Tiny pearl',
+	'Small pearl',
+	'Shiny pearl',
+	'Bright pearl',
+	'Big pearl',
+	'Huge pearl',
+	'Enormous pearl',
+	'Shimmering pearl',
+	'Glistening pearl',
+	'Brilliant pearl',
+	'Radiant pearl'
+]);
+export const sailingMiscellaneousCL = resolveItems([
+	'Dragon metal sheet',
+	'Dragon nails',
+	'Dragon cannonball',
+	'Echo pearl',
+	'Swift albatross feather',
+	'Narwhal horn',
+	'Ray barbs',
+	'Broken dragon hook',
+	'Bottled storm',
+	'Dragon cannon barrel'
+]);
+export const seaTreasuresCL = resolveItems([
+	'Rusty locket',
+	'Mouldy block',
+	'Dull knife',
+	'Broken compass',
+	'Rusty coin',
+	'Broken sextant',
+	'Smashed mirror',
+	'Dragon cannonball',
+	'Dragon nails',
+	'Mouldy doll',
+	'Dragon cannon barrel',
+	"Salvor's paint"
+]);
 export const allPetsCL = resolveItems([
 	'Abyssal orphan',
 	'Ikkle hydra',
@@ -1404,6 +1456,7 @@ export const allPetsCL = resolveItems([
 	'Tangleroot',
 	'Rocky',
 	'Rift guardian',
+	'Soup',
 	'Herbi',
 	'Chompy chick',
 	'Sraracha',
@@ -1623,7 +1676,8 @@ export const skillingPetsCL = resolveItems([
 	'Giant squirrel',
 	'Tangleroot',
 	'Rocky',
-	'Rift guardian'
+	'Rift guardian',
+	'Soup'
 ]);
 export const slayerCL = resolveItems([
 	// Crawling hand
@@ -1871,6 +1925,9 @@ export const capesCL = resolveItems([
 	'Firemaking cape(t)',
 	'Fishing hood',
 	'Fishing cape(t)',
+	'Sailing hood',
+	'Sailing cape',
+	'Sailing cape(t)',
 	'Agility hood',
 	'Agility cape(t)',
 	'Cooking hood',
