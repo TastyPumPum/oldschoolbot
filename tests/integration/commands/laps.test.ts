@@ -1,10 +1,10 @@
 import { Bank, convertLVLtoXP, Items } from 'oldschooljs';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 
 import { zeroTimeFletchables } from '../../../src/lib/skilling/skills/fletching/fletchables/index.js';
-import * as handleTripFinishModule from '../../../src/lib/util/handleTripFinish.js';
 import { lapsCommand } from '../../../src/mahoji/commands/laps.js';
 import { zeroTimeActivityCommand } from '../../../src/mahoji/commands/zeroTimeActivity.js';
+import { handleTripFinishResults } from '../../test-utils/misc.js';
 import { createTestUser } from '../util.js';
 
 function extractResponseText(response: unknown): string {
@@ -72,8 +72,6 @@ describe('laps command', () => {
 			}
 		});
 
-		const handleTripFinishSpy = vi.spyOn(handleTripFinishModule, 'handleTripFinish');
-
 		const response = await user.runCommand(lapsCommand, {
 			name: 'Gnome Stronghold Agility Course',
 			quantity: 1
@@ -82,21 +80,13 @@ describe('laps command', () => {
 		const responseText = extractResponseText(response);
 		expect(responseText.toLowerCase()).not.toContain('fallback');
 
-		let lastCall: Parameters<(typeof handleTripFinishModule)['handleTripFinish']> | undefined;
-		try {
-			await user.runActivity();
-			lastCall = handleTripFinishSpy.mock.calls.at(-1);
-		} finally {
-			handleTripFinishSpy.mockRestore();
-		}
+		const activityResult = await user.runActivity();
+		const finishResult = activityResult
+			? handleTripFinishResults.get(`${user.id}-${activityResult.type}`)
+			: undefined;
 
-		expect(lastCall).toBeDefined();
-		const firstArg = lastCall?.[0];
-		const messageArg =
-			firstArg && typeof firstArg === 'object' && 'message' in firstArg
-				? (firstArg as { message?: unknown }).message
-				: undefined;
-		const content = extractResponseText(messageArg);
+		expect(finishResult).toBeDefined();
+		const content = extractResponseText(finishResult?.message);
 		expect(content.toLowerCase()).not.toContain('fallback preference');
 		expect(content.toLowerCase()).not.toContain('fallback');
 	});
