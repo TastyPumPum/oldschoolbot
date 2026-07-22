@@ -46,6 +46,7 @@ export const sepulchreTask: MinionTask = {
 		let alchQuantity = 0;
 		let alchItem: Item | null = null;
 		let alchXpRes = '';
+		const zeroTimeLoot = new Bank();
 
 		let fletchable: (typeof zeroTimeFletchables)[number] | undefined;
 
@@ -60,7 +61,7 @@ export const sepulchreTask: MinionTask = {
 
 			const alchGP = alchItem.highalch * alchQuantity;
 			if (alchGP > 0) {
-				loot.add('Coins', alchGP);
+				zeroTimeLoot.add('Coins', alchGP);
 				await ClientSettings.updateClientGPTrackSetting('gp_alch', alchGP);
 			}
 
@@ -71,7 +72,7 @@ export const sepulchreTask: MinionTask = {
 			});
 			savedRunesFromAlching = savedRunes;
 			if (savedBank) {
-				loot.add(savedBank);
+				zeroTimeLoot.add(savedBank);
 			}
 
 			alchXpRes = await user.addXP({
@@ -104,6 +105,7 @@ export const sepulchreTask: MinionTask = {
 				source: XpGainSource.ZeroTimeActivity
 			});
 			fletchingLoot.add(fletchable.id, quantityToGive);
+			zeroTimeLoot.add(fletchingLoot);
 		}
 
 		const { previousCL, itemsAdded } = await user.transactItems({
@@ -139,6 +141,29 @@ export const sepulchreTask: MinionTask = {
 			]
 		});
 
+		if (zeroTimeLoot.length > 0) {
+			await user.transactItems({
+				collectionLog: true,
+				itemsToAdd: zeroTimeLoot
+			});
+
+			await trackLoot({
+				totalLoot: zeroTimeLoot,
+				id: 'zeroTimeLoot',
+				type: 'Skilling',
+				changeType: 'loot',
+				duration: data.duration,
+				kc: quantity,
+				users: [
+					{
+						id: user.id,
+						duration,
+						loot: zeroTimeLoot
+					}
+				]
+			});
+		}
+
 		const fallbackNote = zeroTimePreferenceRole === 'fallback' ? ' (fallback preference)' : '';
 		let str = `${user}, ${user.minionName} finished doing the Hallowed Sepulchre ${quantity}x times (floor ${
 			floors[0]
@@ -155,21 +180,20 @@ export const sepulchreTask: MinionTask = {
 
 		// Handle fletching loot separately after generating the main loot image
 		if (fletchable && fletch) {
-			await user.transactItems({
-				collectionLog: true,
-				itemsToAdd: fletchingLoot
-			});
-
 			if (fletchable.outputMultiple) {
 				const fletchableName = `${fletchable.name}s`;
 				str += `\nYou also fletched ${fletchQuantity} sets of ${fletchableName}${fallbackNote} and received ${fletchingLoot}. ${fletchXpRes}.`;
 			} else {
-				str += `\nYou also fletched ${fletchQuantity} ${fletchable.name}${fallbackNote} and received ${fletchXpRes}.`;
+				str += `\nYou also fletched ${fletchQuantity} ${fletchable.name}${fallbackNote} and received ${fletchingLoot}. ${fletchXpRes}.`;
 			}
 		}
 
 		if (alchItem && alchQuantity > 0) {
-			str += `\nYou also alched ${alchQuantity}x ${alchItem.name}${fallbackNote}.`;
+			const alchLoot = new Bank().add('Coins', alchItem.highalch! * alchQuantity);
+			if (savedRunesFromAlching > 0) {
+				alchLoot.add('Nature rune', savedRunesFromAlching);
+			}
+			str += `\nYou also alched ${alchQuantity}x ${alchItem.name}${fallbackNote} and received ${alchLoot}.`;
 			if (savedRunesFromAlching > 0) {
 				str += ` Your Bryophyta's staff saved you ${savedRunesFromAlching} Nature runes.`;
 			}

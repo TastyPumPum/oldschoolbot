@@ -2,6 +2,7 @@ import { Emoji, Events, increaseNumByPercent, Time } from '@oldschoolgg/toolkit'
 import { addItemToBank, Bank, type ItemBank, Items } from 'oldschooljs';
 
 import { XpGainSource } from '@/prisma/main/enums.js';
+import { trackLoot } from '@/lib/lootTrack.js';
 import Agility from '@/lib/skilling/skills/agility.js';
 import { zeroTimeFletchables } from '@/lib/skilling/skills/fletching/fletchables/index.js';
 import type { AgilityActivityTaskOptions } from '@/lib/types/minions.js';
@@ -22,6 +23,7 @@ export const agilityTask: MinionTask = {
 	async run(data: AgilityActivityTaskOptions, { user, handleTripFinish, rng }) {
 		const { courseID, quantity, channelId, duration, alch, fletch, zeroTimePreferenceRole } = data;
 		const loot = new Bank();
+		const zeroTimeLoot = new Bank();
 		const currentLevel = user.skillsAsLevels.agility;
 
 		const course = Agility.Courses.find(course => course.id === courseID)!;
@@ -117,7 +119,9 @@ export const agilityTask: MinionTask = {
 
 		let fletchable: (typeof zeroTimeFletchables)[number] | undefined;
 		let fletchQuantity = 0;
+		const fletchingLoot = new Bank();
 		let alchItemNameForSummary: string | null = null;
+		const alchLoot = new Bank();
 
 		if (fletch && fletch.qty > 0) {
 			fletchable = zeroTimeFletchables.find(item => item.id === fletch.id);
@@ -129,7 +133,8 @@ export const agilityTask: MinionTask = {
 			const quantityToGive = fletchable.outputMultiple
 				? fletchQuantity * fletchable.outputMultiple
 				: fletchQuantity;
-			loot.add(fletchable.id, quantityToGive);
+			fletchingLoot.add(fletchable.id, quantityToGive);
+			zeroTimeLoot.add(fletchingLoot);
 
 			const fletchXpRes = await user.addXP({
 				skillName: 'fletching',
@@ -145,7 +150,7 @@ export const agilityTask: MinionTask = {
 			const alchedItem = Items.getOrThrow(alch.itemID);
 			alchItemNameForSummary = alchedItem.name;
 			const alchGP = alchedItem.highalch! * alch.quantity;
-			loot.add('Coins', alchGP);
+			alchLoot.add('Coins', alchGP);
 			const { savedRunes, savedBank } = calculateBryophytaRuneSavings({
 				user,
 				quantity: alch.quantity,
@@ -153,8 +158,9 @@ export const agilityTask: MinionTask = {
 			});
 			savedRunesFromAlching = savedRunes;
 			if (savedBank) {
-				loot.add(savedBank);
+				alchLoot.add(savedBank);
 			}
+			zeroTimeLoot.add(alchLoot);
 			const magicXpRes = await user.addXP({
 				skillName: 'magic',
 				amount: alch.quantity * 65,
@@ -176,13 +182,13 @@ export const agilityTask: MinionTask = {
 		}
 		if (alch && alchItemNameForSummary) {
 			const fallbackNote = zeroTimePreferenceRole === 'fallback' ? ' (fallback preference)' : '';
-			str += `\nYou also alched ${alch.quantity}x ${alchItemNameForSummary}${fallbackNote}.`;
+			str += `\nYou also alched ${alch.quantity}x ${alchItemNameForSummary}${fallbackNote} and received ${alchLoot}.`;
 		}
 
 		if (fletchable && fletch && fletchQuantity > 0) {
 			const setsText = fletchable.outputMultiple ? ' sets of' : '';
 			const fallbackNote = zeroTimePreferenceRole === 'fallback' ? ' (fallback preference)' : '';
-			str += `\nYou also fletched ${fletchQuantity}${setsText} ${fletchable.name}${fallbackNote}.`;
+			str += `\nYou also fletched ${fletchQuantity}${setsText} ${fletchable.name}${fallbackNote} and received ${fletchingLoot}.`;
 		}
 
 		// Roll for pet
@@ -203,6 +209,29 @@ export const agilityTask: MinionTask = {
 			collectionLog: true,
 			itemsToAdd: loot
 		});
+
+		if (zeroTimeLoot.length > 0) {
+			await user.transactItems({
+				collectionLog: true,
+				itemsToAdd: zeroTimeLoot
+			});
+
+			await trackLoot({
+				totalLoot: zeroTimeLoot,
+				id: 'zeroTimeLoot',
+				type: 'Skilling',
+				changeType: 'loot',
+				duration: data.duration,
+				kc: quantity,
+				users: [
+					{
+						id: user.id,
+						duration,
+						loot: zeroTimeLoot
+					}
+				]
+			});
+		}
 
 		handleTripFinish({ user, channelId, message: str, data, loot });
 	}
