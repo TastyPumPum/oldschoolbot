@@ -546,7 +546,7 @@ export async function prepareZeroTimeActivityTrip(
 			infoMessages.push(`**${`${prefix}Falling back to ${fallbackDescription}.`.trim()}**`);
 		}
 	} else if (formattedFailures.length > 0) {
-		infoMessages.push(...formattedFailures.map(message => `**${message}**`));
+		infoMessages.push(`**${formattedFailures.join('\n')}**`);
 	}
 
 	if (actualPreferenceRole) {
