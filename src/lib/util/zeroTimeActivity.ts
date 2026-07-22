@@ -2,6 +2,7 @@ import { Time } from '@oldschoolgg/toolkit';
 import { Bank, type Item, Items } from 'oldschooljs';
 
 import type { zero_time_activity_type_enum } from '@/prisma/main/enums.js';
+import { trackLoot } from '@/lib/lootTrack.js';
 import { timePerAlch, timePerAlchAgility } from '../../mahoji/lib/abstracted_commands/alchCommand.js';
 import Arrows from '../skilling/skills/fletching/fletchables/arrows.js';
 import Bolts from '../skilling/skills/fletching/fletchables/bolts.js';
@@ -542,10 +543,10 @@ export async function prepareZeroTimeActivityTrip(
 		if (actualPreferenceRole === 'fallback') {
 			const fallbackDescription = describeZeroTimePreference(outcome.result.preference);
 			const prefix = formattedFailures.length > 0 ? `${formattedFailures.join(' ')} ` : '';
-			infoMessages.push(`${prefix}Falling back to ${fallbackDescription}.`.trim());
+			infoMessages.push(`**${`${prefix}Falling back to ${fallbackDescription}.`.trim()}**`);
 		}
 	} else if (formattedFailures.length > 0) {
-		infoMessages.push(...formattedFailures);
+		infoMessages.push(...formattedFailures.map(message => `**${message}**`));
 	}
 
 	if (actualPreferenceRole) {
@@ -553,12 +554,29 @@ export async function prepareZeroTimeActivityTrip(
 	}
 
 	if (options.removeItems) {
+		let costBank: Bank | null = null;
 		if (fletchResult) {
 			await options.user.removeItemsFromBank(fletchResult.itemsToRemove);
+			costBank = fletchResult.itemsToRemove;
 		}
 		if (alchResult) {
 			await options.user.removeItemsFromBank(alchResult.bankToRemove);
 			await ClientSettings.updateBankSetting('magic_cost_bank', alchResult.bankToRemove);
+			costBank = alchResult.bankToRemove;
+		}
+		if (costBank && costBank.length > 0) {
+			await trackLoot({
+				totalCost: costBank,
+				id: 'zeroTimeLoot',
+				type: 'Skilling',
+				changeType: 'cost',
+				users: [
+					{
+						id: options.user.id,
+						cost: costBank
+					}
+				]
+			});
 		}
 	}
 
