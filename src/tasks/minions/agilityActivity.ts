@@ -197,7 +197,7 @@ export const agilityTask: MinionTask = {
 			'agility',
 			typeof course.petChance === 'number' ? course.petChance : course.petChance(currentLevel)
 		);
-		if (rng.roll(petDropRate / quantity)) {
+		if (rng.roll(Math.ceil(petDropRate / quantity))) {
 			loot.add('Giant squirrel');
 			globalClient.emit(
 				Events.ServerNotification,
