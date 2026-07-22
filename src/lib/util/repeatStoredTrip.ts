@@ -68,7 +68,6 @@ import type {
 	RunecraftActivityTaskOptions,
 	SawmillActivityTaskOptions,
 	ScatteringActivityTaskOptions,
-	SepulchreActivityTaskOptions,
 	ShadesOfMortonOptions,
 	ShadesOfMortonPyreLogsOptions,
 	SmeltingActivityTaskOptions,
@@ -108,7 +107,8 @@ const taskCanBeRepeated = (activity: Activity, user: MUser, taskIndex: number) =
 			activity_type_enum.TokkulShop,
 			activity_type_enum.Birdhouse,
 			activity_type_enum.StrongholdOfSecurity,
-			activity_type_enum.CombatRing
+			activity_type_enum.CombatRing,
+			activity_type_enum.ZeroTimeActivity
 		] as activity_type_enum[]
 	).includes(activity.type);
 };
@@ -214,8 +214,7 @@ const tripHandlers: {
 		commandName: 'laps',
 		args: (data: AgilityActivityTaskOptions) => ({
 			name: courses.find(c => c.id === data.courseID)?.name ?? data.courseID.toString(),
-			quantity: data.quantity,
-			alch: Boolean(data.alch)
+			quantity: data.quantity
 		})
 	},
 	[activity_type_enum.AgilityArena]: {
@@ -635,10 +634,7 @@ const tripHandlers: {
 	},
 	[activity_type_enum.Sepulchre]: {
 		commandName: 'minigames',
-		args: (data: SepulchreActivityTaskOptions) => {
-			const fletch = data.fletch?.id;
-			return { sepulchre: { start: { fletching: fletch } } };
-		}
+		args: () => ({ sepulchre: { start: {} } })
 	},
 	[activity_type_enum.Smithing]: {
 		commandName: 'smith',
@@ -785,6 +781,10 @@ const tripHandlers: {
 		args: () => ({
 			name: 'colosseum'
 		})
+	},
+	[activity_type_enum.ZeroTimeActivity]: {
+		commandName: 'zero_time_activity',
+		args: () => ({ overview: {} })
 	}
 } as const;
 
