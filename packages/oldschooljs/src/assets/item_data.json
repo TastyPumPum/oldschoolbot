@@ -99492,8 +99492,12 @@
 		"members": true,
 		"tradeable": true,
 		"tradeable_on_ge": true,
+		"noteable": true,
 		"equipable": true,
+		"cost": 2000,
+		"lowalch": 800,
 		"highalch": 1200,
+		"buy_limit": 4,
 		"equipment": {
 			"attack_stab": 0,
 			"attack_slash": 0,
@@ -99512,8 +99516,7 @@
 			"slot": "legs",
 			"requirements": null
 		},
-		"cost": 2000,
-		"buy_limit": 4
+		"price": 6288
 	},
 	"12347": {
 		"name": "Gold elegant shirt",
