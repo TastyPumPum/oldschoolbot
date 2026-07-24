@@ -99492,12 +99492,8 @@
 		"members": true,
 		"tradeable": true,
 		"tradeable_on_ge": true,
-		"noteable": true,
 		"equipable": true,
-		"cost": 2000,
-		"lowalch": 800,
 		"highalch": 1200,
-		"buy_limit": 4,
 		"equipment": {
 			"attack_stab": 0,
 			"attack_slash": 0,
@@ -99516,7 +99512,8 @@
 			"slot": "legs",
 			"requirements": null
 		},
-		"price": 6288
+		"cost": 2000,
+		"buy_limit": 4
 	},
 	"12347": {
 		"name": "Gold elegant shirt",
@@ -206331,6 +206328,13 @@
 		"name": "Raw impaler meat",
 		"tradeable": true,
 		"tradeable_on_ge": true,
+		"equipable": false
+	},
+	"33833": {
+		"name": "Letvek in a bucket",
+		"members": true,
+		"tradeable": false,
+		"tradeable_on_ge": false,
 		"equipable": false
 	}
 }
