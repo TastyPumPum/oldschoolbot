@@ -6,6 +6,7 @@ import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { type RunCommandArgs, runCommand } from '@/lib/settings/settings.js';
 import { AutoslayOptionsEnum, autoslayModes, SlayerMasterEnum } from '@/lib/slayer/constants.js';
 import { getCommonTaskName } from '@/lib/slayer/slayerUtil.js';
+import { isMetalDragonTaskID, METAL_DRAGON_CANONICAL_ID } from '@/lib/slayer/tasks/metalDragonTask.js';
 import { slayerNewTaskCommand } from '@/mahoji/lib/abstracted_commands/slayerTaskCommand.js';
 
 interface AutoslayLink {
@@ -16,6 +17,15 @@ interface AutoslayLink {
 	efficientMethod?: PvMMethod | PvMMethod[];
 	slayerMasters?: SlayerMasterEnum[];
 }
+
+const metalDragonBossPriority = [
+	Monsters.RuneDragon.id,
+	Monsters.AdamantDragon.id,
+	Monsters.MithrilDragon.id,
+	Monsters.SteelDragon.id,
+	Monsters.IronDragon.id,
+	Monsters.BronzeDragon.id
+];
 
 const AutoSlayMaxEfficiencyTable: AutoslayLink[] = [
 	{
@@ -158,9 +168,9 @@ const AutoSlayMaxEfficiencyTable: AutoslayLink[] = [
 		efficientMethod: 'cannon'
 	},
 	{
-		monsterID: Monsters.SteelDragon.id,
-		efficientName: Monsters.SteelDragon.name,
-		efficientMonster: Monsters.SteelDragon.id,
+		monsterID: METAL_DRAGON_CANONICAL_ID,
+		efficientName: Monsters.BronzeDragon.name,
+		efficientMonster: Monsters.BronzeDragon.id,
 		efficientMethod: 'cannon'
 	},
 	{
@@ -523,12 +533,17 @@ export async function autoSlayCommand({
 		let maxDiff = -1;
 		let maxMobName: string | null = null;
 
-		for (const m of allMonsters) {
-			if (
-				(m.difficultyRating ?? 0) > maxDiff &&
-				(m.levelRequirements === undefined || user.hasSkillReqs(m.levelRequirements))
-			) {
-				if (m.qpRequired === undefined || m.qpRequired <= user.QP) {
+		const canKill = (monster: (typeof allMonsters)[number]) =>
+			(monster.levelRequirements === undefined || user.hasSkillReqs(monster.levelRequirements)) &&
+			(monster.qpRequired === undefined || monster.qpRequired <= user.QP);
+
+		if (isMetalDragonTaskID(usersTask.assignedTask!.monster.id)) {
+			maxMobName =
+				metalDragonBossPriority.map(id => allMonsters.find(m => m.id === id)).find(m => m && canKill(m))
+					?.name ?? null;
+		} else {
+			for (const m of allMonsters) {
+				if ((m.difficultyRating ?? 0) > maxDiff && canKill(m)) {
 					maxDiff = m.difficultyRating ?? 0;
 					maxMobName = m.name;
 				}
