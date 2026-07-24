@@ -1,7 +1,7 @@
 import { Bank, EItem } from 'oldschooljs';
 
 import { calcBurntCookables } from '@/lib/skilling/functions/calcBurntCookables.js';
-import Cooking from '@/lib/skilling/skills/cooking/cooking.js';
+import Cooking, { CookingMethodEnum } from '@/lib/skilling/skills/cooking/cooking.js';
 import type { CookingActivityTaskOptions } from '@/lib/types/minions.js';
 
 export const cookingTask: MinionTask = {
@@ -11,7 +11,7 @@ export const cookingTask: MinionTask = {
 
 		const cookable = Cooking.Cookables.find(item => item.id === cookableID)!;
 
-		if (method === 'KarambwanShopCookDrop') {
+		if (method === CookingMethodEnum.KarambwanShop) {
 			const rawKarambwans = new Bank().add(EItem.RAW_KARAMBWAN, quantity);
 			const cookedKarambwans = new Bank().add(EItem.COOKED_KARAMBWAN, quantity);
 			const xpReceived = quantity * cookable.xp;

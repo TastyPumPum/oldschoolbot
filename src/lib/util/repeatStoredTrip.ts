@@ -11,6 +11,7 @@ import { SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import { autocompleteMonsters } from '@/lib/minions/data/killableMonsters/index.js';
 import { runCommand } from '@/lib/settings/settings.js';
 import { courses } from '@/lib/skilling/skills/agility.js';
+import { CookingMethodEnum } from '@/lib/skilling/skills/cooking/cooking.js';
 import {
 	ensureValidStoredFishingTripIdentifier,
 	FISHING_REWORK_MESSAGE,
@@ -300,7 +301,7 @@ const tripHandlers: {
 		commandName: 'cook',
 		args: (data: CookingActivityTaskOptions) => ({
 			name:
-				data.method === 'KarambwanShopCookDrop'
+				data.method === CookingMethodEnum.KarambwanShop
 					? 'Karambwan Shop Cook + Drop'
 					: Items.itemNameFromId(data.cookableID),
 			quantity: data.quantity
