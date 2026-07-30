@@ -3,6 +3,7 @@ import { NMZ_STRATEGY } from '@/lib/constants.js';
 import TrekShopItems from '@/lib/data/buyables/trekBuyables.js';
 import { ValeTotemsBuyables, ValeTotemsSellables } from '@/lib/data/buyables/valeTotemsBuyables.js';
 import { LMSBuyables } from '@/lib/data/CollectionsExport.js';
+import { masteringMixologyBuyables, mixologyHerbs } from '@/lib/minions/data/masteringMixology.js';
 import { zeroTimeFletchables } from '@/lib/skilling/skills/fletching/fletchables/index.js';
 import {
 	agilityArenaBuyables,
@@ -49,9 +50,7 @@ import {
 	MasteringMixologyBuyCommand,
 	MasteringMixologyContractStartCommand,
 	MasteringMixologyStatusCommand,
-	MixologyPasteCreationCommand,
-	masteringMixologyBuyables,
-	mixologyHerbs
+	MixologyPasteCreationCommand
 } from '@/mahoji/lib/abstracted_commands/masteringMixologyCommand.js';
 import {
 	nightmareZoneBuyables,

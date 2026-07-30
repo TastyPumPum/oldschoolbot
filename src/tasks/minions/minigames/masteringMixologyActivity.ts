@@ -1,19 +1,23 @@
-import { Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import type { MixologyPoints } from '../../../lib/minions/data/masteringMixology.js';
+import {
+	calcMixologyContractBasePoints,
+	calcMixologyHandInPoints,
+	createMixologyPoints,
+	getMixologyContractCost,
+	getMixologyContractDuration,
+	mixologyContractBatchSize,
+	mixologyContractDuration,
+	mixologyContracts,
+	mixologyHerbs,
+	mixologyPastePerPotionStep
+} from '../../../lib/minions/data/masteringMixology.js';
 import type {
 	MasteringMixologyContractActivityTaskOptions,
 	MasteringMixologyContractCreatingTaskOptions
 } from '../../../lib/types/minions.js';
 import { handleTripFinish } from '../../../lib/util/handleTripFinish.js';
-import type { MixologyPaste } from '../../../mahoji/lib/abstracted_commands/masteringMixologyCommand.js';
-import {
-	calcMixologyContractBasePoints,
-	calcMixologyHandInPoints,
-	getMixologyContractDuration,
-	mixologyContracts,
-	mixologyHerbs
-} from '../../../mahoji/lib/abstracted_commands/masteringMixologyCommand.js';
 
 export interface WeightedItem {
 	weight: number;
@@ -44,13 +48,11 @@ export const MixologyPasteCreationTask: MinionTask = {
 		const totalXP = quantity * 6;
 		const pasteItemName = `${herb.paste} paste`;
 
-		// Add paste to bank
 		await user.addItemsToBank({
 			items: new Bank().add(pasteItemName, totalPaste),
 			collectionLog: true
 		});
 
-		// Add Herblore XP for creating paste
 		await user.addXP({
 			skillName: 'herblore',
 			amount: totalXP,
@@ -71,15 +73,11 @@ export const MasteringMixologyContractTask: MinionTask = {
 		const user = await mUserFetch(userID);
 		let completed = 0;
 		let totalXP = 0;
-		const pointsEarned: Record<MixologyPaste, number> = {
-			Mox: 0,
-			Lye: 0,
-			Aga: 0
-		};
+		const pointsEarned = createMixologyPoints();
 		let totalPoints = 0;
 		let actualDuration = 0;
-		const contractBaseRate = Time.Hour / 343;
-		let currentHandInBatch: Record<MixologyPaste, number>[] = [];
+		let currentHandInBatch: MixologyPoints[] = [];
+		const totalCost = new Bank();
 
 		const addHandInBatchPoints = () => {
 			if (currentHandInBatch.length === 0) return;
@@ -92,51 +90,39 @@ export const MasteringMixologyContractTask: MinionTask = {
 			currentHandInBatch = [];
 		};
 
-		const pasteUsage: Record<MixologyPaste, number> = {
-			Mox: 0,
-			Lye: 0,
-			Aga: 0
-		};
+		const pasteUsage = createMixologyPoints();
 
 		const currentLevel = user.skillLevel('herblore');
 		for (let i = 0; i < quantity; i++) {
 			const currentBank = user.bank.clone();
 
 			const availableContracts = mixologyContracts.filter(contract => {
-				const counts: Record<MixologyPaste, number> = { Mox: 0, Lye: 0, Aga: 0 };
-				for (const p of contract.pasteSequence) counts[p] += 10;
 				return (
 					currentLevel >= contract.requiredLevel &&
-					Object.entries(counts).every(([p, c]) => currentBank.amount(`${p} paste`) >= c)
+					currentBank.has(getMixologyContractCost(contract.pasteSequence))
 				);
 			});
 
 			if (availableContracts.length === 0) break;
 
 			const contract = masteringMixologyWeightedRandom(availableContracts);
-
-			const cost = new Bank();
-			for (const paste of contract.pasteSequence) {
-				cost.add(`${paste} paste`, 10);
-			}
+			const cost = getMixologyContractCost(contract.pasteSequence);
 
 			if (!user.owns(cost)) continue;
 
 			await user.removeItemsFromBank(cost);
-			await ClientSettings.updateBankSetting('mastering_mixology_cost_bank', cost);
+			totalCost.add(cost);
 
 			for (const paste of contract.pasteSequence) {
-				pasteUsage[paste] += 10;
+				pasteUsage[paste] += mixologyPastePerPotionStep;
 			}
 
 			currentHandInBatch.push(calcMixologyContractBasePoints(contract.pasteSequence));
-			if (currentHandInBatch.length === 3) addHandInBatchPoints();
+			if (currentHandInBatch.length === mixologyContractBatchSize) addHandInBatchPoints();
 
-			const contractDuration = getMixologyContractDuration(contractBaseRate);
+			const contractDuration = getMixologyContractDuration(mixologyContractDuration);
 
 			actualDuration += contractDuration;
-
-			await user.incrementMinigameScore('mastering_mixology', 1);
 
 			totalXP += contract.xp;
 			completed++;
@@ -151,6 +137,9 @@ export const MasteringMixologyContractTask: MinionTask = {
 				data
 			});
 		}
+
+		await ClientSettings.updateBankSetting('mastering_mixology_cost_bank', totalCost);
+		await user.incrementMinigameScore('mastering_mixology', completed);
 
 		const pasteSummary = Object.entries(pasteUsage)
 			.filter(([, count]) => count > 0)

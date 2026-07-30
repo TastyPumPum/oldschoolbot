@@ -1,43 +1,21 @@
-import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
-import { Bank, Items } from 'oldschooljs';
+import { formatDuration, stringMatches } from '@oldschoolgg/toolkit';
+import { Bank } from 'oldschooljs';
 
+import {
+	getMixologyContractCost,
+	getMixologyContractDuration,
+	masteringMixologyBuyables,
+	mixologyContractDuration,
+	mixologyContracts,
+	mixologyHerbs,
+	mixologyHerbUseDuration
+} from '../../../lib/minions/data/masteringMixology.js';
 import { QuestID } from '../../../lib/minions/data/quests.js';
 import type {
 	MasteringMixologyContractActivityTaskOptions,
 	MasteringMixologyContractCreatingTaskOptions
 } from '../../../lib/types/minions.js';
 import { calcMaxTripLength } from '../../../lib/util/calcMaxTripLength.js';
-
-export interface MixologyHerb {
-	name: string;
-	paste: 'Mox' | 'Lye' | 'Aga';
-	quantity: number;
-}
-
-export type MixologyPaste = 'Mox' | 'Lye' | 'Aga';
-
-const baseHerbs: { base: string; paste: 'Mox' | 'Lye' | 'Aga'; quantity: number; unf?: string }[] = [
-	{ base: 'Guam leaf', paste: 'Mox', quantity: 10, unf: 'Guam potion (unf)' },
-	{ base: 'Marrentill', paste: 'Mox', quantity: 13 },
-	{ base: 'Tarromin', paste: 'Mox', quantity: 15 },
-	{ base: 'Harralander', paste: 'Mox', quantity: 20 },
-	{ base: 'Ranarr weed', paste: 'Lye', quantity: 26, unf: 'Ranarr potion (unf)' },
-	{ base: 'Toadflax', paste: 'Lye', quantity: 32 },
-	{ base: 'Irit leaf', paste: 'Aga', quantity: 30, unf: 'Irit potion (unf)' },
-	{ base: 'Avantoe', paste: 'Lye', quantity: 30 },
-	{ base: 'Kwuarm', paste: 'Lye', quantity: 33 },
-	{ base: 'Huasca', paste: 'Aga', quantity: 20 },
-	{ base: 'Snapdragon', paste: 'Lye', quantity: 40 },
-	{ base: 'Cadantine', paste: 'Aga', quantity: 34 },
-	{ base: 'Lantadyme', paste: 'Aga', quantity: 40 },
-	{ base: 'Dwarf weed', paste: 'Aga', quantity: 42 },
-	{ base: 'Torstol', paste: 'Aga', quantity: 44 }
-];
-
-export const mixologyHerbs: MixologyHerb[] = baseHerbs.flatMap(({ base, paste, quantity, unf }) => [
-	{ name: base, paste, quantity },
-	{ name: unf ?? `${base} potion (unf)`, paste, quantity }
-]);
 
 export async function MixologyPasteCreationCommand(
 	user: MUser,
@@ -67,9 +45,8 @@ export async function MixologyPasteCreationCommand(
 		return `You don't have any ${herb.name} to convert into ${herb.paste} paste.`;
 	}
 
-	const timeToMixOne = Time.Second * 0.72; //Based off 5,000 used per hour
 	const maxTripLength = await calcMaxTripLength(user, 'MixologyPasteCreation');
-	const maxByTime = Math.floor(maxTripLength / timeToMixOne);
+	const maxByTime = Math.floor(maxTripLength / mixologyHerbUseDuration);
 	const maxByItems = bankQty;
 
 	let quantity = optionQuantity ?? Math.min(maxByTime, maxByItems);
@@ -85,7 +62,7 @@ export async function MixologyPasteCreationCommand(
 	}
 
 	const pasteYield = quantity * herb.quantity;
-	const duration = quantity * timeToMixOne;
+	const duration = quantity * mixologyHerbUseDuration;
 	const cost = new Bank().add(herb.name, quantity);
 
 	if (!user.owns(cost)) {
@@ -109,170 +86,6 @@ export async function MixologyPasteCreationCommand(
 		duration
 	)}.`;
 }
-
-export function getMixologyContractDuration(base: number): number {
-	const variance = 0.1;
-	const factor = 1 + (Math.random() * 2 - 1) * variance;
-	return base * factor;
-}
-
-export interface MixologyContract {
-	name: string;
-	pasteSequence: MixologyPaste[];
-	requiredLevel: number;
-	xp: number;
-	weight: number;
-}
-
-export function calcMixologyContractBasePoints(pasteSequence: MixologyPaste[]): Record<MixologyPaste, number> {
-	const counts: Record<MixologyPaste, number> = { Mox: 0, Lye: 0, Aga: 0 };
-	for (const p of pasteSequence) counts[p]++;
-
-	const unique = Object.values(counts).filter(c => c > 0).length;
-	const points: Record<MixologyPaste, number> = {
-		Mox: counts.Mox * 10,
-		Lye: counts.Lye * 10,
-		Aga: counts.Aga * 10
-	};
-
-	if (unique === 1) {
-		const only = pasteSequence[0];
-		points.Mox = points.Lye = points.Aga = 0;
-		points[only] = 20;
-	} else if (unique === 3) {
-		points.Mox *= 2;
-		points.Lye *= 2;
-		points.Aga *= 2;
-	}
-
-	return points;
-}
-
-export function calcMixologyHandInPoints(
-	batch: readonly Record<MixologyPaste, number>[]
-): Record<MixologyPaste, number> {
-	const points = batch.reduce(
-		(total, contractPoints) => ({
-			Mox: total.Mox + contractPoints.Mox,
-			Lye: total.Lye + contractPoints.Lye,
-			Aga: total.Aga + contractPoints.Aga
-		}),
-		{ Mox: 0, Lye: 0, Aga: 0 }
-	);
-
-	const multiplier = batch.length >= 3 ? 1.4 : batch.length === 2 ? 1.2 : 1;
-	return {
-		Mox: Math.floor(points.Mox * multiplier),
-		Lye: Math.floor(points.Lye * multiplier),
-		Aga: Math.floor(points.Aga * multiplier)
-	};
-}
-
-export const mixologyContracts: MixologyContract[] = [
-	{
-		name: 'Alco-AugmentAtor',
-		pasteSequence: ['Aga', 'Aga', 'Aga'],
-		requiredLevel: 60,
-		xp: 190,
-		weight: 5
-	},
-	{
-		name: 'Mammoth-Might Mix',
-		pasteSequence: ['Mox', 'Mox', 'Mox'],
-		requiredLevel: 60,
-		xp: 190,
-		weight: 5
-	},
-	{
-		name: 'LipLack Liquor',
-		pasteSequence: ['Lye', 'Lye', 'Lye'],
-		requiredLevel: 60,
-		xp: 190,
-		weight: 5
-	},
-	{
-		name: 'Mystic Mana Amalgam',
-		pasteSequence: ['Mox', 'Mox', 'Aga'],
-		requiredLevel: 63,
-		xp: 215,
-		weight: 4
-	},
-	{
-		name: "Marley's MoonLight",
-		pasteSequence: ['Mox', 'Mox', 'Lye'],
-		requiredLevel: 66,
-		xp: 240,
-		weight: 4
-	},
-	{
-		name: 'Azure Aura Mix',
-		pasteSequence: ['Aga', 'Aga', 'Mox'],
-		requiredLevel: 69,
-		xp: 265,
-		weight: 4
-	},
-	{
-		name: 'AquaLux Amalgam',
-		pasteSequence: ['Aga', 'Lye', 'Aga'],
-		requiredLevel: 72,
-		xp: 290,
-		weight: 4
-	},
-	{
-		name: 'MegaLite Liquid',
-		pasteSequence: ['Mox', 'Lye', 'Lye'],
-		requiredLevel: 75,
-		xp: 315,
-		weight: 4
-	},
-	{
-		name: 'Anti-Leech Lotion',
-		pasteSequence: ['Aga', 'Lye', 'Lye'],
-		requiredLevel: 78,
-		xp: 340,
-		weight: 4
-	},
-	{
-		name: 'MixALot',
-		pasteSequence: ['Mox', 'Aga', 'Lye'],
-		requiredLevel: 81,
-		xp: 365,
-		weight: 3
-	}
-];
-
-export const masteringMixologyBuyables = [
-	{
-		item: Items.getOrThrow('Apprentice potion pack'),
-		cost: { Mox: 420, Aga: 70, Lye: 30 },
-		requiredLevel: 60
-	},
-	{
-		item: Items.getOrThrow('Adept potion pack'),
-		cost: { Mox: 180, Aga: 440, Lye: 70 },
-		requiredLevel: 70
-	},
-	{
-		item: Items.getOrThrow('Expert potion pack'),
-		cost: { Mox: 410, Aga: 320, Lye: 480 },
-		requiredLevel: 85
-	},
-	{
-		item: Items.getOrThrow('Prescription goggles'),
-		cost: { Mox: 8600, Aga: 7000, Lye: 9350 }
-	},
-	{ item: Items.getOrThrow('Alchemist labcoat'), cost: { Mox: 2250, Aga: 2800, Lye: 3700 } },
-	{ item: Items.getOrThrow('Alchemist pants'), cost: { Mox: 2250, Aga: 2800, Lye: 3700 } },
-	{ item: Items.getOrThrow('Alchemist gloves'), cost: { Mox: 2250, Aga: 2800, Lye: 3700 } },
-	{ item: Items.getOrThrow('Reagent pouch'), cost: { Mox: 13800, Aga: 11200, Lye: 15100 } },
-	{ item: Items.getOrThrow('Potion storage'), cost: { Mox: 7750, Aga: 6300, Lye: 8950 } },
-	{
-		item: Items.getOrThrow('Chugging barrel (disassembled)'),
-		cost: { Mox: 17250, Aga: 14000, Lye: 18600 }
-	},
-	{ item: Items.getOrThrow("Alchemist's amulet"), cost: { Mox: 6900, Aga: 5650, Lye: 7400 } },
-	{ item: Items.getOrThrow('Aldarium'), cost: { Mox: 80, Aga: 60, Lye: 90 } }
-];
 
 export async function MasteringMixologyBuyCommand(user: MUser, input = '', quantity = 1) {
 	const buyable = masteringMixologyBuyables.find(i => stringMatches(input, i.item.name));
@@ -307,14 +120,16 @@ export async function MasteringMixologyBuyCommand(user: MUser, input = '', quant
 		);
 	}
 
-	await user.update({
-		mixology_mox_points: { decrement: totalCost.Mox },
-		mixology_aga_points: { decrement: totalCost.Aga },
-		mixology_lye_points: { decrement: totalCost.Lye }
-	});
-
 	const loot = new Bank().add(buyable.item.id, quantity);
-	await user.transactItems({ itemsToAdd: loot, collectionLog: true });
+	await user.transactItems({
+		itemsToAdd: loot,
+		collectionLog: true,
+		otherUpdates: {
+			mixology_mox_points: { decrement: totalCost.Mox },
+			mixology_aga_points: { decrement: totalCost.Aga },
+			mixology_lye_points: { decrement: totalCost.Lye }
+		}
+	});
 
 	return `Successfully purchased ${loot} for ${totalCost.Mox} Mox, ${totalCost.Aga} Aga and ${totalCost.Lye} Lye points.`;
 }
@@ -332,16 +147,8 @@ export async function MasteringMixologyContractStartCommand(user: MUser, channel
 	}
 
 	const totalAvailable = mixologyContracts.filter(c => {
-		const counts: Record<'Mox' | 'Lye' | 'Aga', number> = {
-			Mox: 0,
-			Lye: 0,
-			Aga: 0
-		};
-		for (const p of c.pasteSequence) counts[p] += 10;
-		return (
-			currentLevel >= c.requiredLevel &&
-			Object.entries(counts).every(([p, c]) => user.bank.amount(`${p} paste`) >= c)
-		);
+		const cost = getMixologyContractCost(c.pasteSequence);
+		return currentLevel >= c.requiredLevel && user.bank.has(cost);
 	}).length;
 	if (totalAvailable === 0) {
 		return `You're out of paste! Each contract requires 30 paste (3 batches of 10). \nCreate more using ${globalClient.mentionCommand(
@@ -351,9 +158,8 @@ export async function MasteringMixologyContractStartCommand(user: MUser, channel
 		)} before starting any contracts.`;
 	}
 
-	const contractTime = Time.Hour / 343;
 	const maxTripLength = await calcMaxTripLength(user, 'MasteringMixologyContract');
-	const maxContracts = Math.floor(maxTripLength / (contractTime * 1.1));
+	const maxContracts = Math.floor(maxTripLength / (mixologyContractDuration * 1.1));
 
 	if (!contracts) {
 		contracts = maxContracts;
@@ -364,7 +170,7 @@ export async function MasteringMixologyContractStartCommand(user: MUser, channel
 	}
 	let totalDuration = 0;
 	for (let i = 0; i < contracts; i++) {
-		totalDuration += getMixologyContractDuration(contractTime);
+		totalDuration += getMixologyContractDuration(mixologyContractDuration);
 	}
 	const duration = Math.round(totalDuration);
 
