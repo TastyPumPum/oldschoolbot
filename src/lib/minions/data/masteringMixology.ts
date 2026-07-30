@@ -49,6 +49,10 @@ export interface MixologyContract {
 	weight: number;
 }
 
+export interface WeightedItem {
+	weight: number;
+}
+
 export const mixologyContracts: MixologyContract[] = [
 	{
 		name: 'Alco-AugmentAtor',
@@ -224,4 +228,14 @@ export function getMixologyContractDuration(base: number): number {
 	const variance = 0.1;
 	const factor = 1 + (Math.random() * 2 - 1) * variance;
 	return base * factor;
+}
+
+export function masteringMixologyWeightedRandom<T extends WeightedItem>(items: readonly T[]): T {
+	const total = items.reduce((sum, item) => sum + item.weight, 0);
+	let roll = Math.random() * total;
+	for (const item of items) {
+		if (roll < item.weight) return item;
+		roll -= item.weight;
+	}
+	return items[0];
 }

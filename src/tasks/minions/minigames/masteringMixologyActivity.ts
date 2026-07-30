@@ -7,6 +7,7 @@ import {
 	createMixologyPoints,
 	getMixologyContractCost,
 	getMixologyContractDuration,
+	masteringMixologyWeightedRandom,
 	mixologyContractBatchSize,
 	mixologyContractDuration,
 	mixologyContracts,
@@ -18,20 +19,6 @@ import type {
 	MasteringMixologyContractCreatingTaskOptions
 } from '../../../lib/types/minions.js';
 import { handleTripFinish } from '../../../lib/util/handleTripFinish.js';
-
-export interface WeightedItem {
-	weight: number;
-}
-
-export function masteringMixologyWeightedRandom<T extends WeightedItem>(items: readonly T[]): T {
-	const total = items.reduce((sum, item) => sum + item.weight, 0);
-	let roll = Math.random() * total;
-	for (const item of items) {
-		if (roll < item.weight) return item;
-		roll -= item.weight;
-	}
-	return items[0];
-}
 
 export const MixologyPasteCreationTask: MinionTask = {
 	type: 'MixologyPasteCreation',
@@ -68,9 +55,10 @@ export const MixologyPasteCreationTask: MinionTask = {
 
 export const MasteringMixologyContractTask: MinionTask = {
 	type: 'MasteringMixologyContract',
-	run: async (data: MasteringMixologyContractActivityTaskOptions) => {
+	run: async (data: MasteringMixologyContractActivityTaskOptions, options?: Parameters<MinionTask['run']>[1]) => {
 		const { userID, channelId, quantity } = data;
 		const user = await mUserFetch(userID);
+		const tripFinish = options?.handleTripFinish ?? handleTripFinish;
 		let completed = 0;
 		let totalXP = 0;
 		const pointsEarned = createMixologyPoints();
@@ -130,7 +118,7 @@ export const MasteringMixologyContractTask: MinionTask = {
 		addHandInBatchPoints();
 
 		if (completed === 0) {
-			return handleTripFinish({
+			return tripFinish({
 				user,
 				channelId,
 				message: `${user.minionName} attempted to complete contracts but had insufficient paste.`,
@@ -168,6 +156,6 @@ export const MasteringMixologyContractTask: MinionTask = {
 			`**Paste Used:** ${pasteSummary}`
 		].join('\n');
 
-		return handleTripFinish({ user, channelId, message: finalMsg, data });
+		return tripFinish({ user, channelId, message: finalMsg, data });
 	}
 };
