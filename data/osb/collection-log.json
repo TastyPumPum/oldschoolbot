@@ -5155,6 +5155,7 @@
 					"Skotos",
 					"Smol heredit",
 					"Smolcano",
+					"Soup",
 					"Sraracha",
 					"Tangleroot",
 					"Tiny tempor",
@@ -5166,6 +5167,23 @@
 					"Wisp",
 					"Youngllef"
 				]
+			},
+			"barracuda_trials": {
+				"items": [
+					"Barrel stand",
+					"Captured wind mote",
+					"Fetid key",
+					"Gurtob's fabric roll",
+					"Gwyna's fabric roll",
+					"Heart of ithell",
+					"Ralph's fabric roll",
+					"Serrated key",
+					"Stormy key",
+					"Whirlpool surprise"
+				]
+			},
+			"boat_paint": {
+				"items": ["Angler's paint", "Barracuda paint", "Salvor's paint", "Shark paint"]
 			},
 			"camdozaal": {
 				"items": [
@@ -5565,6 +5583,21 @@
 			"my_notes": {
 				"items": ["Ancient page"]
 			},
+			"ocean_encounters": {
+				"items": [
+					"Big pearl",
+					"Bright pearl",
+					"Brilliant pearl",
+					"Enormous pearl",
+					"Glistening pearl",
+					"Huge pearl",
+					"Radiant pearl",
+					"Shimmering pearl",
+					"Shiny pearl",
+					"Small pearl",
+					"Tiny pearl"
+				]
+			},
 			"random_events": {
 				"items": [
 					"Beekeeper's boots",
@@ -5689,6 +5722,36 @@
 					"Shayzien platebody (4)"
 				]
 			},
+			"sailing_miscellaneous": {
+				"items": [
+					"Bottled storm",
+					"Broken dragon hook",
+					"Dragon cannon barrel",
+					"Dragon cannonball",
+					"Dragon metal sheet",
+					"Dragon nails",
+					"Echo pearl",
+					"Narwhal horn",
+					"Ray barbs",
+					"Swift albatross feather"
+				]
+			},
+			"sea_treasures": {
+				"items": [
+					"Broken compass",
+					"Broken sextant",
+					"Dragon cannon barrel",
+					"Dragon cannonball",
+					"Dragon nails",
+					"Dull knife",
+					"Mouldy block",
+					"Mouldy doll",
+					"Rusty coin",
+					"Rusty locket",
+					"Salvor's paint",
+					"Smashed mirror"
+				]
+			},
 			"shooting_stars": {
 				"items": ["Celestial ring (uncharged)", "Star fragment"]
 			},
@@ -5701,6 +5764,7 @@
 					"Rift guardian",
 					"Rock golem",
 					"Rocky",
+					"Soup",
 					"Tangleroot"
 				]
 			},
@@ -6139,6 +6203,9 @@
 					"Red soul cape",
 					"Runecraft cape(t)",
 					"Runecraft hood",
+					"Sailing cape",
+					"Sailing cape(t)",
+					"Sailing hood",
 					"Saradomin cape",
 					"Saradomin castlewars cloak",
 					"Saradomin cloak",
@@ -7449,6 +7516,58 @@
 					"Superior mining gloves",
 					"Tangleroot",
 					"Unidentified minerals"
+				]
+			},
+			"sailing": {
+				"counts": false,
+				"items": [
+					"Angler's paint",
+					"Barracuda paint",
+					"Barrel stand",
+					"Big pearl",
+					"Bottled storm",
+					"Bright pearl",
+					"Brilliant pearl",
+					"Broken compass",
+					"Broken dragon hook",
+					"Broken sextant",
+					"Captured wind mote",
+					"Dragon cannon barrel",
+					"Dragon cannonball",
+					"Dragon metal sheet",
+					"Dragon nails",
+					"Dull knife",
+					"Echo pearl",
+					"Enormous pearl",
+					"Fetid key",
+					"Glistening pearl",
+					"Gurtob's fabric roll",
+					"Gwyna's fabric roll",
+					"Heart of ithell",
+					"Huge pearl",
+					"Mouldy block",
+					"Mouldy doll",
+					"Narwhal horn",
+					"Radiant pearl",
+					"Ralph's fabric roll",
+					"Ray barbs",
+					"Rusty coin",
+					"Rusty locket",
+					"Sailing cape",
+					"Sailing cape(t)",
+					"Sailing hood",
+					"Salvor's paint",
+					"Serrated key",
+					"Shark paint",
+					"Shimmering pearl",
+					"Shiny pearl",
+					"Small pearl",
+					"Smashed mirror",
+					"Soup",
+					"Stormy key",
+					"Swift albatross feather",
+					"Tiny pearl",
+					"Whirlpool surprise"
 				]
 			}
 		}
