@@ -26,6 +26,7 @@ import {
 	getCompletedChartingTaskIds,
 	getInstalledFacilities,
 	getOrCreateUserShip,
+	getOwnedShipTypes,
 	getShipParts,
 	getStoredSalvage,
 	updateConfiguredShip,
@@ -292,6 +293,9 @@ export const shipCommand = defineCommand({
 			);
 			const parts = normaliseShipParts(getShipParts(ship, activeShipType), activeShipType);
 			const shipType = SailingShipTypeById.get(activeShipType)!;
+			const ownedShips = getOwnedShipTypes(ship)
+				.map(shipType => SailingShipTypeById.get(shipType)?.name ?? shipType)
+				.join(', ');
 			const storedSalvage = formatStoredSalvage(getStoredSalvage(ship, activeShipType));
 			const chartingProgress = getSeaChartingProgress(getCompletedChartingTaskIds(ship));
 			const chartingStatus = chartingProgress.oceans
@@ -310,7 +314,7 @@ export const shipCommand = defineCommand({
 				return `${trial.name}: ${ranks}`;
 			}).join('\n');
 
-			return `**${name}**\nShip type: ${shipType.name} (${shipType.facilityHotspots} facility hotspots)\nStructural parts: ${formatStructuralParts(parts)}\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\nNext action: ${getNextShipAction(user, activeShipType)}\n\nCharting progress (${chartingProgress.completed.toLocaleString()}/${chartingProgress.total.toLocaleString()}):\n${chartingStatus}\n\nBarracuda Trials:\n${barracudaStatus}`;
+			return `**${name}**\nShip type: ${shipType.name} (${shipType.facilityHotspots} facility hotspots)\nOwned ships: ${ownedShips}\nStructural parts: ${formatStructuralParts(parts)}\nFacilities: ${facilities.length === 0 ? 'None' : facilities.join(', ')}\nStored salvage: ${storedSalvage}\nNext action: ${getNextShipAction(user, activeShipType)}\n\nCharting progress (${chartingProgress.completed.toLocaleString()}/${chartingProgress.total.toLocaleString()}):\n${chartingStatus}\n\nBarracuda Trials:\n${barracudaStatus}`;
 		}
 
 		if (options.select) {
@@ -319,7 +323,19 @@ export const shipCommand = defineCommand({
 			if (user.skillsAsLevels.sailing < shipType.sailingLevel) {
 				return `${user.minionName} needs ${shipType.sailingLevel} Sailing to use a ${shipType.name}.`;
 			}
-			await updateUpgradesBank(user.id, { activeShipType: shipType.id });
+			const ownedShipTypes = getOwnedShipTypes(ship);
+			if (!ownedShipTypes.includes(shipType.id)) {
+				if (!user.owns(shipType.cost)) {
+					return `You need ${shipType.cost} to buy a ${shipType.name}.`;
+				}
+				await user.transactItems({ itemsToRemove: shipType.cost });
+				await updateUpgradesBank(user.id, {
+					activeShipType: shipType.id,
+					ownedShipTypes: [...ownedShipTypes, shipType.id]
+				});
+				return `Bought and selected your ${shipType.name}.`;
+			}
+			await updateUpgradesBank(user.id, { activeShipType: shipType.id, ownedShipTypes });
 			return `Selected your ${shipType.name} as your active ship.`;
 		}
 
@@ -433,6 +449,9 @@ export const shipCommand = defineCommand({
 			}
 
 			const { bank: cost, missingItems } = bankFromSailingCost(part.cost);
+			if (missingItems.length > 0) {
+				return `I can't install ${part.name} because these official recipe items are missing from the current item data: ${missingItems.join(', ')}.`;
+			}
 			if (cost.length > 0 && !user.owns(cost)) {
 				return `You don't have the required items to install ${part.name}.\nYou need: ${cost}.`;
 			}
@@ -451,11 +470,7 @@ export const shipCommand = defineCommand({
 			}
 			await updateConfiguredShip(user.id, shipType, { parts: nextParts });
 
-			const missingCostMessage =
-				missingItems.length > 0
-					? `\nRecipe items not charged because they are not in the current item data: ${missingItems.join(', ')}.`
-					: '';
-			return `Installed ${part.name}.${missingCostMessage}`;
+			return `Installed ${part.name}.`;
 		}
 
 		if (options.clam) {
@@ -504,6 +519,9 @@ export const shipCommand = defineCommand({
 			if (facility.constructionLevel && user.skillsAsLevels.construction < facility.constructionLevel) {
 				return `${user.minionName} needs ${facility.constructionLevel} Construction to install ${facility.name}.`;
 			}
+			if (facility.missingCostItems?.length) {
+				return `I can't install ${facility.name} because these official recipe items are missing from the current item data: ${facility.missingCostItems.join(', ')}.`;
+			}
 
 			const installed = getInstalledFacilities(ship, activeShipType);
 			if (installed.includes(facility.id)) {
@@ -541,10 +559,7 @@ export const shipCommand = defineCommand({
 				facilities: [...facilitiesToKeep, facility.id]
 			});
 
-			const missingCostMessage = facility.missingCostItems?.length
-				? `\nRecipe items not charged because they are not in the current item data: ${facility.missingCostItems.join(', ')}.`
-				: '';
-			return `Installed ${facility.name}.${missingCostMessage}`;
+			return `Installed ${facility.name}.`;
 		}
 
 		if (options.rename) {

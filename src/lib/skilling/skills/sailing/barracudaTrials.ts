@@ -12,6 +12,7 @@ import type { Skills } from '@/lib/types/index.js';
 
 export type BarracudaTrialId = Extract<SailingActivityId, 'tempor_tantrum' | 'jubbly_jive' | 'gwenith_glide'>;
 export type BarracudaRank = 'swordfish' | 'shark' | 'marlin';
+export const BARRACUDA_TRIAL_TURNAROUND_TIME = Time.Second * 10;
 
 export interface BarracudaTrialRank {
 	id: BarracudaRank;
@@ -77,7 +78,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 			{
 				id: 'swordfish',
 				name: 'Swordfish',
-				xp: 595,
+				xp: 634,
 				bonusXP: 1000,
 				targetTime: Time.Minute + Time.Second * 48,
 				reward: new Bank().add('Stormy key'),
@@ -86,7 +87,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 			{
 				id: 'shark',
 				name: 'Shark',
-				xp: 1025,
+				xp: 1103,
 				bonusXP: 2000,
 				targetTime: Time.Minute * 2 + Time.Second * 51,
 				reward: new Bank().add('Barrel stand').add('Whirlpool surprise'),
@@ -95,7 +96,7 @@ export const BarracudaTrials: BarracudaTrial[] = [
 			{
 				id: 'marlin',
 				name: 'Marlin',
-				xp: 1790,
+				xp: 1907,
 				bonusXP: 3000,
 				targetTime: Time.Minute * 4 + Time.Second * 30,
 				reward: new Bank().add("Ralph's fabric roll"),
@@ -227,6 +228,10 @@ export function isBarracudaTrialId(activityId: SailingActivityId): activityId is
 
 export function getBarracudaRank(trial: BarracudaTrial, rankId: string | undefined) {
 	return trial.ranks.find(rank => rank.id === rankId);
+}
+
+export function getBarracudaTrialDuration(rank: BarracudaTrialRank) {
+	return rank.targetTime + BARRACUDA_TRIAL_TURNAROUND_TIME;
 }
 
 export function formatBarracudaRankObjectives(rank: BarracudaTrialRank): string | null {

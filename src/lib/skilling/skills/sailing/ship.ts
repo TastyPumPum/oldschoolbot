@@ -23,6 +23,7 @@ export type SailingConfiguredShip = {
 
 export type SailingUpgradesBank = {
 	activeShipType?: SailingShipType;
+	ownedShipTypes?: SailingShipType[];
 	ships?: Partial<Record<SailingShipType, SailingConfiguredShip>>;
 	clamItemId?: number | null;
 	clamFedAt?: number | null;
@@ -38,6 +39,18 @@ export function getUpgradesBank(ship: UserShip): SailingUpgradesBank {
 
 export function getActiveShipType(ship: UserShip): SailingShipType {
 	return getUpgradesBank(ship).activeShipType ?? 'raft';
+}
+
+export function getOwnedShipTypes(ship: UserShip): SailingShipType[] {
+	const upgrades = getUpgradesBank(ship);
+	const ships = getShips(upgrades);
+	const owned = new Set<SailingShipType>(['raft', ...(upgrades.ownedShipTypes ?? [])]);
+	const activeShipType = upgrades.activeShipType;
+	if (activeShipType) owned.add(activeShipType);
+	for (const shipType of Object.keys(ships) as SailingShipType[]) {
+		owned.add(shipType);
+	}
+	return [...owned];
 }
 
 export function getConfiguredShip(

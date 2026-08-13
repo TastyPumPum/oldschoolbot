@@ -9,6 +9,7 @@ import {
 	BarracudaTrials,
 	formatBarracudaRankObjectives,
 	getBarracudaRank,
+	getBarracudaTrialDuration,
 	getBarracudaTrialProgress,
 	getPreviousBarracudaRank,
 	isBarracudaTrialId
@@ -347,9 +348,10 @@ export const sailCommand = defineCommand({
 				return `${user.minionName} needs to complete ${trial.name} at ${previousRankName} rank before attempting ${rank.name} rank.`;
 			}
 
-			const maxQuantity = Math.max(1, Math.floor(maxTripLength / rank.targetTime));
+			const durationPerCompletion = getBarracudaTrialDuration(rank);
+			const maxQuantity = Math.max(1, Math.floor(maxTripLength / durationPerCompletion));
 			const quantity = Math.min(quantityInput ?? maxQuantity, maxQuantity);
-			const duration = quantity * rank.targetTime;
+			const duration = quantity * durationPerCompletion;
 
 			await ActivityManager.startTrip<SailingActivityTaskOptions>({
 				userID: user.id,

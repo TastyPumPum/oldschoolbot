@@ -30,6 +30,7 @@ export interface SailingShipTypeDefinition {
 	sailingLevel: number;
 	facilityHotspots: number;
 	structuralSlots: SailingStructuralSlot[];
+	cost: Bank;
 }
 
 export interface SailingStructuralPart {
@@ -50,21 +51,24 @@ export const SailingShipTypes: SailingShipTypeDefinition[] = [
 		name: 'Raft',
 		sailingLevel: 1,
 		facilityHotspots: 1,
-		structuralSlots: ['hull', 'helm', 'mast_sails']
+		structuralSlots: ['hull', 'helm', 'mast_sails'],
+		cost: new Bank().add('Coins', 1000)
 	},
 	{
 		id: 'skiff',
 		name: 'Skiff',
 		sailingLevel: 15,
 		facilityHotspots: 7,
-		structuralSlots: ['hull', 'helm', 'keel', 'mast_sails']
+		structuralSlots: ['hull', 'helm', 'keel', 'mast_sails'],
+		cost: new Bank().add('Coins', 15_000)
 	},
 	{
 		id: 'sloop',
 		name: 'Sloop',
 		sailingLevel: 50,
-		facilityHotspots: 13,
-		structuralSlots: ['hull', 'helm', 'keel', 'mast_sails']
+		facilityHotspots: 11,
+		structuralSlots: ['hull', 'helm', 'keel', 'mast_sails'],
+		cost: new Bank().add('Coins', 200_000)
 	}
 ];
 
@@ -534,7 +538,8 @@ const keelParts: SailingStructuralPart[] = keelTiers.flatMap(tier =>
 		constructionLevel: tier.constructionLevel,
 		cost: mergeCosts(
 			{
-				[`${tier.name} ${shipLabel[shipType]} keel parts`]: shipType === 'skiff' ? 10 : 16
+				[shipType === 'skiff' ? `${tier.name} keel parts` : `Large ${tier.tier} keel parts`]:
+					shipType === 'skiff' ? 10 : 16
 			},
 			tier.extra
 		),

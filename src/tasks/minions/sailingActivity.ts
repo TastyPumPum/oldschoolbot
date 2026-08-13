@@ -293,23 +293,6 @@ export const sailingTask: MinionTask = {
 				chance: rank.petChance,
 				activity: `${trial.name} at ${rank.name} rank`
 			});
-			const passiveActions = await applyPassiveSailingActions({ user, data, loot, rng });
-			const clam = getClamItem(shipState);
-			const encounters = rollOceanEncounters({
-				duration,
-				sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
-				facilities: data.ship.facilities ?? [],
-				clamItemId: clam.itemId,
-				clamFedAt: clam.fedAt,
-				user,
-				rng,
-				allowedEncounters: ['strong_winds']
-			});
-			loot.add(encounters.loot);
-			if (encounters.clamConsumed) {
-				await updateUpgradesBank(user.id, { clamItemId: null, clamFedAt: null });
-			}
-
 			await updateUpgradesBank(user.id, {
 				barracudaTrials: setBarracudaTrialProgress(
 					barracudaProgress,
@@ -319,8 +302,7 @@ export const sailingTask: MinionTask = {
 				)
 			});
 
-			const xpReceived =
-				quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0) + passiveActions.totalXP + encounters.xp;
+			const xpReceived = quantity * rank.xp + (newlyCompletedRank ? rank.bonusXP : 0);
 			const xpRes = await user.addXP({
 				skillName: 'sailing',
 				amount: xpReceived,
@@ -334,12 +316,6 @@ export const sailingTask: MinionTask = {
 			}
 			if (newlyCompletedRank) {
 				str += `\nNew rank achieved: ${rank.name}. Bonus XP: ${rank.bonusXP.toLocaleString()}.`;
-			}
-			for (const message of formatPassiveSailingActions(passiveActions)) {
-				str += `\n${message}`;
-			}
-			for (const message of formatOceanEncounters(encounters)) {
-				str += `\n${message}`;
 			}
 			if (loot.length > 0) {
 				await user.transactItems({

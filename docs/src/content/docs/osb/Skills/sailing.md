@@ -10,7 +10,7 @@ Sailing is in active development. Activities and rewards come from OSRS. Where l
 
 - `/sail` - Start a Sailing activity through subcommands for Sea charting, port tasks, shipwreck salvaging, Barracuda Trials, and deep sea trawling.
 - `/ship status` - View installed facilities, stored salvage, charting progress, and Barracuda Trial ranks.
-- `/ship select` - Select which ship type is active.
+- `/ship select` - Buy an unlocked ship type if needed, then select which ship type is active.
 - `/ship install` - Install a Sailing facility by choosing a facility type, then a specific variant.
 - `/ship install_part` - Install a structural ship part such as a hull, helm, keel, or mast and sails.
 - `/ship sort_salvage` - Sort stored shipwreck salvage for Sailing XP.
@@ -34,7 +34,7 @@ The fastest route assumes you have completed Pandemonium, keep your best eligibl
 Useful unlocks while following the route:
 
 - At 7, 28, 56, and 84 Sailing, port-task capacity increases. This improves port tasks when you cannot do the fastest Barracuda Trial available.
-- At 15 Sailing, select a skiff with `/ship select type:Skiff` when you need Barracuda Trials.
+- At 15 Sailing, buy and select a skiff with `/ship select type:Skiff` when you need Barracuda Trials.
 - At 30, 55, and 72 Sailing, do each new Barracuda Trial rank once for the first-completion bonus XP and unlocks, then repeat the highest Marlin rank available.
 - At 55 Sailing, Jubbly Shark gives the Captured wind mote used for a Wind catcher, which improves passive XP on future Sailing trips.
 - At 72 Sailing, Gwenith Shark gives the Heart of ithell used for the Crystal extractor, which adds more passive XP on future Sailing trips.
@@ -120,13 +120,13 @@ Rewards currently implemented:
 
 Gwenith Glide requires Regicide in OSRS. In the bot this is mimicked with 10 Crafting, 56 Agility, 25 Ranged, and 50 quest points.
 
-Barracuda Trials only roll strong winds from ocean encounters; other random encounters, encounter loot, and encounter XP are suppressed during trials.
+Barracuda Trials use the OSRS target-time rates, including the documented 10 second completion turnaround. Ocean encounters and passive sail trimming are not added to Barracuda Trial completions.
 
 ### Facilities
 
 Facilities are installed on your ship to unlock content.
 
-- Rafts have 1 facility hotspot, skiffs have 7, and sloops have 13.
+- Rafts have 1 facility hotspot, skiffs have 7, and sloops have 11.
 - `/ship install` groups facilities by type: salvaging hooks, trawling nets, wind catchers, and station/utility facilities.
 - Bronze through dragon salvaging hooks - unlock and improve shipwreck salvaging.
 - Keg - built with the Barrel stand from The Tempor Tantrum. Ale effects are not yet modelled.
@@ -141,13 +141,13 @@ Facilities are installed on your ship to unlock content.
 
 Ships have OSRS-style structural parts. Rafts have a hull, helm, and mast with sails. Skiffs and sloops also have a keel. Structural parts install on the currently active ship.
 
-Each user has one raft, one skiff, and one sloop. `/ship select` chooses the active ship, and Sailing commands use that active ship's structural parts, facilities, and stored salvage.
+Each user starts with the Pandemonium raft. `/ship select` buys an unlocked skiff or sloop when needed, chooses the active ship, and Sailing commands use that active ship's structural parts, facilities, and stored salvage.
 
 Supported ship types:
 
 - Raft - 1 Sailing, 1 facility hotspot, no keel, no Barracuda Trials.
-- Skiff - 15 Sailing, 7 facility hotspots, required for Barracuda Trials.
-- Sloop - 50 Sailing, 13 facility hotspots.
+- Skiff - 15 Sailing, 7 facility hotspots, 15,000 coins, required for Barracuda Trials.
+- Sloop - 50 Sailing, 11 facility hotspots, 200,000 coins.
 
 Supported structural tiers:
 
