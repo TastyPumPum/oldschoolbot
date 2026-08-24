@@ -6,6 +6,7 @@ import type { Prisma, User } from '@/prisma/main.js';
 import { type BitField, Channel } from '@/lib/constants.js';
 import { customItems } from '@/lib/customItems/util.js';
 import { allDcSet } from '@/lib/data/Collections.js';
+import { handleNewCLItems } from '@/lib/handleNewCLItems.js';
 import { StaffGrantRoleSources, type StaffGrants } from '@/lib/settings/misc.js';
 import { dmCyrAudit, sendCyrCriticalBotLog } from '@/lib/util/cyrAudit.js';
 import { userQueueFn } from '@/lib/util/userQueues.js';
@@ -256,6 +257,9 @@ export async function sendStaffBestowReward({
 				bankLoot.remove('Coins', gpToAdd);
 			}
 			recipientBank.add(bankLoot);
+			const previousCL = recipient.cl.clone();
+			const clUpdates = recipient.calculateAddItemsToCLUpdates({ items: loot });
+			const newCL = new Bank(clUpdates.collectionLogBank);
 
 			await prisma.$transaction([
 				prisma.user.update({
@@ -269,9 +273,27 @@ export async function sendStaffBestowReward({
 					where: { id: recipient.id },
 					data: {
 						bank: recipientBank.toJSON(),
-						GP: recipientGP
+						GP: recipientGP,
+						...clUpdates
 					},
 					select: { id: true }
+				}),
+				prisma.jsonBank.upsert({
+					where: {
+						user_id_type: {
+							user_id: recipient.id,
+							type: 'CollectionLog'
+						}
+					},
+					create: {
+						user_id: recipient.id,
+						type: 'CollectionLog',
+						bank: clUpdates.collectionLogBank!
+					},
+					update: {
+						bank: clUpdates.collectionLogBank!
+					},
+					select: { user_id: true }
 				}),
 				prisma.economyTransaction.create({
 					data: {
@@ -287,6 +309,7 @@ export async function sendStaffBestowReward({
 			]);
 
 			await Promise.all([user.sync(), recipient.sync()]);
+			await handleNewCLItems({ itemsAdded: loot, user: recipient, previousCL, newCL });
 
 			const remaining = rewardsLeft.amount(itemID);
 			await globalClient.sendMessage(Channel.BotLogs, {
