@@ -51,6 +51,10 @@ interface RefundResult {
 	userMessage: string;
 }
 
+export function hasActiveLuckyPennyEffect(user: Pick<MUser, 'hasCompletedCATier' | 'hasEquippedOrInBank'>): boolean {
+	return user.hasEquippedOrInBank("Ghommal's lucky penny") && user.hasCompletedCATier('master');
+}
+
 export const degradeableItems: DegradeableItem[] = [
 	{
 		item: Items.getOrThrow('Abyssal tentacle'),
@@ -319,9 +323,9 @@ export async function degradeItem({
 	const degItem = degradeableItems.find(i => i.item === item);
 	if (!degItem) throw new Error('Invalid degradeable item');
 
-	// 5% chance to not consume a charge when Ghommal's lucky penny is equipped
+	// 5% chance to not consume a charge while the user owns Ghommal's lucky penny and Master CA rewards are active.
 	let pennyReduction = 0;
-	if (user.hasEquipped("Ghommal's lucky penny")) {
+	if (hasActiveLuckyPennyEffect(user)) {
 		for (let i = 0; i < chargesToDegrade; i++) {
 			if (MathRNG.percentChance(5)) {
 				pennyReduction++;
@@ -420,7 +424,7 @@ export async function degradeChargeBank(user: MUser, chargeBank: ChargeBank) {
 		results.push(result.userMessage);
 	}
 
-	if (user.hasEquipped("Ghommal's lucky penny")) results.push("5% reduced charges for Ghommal's lucky penny");
+	if (hasActiveLuckyPennyEffect(user)) results.push("5% reduced charges for Ghommal's lucky penny");
 
 	return results.join(', ');
 }
