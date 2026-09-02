@@ -209,7 +209,6 @@ export const BitFieldData: Record<BitField, IBitFieldData> = {
 	[BitField.UsedStrangledTablet]: { name: 'Used Strangled Tablet', protected: false, userConfigurable: false },
 	[BitField.SelfGamblingLocked]: { name: 'Self Gambling Lock', protected: false, userConfigurable: true },
 	[BitField.OriginalCyrSupporter]: { name: "One of Cyr's first Patrons", protected: false, userConfigurable: false },
-
 	[BitField.BypassAgeRestriction]: { name: 'Bypassed Age Restriction', protected: false, userConfigurable: false },
 	[BitField.HasPermanentEventBackgrounds]: {
 		name: 'Permanent Event Backgrounds',
