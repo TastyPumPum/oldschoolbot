@@ -81,6 +81,12 @@ export const usableUnlocks: UsableUnlock[] = [
 		item: Items.getOrThrow('Mystic vigour prayer scroll'),
 		bitfield: BitField.HasMysticVigourScroll,
 		resultMessage: 'You used your Mystic vigour prayer scroll, and unlocked the Mystic vigour prayer.'
+	},
+	{
+		item: Items.getOrThrow("Ghommal's lucky penny"),
+		bitfield: BitField.HasConsumedLuckyPenny,
+		resultMessage:
+			"You used your Ghommal's lucky penny, and unlocked its charge-saving effect while Master Combat Achievement rewards are active."
 	}
 ];
 for (const usableUnlock of usableUnlocks) {

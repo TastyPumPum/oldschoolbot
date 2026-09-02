@@ -2,10 +2,13 @@ import type { GearSetupType, PrimaryGearSetupType } from '@oldschoolgg/gear';
 import { MathRNG } from 'node-rng';
 import { Bank, type Item, Items, itemID, type Monster } from 'oldschooljs';
 
+import { hasActiveLuckyPennyEffect } from '@/lib/luckyPenny.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
 import type { ChargeBank } from '@/lib/structures/Bank.js';
 import type { DegradeableItemColumns } from '@/lib/user/userTypes.js';
 import { assert } from '@/lib/util/logError.js';
+
+export { hasActiveLuckyPennyEffect };
 
 export interface DegradeableItem {
 	item: Item;
@@ -49,10 +52,6 @@ interface RefundResult {
 	refundedCharges: number;
 	totalCharges: number;
 	userMessage: string;
-}
-
-export function hasActiveLuckyPennyEffect(user: Pick<MUser, 'hasCompletedCATier' | 'hasEquippedOrInBank'>): boolean {
-	return user.hasEquippedOrInBank("Ghommal's lucky penny") && user.hasCompletedCATier('master');
 }
 
 export const degradeableItems: DegradeableItem[] = [
@@ -323,7 +322,7 @@ export async function degradeItem({
 	const degItem = degradeableItems.find(i => i.item === item);
 	if (!degItem) throw new Error('Invalid degradeable item');
 
-	// 5% chance to not consume a charge while the user owns Ghommal's lucky penny and Master CA rewards are active.
+	// 5% chance to not consume a charge while Ghommal's lucky penny is unlocked and Master CA rewards are active.
 	let pennyReduction = 0;
 	if (hasActiveLuckyPennyEffect(user)) {
 		for (let i = 0; i < chargesToDegrade; i++) {

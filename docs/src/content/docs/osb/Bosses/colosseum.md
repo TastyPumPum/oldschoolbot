@@ -36,7 +36,7 @@ These items provide a boost **from the bank** (do not need to be equipped):
 
 ## Gear
 
-Use any item from the lists below. Boosts only apply to listed weapons or charged items. Equipping higher-tier gear (e.g., Torva over Bandos) provides no additional completion benefit. Keeping [[Ghommal's Lucky Penny]] equipped or in your bank will reduce charge consumption (including Blood Fury charges) by 5% while Master-tier Combat Achievement rewards are unlocked.
+Use any item from the lists below. Boosts only apply to listed weapons or charged items. Equipping higher-tier gear (e.g., Torva over Bandos) provides no additional completion benefit. Using [[Ghommal's Lucky Penny]] will unlock reduced charge consumption (including Blood Fury charges) by 5% while Master-tier Combat Achievement rewards are unlocked.
 
 ### Melee Setup
 
