@@ -21,14 +21,14 @@
 			"result_message": "You used your Frozen tablet."
 		},
 		{
-			"item": "Mystic vigour prayer scroll",
-			"bitfield": 46,
-			"result_message": "You used your Mystic vigour prayer scroll, and unlocked the Mystic vigour prayer."
-		},
-		{
 			"item": "Ghommal's lucky penny",
 			"bitfield": 59,
 			"result_message": "You used your Ghommal's lucky penny, and unlocked its charge-saving effect while Master Combat Achievement rewards are active."
+		},
+		{
+			"item": "Mystic vigour prayer scroll",
+			"bitfield": 46,
+			"result_message": "You used your Mystic vigour prayer scroll, and unlocked the Mystic vigour prayer."
 		},
 		{
 			"item": "Runescroll of bloodbark",
