@@ -130,20 +130,20 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			collectionLog: true
 		});
 
-		const stoppedOnUnique =
-			Boolean(trips?.some(trip => trip.loot && new Bank().add(trip.loot!).length > 0)) ||
-			(!trips && deepestDelveCompleted < targetDelve);
+		const stoppedOnUnique = !trips && deepestDelveCompleted < targetDelve;
 		const anyDeath = tripData.some(trip => trip.dead);
 
 		const uniqueNames = DOOM_UNIQUE_ITEMS.filter((id: number) => loot.has(id))
 			.map((id: number) => Items.itemNameFromId(id))
 			.join(', ');
 
-		const completionLine = stoppedOnUnique
-			? `Your minion stopped after receiving a unique: **${uniqueNames}**.`
-			: anyDeath
-				? `Your minion attempted **${tripData.length}x** Doom of Mokhaiotl trips up to delve **${targetDelve}**.`
-				: `Your minion completed **${tripData.length}x** Doom of Mokhaiotl trips up to delve **${aggregatedDeepest}**.`;
+		const completionLine = `${
+			stoppedOnUnique
+				? `Your minion stopped after receiving a unique: **${uniqueNames}**.`
+				: anyDeath
+					? `Your minion attempted **${tripData.length}x** Doom of Mokhaiotl trips up to delve **${targetDelve}**.`
+					: `Your minion completed **${tripData.length}x** Doom of Mokhaiotl trips up to delve **${aggregatedDeepest}**.`
+		}${trips && uniqueNames.length > 0 ? `\n**Uniques received:** ${uniqueNames}` : ''}`;
 
 		announceLoot({
 			user,

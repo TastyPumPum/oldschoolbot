@@ -600,7 +600,7 @@ function getDoomTripCost(options: {
 	state: DoomGearState;
 	result: DoomRunResult;
 	userMagicLevel: number;
-	venomProtection: DoomVenomProtection;
+	venomProtection: Pick<DoomVenomProtection, 'itemCost'>;
 	deepDelves: number;
 	totalDelves: number;
 	availableSupplies?: Bank;
@@ -845,35 +845,23 @@ export async function doomCommand(
 		);
 	}
 	const trips: DoomActivityTripData[] = [];
-	const suppliesUsed = new Bank();
-	const venomItemsUsed = new Bank();
-	const venomItemsRefunded = new Bank();
-	const effectiveVenomCost = new Bank();
-	const availableSupplies = user.bank.clone();
+	const fullTripCostResult: DoomRunResult = {
+		diedAt: null,
+		loot: null,
+		deepestDelveCompleted: targetDelve,
+		deepDelvesEarned: Math.max(0, targetDelve - 7),
+		totalWavesCleared: targetDelve,
+		duration: fullTripDuration,
+		deathChances: [],
+		ayakChargesGained: 0
+	};
 	let totalDuration = 0;
 	const tripsToAttempt = quantity ?? Number.POSITIVE_INFINITY;
 	while (trips.length < tripsToAttempt) {
 		const trip = startDoomRun(tripOptions);
-		if (totalDuration + trip.duration > fakeDuration) break;
-		totalDuration += trip.duration;
-		const tripCostVenomProtection = selectDoomVenomProtection(itemName => availableSupplies.amount(itemName), trip.duration);
-		if (!tripCostVenomProtection) break;
-		const tripCost = getDoomTripCost({
-			user,
-			state,
-			result: trip,
-			userMagicLevel,
-			venomProtection: tripCostVenomProtection,
-			deepDelves,
-			totalDelves,
-			availableSupplies
-		});
-		if (!availableSupplies.has(tripCost.cost)) break;
-		availableSupplies.remove(tripCost.cost).add(tripCostVenomProtection.replacementItems);
-		suppliesUsed.add(tripCost.cost);
-		venomItemsUsed.add(tripCostVenomProtection.itemCost);
-		venomItemsRefunded.add(tripCostVenomProtection.replacementItems);
-		effectiveVenomCost.add(tripCostVenomProtection.effectiveCost);
+		const tripDuration = Math.floor(trip.duration);
+		if (totalDuration + tripDuration > fakeDuration) break;
+		totalDuration += tripDuration;
 		const uniqueLoot = new Bank();
 		if (trip.loot) {
 			for (const itemID of DOOM_UNIQUE_ITEMS) {
@@ -882,7 +870,7 @@ export async function doomCommand(
 			}
 		}
 		trips.push({
-			dur: trip.duration,
+			dur: tripDuration,
 			dead: trip.diedAt !== null,
 			lvl: trip.deepestDelveCompleted,
 			loot: uniqueLoot.length > 0 ? uniqueLoot.toJSON() : undefined,
@@ -890,39 +878,96 @@ export async function doomCommand(
 			ayak: trip.ayakChargesGained || undefined
 		});
 	}
-	if (trips.length === 0) return "You don't have enough supplies to complete a Doom of Mokhaiotl trip.";
-	const estimatedTripQuantity = trips.length;
-	const estimateVenomProtection = selectDoomVenomProtection(itemName => user.bank.amount(itemName), fullTripDuration);
-	if (!estimateVenomProtection) {
-		return `You need enough venom protection to cover this ${formatDuration(fakeDuration)} Doom trip.`;
+	if (trips.length === 0) return 'Your minion needs enough time to attempt at least one Doom of Mokhaiotl trip.';
+	function buildEstimatedCost(tripQuantity: number) {
+		const availableSupplies = user.bank.clone();
+		const venomProtection = selectDoomVenomProtection(
+			itemName => availableSupplies.amount(itemName),
+			fullTripDuration * tripQuantity
+		);
+		if (!venomProtection) return null;
+		const cost = new Bank().add(venomProtection.itemCost);
+		if (!availableSupplies.has(venomProtection.itemCost)) return null;
+		availableSupplies.remove(venomProtection.itemCost);
+
+		for (let i = 0; i < tripQuantity; i++) {
+			const tripCost = getDoomTripCost({
+				user,
+				state,
+				result: fullTripCostResult,
+				userMagicLevel,
+				venomProtection: { itemCost: new Bank() },
+				deepDelves,
+				totalDelves,
+				availableSupplies
+			});
+			if (!availableSupplies.has(tripCost.cost)) return null;
+			availableSupplies.remove(tripCost.cost);
+			cost.add(tripCost.cost);
+		}
+
+		return {
+			cost,
+			venomCost: venomProtection.itemCost,
+			effectiveVenomCost: venomProtection.effectiveCost
+		};
 	}
-	const estimatedTripCost = getDoomTripCost({
-		user,
-		state,
-		result: {
-			diedAt: null,
-			loot: null,
-			deepestDelveCompleted: targetDelve,
-			deepDelvesEarned: Math.max(0, targetDelve - 7),
-			totalWavesCleared: targetDelve,
-			duration: fullTripDuration,
-			deathChances: [],
-			ayakChargesGained: 0
-		},
-		userMagicLevel,
-		venomProtection: estimateVenomProtection,
-		deepDelves,
-		totalDelves
-	});
-	const estimatedCost = estimatedTripCost.cost.clone().multiply(estimatedTripQuantity);
-	const estimatedVenomCost = estimateVenomProtection.itemCost.clone().multiply(estimatedTripQuantity);
-	const estimatedEffectiveVenomCost = estimateVenomProtection.effectiveCost.clone().multiply(estimatedTripQuantity);
+	let estimated = buildEstimatedCost(trips.length);
+	if (!estimated && quantity) return "You don't have enough supplies to complete this many Doom of Mokhaiotl trips.";
+	while (!estimated && trips.length > 1) {
+		const removedTrip = trips.pop()!;
+		totalDuration -= removedTrip.dur;
+		estimated = buildEstimatedCost(trips.length);
+	}
+	if (!estimated) return "You don't have enough supplies to complete a Doom of Mokhaiotl trip.";
+	const { cost: estimatedCost, venomCost: estimatedVenomCost, effectiveVenomCost: estimatedEffectiveVenomCost } = estimated;
+	const suppliesUsed = new Bank();
+	const venomItemsUsed = new Bank();
+	const venomItemsRefunded = new Bank();
+	const tripSuppliesAvailable = estimatedCost.clone();
+	const effectiveVenomCost = new Bank();
+	for (const trip of trips) {
+		const tripCostVenomProtection = selectDoomVenomProtection(
+			itemName => tripSuppliesAvailable.amount(itemName),
+			trip.dur
+		);
+		if (!tripCostVenomProtection) {
+			return "You don't have enough allocated venom protection to complete a Doom of Mokhaiotl trip.";
+		}
+		const tripCost = getDoomTripCost({
+			user,
+			state,
+			result: {
+				diedAt: trip.diedAt ?? null,
+				loot: null,
+				deepestDelveCompleted: trip.lvl,
+				deepDelvesEarned: Math.max(0, trip.lvl - 7),
+				totalWavesCleared: trip.lvl,
+				duration: trip.dur,
+				deathChances: [],
+				ayakChargesGained: trip.ayak ?? 0
+			},
+			userMagicLevel,
+			venomProtection: tripCostVenomProtection,
+			deepDelves,
+			totalDelves,
+			availableSupplies: tripSuppliesAvailable
+		});
+		if (!tripSuppliesAvailable.has(tripCost.cost)) {
+			return "You don't have enough allocated supplies to complete a Doom of Mokhaiotl trip.";
+		}
+		tripSuppliesAvailable.remove(tripCost.cost).add(tripCostVenomProtection.replacementItems);
+		suppliesUsed.add(tripCost.cost);
+		venomItemsUsed.add(tripCostVenomProtection.itemCost);
+		venomItemsRefunded.add(tripCostVenomProtection.replacementItems);
+		effectiveVenomCost.add(tripCostVenomProtection.effectiveCost);
+	}
 	const deepestDelveCompletedForTask = Math.max(...trips.map(trip => trip.lvl));
 	const totalWavesClearedForTask = trips.reduce((sum, trip) => sum + trip.lvl, 0);
 	const deepDelvesEarnedForTask = trips.reduce((sum, trip) => sum + Math.max(0, trip.lvl - 7), 0);
 	const ayakChargesGainedForTask = trips.reduce((sum, trip) => sum + (trip.ayak ?? 0), 0);
 	const diedAtForTask = trips.length === 1 ? (trips[0].diedAt ?? null) : null;
-	const res = startDoomRun(tripOptions);
+	const deathChances = calculateDoomDeathChances(targetDelve, waveCompletions);
 	const costRemovalResult = await removeDoomTripCost(user, estimatedCost, {
 		itemCost: estimatedVenomCost,
 		replacementItems: new Bank(),
@@ -969,9 +1014,9 @@ export async function doomCommand(
 	return [
 		quantity
 			? `${user.usernameOrMention}'s minion is now fighting the **Doom of Mokhaiotl** ${trips.length}x (targeting delve **${targetDelve}**)!`
-			: `${user.usernameOrMention}'s minion is now fighting the **Doom of Mokhaiotl**! Attempting to do as many trips as possible up to level ${targetDelve} or until you get a unique, whichever comes first.`,
+			: `${user.usernameOrMention}'s minion is now fighting the **Doom of Mokhaiotl**! Attempting to do as many trips as possible up to level ${targetDelve}.`,
 		`**Duration:** ${formatDuration(fakeDuration)} | **Stop on unique:** ${effectiveStopOnUnique ? 'Yes' : 'No'}`,
-		buildDoomDeathChanceLine(res.deathChances),
+		buildDoomDeathChanceLine(deathChances),
 		`**Cost:** ${realCost}`,
 		`**Boosts:** ${buildDoomBoostLines(state, kcReduction, skillBoostMsg).join(', ')}`,
 		targetDelve > 15
