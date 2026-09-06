@@ -119,6 +119,19 @@ const ores: Ore[] = [
 		aliases: ['ash', 'volcanic']
 	},
 	{
+		level: 25,
+		xp: 40.5,
+		id: itemID('Lead ore'),
+		name: 'Lead ore',
+		respawnTime: 6,
+		bankingTime: 33,
+		slope: 65 / 98,
+		intercept: 44 - 65 / 98,
+		petChance: 741_600,
+		clueScrollChance: 741_600,
+		aliases: ['lead']
+	},
+	{
 		level: 30,
 		xp: 5,
 		id: 7936,
@@ -240,6 +253,19 @@ const ores: Ore[] = [
 		petChance: 59_328,
 		clueScrollChance: 59_328,
 		aliases: ['addy', 'adamant', 'adamant ore', 'adamantite']
+	},
+	{
+		level: 74,
+		xp: 105,
+		id: itemID('Nickel ore'),
+		name: 'Nickel ore',
+		respawnTime: 12,
+		bankingTime: 33,
+		slope: 0.15,
+		intercept: -0.2,
+		petChance: 80_000,
+		clueScrollChance: 80_000,
+		aliases: ['nickel']
 	},
 	{
 		level: 85,

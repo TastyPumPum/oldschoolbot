@@ -83,6 +83,7 @@ import { scatteringTask } from '@/tasks/minions/PrayerActivity/scatteringActivit
 import { pickpocketTask } from '@/tasks/minions/pickpocketActivity.js';
 import { questingTask } from '@/tasks/minions/questingActivity.js';
 import { runecraftTask } from '@/tasks/minions/runecraftActivity.js';
+import { sailingTask } from '@/tasks/minions/sailingActivity.js';
 import { sawmillTask } from '@/tasks/minions/sawmillActivity.js';
 import { shootingStarTask } from '@/tasks/minions/shootingStarsActivity.js';
 import { smeltingTask } from '@/tasks/minions/smeltingActivity.js';
@@ -169,6 +170,7 @@ export const allTasks: MinionTask[] = [
 	farmingTask,
 	firemakingTask,
 	fishingTask,
+	sailingTask,
 	fletchingTask,
 	gloryChargingTask,
 	gloryUnchargingTask,

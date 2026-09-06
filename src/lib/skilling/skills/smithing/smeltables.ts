@@ -32,6 +32,15 @@ const Bars: Bar[] = [
 		timeToUse: Time.Second * 2.4
 	},
 	{
+		name: 'Lead bar',
+		level: 25,
+		xp: 15.5,
+		id: itemID('Lead bar'),
+		inputOres: new Bank({ 'Lead ore': 2 }),
+		chanceOfFail: 0,
+		timeToUse: Time.Second * 3
+	},
+	{
 		name: 'Steel bar',
 		level: 30,
 		xp: 17.5,
@@ -55,6 +64,15 @@ const Bars: Bar[] = [
 		xp: 30,
 		id: itemID('Mithril bar'),
 		inputOres: new Bank({ 'Mithril ore': 1, Coal: 4 }),
+		chanceOfFail: 0,
+		timeToUse: Time.Second * 2.4
+	},
+	{
+		name: 'Cupronickel bar',
+		level: 74,
+		xp: 32,
+		id: itemID('Cupronickel bar'),
+		inputOres: new Bank({ 'Copper ore': 2, 'Nickel ore': 1 }),
 		chanceOfFail: 0,
 		timeToUse: Time.Second * 2.4
 	},
