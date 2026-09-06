@@ -169,13 +169,6 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			users: [{ id: user.id, loot: itemsAdded, duration }]
 		});
 
-		const image = await makeBankImage({
-			bank: itemsAdded,
-			title: `Doom of Mokhaiotl - ${tripData.length}x Delve ${targetDelve}`,
-			user,
-			previousCL
-		});
-
 		const kcSummary = buildKcSummary(newDeepest, newDeepDelves, newTotal);
 		const tripSummary = trips
 			? `\n${tripData
@@ -189,12 +182,32 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			: '';
 		const refundMessage =
 			refundedSupplies.length > 0 ? `\n**Refunded supplies:** ${refundedSupplies}` : '';
+		const content = `${user} ${completionLine}${tripSummary}${
+			itemsAdded.length === 0 ? "\n\nYou didn't get any loot. Sorry. 😞\n" : ''
+		}${refundMessage}\n${kcSummary}${xpMessage ? `\n${xpMessage}` : ''}`;
+
+		if (itemsAdded.length === 0) {
+			return handleTripFinish({
+				user,
+				channelId,
+				message: content,
+				data,
+				loot: itemsAdded
+			});
+		}
+
+		const image = await makeBankImage({
+			bank: itemsAdded,
+			title: `Doom of Mokhaiotl - ${tripData.length}x Delve ${targetDelve}`,
+			user,
+			previousCL
+		});
 
 		return handleTripFinish({
 			user,
 			channelId,
 			message: {
-				content: `${user} ${completionLine}${tripSummary}${refundMessage}\n${kcSummary}${xpMessage ? `\n${xpMessage}` : ''}`,
+				content,
 				files: [image]
 			},
 			data,
