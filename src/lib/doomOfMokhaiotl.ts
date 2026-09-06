@@ -2,7 +2,7 @@ import type { EquipmentSlot } from '@oldschoolgg/gear';
 import { calcWhatPercent, formatDuration, reduceNumByPercent, round, Time, UserError } from '@oldschoolgg/toolkit';
 import { Bank, EMonster, type ItemBank, Items, LootTable, resolveItems } from 'oldschooljs';
 
-import { BitField, globalConfig } from '@/lib/constants.js';
+import { BitField } from '@/lib/constants.js';
 import { avasDevices, doomOfMokhaiotlCL } from '@/lib/data/CollectionsExport.js';
 import {
 	applyDoomSkillBoost,
@@ -13,7 +13,6 @@ import {
 	calculateDoomTripDuration,
 	calculateDoomWipeChanceBeforeTarget,
 	calculateDoomZcbBoltsNeeded,
-	DOOM_VENOM_PROTECTION_OPTIONS,
 	type DoomMeleePunishWeapon,
 	type DoomVenomProtection,
 	type DoomWaveCompletions,
@@ -604,8 +603,10 @@ function getDoomTripCost(options: {
 	venomProtection: DoomVenomProtection;
 	deepDelves: number;
 	totalDelves: number;
+	availableSupplies?: Bank;
 }): DoomTripCostResult {
 	const { user, state, result, userMagicLevel, venomProtection, deepDelves, totalDelves } = options;
+	const availableSupplies = options.availableSupplies ?? user.bank;
 	const delvesForCost = result.diedAt ?? result.deepestDelveCompleted;
 	const fullDurationMinutes = result.duration / Time.Minute;
 	const score = experienceScore(deepDelves, totalDelves);
@@ -636,7 +637,7 @@ function getDoomTripCost(options: {
 		let boltsRemaining = boltsNeeded;
 		for (const bolt of RUBY_BOLT_VARIANTS) {
 			if (boltsRemaining <= 0) break;
-			const owned = user.bank.amount(bolt);
+			const owned = availableSupplies.amount(bolt);
 			if (owned > 0) {
 				const use = Math.min(owned, boltsRemaining);
 				cost.add(bolt, use);
@@ -648,7 +649,7 @@ function getDoomTripCost(options: {
 	if (state.meleePunishWeapon === 'crystal_halberd') cost.add('Crystal shard', Math.ceil(delvesForCost));
 	if (state.hasRiteOfVileTransference) {
 		const casts = calcDeathChargeCasts({
-			bank: user.bank,
+			bank: availableSupplies,
 			duration: result.duration,
 			quantity: delvesForCost
 		});
@@ -667,8 +668,8 @@ function getDoomTripCost(options: {
 async function removeDoomTripCost(
 	user: DoomUser,
 	cost: Bank,
-	venomProtection: DoomVenomProtection
-): Promise<Bank | string> {
+	venomProtection: Pick<DoomVenomProtection, 'itemCost' | 'replacementItems' | 'effectiveCost'>
+): Promise<{ realCost: Bank; refundedItems: Bank } | string> {
 	const realCost = new Bank();
 	try {
 		const result = await user.specialRemoveItems(cost);
@@ -678,10 +679,9 @@ async function removeDoomTripCost(
 		throw err;
 	}
 	if (venomProtection.replacementItems.length > 0) {
-		await user.addItemsToBank({ items: venomProtection.replacementItems, collectionLog: false });
 		realCost.remove(venomProtection.itemCost).add(venomProtection.effectiveCost);
 	}
-	return realCost;
+	return { realCost, refundedItems: venomProtection.replacementItems };
 }
 
 function buildDoomBoostLines(state: DoomGearState, kcReduction: number, skillBoostMsg: string): string[] {
@@ -844,13 +844,17 @@ export async function doomCommand(
 
 	const trips: DoomActivityTripData[] = [];
 	const suppliesUsed = new Bank();
+	const venomItemsUsed = new Bank();
+	const venomItemsRefunded = new Bank();
+	const effectiveVenomCost = new Bank();
+	const availableSupplies = user.bank.clone();
 	let totalDuration = 0;
 	const tripsToAttempt = quantity ?? Number.POSITIVE_INFINITY;
 	while (trips.length < tripsToAttempt) {
 		const trip = startDoomRun(tripOptions);
 		if (totalDuration + trip.duration > fakeDuration) break;
 		totalDuration += trip.duration;
-		const tripCostVenomProtection = selectDoomVenomProtection(itemName => user.bank.amount(itemName), trip.duration);
+		const tripCostVenomProtection = selectDoomVenomProtection(itemName => availableSupplies.amount(itemName), trip.duration);
 		if (!tripCostVenomProtection) break;
 		const tripCost = getDoomTripCost({
 			user,
@@ -859,9 +863,15 @@ export async function doomCommand(
 			userMagicLevel,
 			venomProtection: tripCostVenomProtection,
 			deepDelves,
-			totalDelves
+			totalDelves,
+			availableSupplies
 		});
+		if (!availableSupplies.has(tripCost.cost)) break;
+		availableSupplies.remove(tripCost.cost).add(tripCostVenomProtection.replacementItems);
 		suppliesUsed.add(tripCost.cost);
+		venomItemsUsed.add(tripCostVenomProtection.itemCost);
+		venomItemsRefunded.add(tripCostVenomProtection.replacementItems);
+		effectiveVenomCost.add(tripCostVenomProtection.effectiveCost);
 		const uniqueLoot = new Bank();
 		if (trip.loot) {
 			for (const itemID of DOOM_UNIQUE_ITEMS) {
@@ -886,39 +896,13 @@ export async function doomCommand(
 	const ayakChargesGainedForTask = trips.reduce((sum, trip) => sum + (trip.ayak ?? 0), 0);
 	const diedAtForTask = trips.length === 1 ? (trips[0].diedAt ?? null) : null;
 	const res = startDoomRun(tripOptions);
-	const venomProtection = selectDoomVenomProtection(itemName => user.bank.amount(itemName), fakeDuration * 1.1);
-	if (!venomProtection) {
-		return `You need enough doses of ${formatList(
-			DOOM_VENOM_PROTECTION_OPTIONS.map(option => option.potionName),
-			'or'
-		)} to cover this ${formatDuration(fakeDuration)} Doom trip.`;
-	}
-
-	const costResult = getDoomTripCost({
-		user,
-		state,
-		result: { ...res, diedAt: null, deepestDelveCompleted: targetDelve, duration: fakeDuration * 1.1 },
-		userMagicLevel,
-		venomProtection,
-		deepDelves,
-		totalDelves
+	const costRemovalResult = await removeDoomTripCost(user, suppliesUsed, {
+		itemCost: venomItemsUsed,
+		replacementItems: venomItemsRefunded,
+		effectiveCost: effectiveVenomCost
 	});
-
-	const realCost = await removeDoomTripCost(user, costResult.cost, venomProtection);
-	if (typeof realCost === 'string') return realCost;
-	if (!realCost.has(suppliesUsed)) {
-		await globalClient.sendDm(
-			globalConfig.adminUserIDs[0],
-			`Doom of Mokhaiotl estimated supply cost was too low for user ${user.id} (${user.usernameOrMention}). Target delve: ${targetDelve}, quantity: ${
-				quantity ?? 'auto'
-			}. Estimated/removed: ${realCost}. Simulated used: ${suppliesUsed}.`
-		);
-		const extraCost = new Bank().add(suppliesUsed).remove(realCost);
-		const extraRealCost = await removeDoomTripCost(user, extraCost, { ...venomProtection, replacementItems: new Bank() });
-		if (typeof extraRealCost === 'string') return extraRealCost;
-		realCost.add(extraRealCost);
-	}
-	const refund = new Bank().add(realCost).remove(suppliesUsed);
+	if (typeof costRemovalResult === 'string') return costRemovalResult;
+	const { realCost, refundedItems } = costRemovalResult;
 
 	await ClientSettings.updateBankSetting('doom_cost', realCost);
 	await user.statsBankUpdate('doom_cost', realCost);
@@ -942,17 +926,15 @@ export async function doomCommand(
 		diedAt: diedAtForTask,
 		loot: {},
 		trips,
-		refund: refund.toJSON(),
+		refund: refundedItems.toJSON(),
 		deepDelvesEarned: deepDelvesEarnedForTask,
 		totalWavesCleared: totalWavesClearedForTask,
 		deepestDelveCompleted: deepestDelveCompletedForTask,
 		stopOnUnique: effectiveStopOnUnique,
 		ayakChargesGained: ayakChargesGainedForTask,
-		brewsUsed: costResult.brewsUsed,
-		restoresUsed: costResult.restoresUsed,
-		rangingUsed: costResult.rangingUsed,
-		venomProtectionPotionName: venomProtection.option.potionName,
-		venomProtectionDosesUsed: venomProtection.dosesNeeded,
+		brewsUsed: suppliesUsed.amount('Saradomin brew(4)'),
+		restoresUsed: suppliesUsed.amount('Super restore(4)'),
+		rangingUsed: suppliesUsed.amount('Ranging potion(4)'),
 		disableZcbBoost: state.zcbBoostDisabled || undefined
 	});
 

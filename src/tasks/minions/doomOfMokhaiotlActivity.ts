@@ -1,7 +1,6 @@
 import { Bank, EMonster, type ItemBank, Items } from 'oldschooljs';
 
 import {
-	calculateDoomEarlyDeathSupplyRefund,
 	calculateDoomXP,
 	DOOM_UNIQUE_ITEMS,
 	normaliseDoomWaveCompletions,
@@ -24,11 +23,6 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			duration,
 			deepestDelveCompleted,
 			ayakChargesGained,
-			brewsUsed,
-			restoresUsed,
-			rangingUsed,
-			venomProtectionPotionName,
-			venomProtectionDosesUsed,
 			trips,
 			refund
 		} = data;
@@ -109,26 +103,17 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			);
 		}
 
-		if (refund) {
-			await user.addItemsToBank({ items: new Bank().add(refund), collectionLog: false });
+		const refundedSupplies = new Bank().add(refund ?? {});
+		if (refundedSupplies.length > 0) {
+			await user.addItemsToBank({ items: refundedSupplies, collectionLog: false });
 		}
 
 		if (!trips && diedAt !== null) {
 			const kcSummary = buildKcSummary(newDeepest, newDeepDelves, newTotal);
-			const refund = calculateDoomEarlyDeathSupplyRefund({
-				targetDelve,
-				deepestDelveCompleted,
-				brewsUsed,
-				restoresUsed,
-				rangingUsed,
-				venomProtectionPotionName,
-				venomProtectionDosesUsed
-			});
-			if (refund.length > 0) {
-				await user.addItemsToBank({ items: refund, collectionLog: false });
-			}
 			const refundMessage =
-				refund.length > 0 ? `\n**Refunded supplies:** ${refund}` : '\n**Refunded supplies:** None.';
+				refundedSupplies.length > 0
+					? `\n**Refunded supplies:** ${refundedSupplies}`
+					: '\n**Refunded supplies:** None.';
 
 			return handleTripFinish({
 				user,
@@ -202,7 +187,8 @@ export const doomOfMokhaiotlTask: MinionTask = {
 					)
 					.join('\n')}`
 			: '';
-		const refundMessage = refund && new Bank().add(refund).length > 0 ? `\n**Refunded supplies:** ${new Bank().add(refund)}` : '';
+		const refundMessage =
+			refundedSupplies.length > 0 ? `\n**Refunded supplies:** ${refundedSupplies}` : '';
 
 		return handleTripFinish({
 			user,
