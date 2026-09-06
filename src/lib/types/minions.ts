@@ -547,9 +547,19 @@ export interface ColoTaskOptions extends ActivityTaskOptions {
 export interface DoomTaskOptions extends ActivityTaskOptions {
 	type: 'DoomOfMokhaiotl';
 	targetDelve: number;
+	quantity?: number;
 	xpTargetDelve?: number;
 	diedAt: number | null;
 	loot: ItemBank | null;
+	trips?: {
+		dur: number;
+		dead: boolean;
+		lvl: number;
+		loot?: ItemBank;
+		diedAt?: number;
+		ayak?: number;
+	}[];
+	refund?: ItemBank;
 	fakeDuration: number;
 	stopOnUnique?: boolean;
 	deepDelvesEarned: number;

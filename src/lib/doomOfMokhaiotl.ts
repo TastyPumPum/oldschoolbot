@@ -1,8 +1,8 @@
 import type { EquipmentSlot } from '@oldschoolgg/gear';
 import { calcWhatPercent, formatDuration, reduceNumByPercent, round, Time, UserError } from '@oldschoolgg/toolkit';
-import { Bank, EMonster, Items, LootTable, resolveItems } from 'oldschooljs';
+import { Bank, EMonster, type ItemBank, Items, LootTable, resolveItems } from 'oldschooljs';
 
-import { BitField } from '@/lib/constants.js';
+import { BitField, globalConfig } from '@/lib/constants.js';
 import { avasDevices, doomOfMokhaiotlCL } from '@/lib/data/CollectionsExport.js';
 import {
 	applyDoomSkillBoost,
@@ -165,6 +165,17 @@ export const doomDelves: DelveEntry[] = Array.from({ length: MAX_DELVE }, (_, i)
 	};
 });
 
+export function rollDoomRegularLoot(delveLevel: number): Bank {
+	const entry = doomDelves[delveLevel - 1];
+	const loot = entry.table.roll();
+	for (const itemID of DOOM_UNIQUE_ITEMS) {
+		const amount = loot.amount(itemID);
+		if (amount > 0) loot.remove(itemID, amount);
+	}
+	if (entry.guaranteedTears > 0) loot.add('Demon tear', entry.guaranteedTears);
+	return loot;
+}
+
 function experienceScore(deepDelves: number, totalDelves: number): number {
 	return deepDelves * 2 + Math.floor(totalDelves / 10);
 }
@@ -197,6 +208,15 @@ interface DoomTripCostResult {
 	brewsUsed: number;
 	restoresUsed: number;
 	rangingUsed: number;
+}
+
+interface DoomActivityTripData {
+	dur: number;
+	dead: boolean;
+	lvl: number;
+	loot?: ItemBank;
+	diedAt?: number;
+	ayak?: number;
 }
 
 const DOOM_SKILL_REQUIREMENTS: Skills = {
@@ -294,13 +314,17 @@ export function startDoomRun(options: {
 		const deathChance = deathChances[d - 1];
 
 		if (options.rng.percentChance(deathChance)) {
+			const deathDuration = reduceNumByPercent(
+				scaleDoomDurationForCompletedDelves(baseDuration, d, targetDelve),
+				options.durationReductionPercent
+			);
 			return {
 				diedAt: d,
 				loot: null,
 				deepestDelveCompleted,
 				deepDelvesEarned,
 				totalWavesCleared,
-				duration,
+				duration: deathDuration,
 				deathChances,
 				ayakChargesGained
 			};
@@ -491,6 +515,48 @@ function getDoomGearError(user: DoomUser, state: DoomGearState): string | null {
 	return null;
 }
 
+function checkLine(passed: boolean, text: string): string {
+	return `${passed ? '✅' : '❌'} ${text}`;
+}
+
+function buildDoomRequirementsChecklist(user: DoomUser, targetDelve: number, state: DoomGearState): string {
+	const lines = [
+		checkLine(
+			user.user.finished_quest_ids.includes(QuestID.TheFinalDawn),
+			'Completed "The Final Dawn" quest.'
+		),
+		checkLine(targetDelve >= 1 && targetDelve <= MAX_DELVE, `Target delve is between 1 and ${MAX_DELVE}.`),
+		checkLine(user.hasSkillReqs(DOOM_SKILL_REQUIREMENTS), `Stats: ${formatSkillRequirements(DOOM_SKILL_REQUIREMENTS)}.`),
+		checkLine(user.user.bitfield.includes(BitField.HasDexScroll), 'Rigour unlocked from a Dexterous prayer scroll.'),
+		checkLine(state.hasSBow || state.hasTbow, 'Twisted bow or Scorching bow equipped in your range setup.'),
+		checkLine(
+			DOOM_DEMONBANE_WEAPONS.some(i => user.hasEquippedOrInBank(i)),
+			`Demonbane weapon owned: ${formatList(DOOM_DEMONBANE_WEAPONS.map(i => Items.itemNameFromId(i)), 'or')}.`
+		),
+		checkLine(
+			state.hasChargedEyeOfAyak || DOOM_MAGE_WEAPONS.some(i => user.hasEquippedOrInBank(i)),
+			'Eye of Ayak with charges or a mage weapon for mage grubs.'
+		),
+		...Object.entries(DOOM_REQUIRED_RANGE_GEAR).map(([slot, items]) =>
+			checkLine(
+				items.some(g => user.gear.range.hasEquipped(g)),
+				`Range ${slot}: ${formatList(items.map(i => Items.itemNameFromId(i)), 'or')}.`
+			)
+		),
+		checkLine(
+			Boolean(state.meleePunishWeapon),
+			'Melee punish weapon: Noxious halberd, Crystal halberd, or Dual macuahuitl.'
+		),
+		checkLine(
+			state.meleePunishWeapon !== 'crystal_halberd' || user.bank.amount('Crystal shard') >= state.crystalShardsNeeded,
+			`${state.crystalShardsNeeded.toLocaleString()}x Crystal shard for Crystal halberd.`
+		),
+		checkLine(!(state.hasTbow || state.hasSBow) || state.equippedArrowId !== null, 'Arrows equipped in your range setup.')
+	];
+
+	return `**Doom of Mokhaiotl requirements for delve ${targetDelve}:**\n${lines.join('\n')}`;
+}
+
 function addDoomRuneCosts(cost: Bank, user: DoomUser, userMagicLevel: number, delvesForCost: number) {
 	let fireRunes = 0;
 	let soulRunes = 0;
@@ -534,14 +600,13 @@ function getDoomTripCost(options: {
 	user: DoomUser;
 	state: DoomGearState;
 	result: DoomRunResult;
-	targetDelve: number;
 	userMagicLevel: number;
 	venomProtection: DoomVenomProtection;
 	deepDelves: number;
 	totalDelves: number;
 }): DoomTripCostResult {
-	const { user, state, result, targetDelve, userMagicLevel, venomProtection, deepDelves, totalDelves } = options;
-	const delvesForCost = result.diedAt === null ? result.deepestDelveCompleted : targetDelve;
+	const { user, state, result, userMagicLevel, venomProtection, deepDelves, totalDelves } = options;
+	const delvesForCost = result.diedAt ?? result.deepestDelveCompleted;
 	const fullDurationMinutes = result.duration / Time.Minute;
 	const score = experienceScore(deepDelves, totalDelves);
 	const experienceFactor = Math.min(score / 1000, 1);
@@ -683,9 +748,18 @@ export async function doomCommand(
 	itx: OSInteraction,
 	targetDelve: number,
 	stopOnUnique = true,
-	disableZcbBoost = false
+	disableZcbBoost = false,
+	quantity?: number,
+	check = false
 ) {
 	const { user, rng } = itx;
+	const effectiveStopOnUnique = quantity ? stopOnUnique : true;
+
+	if (!Number.isInteger(targetDelve)) return 'Target delve must be a whole number.';
+	if (quantity !== undefined && (!Number.isInteger(quantity) || quantity < 1)) return 'Quantity must be a positive whole number.';
+
+	const state = getDoomGearState(user, targetDelve, disableZcbBoost);
+	if (check) return buildDoomRequirementsChecklist(user, targetDelve, state);
 
 	if (await user.minionIsBusy()) {
 		return `${user.usernameOrMention} is busy`;
@@ -694,7 +768,6 @@ export async function doomCommand(
 	const preflightError = getDoomPreflightError(user, targetDelve);
 	if (preflightError) return preflightError;
 
-	const state = getDoomGearState(user, targetDelve, disableZcbBoost);
 	const gearError = getDoomGearError(user, state);
 	if (gearError) return gearError;
 	if (!state.meleePunishWeapon) throw new Error('Doom gear validated without a melee punish weapon.');
@@ -736,7 +809,7 @@ export async function doomCommand(
 		: durationAfterSkillBoost;
 	const durationReductionPercent = calcWhatPercent(baseDuration - durationAfterWaystone, baseDuration);
 
-	const res = startDoomRun({
+	const tripOptions = {
 		targetDelve,
 		hasTbow: state.hasTbow,
 		hasSBow: state.hasSBow,
@@ -752,22 +825,79 @@ export async function doomCommand(
 		waveCompletions,
 		baseDuration,
 		durationReductionPercent,
-		stopOnUnique,
+		stopOnUnique: effectiveStopOnUnique,
 		rng
-	});
-	const venomProtection = selectDoomVenomProtection(itemName => user.bank.amount(itemName), res.duration);
+	};
+	const fullTripDuration = Math.floor(reduceNumByPercent(baseDuration, durationReductionPercent));
+	let fakeDuration = quantity ? quantity * fullTripDuration : fullTripDuration;
+	const maxTripLength = await user.calcMaxTripLength('DoomOfMokhaiotl');
+	if (quantity && quantity * fullTripDuration > maxTripLength) {
+		return `The max amount of trips you can do is ${Math.floor(
+			maxTripLength / fullTripDuration
+		).toLocaleString()}, try a lower quantity. Doing ${quantity.toLocaleString()}x would take ${formatDuration(
+			quantity * fullTripDuration
+		)}. If you want to maximize your trip length, then don't specify a quantity and you will do as many as you can by default.`;
+	}
+	if (!quantity) {
+		fakeDuration = Math.floor(rng.randomVariation(maxTripLength * 1.1, 10));
+	}
+
+	const trips: DoomActivityTripData[] = [];
+	const suppliesUsed = new Bank();
+	let totalDuration = 0;
+	const tripsToAttempt = quantity ?? Number.POSITIVE_INFINITY;
+	while (trips.length < tripsToAttempt) {
+		const trip = startDoomRun(tripOptions);
+		if (totalDuration + trip.duration > fakeDuration) break;
+		totalDuration += trip.duration;
+		const tripCostVenomProtection = selectDoomVenomProtection(itemName => user.bank.amount(itemName), trip.duration);
+		if (!tripCostVenomProtection) break;
+		const tripCost = getDoomTripCost({
+			user,
+			state,
+			result: trip,
+			userMagicLevel,
+			venomProtection: tripCostVenomProtection,
+			deepDelves,
+			totalDelves
+		});
+		suppliesUsed.add(tripCost.cost);
+		const uniqueLoot = new Bank();
+		if (trip.loot) {
+			for (const itemID of DOOM_UNIQUE_ITEMS) {
+				const qty = trip.loot.amount(itemID);
+				if (qty > 0) uniqueLoot.add(itemID, qty);
+			}
+		}
+		trips.push({
+			dur: trip.duration,
+			dead: trip.diedAt !== null,
+			lvl: trip.deepestDelveCompleted,
+			loot: uniqueLoot.length > 0 ? uniqueLoot.toJSON() : undefined,
+			diedAt: trip.diedAt ?? undefined,
+			ayak: trip.ayakChargesGained || undefined
+		});
+		if (effectiveStopOnUnique && trip.loot && DOOM_UNIQUE_ITEMS.some(id => trip.loot!.has(id))) break;
+	}
+	if (trips.length === 0) return 'Your max trip length is too short to complete a Doom of Mokhaiotl trip.';
+	const deepestDelveCompletedForTask = Math.max(...trips.map(trip => trip.lvl));
+	const totalWavesClearedForTask = trips.reduce((sum, trip) => sum + trip.lvl, 0);
+	const deepDelvesEarnedForTask = trips.reduce((sum, trip) => sum + Math.max(0, trip.lvl - 7), 0);
+	const ayakChargesGainedForTask = trips.reduce((sum, trip) => sum + (trip.ayak ?? 0), 0);
+	const diedAtForTask = trips.length === 1 ? (trips[0].diedAt ?? null) : null;
+	const res = startDoomRun(tripOptions);
+	const venomProtection = selectDoomVenomProtection(itemName => user.bank.amount(itemName), fakeDuration * 1.1);
 	if (!venomProtection) {
 		return `You need enough doses of ${formatList(
 			DOOM_VENOM_PROTECTION_OPTIONS.map(option => option.potionName),
 			'or'
-		)} to cover this ${formatDuration(res.duration)} Doom trip.`;
+		)} to cover this ${formatDuration(fakeDuration)} Doom trip.`;
 	}
 
 	const costResult = getDoomTripCost({
 		user,
 		state,
-		result: res,
-		targetDelve,
+		result: { ...res, diedAt: null, deepestDelveCompleted: targetDelve, duration: fakeDuration * 1.1 },
 		userMagicLevel,
 		venomProtection,
 		deepDelves,
@@ -776,6 +906,19 @@ export async function doomCommand(
 
 	const realCost = await removeDoomTripCost(user, costResult.cost, venomProtection);
 	if (typeof realCost === 'string') return realCost;
+	if (!realCost.has(suppliesUsed)) {
+		await globalClient.sendDm(
+			globalConfig.adminUserIDs[0],
+			`Doom of Mokhaiotl estimated supply cost was too low for user ${user.id} (${user.usernameOrMention}). Target delve: ${targetDelve}, quantity: ${
+				quantity ?? 'auto'
+			}. Estimated/removed: ${realCost}. Simulated used: ${suppliesUsed}.`
+		);
+		const extraCost = new Bank().add(suppliesUsed).remove(realCost);
+		const extraRealCost = await removeDoomTripCost(user, extraCost, { ...venomProtection, replacementItems: new Bank() });
+		if (typeof extraRealCost === 'string') return extraRealCost;
+		realCost.add(extraRealCost);
+	}
+	const refund = new Bank().add(realCost).remove(suppliesUsed);
 
 	await ClientSettings.updateBankSetting('doom_cost', realCost);
 	await user.statsBankUpdate('doom_cost', realCost);
@@ -790,18 +933,21 @@ export async function doomCommand(
 	await ActivityManager.startTrip<DoomTaskOptions>({
 		userID: user.id,
 		channelId: itx.channelId,
-		duration: res.duration,
-		fakeDuration: res.duration,
+		duration: totalDuration,
+		fakeDuration,
 		type: 'DoomOfMokhaiotl',
 		targetDelve,
-		xpTargetDelve: res.diedAt === null ? res.deepestDelveCompleted : targetDelve,
-		diedAt: res.diedAt,
-		loot: res.loot?.toJSON() ?? {},
-		deepDelvesEarned: res.deepDelvesEarned,
-		totalWavesCleared: res.totalWavesCleared,
-		deepestDelveCompleted: res.deepestDelveCompleted,
-		stopOnUnique,
-		ayakChargesGained: res.ayakChargesGained,
+		quantity: trips.length,
+		xpTargetDelve: deepestDelveCompletedForTask,
+		diedAt: diedAtForTask,
+		loot: {},
+		trips,
+		refund: refund.toJSON(),
+		deepDelvesEarned: deepDelvesEarnedForTask,
+		totalWavesCleared: totalWavesClearedForTask,
+		deepestDelveCompleted: deepestDelveCompletedForTask,
+		stopOnUnique: effectiveStopOnUnique,
+		ayakChargesGained: ayakChargesGainedForTask,
 		brewsUsed: costResult.brewsUsed,
 		restoresUsed: costResult.restoresUsed,
 		rangingUsed: costResult.rangingUsed,
@@ -811,10 +957,15 @@ export async function doomCommand(
 	});
 
 	return [
-		`${user.usernameOrMention}'s minion is now fighting the **Doom of Mokhaiotl** (targeting delve **${targetDelve}**)!`,
-		`**Duration:** ${formatDuration(res.duration)} | **Stop on unique:** ${stopOnUnique ? 'Yes' : 'No'}`,
+		quantity
+			? `${user.usernameOrMention}'s minion is now fighting the **Doom of Mokhaiotl** ${trips.length}x (targeting delve **${targetDelve}**)!`
+			: `${user.usernameOrMention}'s minion is now fighting the **Doom of Mokhaiotl**! Attempting to do as many trips as possible up to level ${targetDelve} or until you get a unique, whichever comes first.`,
+		`**Duration:** ${formatDuration(fakeDuration)} | **Stop on unique:** ${effectiveStopOnUnique ? 'Yes' : 'No'}`,
 		buildDoomDeathChanceLine(res.deathChances),
 		`**Cost:** ${realCost}`,
-		`**Boosts:** ${buildDoomBoostLines(state, kcReduction, skillBoostMsg).join(', ')}`
+		`**Boosts:** ${buildDoomBoostLines(state, kcReduction, skillBoostMsg).join(', ')}`,
+		targetDelve > 15
+			? 'Doom levels beyond 15 are not worth the time, but you can try if you would like :). You will only use the supplies and time for levels actually completed, so you are not wasting anything.'
+			: ''
 	].join('\n');
 }

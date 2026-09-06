@@ -26,6 +26,19 @@ export const delvesCommand = defineCommand({
 					name: 'stop_on_unique',
 					description: 'Stop the trip early if you receive a unique drop (default: true).',
 					required: false
+				},
+				{
+					type: 'Integer',
+					name: 'quantity',
+					description: 'How many Doom trips to attempt.',
+					required: false,
+					min_value: 1
+				},
+				{
+					type: 'Boolean',
+					name: 'check',
+					description: 'Check if you meet all requirements for Doom.',
+					required: false
 				}
 			]
 		}
@@ -36,7 +49,9 @@ export const delvesCommand = defineCommand({
 				interaction,
 				options.doom.target_delve as number,
 				options.doom.stop_on_unique ?? true,
-				Boolean((options.doom as { disable_zcb_boost?: boolean }).disable_zcb_boost)
+				Boolean((options.doom as { disable_zcb_boost?: boolean }).disable_zcb_boost),
+				options.doom.quantity as number | undefined,
+				options.doom.check ?? false
 			);
 		}
 		return 'Invalid command.';

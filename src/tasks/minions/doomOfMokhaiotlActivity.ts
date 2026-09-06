@@ -4,7 +4,8 @@ import {
 	calculateDoomEarlyDeathSupplyRefund,
 	calculateDoomXP,
 	DOOM_UNIQUE_ITEMS,
-	normaliseDoomWaveCompletions
+	normaliseDoomWaveCompletions,
+	rollDoomRegularLoot
 } from '@/lib/doomOfMokhaiotl.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import announceLoot from '@/lib/minions/functions/announceLoot.js';
@@ -21,16 +22,45 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			targetDelve,
 			xpTargetDelve,
 			duration,
-			deepDelvesEarned,
-			totalWavesCleared,
 			deepestDelveCompleted,
 			ayakChargesGained,
 			brewsUsed,
 			restoresUsed,
 			rangingUsed,
 			venomProtectionPotionName,
-			venomProtectionDosesUsed
+			venomProtectionDosesUsed,
+			trips,
+			refund
 		} = data;
+		const tripData =
+			trips ??
+			[
+				{
+					dur: duration,
+					dead: diedAt !== null,
+					lvl: deepestDelveCompleted,
+					loot: possibleLoot ?? undefined,
+					diedAt: diedAt ?? undefined
+				}
+			];
+		const aggregatedLoot = new Bank();
+		let aggregatedDeepDelves = 0;
+		let aggregatedWavesCleared = 0;
+		let aggregatedDeepest = 0;
+		let aggregatedAyakCharges = trips ? 0 : (ayakChargesGained ?? 0);
+
+		for (const trip of tripData) {
+			aggregatedDeepest = Math.max(aggregatedDeepest, trip.lvl);
+			aggregatedWavesCleared += trip.lvl;
+			aggregatedDeepDelves += Math.max(0, trip.lvl - 7);
+			aggregatedAyakCharges += trip.ayak ?? 0;
+			if (!trip.dead) {
+				for (let delve = 1; delve <= trip.lvl; delve++) {
+					aggregatedLoot.add(rollDoomRegularLoot(delve));
+				}
+				if (trip.loot) aggregatedLoot.add(trip.loot);
+			}
+		}
 
 		const currentStats = await user.fetchStats();
 		const prevDeepest = Number(currentStats.doom_deepest_delve ?? 0);
@@ -40,12 +70,14 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			(currentStats as { doom_wave_completions?: unknown }).doom_wave_completions
 		);
 
-		const newDeepest = Math.max(prevDeepest, deepestDelveCompleted);
-		const newDeepDelves = prevDeepDelves + (deepDelvesEarned ?? 0);
-		const newTotal = prevTotal + (totalWavesCleared ?? 0);
-		const doomKcEarned = deepDelvesEarned ?? 0;
-		for (let wave = 1; wave <= deepestDelveCompleted; wave++) {
-			waveCompletions[wave] = (waveCompletions[wave] ?? 0) + 1;
+		const newDeepest = Math.max(prevDeepest, aggregatedDeepest);
+		const newDeepDelves = prevDeepDelves + aggregatedDeepDelves;
+		const newTotal = prevTotal + aggregatedWavesCleared;
+		const doomKcEarned = aggregatedDeepDelves;
+		for (const trip of tripData) {
+			for (let wave = 1; wave <= trip.lvl; wave++) {
+				waveCompletions[wave] = (waveCompletions[wave] ?? 0) + 1;
+			}
 		}
 
 		const monsterScores = { ...((currentStats.monster_scores ?? {}) as ItemBank) };
@@ -62,22 +94,26 @@ export const doomOfMokhaiotlTask: MinionTask = {
 		} as Parameters<typeof user.statsUpdate>[0]);
 
 		await user.update({
-			ayak_charges: { increment: ayakChargesGained }
+			ayak_charges: { increment: aggregatedAyakCharges }
 		});
 
 		let xpMessage = '';
-		if (totalWavesCleared > 0) {
+		if (aggregatedWavesCleared > 0) {
 			xpMessage = await user.addXPBank(
 				calculateDoomXP({
 					duration,
-					targetDelve: xpTargetDelve ?? targetDelve,
-					totalWavesCleared,
+					targetDelve: Math.max(1, xpTargetDelve ?? aggregatedDeepest),
+					totalWavesCleared: aggregatedWavesCleared,
 					minimal: true
 				})
 			);
 		}
 
-		if (diedAt !== null) {
+		if (refund) {
+			await user.addItemsToBank({ items: new Bank().add(refund), collectionLog: false });
+		}
+
+		if (!trips && diedAt !== null) {
 			const kcSummary = buildKcSummary(newDeepest, newDeepDelves, newTotal);
 			const refund = calculateDoomEarlyDeathSupplyRefund({
 				targetDelve,
@@ -102,22 +138,27 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			});
 		}
 
-		const loot = new Bank().add(possibleLoot ?? {});
+		const loot = new Bank().add(trips ? aggregatedLoot : possibleLoot ?? {});
 
 		const { previousCL, itemsAdded } = await user.transactItems({
 			itemsToAdd: loot,
 			collectionLog: true
 		});
 
-		const stoppedOnUnique = deepestDelveCompleted < targetDelve;
+		const stoppedOnUnique =
+			Boolean(trips?.some(trip => trip.loot && new Bank().add(trip.loot!).length > 0)) ||
+			(!trips && deepestDelveCompleted < targetDelve);
+		const anyDeath = tripData.some(trip => trip.dead);
 
 		const uniqueNames = DOOM_UNIQUE_ITEMS.filter((id: number) => loot.has(id))
 			.map((id: number) => Items.itemNameFromId(id))
 			.join(', ');
 
 		const completionLine = stoppedOnUnique
-			? `Your minion stopped at delve **${deepestDelveCompleted}** after receiving a unique: **${uniqueNames}**.`
-			: `Your minion completed the Doom of Mokhaiotl up to delve **${deepestDelveCompleted}**.`;
+			? `Your minion stopped after receiving a unique: **${uniqueNames}**.`
+			: anyDeath
+				? `Your minion attempted **${tripData.length}x** Doom of Mokhaiotl trips up to delve **${targetDelve}**.`
+				: `Your minion completed **${tripData.length}x** Doom of Mokhaiotl trips up to delve **${aggregatedDeepest}**.`;
 
 		announceLoot({
 			user,
@@ -139,24 +180,35 @@ export const doomOfMokhaiotlTask: MinionTask = {
 			type: 'Monster',
 			changeType: 'loot',
 			duration,
-			kc: totalWavesCleared ?? 0,
+			kc: aggregatedWavesCleared,
 			users: [{ id: user.id, loot: itemsAdded, duration }]
 		});
 
 		const image = await makeBankImage({
 			bank: itemsAdded,
-			title: `Doom of Mokhaiotl - Delve ${deepestDelveCompleted}`,
+			title: `Doom of Mokhaiotl - ${tripData.length}x Delve ${targetDelve}`,
 			user,
 			previousCL
 		});
 
 		const kcSummary = buildKcSummary(newDeepest, newDeepDelves, newTotal);
+		const tripSummary = trips
+			? `\n${tripData
+					.map(
+						(trip, index) =>
+							`Trip ${index + 1}: ${trip.dead ? `died at delve **${trip.diedAt ?? trip.lvl + 1}**` : `reached delve **${trip.lvl}**`}${
+								trip.loot ? ' and received a unique' : ''
+							}`
+					)
+					.join('\n')}`
+			: '';
+		const refundMessage = refund && new Bank().add(refund).length > 0 ? `\n**Refunded supplies:** ${new Bank().add(refund)}` : '';
 
 		return handleTripFinish({
 			user,
 			channelId,
 			message: {
-				content: `${user} ${completionLine}\n${kcSummary}${xpMessage ? `\n${xpMessage}` : ''}`,
+				content: `${user} ${completionLine}${tripSummary}${refundMessage}\n${kcSummary}${xpMessage ? `\n${xpMessage}` : ''}`,
 				files: [image]
 			},
 			data,
