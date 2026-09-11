@@ -1017,7 +1017,7 @@ const specialPlants: Plant[] = [
 		defaultNumOfPatches: 0,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[1, 1] // Canifs patch (1)
@@ -1053,7 +1053,7 @@ const specialPlants: Plant[] = [
 		defaultNumOfPatches: 0,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[1, 1] // Canifs patch (1)
@@ -1096,7 +1096,7 @@ const specialPlants: Plant[] = [
 		defaultNumOfPatches: 2,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[33, 1] // Prifddinas (1)

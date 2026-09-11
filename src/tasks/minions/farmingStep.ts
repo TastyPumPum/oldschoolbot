@@ -1,13 +1,14 @@
-import type { IFarmingContract } from '@oldschoolgg/schemas';
-import { Emoji, Events, Time } from '@oldschoolgg/toolkit';
-import { MathRNG, type RNGProvider } from 'node-rng';
-import { Bank, increaseBankQuantitesByPercent, itemID, Items, Monsters } from 'oldschooljs';
-
-import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import { clAdjustedDroprate } from '@/lib/bso/bsoUtil.js';
 import { MysteryBoxes } from '@/lib/bso/openables/tables.js';
 import { mutations } from '@/lib/bso/skills/farming/mutations.js';
 import { InventionID, inventionBoosts, inventionItemBoost } from '@/lib/bso/skills/invention/inventions.js';
+
+import type { IFarmingContract } from '@oldschoolgg/schemas';
+import { Emoji, Events, Time } from '@oldschoolgg/toolkit';
+import { MathRNG, type RNGProvider } from 'node-rng';
+import { Bank, Items, increaseBankQuantitesByPercent, itemID, Monsters } from 'oldschooljs';
+
+import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import chatHeadImage from '@/lib/canvas/chatHeadImage.js';
 import { combatAchievementTripEffect } from '@/lib/combat_achievements/combatAchievements.js';
 import { BitField } from '@/lib/constants.js';
@@ -669,24 +670,9 @@ async function applySpecialFarmingLoot(options: {
 	patchType: PatchTypes.IPatchData;
 	alivePlants: number;
 	currentFarmingLevel: number;
-	planting: boolean;
-	plant: FarmingPlant;
-	quantity: number;
 }): Promise<Bank> {
-	const {
-		user,
-		channelID,
-		data,
-		rng,
-		infoStr,
-		plantToHarvest,
-		patchType,
-		alivePlants,
-		currentFarmingLevel,
-		planting,
-		plant,
-		quantity
-	} = options;
+	const { user, channelID, data, rng, infoStr, plantToHarvest, patchType, alivePlants, currentFarmingLevel } =
+		options;
 	let { loot } = options;
 
 	const { petDropRate } = skillingPetDropRate(user, 'farming', plantToHarvest.petChance);
@@ -778,9 +764,36 @@ async function applySpecialFarmingLoot(options: {
 		);
 	}
 
+	return loot;
+}
+
+async function applyBSOPostHarvestLoot(options: {
+	user: MUser;
+	rng: RNGProvider;
+	loot: Bank;
+	infoStr: string[];
+	plantToHarvest: FarmingPlant;
+	planting: boolean;
+	plant: FarmingPlant;
+	quantity: number;
+	alivePlants: number;
+}) {
+	const { user, rng, loot, infoStr, plantToHarvest, planting, plant, quantity, alivePlants } = options;
+
+	if ('onHarvest' in plantToHarvest && plantToHarvest.onHarvest) {
+		await plantToHarvest.onHarvest({ user, loot, quantity: alivePlants, messages: infoStr });
+	}
+
+	if (plantToHarvest.name === 'Mysterious tree' && loot.has('Seed Pack')) {
+		loot.add('Seed Pack', 1);
+		infoStr.push('+1 Seed Pack for Mysterious tree farming contract');
+	}
+
 	if (loot.has('Plopper')) {
 		loot.set('Plopper', 1);
-		infoStr.push('<:plopper:787310793321349120> You found a pig on a farm and have adopted it to help you with farming.');
+		infoStr.push(
+			'<:plopper:787310793321349120> You found a pig on a farm and have adopted it to help you with farming.'
+		);
 	}
 
 	if (user.hasEquippedOrInBank('Farming master cape')) {
@@ -815,8 +828,6 @@ async function applySpecialFarmingLoot(options: {
 			infoStr.push(`One of your crops mutated into a ${Items.itemNameFromId(mutation.output)}.`);
 		}
 	}
-
-	return loot;
 }
 
 async function completeFarmingContractIfEligible(options: {
@@ -1040,10 +1051,7 @@ export async function executeFarmingStep({
 		plantToHarvest,
 		patchType,
 		alivePlants,
-		currentFarmingLevel,
-		planting,
-		plant,
-		quantity
+		currentFarmingLevel
 	});
 
 	let newPatch: PatchTypes.PatchData = {
@@ -1085,10 +1093,17 @@ export async function executeFarmingStep({
 	});
 	boosts.push(...lootBoosts);
 
-	if (plantToHarvest.name === 'Mysterious tree' && loot.has('Seed Pack')) {
-		loot.add('Seed Pack', 1);
-		infoStr.push('+1 Seed Pack for Mysterious tree farming contract');
-	}
+	await applyBSOPostHarvestLoot({
+		user,
+		rng,
+		loot,
+		infoStr,
+		plantToHarvest,
+		planting,
+		plant,
+		quantity,
+		alivePlants
+	});
 
 	const boostLine = formatFarmingBoosts(boosts, { prefix: '\n' });
 	if (boostLine) {

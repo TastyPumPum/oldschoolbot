@@ -359,7 +359,7 @@ const fruitTrees: Plant[] = [
 		defaultNumOfPatches: 4,
 		canPayFarmer: true,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[22, 1] // Lletya Patch (1)

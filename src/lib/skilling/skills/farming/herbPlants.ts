@@ -672,7 +672,7 @@ const herbPlants: Plant[] = [
 		defaultNumOfPatches: 4,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[900, 1], // Canifs Patches (1)
@@ -709,7 +709,7 @@ const herbPlants: Plant[] = [
 		defaultNumOfPatches: 4,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[900, 1],
@@ -748,7 +748,7 @@ const herbPlants: Plant[] = [
 		defaultNumOfPatches: 4,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[900, 1], // Canifs Patches (1)
@@ -788,7 +788,7 @@ const herbPlants: Plant[] = [
 		defaultNumOfPatches: 4,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[900, 1], // Canifs Patches (1)

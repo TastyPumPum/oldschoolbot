@@ -235,7 +235,7 @@ const trees: Plant[] = [
 		defaultNumOfPatches: 2,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: false,
+		canCompostAndPay: false,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [[3000, 1]],
 		// [Farm Lvl, Patches Gained]

@@ -307,7 +307,7 @@ const allotmentPlants: Plant[] = [
 		defaultNumOfPatches: 2,
 		canPayFarmer: false,
 		canCompostPatch: true,
-		canCompostandPay: true,
+		canCompostAndPay: true,
 		// [QP, Patches Gained]
 		additionalPatchesByQP: [
 			[1, 2], // Canifs Patches (2)

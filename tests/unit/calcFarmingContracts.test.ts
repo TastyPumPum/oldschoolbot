@@ -122,7 +122,7 @@ describe('calcFarmingContracts', () => {
 
 		openSeedPack(2, testRng);
 
-		const [[, low], [, medium], [, high]] = everySpy.mock.calls;
+		const [[, low], [, medium], [, high]] = everySpy.mock.calls.slice(-3);
 		expect(low).toBe(3);
 		expect(medium).toBe(3);
 		expect(high).toBe(1);
@@ -143,7 +143,7 @@ describe('calcFarmingContracts', () => {
 
 		openSeedPack(3, testRng);
 
-		const [[, low], [, medium], [, high]] = everySpy.mock.calls;
+		const [[, low], [, medium], [, high]] = everySpy.mock.calls.slice(-3);
 		expect(high).toBe(1);
 		expect(medium).toBe(4);
 		expect(low).toBe(3);
@@ -164,7 +164,7 @@ describe('calcFarmingContracts', () => {
 
 		openSeedPack(4, testRng);
 
-		const [[, low], [, medium], [, high]] = everySpy.mock.calls;
+		const [[, low], [, medium], [, high]] = everySpy.mock.calls.slice(-3);
 		expect(low).toBe(2);
 		expect(medium).toBe(5);
 		expect(high).toBe(2);
@@ -185,7 +185,7 @@ describe('calcFarmingContracts', () => {
 
 		openSeedPack(5, testRng);
 
-		const [[, low], [, medium], [, high]] = everySpy.mock.calls;
+		const [[, low], [, medium], [, high]] = everySpy.mock.calls.slice(-3);
 		expect(low).toBe(1);
 		expect(medium).toBe(6);
 		expect(high).toBe(3);
