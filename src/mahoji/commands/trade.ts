@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import {
-	type APIMessage,
 	type APIAttachment,
+	type APIMessage,
 	ButtonBuilder,
 	ButtonStyle,
 	EmbedBuilder,
@@ -54,7 +54,11 @@ function hasAllowedTradeFileExtension(attachment: APIAttachment) {
 }
 
 function hasBinaryTextCharacters(text: string) {
-	return /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text);
+	for (const char of text) {
+		const code = char.charCodeAt(0);
+		if (code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 127) return true;
+	}
+	return false;
 }
 
 function assertJSONObject(value: unknown): asserts value is Record<string, unknown> {
@@ -113,10 +117,7 @@ function parseTradeFileBankContent({
 			noDuplicateItems: true
 		}).filter(i => itemIsTradeable(i.id, true));
 	} catch (err) {
-		return formatTradeFileParseError(
-			optionName,
-			err instanceof Error ? err.message : 'Unknown parsing error.'
-		);
+		return formatTradeFileParseError(optionName, err instanceof Error ? err.message : 'Unknown parsing error.');
 	}
 }
 
@@ -173,7 +174,11 @@ async function downloadTradeAttachmentText(
 		const text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
 		if (hasBinaryTextCharacters(text)) {
 			return {
-				error: formatTradeFileError(optionName, 'The file must be plaintext UTF-8.', 'Binary data was detected.')
+				error: formatTradeFileError(
+					optionName,
+					'The file must be plaintext UTF-8.',
+					'Binary data was detected.'
+				)
 			};
 		}
 		return { text };
@@ -298,12 +303,7 @@ ${formatTradeHashSummary(senderUser, recipientUser, itemsSent, itemsReceived)}`;
 	return message;
 }
 
-function buildTradeCompletionResponse(
-	senderUser: MUser,
-	recipientUser: MUser,
-	itemsSent: Bank,
-	itemsReceived: Bank
-) {
+function buildTradeCompletionResponse(senderUser: MUser, recipientUser: MUser, itemsSent: Bank, itemsReceived: Bank) {
 	let synopsis = `Trade completed! ${senderUser.mention} sold ${itemsSent.toStringFull()} to ${
 		recipientUser.mention
 	} in return for ${itemsReceived.toStringFull()}.`;
@@ -555,9 +555,9 @@ export const tradeCommand = defineCommand({
 			return { itemsSent: parsedItemsSent, itemsReceived: parsedItemsReceived };
 		}
 
-		let tradeMaxPull = extraSettings.tradeMaxPull ?? DEFAULT_TRADE_MAX_PULL;
-		let { itemsSent, itemsReceived } = parseTradeBanks(tradeMaxPull);
-		let mainContent = tradeComposeMainContent(senderUser, recipientUser, itemsSent, itemsReceived);
+		const tradeMaxPull = extraSettings.tradeMaxPull ?? DEFAULT_TRADE_MAX_PULL;
+		const { itemsSent, itemsReceived } = parseTradeBanks(tradeMaxPull);
+		const mainContent = tradeComposeMainContent(senderUser, recipientUser, itemsSent, itemsReceived);
 		const tradeTimeout = extraSettings.tradeTimeout * 1000;
 		const tradeEmbedTimeout = extraSettings.tradeEmbedTimeout * 1000;
 
@@ -579,14 +579,9 @@ export const tradeCommand = defineCommand({
 		let tradeMessage: APIMessage;
 		let confirmationMessage: APIMessage;
 		if (needsEmbed) {
-			const embedMessage = tradeComposeEmbed(
-				senderUser,
-				recipientUser,
-				itemsSent,
-				itemsReceived
-			);
+			const embedMessage = tradeComposeEmbed(senderUser, recipientUser, itemsSent, itemsReceived);
 			// Is the response too big for an embed?
-			if (Boolean(embedMessage.files?.length)) {
+			if (embedMessage.files?.length) {
 				tradeMessage = await interaction.followUp(embedMessage);
 				const content = tradeConfirmationMsg(tradeEmbedTimeout);
 
@@ -605,8 +600,7 @@ export const tradeCommand = defineCommand({
 				await interaction.editFollowUp(confirmationMessage.id, { content: 'Trade confirmed.', components: [] });
 			} else {
 				const content = `${embedMessage.content}\n\nYou have ${Math.floor(tradeEmbedTimeout / 1000)} seconds to confirm.`;
-				confirmationMessage =
-				tradeMessage = await interaction.followUp({
+				confirmationMessage = tradeMessage = await interaction.followUp({
 					...embedMessage,
 					content,
 					components: tradeConfirmationButtons()
@@ -684,12 +678,7 @@ export const tradeCommand = defineCommand({
 			await ClientSettings.addToGPTaxBalance(senderUser, itemsSent.amount('Coins'));
 		}
 
-		const completionResponse = buildTradeCompletionResponse(
-			senderUser,
-			recipientUser,
-			itemsSent,
-			itemsReceived
-		);
+		const completionResponse = buildTradeCompletionResponse(senderUser, recipientUser, itemsSent, itemsReceived);
 		await interaction.editFollowUp(confirmationMessage.id, { ...completionResponse, clearAttachments: true });
 		return SpecialResponse.RespondedManually;
 	}
