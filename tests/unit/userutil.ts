@@ -34,6 +34,7 @@ export interface MockUserArgs {
 	skills_fishing?: number;
 	GP?: number;
 	bitfield?: BitField[];
+	favorite_alchables?: number[];
 	id?: string;
 }
 
@@ -78,6 +79,7 @@ const mockUser = (overrides?: MockUserArgs): User => {
 		skills_hitpoints: overrides?.skills_hitpoints ?? convertLVLtoXP(10),
 		GP: overrides?.GP ?? 0,
 		bitfield: overrides?.bitfield ?? [],
+		favorite_alchables: overrides?.favorite_alchables ?? [],
 		username: 'Magnaboy',
 		QP: overrides?.QP ?? 0,
 		sacrificedValue: 0,
