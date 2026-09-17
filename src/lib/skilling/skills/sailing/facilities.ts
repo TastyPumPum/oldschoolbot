@@ -90,7 +90,7 @@ export const SailingFacilities: SailingFacility[] = [
 		name: 'Steel salvaging hook',
 		level: 27,
 		constructionLevel: 18,
-		cost: { 'Teak plank': 4, 'Steel nails': 16, 'Steel bar': 8, Rope: 1, 'Lead bar': 3 },
+		cost: { 'Teak plank': 4, 'Steel nails': 16, 'Steel bar': 6, Rope: 1, 'Lead bar': 3 },
 		description: 'Improves shipwreck salvaging.'
 	}),
 	salvagingHook({
@@ -115,7 +115,7 @@ export const SailingFacilities: SailingFacility[] = [
 		level: 74,
 		constructionLevel: 66,
 		cost: {
-			'Ironwood plank': 6,
+			'Ironwood plank': 4,
 			'Rune nails': 16,
 			'Runite bar': 6,
 			Rope: 1,
@@ -130,7 +130,7 @@ export const SailingFacilities: SailingFacility[] = [
 		level: 86,
 		constructionLevel: 78,
 		cost: {
-			'Rosewood plank': 7,
+			'Rosewood plank': 4,
 			'Dragon nails': 16,
 			'Dragon metal sheet': 6,
 			Rope: 1,
@@ -152,7 +152,8 @@ export const SailingFacilities: SailingFacility[] = [
 		name: 'Keg',
 		level: 33,
 		constructionLevel: 25,
-		cost: new Bank({ 'Oak plank': 5, 'Iron nails': 20, 'Barrel stand': 1 }),
+		cost: new Bank({ 'Oak plank': 5, 'Iron nails': 20 }),
+		requiredItems: new Bank({ 'Barrel stand': 1 }),
 		description: 'Stores charting ales. Ale effects are not yet modelled.'
 	},
 	{
@@ -160,6 +161,7 @@ export const SailingFacilities: SailingFacility[] = [
 		name: 'Salvaging station',
 		level: 42,
 		constructionLevel: 34,
+		shipTypes: ['skiff', 'sloop'],
 		cost: new Bank({ 'Teak plank': 4, 'Steel nails': 16 }),
 		description: 'Automatically sorts salvage while shipwreck salvaging at sea.'
 	},
@@ -214,11 +216,33 @@ export const SailingFacilities: SailingFacility[] = [
 		constructionLevel: net.constructionLevel,
 		cost: net.cost,
 		family: 'trawling_net' as const,
+		shipTypes: ['skiff', 'sloop'] as SailingShipType[],
 		description: `Enables deep sea trawling at ${net.depths.join(', ')} depths.`
 	}))
 ];
 
 export const SailingFacilitiesById = new Map(SailingFacilities.map(f => [f.id, f]));
+
+// Construction XP from the individual facility recipes on the OSRS Wiki.
+export const sailingFacilityConstructionXP: Record<SailingFacilityId, number> = {
+	salvaging_hook: 151,
+	iron_salvaging_hook: 312,
+	steel_salvaging_hook: 499,
+	mithril_salvaging_hook: 769,
+	adamant_salvaging_hook: 919,
+	rune_salvaging_hook: 1233,
+	dragon_salvaging_hook: 1537,
+	inoculation_station: 765,
+	salvaging_station: 372,
+	keg: 313,
+	wind_catcher: 741,
+	gale_catcher: 1517,
+	crystal_extractor: 3066,
+	rope_trawling_net: 458,
+	linen_trawling_net: 697,
+	hemp_trawling_net: 1003,
+	cotton_trawling_net: 1289
+};
 
 export function isSalvagingHookFacility(facility: SailingFacilityId): boolean {
 	return SailingFacilitiesById.get(facility)?.family === 'salvaging_hook';

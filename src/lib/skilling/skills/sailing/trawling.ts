@@ -57,7 +57,7 @@ export const TrawlingNets: TrawlingNet[] = [
 		id: 'hemp_trawling_net',
 		name: 'Hemp trawling net',
 		level: 76,
-		constructionLevel: 70,
+		constructionLevel: 65,
 		maxFishPerCatch: 4,
 		sailingXP: 11,
 		depths: ['shallow', 'moderate', 'deep'],
@@ -175,7 +175,20 @@ export function canTrawlAtDepth(net: TrawlingNet, depth: TrawlingDepth) {
 
 export function getTrawlingCatchChance(shoal: TrawlingShoal, fishingLevel: number) {
 	if (fishingLevel < shoal.fishingLevel) return 0;
-	if (fishingLevel >= 99) return shoal.catchChanceHigh;
-	const levelProgress = (fishingLevel - shoal.fishingLevel) / (99 - shoal.fishingLevel);
-	return shoal.catchChanceLow + (shoal.catchChanceHigh - shoal.catchChanceLow) * levelProgress;
+	// https://oldschool.runescape.wiki/w/Module:Skilling_success_chart
+	const value =
+		Math.floor(
+			(shoal.catchChanceLow * (99 - fishingLevel) + shoal.catchChanceHigh * (fishingLevel - 1)) / 98 + 0.5
+		) + 1;
+	return Math.min(1, Math.max(0, value / 256)) * 100;
 }
+
+// One Heron roll per successful catch, regardless of the number of fish caught.
+export const trawlingHeronBaseChance: Record<TrawlingShoalId, number> = {
+	giant_krill: 257_770,
+	haddock: 247_770,
+	yellowfin: 237_770,
+	halibut: 227_770,
+	bluefin: 217_770,
+	marlin_shoal: 207_770
+};

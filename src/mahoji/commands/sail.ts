@@ -380,7 +380,11 @@ export const sailCommand = defineCommand({
 		}
 
 		if (activity.id === 'sea_charting') {
-			const eligibleTasks = getEligibleSeaChartingTasks(user, getCompletedChartingTaskIds(ship));
+			const eligibleTasks = getEligibleSeaChartingTasks(
+				user,
+				getCompletedChartingTaskIds(ship),
+				shipSnapshot.shipType
+			);
 			if (eligibleTasks.length === 0) {
 				return `${user.minionName} has no eligible Sea charting tasks to complete right now.`;
 			}
@@ -428,7 +432,8 @@ export const sailCommand = defineCommand({
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
 				variant,
-				trawlingNet
+				trawlingNet,
+				fishingLevel: user.skillsAsLevels.fishing
 			});
 
 			return `${user.minionName} is now deep sea trawling at ${shoal.name} with ${TrawlingNetById.get(trawlingNet!)?.name} (${quantity.toLocaleString()} stops), it'll take around ${formatDuration(duration)} to finish.`;
@@ -452,7 +457,8 @@ export const sailCommand = defineCommand({
 			ship: shipSnapshot,
 			sailingLevel: user.skillsAsLevels.sailing,
 			variant,
-			trawlingNet
+			trawlingNet,
+			fishingLevel: user.skillsAsLevels.fishing
 		});
 
 		return `${user.minionName} is now doing ${activity.name}${

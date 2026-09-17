@@ -45,7 +45,8 @@ import {
 	getTrawlingCatchChance,
 	TrawlingNetById,
 	TrawlingShoalById,
-	type TrawlingShoalId
+	type TrawlingShoalId,
+	trawlingHeronBaseChance
 } from '@/lib/skilling/skills/sailing/trawling.js';
 import { calculatePassiveSailingActions } from '@/lib/skilling/skills/sailing/upgrades.js';
 import type { SailingActivityTaskOptions } from '@/lib/types/minions.js';
@@ -92,7 +93,8 @@ async function applyPassiveSailingActions({
 	const result = calculatePassiveSailingActions({
 		duration: data.duration,
 		sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
-		facilities: data.ship.facilities ?? []
+		facilities: data.ship.facilities ?? [],
+		sails: data.ship.parts.mast_sails
 	});
 	await rollSoup({
 		user,
@@ -205,6 +207,7 @@ export const sailingTask: MinionTask = {
 				duration,
 				sailingLevel: data.sailingLevel ?? user.skillsAsLevels.sailing,
 				facilities: data.ship.facilities ?? [],
+				sails: data.ship.parts.mast_sails,
 				clamItemId: clam.itemId,
 				clamFedAt: clam.fedAt,
 				user,
@@ -361,6 +364,7 @@ export const sailingTask: MinionTask = {
 				duration,
 				sailingLevel,
 				facilities: data.ship.facilities ?? [],
+				sails: data.ship.parts.mast_sails,
 				clamItemId: clam.itemId,
 				clamFedAt: clam.fedAt,
 				user,
@@ -404,6 +408,14 @@ export const sailingTask: MinionTask = {
 			const salvageXP = Math.floor(salvageQuantity * shipwreck.salvagingXP);
 			const loot = new Bank();
 			const hasSalvagingStation = data.ship.facilities.includes('salvaging_station');
+			const receivedSalvagingSoup = await rollSoup({
+				user,
+				loot,
+				rng,
+				rolls: salvageQuantity,
+				chance: shipwreck.petChance,
+				activity: `salvaging from ${shipwreck.name}`
+			});
 			let sortingXP = 0;
 			if (hasSalvagingStation) {
 				sortingXP = Math.floor(salvageQuantity * shipwreck.sortingXP);
@@ -414,7 +426,7 @@ export const sailingTask: MinionTask = {
 				} else if (soupQuantity > 1) {
 					loot.remove('Soup', soupQuantity - 1);
 				}
-				if (!user.owns('Soup') && soupQuantity > 0) {
+				if (!receivedSalvagingSoup && !user.owns('Soup') && soupQuantity > 0) {
 					globalClient.emit(
 						Events.ServerNotification,
 						`${skillEmoji.sailing} **${user.badgedUsername}'s** minion, ${user.minionName}, just received Soup while sorting salvage at sea!`
@@ -465,7 +477,8 @@ export const sailingTask: MinionTask = {
 
 			const loot = new Bank();
 			let successfulCatches = 0;
-			const catchChance = getTrawlingCatchChance(shoal, user.skillsAsLevels.fishing);
+			const fishingLevel = data.fishingLevel ?? user.skillsAsLevels.fishing;
+			const catchChance = getTrawlingCatchChance(shoal, fishingLevel);
 			const rollsPerStop = Math.max(1, Math.floor(shoal.stopDuration / activity.baseTime));
 			const totalRolls = quantity * rollsPerStop;
 			for (let i = 0; i < totalRolls; i++) {
@@ -473,6 +486,17 @@ export const sailingTask: MinionTask = {
 				successfulCatches++;
 				loot.add(shoal.fish, rng.randInt(1, net.maxFishPerCatch));
 				if (rng.roll(18_000)) loot.add("Angler's paint");
+				if (
+					!user.owns('Heron') &&
+					!loot.has('Heron') &&
+					rng.roll(trawlingHeronBaseChance[shoal.id] - 25 * fishingLevel)
+				) {
+					loot.add('Heron');
+					globalClient.emit(
+						Events.ServerNotification,
+						`${skillEmoji.fishing} **${user.badgedUsername}'s** minion, ${user.minionName}, just received a Heron while trawling at ${shoal.name}!`
+					);
+				}
 			}
 			await rollSoup({
 				user,

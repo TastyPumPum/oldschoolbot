@@ -194,6 +194,7 @@ export interface SailingActivityTaskOptions extends ActivityTaskOptions {
 	sailingLevel?: number;
 	chartingTaskIds?: number[];
 	trawlingNet?: TrawlingNetId;
+	fishingLevel?: number;
 	iQty?: number;
 }
 

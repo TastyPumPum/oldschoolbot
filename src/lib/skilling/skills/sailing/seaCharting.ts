@@ -1,4 +1,5 @@
 import { QuestID } from '@/lib/minions/data/quests.js';
+import type { SailingShipType } from '@/lib/skilling/skills/sailing/shipParts.js';
 
 export type SeaChartingTaskType = 'Generic' | 'Spyglass' | 'Crate' | 'Current' | 'Diving' | 'Weather';
 
@@ -125,7 +126,7 @@ const rawSeaChartingCompletionBonuses = [
 	" Sea,5,1710;Unquiet Ocean,Red Reef,5,1710;Unquiet Ocean,Anglerfish's Light,4,1710;Unquiet Ocean,Bay of Elidinis,5,1710;Unquiet Ocean,Pearl Bank,4,1710;Unquiet Ocean,The Lonely Sea,",
 	'4,1710;Unquiet Ocean,Tortugan Sea,5,2880;Unquiet Ocean,Turtle Belt,5,1990;Unquiet Ocean,Sea of Shells,5,2880;Shrouded Ocean,Fortis Bay,5,1710;Shrouded Ocean,Aureum Coast,4,1710;Shr',
 	"ouded Ocean,Wyrm's Waters,5,1710;Shrouded Ocean,The Skullhorde,4,1710;Shrouded Ocean,Western Gate,5,1710;Shrouded Ocean,Sapphire Sea,5,1710;Shrouded Ocean,Breakbone Strait,4,1990;S",
-	'hrouded Ocean,Backwater,6,1990;Shrouded Ocean,Zul-Egil,4,1990;Shrouded Ocean,Mythic Sea,4,1990;Shrouded Ocean,Soul Bay,5,6710;Shrouded Ocean,Barracuda Belt,6,6710;Shrouded Ocean,Th',
+	'hrouded Ocean,Backwater,6,1990;Shrouded Ocean,Zul-Egil,4,1990;Shrouded Ocean,Mythic Sea,4,4430;Shrouded Ocean,Soul Bay,5,6710;Shrouded Ocean,Barracuda Belt,6,6710;Shrouded Ocean,Th',
 	'e Everdeep,5,6710;Shrouded Ocean,Sea of Souls,4,8750;Shrouded Ocean,Rainbow Reef,5,17230;Shrouded Ocean,Southern Expanse,4,17230;Sunset Ocean,Sunset Bay,5,1710;Sunset Ocean,Misty S',
 	"ea,4,1710;Sunset Ocean,Dusk's Maw,4,1710;Western Ocean,Great Sound,3,190;Western Ocean,Crabclaw Bay,3,190;Western Ocean,Hosidian Sea,3,270;Western Ocean,Gulf of Kourend,4,510;Weste",
 	"rn Ocean,Pilgrims' Passage,3,1710;Western Ocean,Litus Lucis,4,1710;Western Ocean,Crystal Sea,6,1710;Western Ocean,Vagabonds Rest,5,1710;Western Ocean,Moonshadow,4,1710;Western Ocea",
@@ -171,8 +172,16 @@ const seaChartingOceanOrder = [
 	'Bonus charts'
 ];
 
-export function userCanDoSeaChartingTask(user: MUser, task: SeaChartingTask) {
+const seaChartingRequiredShip: Partial<Record<number, SailingShipType>> = {
+	170: 'skiff',
+	210: 'raft',
+	261: 'raft'
+};
+
+export function userCanDoSeaChartingTask(user: MUser, task: SeaChartingTask, shipType: SailingShipType) {
 	if (user.skillsAsLevels.sailing < task.level) return false;
+	const requiredShip = seaChartingRequiredShip[task.id];
+	if (requiredShip && requiredShip !== shipType) return false;
 	const requiredQuest = seaChartingTaskRequiredQuest[task.type];
 	if (requiredQuest && !user.user.finished_quest_ids.includes(requiredQuest)) return false;
 	if (task.type === 'Diving') {
@@ -181,9 +190,9 @@ export function userCanDoSeaChartingTask(user: MUser, task: SeaChartingTask) {
 	return true;
 }
 
-export function getEligibleSeaChartingTasks(user: MUser, completedTaskIds: number[]) {
+export function getEligibleSeaChartingTasks(user: MUser, completedTaskIds: number[], shipType: SailingShipType) {
 	const completed = new Set(completedTaskIds);
-	return seaChartingTasks.filter(task => !completed.has(task.id) && userCanDoSeaChartingTask(user, task));
+	return seaChartingTasks.filter(task => !completed.has(task.id) && userCanDoSeaChartingTask(user, task, shipType));
 }
 
 export function getSeaChartingProgress(completedTaskIds: number[]) {

@@ -8,7 +8,8 @@ import {
 	isSalvagingHookFacility,
 	SailingFacilities,
 	SailingFacilitiesById,
-	type SailingFacilityId
+	type SailingFacilityId,
+	sailingFacilityConstructionXP
 } from '@/lib/skilling/skills/sailing/facilities.js';
 import { canGainSailingXP } from '@/lib/skilling/skills/sailing/sailingXPUnlock.js';
 import {
@@ -524,12 +525,18 @@ export const shipCommand = defineCommand({
 			}
 
 			const installed = getInstalledFacilities(ship, activeShipType);
+			if (facility.shipTypes && !facility.shipTypes.includes(activeShipType)) {
+				return `${facility.name} can only be installed on a ${facility.shipTypes.join(' or ')}.`;
+			}
 			if (installed.includes(facility.id)) {
 				return `${facility.name} is already installed.`;
 			}
 
 			if (facility.requiredItems && !user.owns(facility.requiredItems)) {
 				return `You need to own ${facility.requiredItems} to install ${facility.name}.`;
+			}
+			if (!user.owns('Saw') || !user.owns('Hammer')) {
+				return `You need a saw and hammer to install ${facility.name}.`;
 			}
 
 			const facilitiesToKeep = isTrawlingNetFacility(facility.id)
@@ -559,7 +566,11 @@ export const shipCommand = defineCommand({
 				facilities: [...facilitiesToKeep, facility.id]
 			});
 
-			return `Installed ${facility.name}.`;
+			const xpRes = await user.addXP({
+				skillName: 'construction',
+				amount: sailingFacilityConstructionXP[facility.id]
+			});
+			return `Installed ${facility.name}. ${xpRes}`;
 		}
 
 		if (options.rename) {

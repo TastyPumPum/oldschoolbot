@@ -4,7 +4,8 @@ import { Bank, Items } from 'oldschooljs';
 import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { MAX_CLUES_DROPPED } from '@/lib/constants.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
-import { STARTER_SAIL_TRIM_DATA } from '@/lib/skilling/skills/sailing/upgrades.js';
+import type { SailingMastSailsTier } from '@/lib/skilling/skills/sailing/shipParts.js';
+import { sailTrimXP } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 const oceanManDrinks = [
 	'Short green guy',
@@ -140,6 +141,7 @@ export function rollOceanEncounters({
 	duration,
 	sailingLevel,
 	facilities,
+	sails = 'wooden_linen',
 	clamItemId,
 	clamFedAt,
 	user,
@@ -149,6 +151,7 @@ export function rollOceanEncounters({
 	duration: number;
 	sailingLevel: number;
 	facilities: SailingFacilityId[];
+	sails?: SailingMastSailsTier;
 	clamItemId?: number | null;
 	clamFedAt?: number | null;
 	user: MUser;
@@ -172,7 +175,7 @@ export function rollOceanEncounters({
 					: facilities.includes('wind_catcher')
 						? 'wind_catcher'
 						: null;
-				const trimXP = STARTER_SAIL_TRIM_DATA.xp * 4 * (catcher ? 0.75 : 1);
+				const trimXP = sailTrimXP[sails] * 4 * (catcher ? 0.75 : 1);
 				const moteXP = catcher ? 4 * (catcher === 'gale_catcher' ? 70 : 40) : 0;
 				xp += trimXP + moteXP;
 				messages.push('Strong winds allowed 4 extra sail trims.');
@@ -202,7 +205,14 @@ export function rollOceanEncounters({
 				break;
 			}
 			case 'giant_clam': {
-				if (sailingLevel < 40 || !clamItemId || !clamFedAt || Date.now() - clamFedAt < Time.Hour) break;
+				if (
+					clamConsumed ||
+					sailingLevel < 40 ||
+					!clamItemId ||
+					!clamFedAt ||
+					Date.now() - clamFedAt < Time.Hour
+				)
+					break;
 				const item = Items.get(clamItemId);
 				const highAlchValue = item?.highalch ?? (item?.name === 'Coins' ? 1 : 0);
 				const pearl = getPearl(highAlchValue);
