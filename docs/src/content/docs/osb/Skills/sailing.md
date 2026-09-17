@@ -120,7 +120,9 @@ Rewards currently implemented:
 
 Gwenith Glide requires Regicide in OSRS. In the bot this is mimicked with 10 Crafting, 56 Agility, 25 Ranged, and 50 quest points.
 
-Barracuda Trials use the OSRS target-time rates, including the documented 10 second completion turnaround. Ocean encounters and passive sail trimming are not added to Barracuda Trial completions.
+Marlin training trips use [Temple ironman EHP rates](https://templeosrs.com/rates/skills.php?ehp=im), checked on 17 September 2026: Tempor 25,000 XP/hr, Jubbly 80,000 XP/hr, and Gwenith 195,000 XP/hr with a camphor hull or better. Gwenith increases to 225,000 XP/hr at level 90 with a rosewood hull. These are AFK training estimates, not recorded race times. Swordfish and Shark completions, and Gwenith trips without a qualifying hull, retain OSRS target times plus the 10-second turnaround. First-completion bonuses are awarded once and are not included in the repeatable rate. Ocean encounters and passive sail trimming are not added to Barracuda Trial completions.
+
+Temple's early 5,000 XP/hr band combines port tasks and quests; its level-50 salvage band requires a boost. These composite or boost-dependent rates are not applied to unrelated activities or used to bypass their OSRS requirements.
 
 ### Facilities
 

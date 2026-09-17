@@ -2,6 +2,7 @@ import { Time } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 import { describe, expect, test } from 'vitest';
 
+import { BarracudaTrialById, getTempleIronmanTrialXPHour } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import { rollOceanEncounters } from '@/lib/skilling/skills/sailing/encounters.js';
 import { SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
 import {
@@ -13,6 +14,20 @@ import { getTrawlingCatchChance, TrawlingNetById, TrawlingShoalById } from '@/li
 import { calculatePassiveSailingActions, sailTrimXP } from '@/lib/skilling/skills/sailing/upgrades.js';
 
 describe('Sailing', () => {
+	test('Temple ironman trial rates respect levels, methods and installed hulls', () => {
+		expect(getTempleIronmanTrialXPHour('tempor_tantrum', 29)).toBeNull();
+		expect(getTempleIronmanTrialXPHour('tempor_tantrum', 30)).toBe(25_000);
+		expect(getTempleIronmanTrialXPHour('tempor_tantrum', 99)).toBe(25_000);
+		expect(getTempleIronmanTrialXPHour('jubbly_jive', 54)).toBeNull();
+		expect(getTempleIronmanTrialXPHour('jubbly_jive', 55)).toBe(80_000);
+		expect(getTempleIronmanTrialXPHour('gwenith_glide', 71, 'rosewood')).toBeNull();
+		expect(getTempleIronmanTrialXPHour('gwenith_glide', 72, 'mahogany')).toBeNull();
+		expect(getTempleIronmanTrialXPHour('gwenith_glide', 72, 'camphor')).toBe(195_000);
+		expect(getTempleIronmanTrialXPHour('gwenith_glide', 89, 'rosewood')).toBe(195_000);
+		expect(getTempleIronmanTrialXPHour('gwenith_glide', 90, 'rosewood')).toBe(225_000);
+		expect(getTempleIronmanTrialXPHour('gwenith_glide', 99, 'camphor')).toBe(195_000);
+		expect(BarracudaTrialById.get('gwenith_glide')!.ranks.find(rank => rank.id === 'marlin')!.xp).toBe(19_410);
+	});
 	test('Charting enforces mandatory boats, not recommended boats', () => {
 		const user = {
 			skillsAsLevels: { sailing: 99 },

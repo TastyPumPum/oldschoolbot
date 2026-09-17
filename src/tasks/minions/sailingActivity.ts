@@ -272,10 +272,12 @@ export const sailingTask: MinionTask = {
 				completedRanks.add(rank.id);
 			}
 			const bestTime = trialProgress.bestTimes[rank.id];
-			const nextBestTimes = {
-				...trialProgress.bestTimes,
-				[rank.id]: bestTime ? Math.min(bestTime, rank.targetTime) : rank.targetTime
-			};
+			const nextBestTimes = data.trialXPHour
+				? trialProgress.bestTimes
+				: {
+						...trialProgress.bestTimes,
+						[rank.id]: bestTime ? Math.min(bestTime, rank.targetTime) : rank.targetTime
+					};
 
 			const loot = new Bank();
 			if (newlyCompletedRank) {

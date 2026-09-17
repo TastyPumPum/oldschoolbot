@@ -4,10 +4,12 @@ import { Bank } from 'oldschooljs';
 import type { SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
 import type { SailingFacilityId } from '@/lib/skilling/skills/sailing/facilities.js';
 import type {
+	SailingHullTier,
 	SailingShipType,
 	SailingStructuralSlot,
 	SailingStructuralTier
 } from '@/lib/skilling/skills/sailing/shipParts.js';
+import { tierMeetsRequirement } from '@/lib/skilling/skills/sailing/shipParts.js';
 import type { Skills } from '@/lib/types/index.js';
 
 export type BarracudaTrialId = Extract<SailingActivityId, 'tempor_tantrum' | 'jubbly_jive' | 'gwenith_glide'>;
@@ -232,6 +234,17 @@ export function getBarracudaRank(trial: BarracudaTrial, rankId: string | undefin
 
 export function getBarracudaTrialDuration(rank: BarracudaTrialRank) {
 	return rank.targetTime + BARRACUDA_TRIAL_TURNAROUND_TIME;
+}
+
+// https://templeosrs.com/rates/skills.php?ehp=im (checked 17 September 2026).
+// These are repeatable training rates, not rates for one-off rank rewards.
+export function getTempleIronmanTrialXPHour(trial: BarracudaTrialId, sailingLevel: number, hull?: SailingHullTier) {
+	if (trial === 'tempor_tantrum' && sailingLevel >= 30) return 25_000;
+	if (trial === 'jubbly_jive' && sailingLevel >= 55) return 80_000;
+	if (trial !== 'gwenith_glide' || sailingLevel < 72) return null;
+	if (sailingLevel >= 90 && tierMeetsRequirement('hull', hull, 'rosewood')) return 225_000;
+	if (tierMeetsRequirement('hull', hull, 'camphor')) return 195_000;
+	return null;
 }
 
 export function formatBarracudaRankObjectives(rank: BarracudaTrialRank): string | null {

@@ -1,4 +1,4 @@
-import { formatDuration } from '@oldschoolgg/toolkit';
+import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { SailingActivityById, type SailingActivityId } from '@/lib/skilling/skills/sailing/activities.js';
@@ -12,6 +12,7 @@ import {
 	getBarracudaTrialDuration,
 	getBarracudaTrialProgress,
 	getPreviousBarracudaRank,
+	getTempleIronmanTrialXPHour,
 	isBarracudaTrialId
 } from '@/lib/skilling/skills/sailing/barracudaTrials.js';
 import { isSalvagingHookFacility, SailingFacilitiesById } from '@/lib/skilling/skills/sailing/facilities.js';
@@ -348,7 +349,13 @@ export const sailCommand = defineCommand({
 				return `${user.minionName} needs to complete ${trial.name} at ${previousRankName} rank before attempting ${rank.name} rank.`;
 			}
 
-			const durationPerCompletion = getBarracudaTrialDuration(rank);
+			const trialXPHour =
+				rank.id === 'marlin'
+					? getTempleIronmanTrialXPHour(trial.id, user.skillsAsLevels.sailing, shipSnapshot.parts.hull)
+					: null;
+			const durationPerCompletion = trialXPHour
+				? Math.ceil((rank.xp / trialXPHour) * Time.Hour)
+				: getBarracudaTrialDuration(rank);
 			const maxQuantity = Math.max(1, Math.floor(maxTripLength / durationPerCompletion));
 			const quantity = Math.min(quantityInput ?? maxQuantity, maxQuantity);
 			const duration = quantity * durationPerCompletion;
@@ -363,7 +370,8 @@ export const sailCommand = defineCommand({
 				iQty: quantityInput ? quantityInput : undefined,
 				ship: shipSnapshot,
 				sailingLevel: user.skillsAsLevels.sailing,
-				variant: rank.id satisfies BarracudaRank
+				variant: rank.id satisfies BarracudaRank,
+				trialXPHour: trialXPHour ?? undefined
 			});
 
 			let response = `${user.minionName} is now attempting ${trial.name} at ${rank.name} rank (${quantity} completions), it'll take around ${formatDuration(
