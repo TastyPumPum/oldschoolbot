@@ -5,8 +5,7 @@ import { defineSkill } from '@/lib/skilling/types.js';
 const Sailing = defineSkill({
 	aliases: ['sailing', 'sail'],
 	id: 'sailing',
-	// Emoji.Sailing doesn't exist in toolkit; use a simple sailboat emoji for now.
-	emoji: '⛵' as EmojiType,
+	emoji: '<:Sailing:1537491722920267889>' as EmojiType,
 	name: 'Sailing'
 });
 
