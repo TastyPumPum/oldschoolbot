@@ -29,6 +29,14 @@ const BlastableBars: BlastableBar[] = [
 		timeToUse: Time.Second * 0.47
 	},
 	{
+		name: 'Lead bar',
+		level: 25,
+		xp: 15.5,
+		id: itemID('Lead bar'),
+		inputOres: new Bank({ 'Lead ore': 2 }),
+		timeToUse: Time.Second * 0.47
+	},
+	{
 		name: 'Steel bar',
 		level: 30,
 		xp: 17.5,

@@ -71,7 +71,9 @@ export enum SlayerTaskUnlocksEnum {
 	EyeSeeYou = 202,
 	MoreEyesThanSense = 203,
 	WarpedReality = 204,
-	UnRestrainingOrder = 205
+	UnRestrainingOrder = 205,
+	ISeeDragons = 206,
+	ChanceOfHeavyFrost = 207
 }
 
 export const SlayerRewardsShop: SlayerTaskUnlocks[] = [
@@ -573,5 +575,23 @@ export const SlayerRewardsShop: SlayerTaskUnlocks[] = [
 		extendMult: 2.857,
 		canBeRemoved: true,
 		aliases: ['extend custodian stalkers', 'extend stalkers']
+	},
+	{
+		id: SlayerTaskUnlocksEnum.ISeeDragons,
+		name: 'I see Dragons',
+		desc: 'Number of frost dragons assigned is increased to 180-240.',
+		slayerPointCost: 100,
+		extendID: [Monsters.FrostDragon.id],
+		extendMult: 2.4,
+		canBeRemoved: true,
+		aliases: ['extend frost dragons', 'extend frost dragon', 'frost dragons']
+	},
+	{
+		id: SlayerTaskUnlocksEnum.ChanceOfHeavyFrost,
+		name: 'Chance of Heavy Frost',
+		desc: 'Weighting increased from 5 to 8 for Frost dragon tasks from Nieve and Duradel.',
+		slayerPointCost: 100,
+		canBeRemoved: true,
+		aliases: ['heavy frost', 'frost dragon weight', 'chance of heavy frost']
 	}
 ];

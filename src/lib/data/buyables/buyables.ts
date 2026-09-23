@@ -753,6 +753,12 @@ const questBuyables: Buyable[] = [
 		gpCost: 1_000_000,
 		qpRequired: 120,
 		ironmanPrice: 9_500
+	},
+	{
+		name: 'Crowbar',
+		gpCost: 100,
+		ironmanPrice: 10,
+		requiredQuests: [QuestID.PryingTimes]
 	}
 ];
 
