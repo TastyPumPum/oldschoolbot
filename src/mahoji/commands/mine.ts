@@ -264,6 +264,10 @@ export const mineCommand = defineCommand({
 			}
 		}
 
+		if (ore.name === 'Lead ore' && !user.user.finished_quest_ids.includes(QuestID.Pandemonium)) {
+			return 'You need to have completed the Pandemonium quest to access lead rocks.';
+		}
+
 		const hasKaramjaMedium = user.hasDiary('karamja.medium');
 		const res = determineMiningTrip({
 			gearBank: user.gearBank,

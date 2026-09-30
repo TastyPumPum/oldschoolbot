@@ -17,6 +17,9 @@ export interface AssignableSlayerTask {
 	dontAssign?: boolean;
 	extendedAmount?: [number, number];
 	extendedUnlockId?: number;
+	boostedWeight?: number;
+	boostedWeightUnlockId?: number;
+	effectiveWeight?: number;
 	wilderness?: boolean;
 	requiredQuests?: QuestID[];
 }

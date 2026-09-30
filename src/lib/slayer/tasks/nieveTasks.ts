@@ -244,6 +244,19 @@ export const nieveTasks: AssignableSlayerTask[] = [
 		unlocked: true
 	},
 	{
+		monster: Monsters.FrostDragon,
+		amount: [60, 100],
+		extendedAmount: [180, 240],
+		extendedUnlockId: SlayerTaskUnlocksEnum.ISeeDragons,
+		weight: 5,
+		boostedWeight: 8,
+		boostedWeightUnlockId: SlayerTaskUnlocksEnum.ChanceOfHeavyFrost,
+		monsters: [Monsters.FrostDragon.id],
+		combatLevel: 85,
+		levelRequirements: killableMonsters.find(k => k.id === Monsters.FrostDragon.id)?.levelRequirements,
+		unlocked: true
+	},
+	{
 		monster: Monsters.Gargoyle,
 		amount: [120, 185],
 		extendedAmount: [200, 250],

@@ -22,7 +22,9 @@ import {
 	amoxliatlCL,
 	araxxorCL,
 	barbarianAssaultCL,
+	barracudaTrialsCL,
 	barrowsChestCL,
+	boatPaintCL,
 	brimhavenAgilityArenaCL,
 	bryophytaCL,
 	callistoCL,
@@ -93,14 +95,17 @@ import {
 	myNotesCL,
 	NexCL,
 	oborCL,
+	oceanEncountersCL,
 	pestControlCL,
 	questCL,
 	randomEventsCL,
 	revenantsCL,
 	roguesDenCL,
 	rooftopAgilityCL,
+	sailingMiscellaneousCL,
 	sarachnisCL,
 	scorpiaCL,
+	seaTreasuresCL,
 	shadesOfMorttonCL,
 	shayzienArmourCL,
 	skillingPetsCL,
@@ -1020,6 +1025,14 @@ export const allCollectionLogs: ICollection = {
 				alias: ['pet', 'pets'],
 				items: allPetsCL
 			},
+			'Barracuda Trials': {
+				alias: ['barracuda', 'barracuda trials'],
+				items: barracudaTrialsCL
+			},
+			'Boat Paint': {
+				alias: ['boat paint', 'paints'],
+				items: boatPaintCL
+			},
 			Camdozaal: {
 				items: camdozaalCL
 			},
@@ -1088,6 +1101,10 @@ export const allCollectionLogs: ICollection = {
 				alias: ['my notes'],
 				items: myNotesCL
 			},
+			'Ocean Encounters': {
+				alias: ['ocean encounters', 'giant clam', 'pearls'],
+				items: oceanEncountersCL
+			},
 			'Random Events': {
 				alias: ['random'],
 				items: randomEventsCL
@@ -1137,6 +1154,14 @@ export const allCollectionLogs: ICollection = {
 			},
 			'Shayzien Armour': {
 				items: shayzienArmourCL
+			},
+			'Sailing Miscellaneous': {
+				alias: ['sailing misc', 'sailing miscellaneous'],
+				items: sailingMiscellaneousCL
+			},
+			'Sea Treasures': {
+				alias: ['sea treasures', 'shipwreck salvage', 'salvage'],
+				items: seaTreasuresCL
 			},
 			'Shooting Stars': { items: resolveItems(['Celestial ring (uncharged)', 'Star fragment']) },
 			'Skilling Pets': {
@@ -1312,6 +1337,19 @@ export const allCollectionLogs: ICollection = {
 					'Beaver',
 					'Giant squirrel'
 				])
+			},
+			Sailing: {
+				counts: false,
+				alias: ['sail'],
+				items: uniqueArr([
+					...barracudaTrialsCL,
+					...boatPaintCL,
+					...oceanEncountersCL,
+					...sailingMiscellaneousCL,
+					...seaTreasuresCL,
+					...resolveItems(['Soup', 'Sailing hood', 'Sailing cape', 'Sailing cape(t)'])
+				]),
+				fmtProg: skillProg('sailing')
 			}
 		}
 	}
