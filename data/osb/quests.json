@@ -1,5 +1,26 @@
 [
 	{
+		"id": 19,
+		"qp": 2,
+		"name": "A Kingdom Divided",
+		"skill_reqs": {
+			"agility": 54,
+			"thieving": 52,
+			"woodcutting": 52,
+			"herblore": 50,
+			"mining": 42,
+			"crafting": 38,
+			"magic": 35,
+			"smithing": 34
+		},
+		"qp_req": 50,
+		"combat_level_req": 65,
+		"rewards": {
+			"4447": 2,
+			"25818": 1
+		}
+	},
+	{
 		"id": 7,
 		"qp": 1,
 		"name": "At First Light",
@@ -23,10 +44,10 @@
 		"name": "Children of the Sun"
 	},
 	{
-		"id": 21,
+		"id": 22,
 		"qp": 1,
 		"name": "Current Affairs",
-		"prerequisites_quests": [19],
+		"prerequisites_quests": [20],
 		"skill_reqs": {
 			"fishing": 10,
 			"sailing": 22
@@ -122,7 +143,7 @@
 		"prerequisites_quests": [3]
 	},
 	{
-		"id": 19,
+		"id": 20,
 		"qp": 1,
 		"name": "Pandemonium",
 		"skills_rewards": {
@@ -155,10 +176,10 @@
 		}
 	},
 	{
-		"id": 20,
+		"id": 21,
 		"qp": 1,
 		"name": "Prying Times",
-		"prerequisites_quests": [19],
+		"prerequisites_quests": [20],
 		"qp_req": 2,
 		"skill_reqs": {
 			"mining": 10,
@@ -307,10 +328,10 @@
 		}
 	},
 	{
-		"id": 22,
+		"id": 23,
 		"qp": 1,
 		"name": "Troubled Tortugans",
-		"prerequisites_quests": [19],
+		"prerequisites_quests": [20],
 		"skill_reqs": {
 			"slayer": 51,
 			"construction": 48,
