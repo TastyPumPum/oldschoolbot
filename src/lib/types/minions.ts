@@ -5,6 +5,7 @@ import type { NMZStrategy } from '@/lib/constants.js';
 import type { SlayerActivityConstants } from '@/lib/minions/data/combatConstants.js';
 import type { AttackStyles } from '@/lib/minions/functions/index.js';
 import type { MinigameName } from '@/lib/settings/minigames.js';
+import type { TFARaidResult, TFARouteChoices } from '@/lib/simulation/tfa.js';
 import type { UnderwaterAgilityThievingTrainingSkill } from '@/lib/skilling/skills/agility.js';
 import type { CookingMethodEnum } from '@/lib/skilling/skills/cooking/cooking.js';
 import type { IPatchData } from '@/lib/skilling/skills/farming/utils/types.js';
@@ -552,6 +553,21 @@ export interface TheatreOfBloodTaskOptions extends ActivityTaskOptionsWithUsers 
 	solo?: boolean;
 }
 
+export interface FracturedArchiveTaskOptions extends ActivityTaskOptionsWithUsers {
+	type: 'FracturedArchive';
+	leader: string;
+	quantity: number;
+	solo: boolean;
+	/** Extra simulated copies of the leader; omitted for ordinary parties and older trips. */
+	fakeMass?: number;
+	autoRepeat?: boolean;
+	maxTeamSize: number;
+	routeChoices: TFARouteChoices;
+	raids: TFARaidResult[];
+	fakeDuration: number;
+	deathFeeReserved: number;
+}
+
 export interface ColoTaskOptions extends ActivityTaskOptions {
 	type: 'Colosseum';
 	fakeDuration: number;
@@ -694,6 +710,7 @@ export interface SpecificQuestOptions extends ActivityTaskOptions {
 }
 
 export type ActivityTaskData =
+	| FracturedArchiveTaskOptions
 	| MonsterActivityTaskOptions
 	| WoodcuttingActivityTaskOptions
 	| CollectingOptions

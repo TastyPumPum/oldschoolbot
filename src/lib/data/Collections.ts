@@ -144,6 +144,7 @@ import {
 } from '@/lib/minions/data/templeTrekking.js';
 import type { MinigameName } from '@/lib/settings/minigames.js';
 import { NexNonUniqueTable, NexUniqueTable } from '@/lib/simulation/misc.js';
+import { TFACollectionLog } from '@/lib/simulation/tfa.js';
 import { allFarmingItems } from '@/lib/skilling/skills/farming/index.js';
 import type { SkillNameType } from '@/lib/skilling/types.js';
 import type { MUserStats } from '@/lib/structures/MUserStats.js';
@@ -651,6 +652,16 @@ export const allCollectionLogs: ICollection = {
 	},
 	Raids: {
 		activities: {
+			'The Fractured Archive': {
+				alias: ['tfa', 'fred', 'fractured archive'],
+				kcActivity: {
+					Default: async (_, minigameScores) =>
+						minigameScores.find(i => i.minigame.column === 'fractured_archive')!.score
+				},
+				items: TFACollectionLog,
+				isActivity: true,
+				fmtProg: ({ minigames }) => [`${minigames.fractured_archive} KC`]
+			},
 			'Chambers of Xeric': {
 				alias: ChambersOfXeric.aliases,
 				kcActivity: {

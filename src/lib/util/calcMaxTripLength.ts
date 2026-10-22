@@ -43,6 +43,7 @@ export function calcMaxTripLengthSync(user: MUser, roboUser: RobochimpUser, acti
 		case 'Sepulchre':
 		case 'Raids':
 		case 'TheatreOfBlood':
+		case 'FracturedArchive':
 		case 'TombsOfAmascut':
 		case 'Pickpocket':
 		case 'SoulWars':

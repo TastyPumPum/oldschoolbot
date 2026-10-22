@@ -48,6 +48,7 @@ import type {
 	FiremakingActivityTaskOptions,
 	FishingActivityTaskOptions,
 	FletchingActivityTaskOptions,
+	FracturedArchiveTaskOptions,
 	GauntletOptions,
 	GiantsFoundryActivityTaskOptions,
 	GroupMonsterActivityTaskOptions,
@@ -673,6 +674,23 @@ const tripHandlers: {
 					hard_mode: data.hardMode,
 					solo: data.solo,
 					quantity: data.quantity
+				}
+			}
+		})
+	},
+	[activity_type_enum.FracturedArchive]: {
+		commandName: 'raid',
+		args: (data: FracturedArchiveTaskOptions) => ({
+			tfa: {
+				start: {
+					solo: data.solo,
+					fake_mass: data.fakeMass,
+					auto_repeat: data.autoRepeat,
+					max_team_size: data.maxTeamSize,
+					quantity: data.quantity,
+					second_boss: data.routeChoices.second,
+					third_boss: data.routeChoices.third,
+					fourth_boss: data.routeChoices.fourth
 				}
 			}
 		})

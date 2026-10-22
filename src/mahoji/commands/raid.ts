@@ -2,15 +2,117 @@ import { choicesOf } from '@/discord/index.js';
 import { toaHelpCommand, toaStartCommand } from '@/lib/simulation/toa.js';
 import { mileStoneBaseDeathChances } from '@/lib/simulation/toaUtils.js';
 import { coxBoostsCommand, coxCommand, coxStatsCommand } from '@/mahoji/lib/abstracted_commands/coxCommand.js';
+import {
+	tfaCheckCommand,
+	tfaStartCommand,
+	tfaStatsCommand,
+	tfaStopCommand
+} from '@/mahoji/lib/abstracted_commands/tfaCommand.js';
 import { tobCheckCommand, tobStartCommand, tobStatsCommand } from '@/mahoji/lib/abstracted_commands/tobCommand.js';
 
 export const raidCommand = defineCommand({
 	name: 'raid',
-	description: 'Send your minion to do raids - CoX or ToB.',
+	description: 'Send your minion to do raids - CoX, ToB, ToA or TFA.',
 	attributes: {
 		requiresMinion: true
 	},
 	options: [
+		{
+			type: 'SubcommandGroup',
+			name: 'tfa',
+			description: 'The Fractured Archive. Your minion has absolutely no idea what to expect.',
+			options: [
+				{
+					type: 'Subcommand',
+					name: 'start',
+					description: 'Attempt the Fractured Archive. Good luck.',
+					options: [
+						{
+							type: 'Boolean',
+							name: 'solo',
+							description: 'Attempt a true solo, scaled to two players.',
+							required: false
+						},
+						{
+							type: 'Integer',
+							name: 'fake_mass',
+							description:
+								'Number of simulated copies joining you (1-7). You receive only your own loot.',
+							required: false,
+							min_value: 1,
+							max_value: 7
+						},
+						{
+							type: 'Boolean',
+							name: 'auto_repeat',
+							description: 'Automatically repeat solo/fake-mass trips until you use /raid tfa stop.',
+							required: false
+						},
+						{
+							type: 'Integer',
+							name: 'max_team_size',
+							description: 'Maximum party size.',
+							required: false,
+							min_value: 1,
+							max_value: 8
+						},
+						{
+							type: 'Integer',
+							name: 'quantity',
+							description: 'Number of raids to attempt.',
+							required: false,
+							min_value: 1,
+							max_value: 5
+						},
+						{
+							type: 'String',
+							name: 'second_boss',
+							description: 'Second boss. Leave blank for a random door.',
+							required: false,
+							choices: [
+								{ name: 'Ezekiel', value: 'ezekiel' },
+								{ name: 'Bork and the Smorks', value: 'bork' }
+							]
+						},
+						{
+							type: 'String',
+							name: 'third_boss',
+							description: 'Third boss. Leave blank for a random door.',
+							required: false,
+							choices: [
+								{ name: 'Moia', value: 'moia' },
+								{ name: 'Dreadnoth the Jellied', value: 'dreadnoth' }
+							]
+						},
+						{
+							type: 'String',
+							name: 'fourth_boss',
+							description: 'Fourth boss. Leave blank for a random door.',
+							required: false,
+							choices: [
+								{ name: 'Xarth', value: 'xarth' },
+								{ name: "Dagon'hai Elder and monks", value: 'dagonhai' }
+							]
+						}
+					]
+				},
+				{
+					type: 'Subcommand',
+					name: 'check',
+					description: 'Check whether your minion is ready to get lost in the Archive.'
+				},
+				{
+					type: 'Subcommand',
+					name: 'stats',
+					description: 'View TFA requirements, stats and provisional balancing.'
+				},
+				{
+					type: 'Subcommand',
+					name: 'stop',
+					description: 'Stop your TFA auto-repeat after the current trip finishes.'
+				}
+			]
+		},
 		{
 			type: 'SubcommandGroup',
 			name: 'cox',
@@ -183,8 +285,12 @@ export const raidCommand = defineCommand({
 		if (tob?.stats) return tobStatsCommand(interaction);
 		if (tob?.check) return tobCheckCommand(user, Boolean(tob.check.hard_mode));
 		if (options.toa?.help) return toaHelpCommand(user, channelId);
+		if (options.tfa?.stats) return tfaStatsCommand(user);
+		if (options.tfa?.check) return tfaCheckCommand(user);
+		if (options.tfa?.stop) return tfaStopCommand(user);
 
 		if (await user.minionIsBusy()) return "Your minion is busy, you can't do this.";
+		if (options.tfa?.start) return tfaStartCommand(interaction, channelId, options.tfa.start);
 
 		if (cox?.start) {
 			return coxCommand(

@@ -24,6 +24,7 @@ import killableMonsters, { effectiveMonsters, NightmareMonster } from '@/lib/min
 import { allOpenables, type UnifiedOpenable } from '@/lib/openables.js';
 import type { MinigameName } from '@/lib/settings/minigames.js';
 import { Minigames } from '@/lib/settings/minigames.js';
+import { TFACollectionLog } from '@/lib/simulation/tfa.js';
 import { Skills } from '@/lib/skilling/skills/index.js';
 import { isGroupActivity, isNexActivity, isRaidsActivity, isTOBOrTOAActivity } from '@/lib/util/activityTypeCheck.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
@@ -314,6 +315,11 @@ const dryStreakMinigames: DrystreakMinigame[] = [
 		name: 'Tombs of Amascut',
 		key: 'tombs_of_amascut',
 		items: ItemGroups.toaCL
+	},
+	{
+		name: 'The Fractured Archive',
+		key: 'fractured_archive',
+		items: TFACollectionLog
 	},
 	{
 		name: 'Shades of Morton',
@@ -694,7 +700,7 @@ async function checkMassesCommand(guildId: string | null) {
 	const massStr = masses
 		.map(m => {
 			const remainingTime =
-				isTOBOrTOAActivity(m) || isNexActivity(m)
+				isTOBOrTOAActivity(m) || isNexActivity(m) || m.type === 'FracturedArchive'
 					? m.finishDate - m.duration + m.fakeDuration - now
 					: m.finishDate - now;
 			if ('users' in m) {

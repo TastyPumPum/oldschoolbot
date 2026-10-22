@@ -456,6 +456,7 @@ model Webhook {
 }
 
 enum XpGainSource {
+  FracturedArchive
   TombsOfAmascut
   UnderwaterAgilityThieving
   ChambersOfXeric
@@ -550,6 +551,7 @@ model Minigame {
   tears_of_guthix         Int    @default(0)
   tob                     Int    @default(0)
   tob_hard                Int    @default(0)
+  fractured_archive       Int    @default(0)
   lms                     Int    @default(0)
   trouble_brewing         Int    @default(0)
   puro_puro               Int    @default(0)
@@ -705,6 +707,11 @@ model UserStats {
 
   toa_attempts Int @default(0)
 
+  tfa_attempts Int @default(0)
+  tfa_deaths   Int @default(0)
+  tfa_cost     Json @default("{}") @db.Json
+  tfa_loot     Json @default("{}") @db.Json
+
   toa_cost Json @default("{}") @db.Json
   toa_loot Json @default("{}") @db.Json
 
@@ -859,6 +866,7 @@ model HistoricalData {
 }
 
 enum activity_type_enum {
+  FracturedArchive
   Agility
   Cooking
   MonsterKilling

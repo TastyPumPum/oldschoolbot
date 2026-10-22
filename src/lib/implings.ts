@@ -95,6 +95,7 @@ export function handlePassiveImplings(user: MUser, data: ActivityTaskData) {
 			'Inferno',
 			'Christmas',
 			'TheatreOfBlood',
+			'FracturedArchive',
 			activity_type_enum.PuroPuro,
 			activity_type_enum.BarbarianAssault,
 			activity_type_enum.CastleWars,

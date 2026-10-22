@@ -1101,6 +1101,16 @@ ${bank
 		}
 	},
 	{
+		name: 'The Fractured Archive (TFA) cost',
+		perkTierNeeded: PerkTier.Four,
+		run: (_, userStats) => makeResponseForBank(new Bank(userStats.tfa_cost as ItemBank), 'Your TFA Cost')
+	},
+	{
+		name: 'The Fractured Archive (TFA) loot',
+		perkTierNeeded: PerkTier.Four,
+		run: (_, userStats) => makeResponseForBank(new Bank(userStats.tfa_loot as ItemBank), 'Your TFA Loot')
+	},
+	{
 		name: 'Tombs of Amascut (TOA) loot',
 		perkTierNeeded: PerkTier.Four,
 		run: (_, userStats) => {

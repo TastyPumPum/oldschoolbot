@@ -101,6 +101,13 @@ export function minionStatus(user: MUser, currentTask: ActivityTaskData | null, 
 	const formattedDuration = `${loneFormattedDuration} remaining.`;
 
 	switch (currentTask.type) {
+		case 'FracturedArchive': {
+			const remaining = currentTask.finishDate - currentTask.duration + currentTask.fakeDuration - Date.now();
+			const party = currentTask.fakeMass
+				? `${currentTask.fakeMass} simulated ${currentTask.fakeMass === 1 ? 'copy' : 'copies'} of themselves (${currentTask.fakeMass + 1} minions total)`
+				: `${currentTask.users.length} player(s)`;
+			return `${name} is attempting ${currentTask.quantity}x Fractured Archive with ${party}. They have no clue what they are doing. Good luck! Expected return: ${formatTripDuration(user, remaining)}.${currentTask.autoRepeat ? ' Auto-repeat is enabled; use /raid tfa stop to finish after this trip.' : ''}`;
+		}
 		case 'MonsterKilling': {
 			const data = currentTask as MonsterActivityTaskOptions;
 			const monster = killableMonsters.find(mon => mon.id === data.mi);

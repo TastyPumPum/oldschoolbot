@@ -62,6 +62,7 @@ import { soulWarsTask } from '@/tasks/minions/minigames/soulWarsActivity.js';
 import { togTask } from '@/tasks/minions/minigames/tearsOfGuthixActivity.js';
 import { templeTrekkingTask } from '@/tasks/minions/minigames/templeTrekkingActivity.js';
 import { temporossTask } from '@/tasks/minions/minigames/temporossActivity.js';
+import { tfaTask } from '@/tasks/minions/minigames/tfaActivity.js';
 import { titheFarmTask } from '@/tasks/minions/minigames/titheFarmActivity.js';
 import { toaTask } from '@/tasks/minions/minigames/toaActivity.js';
 import { tobTask } from '@/tasks/minions/minigames/tobActivity.js';
@@ -148,6 +149,7 @@ export const allTasks: MinionTask[] = [
 	puroPuroTask,
 	raidsTask,
 	tobTask,
+	tfaTask,
 	togTask,
 	trawlerTask,
 	brewingTask,

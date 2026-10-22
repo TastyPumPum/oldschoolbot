@@ -16,6 +16,11 @@ export interface MinigameScore {
 export const minigameColumnToNameMap = new Map<string, string>();
 export const Minigames: readonly BotMinigame[] = [
 	{
+		name: 'The Fractured Archive',
+		aliases: ['tfa', 'fred', 'fractured archive', 'raid4', 'raids4'],
+		column: 'fractured_archive'
+	},
+	{
 		name: 'Tithe farm',
 		aliases: ['tf', 'tithe'],
 		column: 'tithe_farm'

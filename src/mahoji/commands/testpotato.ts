@@ -173,7 +173,17 @@ for (const gear of Items.resolveItems([
 	doomMage.equip(Items.getOrThrow(gear));
 }
 
+// TFA currently uses CoX's gear scoring, so these are its maximum-score setups.
+const tfaGear = {
+	name: 'TFA',
+	melee: COXMaxMeleeGear.clone(),
+	range: COXMaxRangeGear.clone(),
+	mage: COXMaxMageGear.clone()
+};
+tfaGear.range.set('ammo', { item: itemID('Dragon arrow'), quantity: 100_000 });
+
 const gearPresets = [
+	tfaGear,
 	{
 		name: 'Cox',
 		melee: COXMaxMeleeGear,
@@ -442,6 +452,12 @@ const doomPreset = new Bank()
 
 const doomYamaPreset = new Bank().add(doomPreset).add(yamaPreset);
 
+const tfaPreset = new Bank()
+	.add(bossingPreset)
+	.add(tfaGear.melee.toBank())
+	.add(tfaGear.range.toBank())
+	.add(tfaGear.mage.toBank());
+
 const shadesPreset = new Bank().add('Olive oil(4)', 100_000).add('Sacred oil(4)', 100_000);
 for (const log of shadesLogs) {
 	shadesPreset.add(log.normalLog.id, 100_000);
@@ -477,6 +493,7 @@ const spawnPresets = [
 	['food', foodPreset],
 	['runes', runePreset],
 	['bossing', bossingPreset],
+	['tfa', tfaPreset],
 	['doom', doomPreset],
 	['yama', yamaPreset],
 	['doom-yama', doomYamaPreset],
@@ -1261,6 +1278,26 @@ export const testPotatoCommand = globalConfig.isProduction
 					}
 
 					await user.addItemsToBank({ items: bankToGive, collectionLog: Boolean(collectionlog) });
+					if (preset === 'tfa') {
+						await user.rawUpdate({
+							data: {
+								scythe_of_vitur_charges: Math.max(user.user.scythe_of_vitur_charges, 100_000),
+								tum_shadow_charges: Math.max(user.user.tum_shadow_charges, 100_000)
+							},
+							gearUpdates: [
+								{ setup: 'melee', gear: tfaGear.melee.raw() },
+								{
+									setup: 'range',
+									gear: {
+										...tfaGear.range.raw(),
+										ammo: { item: itemID('Dragon arrow'), quantity: 100_000 }
+									}
+								},
+								{ setup: 'mage', gear: tfaGear.mage.raw() }
+							]
+						});
+						return 'Spawned TFA gear, raid supplies and 100m GP. Equipped your melee, ranged and mage setups, loaded 100,000 dragon arrows, and topped up your Scythe and Shadow to at least 100,000 charges each. Your minion is fully equipped and still completely confused.';
+					}
 					return `Spawned: ${bankToGive.toString().slice(0, 1800)}.`;
 				}
 
