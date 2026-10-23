@@ -119,6 +119,10 @@ export async function dailyCommand(rng: RNGProvider, interaction: MInteraction, 
 		options: allAnswers.map(answer => ({ label: answer, id: answer })),
 		content: `**${Emoji.Diango} Diango asks ${user.badgedUsername}...** ${question.question}`
 	});
-	if (!choice) return reward(rng, user, false);
-	return reward(rng, user, question.answers.includes(choice.choice.label!));
+	const triviaCorrect = Boolean(choice && question.answers.includes(choice.choice.label!));
+	await user.statsUpdate({
+		dailies_answered: { increment: choice ? 1 : 0 },
+		daily_correct_streak: triviaCorrect ? { increment: 1 } : 0
+	});
+	return reward(rng, user, triviaCorrect);
 }

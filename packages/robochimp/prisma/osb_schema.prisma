@@ -755,6 +755,8 @@ model UserStats {
 
   total_gp_traded BigInt @default(0)
 
+  dailies_answered               Int    @default(0)
+  daily_correct_streak           Int    @default(0)
   last_daily_timestamp           BigInt @default(0)
   last_tears_of_guthix_timestamp BigInt @default(0)
 

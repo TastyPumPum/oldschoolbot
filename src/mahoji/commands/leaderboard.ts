@@ -79,6 +79,39 @@ async function delvesLb(interaction: MInteraction, activity: string, metric: str
 	});
 }
 
+const dailiesTypes = {
+	answered: 'Total Dailies Answered',
+	streak: 'Current Correct Daily Streak'
+} as const;
+
+async function dailiesLb(interaction: MInteraction, type: string, ironmanOnly: boolean) {
+	if (!(type in dailiesTypes)) return "That's not a valid dailies leaderboard.";
+	const users = await prisma.$queryRaw<{ id: string; score: number }[]>`
+		SELECT scores.id, scores.score
+		FROM (
+			SELECT user_id::text AS id, user_id,
+				CASE ${type}
+					WHEN 'answered' THEN dailies_answered
+					WHEN 'streak' THEN daily_correct_streak
+				END AS score
+			FROM user_stats
+		) scores
+		WHERE scores.score > 0
+			AND (NOT ${ironmanOnly} OR EXISTS (
+				SELECT 1 FROM users
+				WHERE users.id = scores.id AND users."minion.ironman" = true
+			))
+		ORDER BY scores.score DESC, scores.user_id ASC
+		LIMIT 2000;
+	`;
+	return doMenuWrapper({
+		ironmanOnly,
+		interaction,
+		users,
+		title: `${dailiesTypes[type as keyof typeof dailiesTypes]} Leaderboard`
+	});
+}
+
 async function farmingContractLb(interaction: MInteraction, ironmanOnly: boolean) {
 	const list = await prisma.$queryRawUnsafe<{ id: string; count: number }[]>(
 		`SELECT id::text as id, CAST("minion.farmingContract"->>'contractsCompleted' AS INTEGER) as count
@@ -708,6 +741,21 @@ export const leaderboardCommand = defineCommand({
 		},
 		{
 			type: 'Subcommand',
+			name: 'dailies',
+			description: 'Check daily answer totals and current correct answer streaks.',
+			options: [
+				{
+					type: 'String',
+					name: 'type',
+					description: 'The dailies leaderboard to show (defaults to total answered).',
+					required: false,
+					choices: Object.entries(dailiesTypes).map(([value, name]) => ({ name, value }))
+				},
+				ironmanOnlyOption
+			]
+		},
+		{
+			type: 'Subcommand',
 			name: 'farming_contracts',
 			description: 'Check the farming contracts leaderboard.',
 			options: [ironmanOnlyOption]
@@ -957,6 +1005,10 @@ export const leaderboardCommand = defineCommand({
 				options.delves.metric ?? 'deepest',
 				Boolean(options.delves.ironmen_only)
 			);
+		}
+
+		if (options.dailies) {
+			return dailiesLb(interaction, options.dailies.type ?? 'answered', Boolean(options.dailies.ironmen_only));
 		}
 
 		if (options.farming_contracts) {
