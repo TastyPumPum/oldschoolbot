@@ -74,6 +74,29 @@ export const nieveMonsters: KillableMonster[] = [
 		attackStylesUsed: [GearStat.AttackSlash]
 	},
 	{
+		id: Monsters.FrostDragon.id,
+		name: Monsters.FrostDragon.name,
+		aliases: Monsters.FrostDragon.aliases,
+		timeToFinish: Time.Second * 30,
+		table: Monsters.FrostDragon,
+
+		wildy: false,
+
+		difficultyRating: 4,
+		itemsRequired: resolveItems(['Anti-dragon shield']),
+		notifyDrops: resolveItems(['Dragon metal sheet', 'Dragon nails', 'Draconic visage']),
+		qpRequired: 0,
+		levelRequirements: {
+			sailing: 87
+		},
+		healAmountNeeded: 20 * 4,
+		attackStyleToUse: GearStat.AttackCrush,
+		attackStylesUsed: [GearStat.AttackCrush],
+		canCannon: false,
+		cannonMulti: false,
+		canBarrage: false
+	},
+	{
 		id: Monsters.LocustRider.id,
 		name: Monsters.LocustRider.name,
 		aliases: Monsters.LocustRider.aliases,

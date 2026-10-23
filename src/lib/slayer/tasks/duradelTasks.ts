@@ -235,6 +235,19 @@ export const duradelTasks: AssignableSlayerTask[] = [
 		unlocked: true
 	},
 	{
+		monster: Monsters.FrostDragon,
+		amount: [70, 120],
+		extendedAmount: [180, 240],
+		extendedUnlockId: SlayerTaskUnlocksEnum.ISeeDragons,
+		weight: 5,
+		boostedWeight: 8,
+		boostedWeightUnlockId: SlayerTaskUnlocksEnum.ChanceOfHeavyFrost,
+		monsters: [Monsters.FrostDragon.id],
+		combatLevel: 85,
+		levelRequirements: killableMonsters.find(k => k.id === Monsters.FrostDragon.id)?.levelRequirements,
+		unlocked: true
+	},
+	{
 		monster: Monsters.Gargoyle,
 		amount: [130, 200],
 		weight: 8,

@@ -1,3 +1,4 @@
+import { FrostDragon } from '@/simulation/monsters/low/a-f/FrostDragon.js';
 import { FrostNagua } from '@/simulation/monsters/low/a-f/FrostNagua.js';
 import type { SimpleMonster } from '@/structures/Monster.js';
 import { DagannothPrime } from '../bosses/DagannothPrime.js';
@@ -555,6 +556,7 @@ export const allLowMonsters: Record<string, SimpleMonster> = {
 	Crab,
 	ChilledJelly,
 	WealthyCitizen,
+	FrostDragon,
 	FrostNagua,
 	SulphurNagua,
 	WarpedTerrorbird,

@@ -106,7 +106,7 @@ export function calculateSlayerPoints(currentStreak: number, master: SlayerMaste
 function weightedPick(rng: RNGProvider, filteredTasks: AssignableSlayerTask[]) {
 	let totalweight = 0;
 	for (let i = 0; i < filteredTasks.length; i++) {
-		totalweight += filteredTasks[i].weight;
+		totalweight += filteredTasks[i].effectiveWeight ?? filteredTasks[i].weight;
 	}
 	const randomWeight = rng.randFloat(1, totalweight);
 
@@ -114,7 +114,7 @@ function weightedPick(rng: RNGProvider, filteredTasks: AssignableSlayerTask[]) {
 	let weight = 0;
 
 	for (let i = 0; i < filteredTasks.length; i++) {
-		weight += filteredTasks[i].weight;
+		weight += filteredTasks[i].effectiveWeight ?? filteredTasks[i].weight;
 		if (randomWeight <= weight) {
 			result = i;
 			break;
@@ -183,7 +183,18 @@ function userCanUseTask(user: MUser, task: AssignableSlayerTask, master: SlayerM
 
 export async function assignNewSlayerTask({ user, rng }: OSInteraction, master: SlayerMaster) {
 	// assignedTask is the task object, currentTask is the database row.
-	const baseTasks = [...master.tasks].filter(t => userCanUseTask(user, t, master, false));
+	const baseTasks = [...master.tasks]
+		.filter(t => userCanUseTask(user, t, master, false))
+		.map(task => {
+			const hasBoostedWeight =
+				task.boostedWeight &&
+				task.boostedWeightUnlockId &&
+				user.hasSlayerUnlock(task.boostedWeightUnlockId as SlayerTaskUnlocksEnum);
+			return {
+				...task,
+				effectiveWeight: hasBoostedWeight ? task.boostedWeight : task.weight
+			};
+		});
 	let bossTask = false;
 	let wildyBossTask = false;
 	if (
