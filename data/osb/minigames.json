@@ -145,6 +145,11 @@
 		"column": "tempoross"
 	},
 	{
+		"name": "The Fractured Archive",
+		"aliases": ["tfa", "fred", "fractured archive", "raid4", "raids4"],
+		"column": "fractured_archive"
+	},
+	{
 		"name": "Theatre of Blood",
 		"aliases": ["tob", "theatre of blood"],
 		"column": "tob"

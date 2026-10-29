@@ -2870,6 +2870,27 @@
 	},
 	"raids": {
 		"activities": {
+			"the_fractured_archive": {
+				"kc_activity": {},
+				"items": [
+					"Ascension crossbows",
+					"Ascension shards",
+					"Fragment of burning fire",
+					"Fragment of deep water",
+					"Fragment of living earth",
+					"Fragment of whispering wind",
+					"Horn of Bran",
+					"Living record (tier 1)",
+					"Living record (tier 2)",
+					"Living record (tier 3)",
+					"Living record (tier 4)",
+					"Living record (tier 5)",
+					"Obligator (uncharged) (base)",
+					"Rondache",
+					"Zorya's tome (uncharged)"
+				],
+				"is_activity": true
+			},
 			"chambers_of_xeric": {
 				"kc_activity": {},
 				"items": [

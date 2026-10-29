@@ -1,6 +1,6 @@
 {
-	"hash": "27a3bd240d4d63b1ec5a25f2d70cf03a",
-	"date": "2026-09-09T11:55:21.667Z",
+	"hash": "a788ee72c3a9a3ea50fdd11fb6bb41e1",
+	"date": "2026-10-29T10:52:04.017Z",
 	"data": [
 		{
 			"name": "activities",
@@ -438,8 +438,8 @@
 		},
 		{
 			"name": "raid",
-			"desc": "Send your minion to do raids - CoX or ToB.",
-			"subOptions": ["cox", "toa", "tob"]
+			"desc": "Send your minion to do raids - CoX, ToB, ToA or TFA.",
+			"subOptions": ["cox", "tfa", "toa", "tob"]
 		},
 		{
 			"name": "redeem",

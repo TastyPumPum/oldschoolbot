@@ -212220,9 +212220,11 @@
 		"cost": 4000000
 	},
 	"34722": {
-		"name": "archivist's folio",
+		"name": "Archivist's folio (inert)",
 		"members": true,
+		"tradeable": false,
 		"tradeable_on_ge": false,
+		"equipable": false,
 		"lowalch": 200,
 		"highalch": 300,
 		"cost": 500
@@ -212299,5 +212301,136 @@
 		"tradeable": false,
 		"tradeable_on_ge": false,
 		"equipable": false
+	},
+	"34730": {
+		"name": "Leftovers",
+		"members": true,
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": false
+	},
+	"34732": {
+		"name": "Candy onion",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": false
+	},
+	"34734": {
+		"name": "Sugar",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": false,
+		"lowalch": 4,
+		"highalch": 6,
+		"cost": 10
+	},
+	"34736": {
+		"name": "Molten sugar",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": false,
+		"cost": 3
+	},
+	"34738": {
+		"name": "Old onion",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": false
+	},
+	"34740": {
+		"name": "Vampyre monocle",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": true,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "head",
+			"requirements": null
+		}
+	},
+	"34742": {
+		"name": "Vampyre costume top",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": true,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "body",
+			"requirements": null
+		}
+	},
+	"34744": {
+		"name": "Vampyre costume bottom",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": true,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "legs",
+			"requirements": null
+		}
+	},
+	"34746": {
+		"name": "Vampyre costume cape",
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": true,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 0,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "cape",
+			"requirements": null
+		}
 	}
 }
