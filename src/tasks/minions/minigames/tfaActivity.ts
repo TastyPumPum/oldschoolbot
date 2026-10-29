@@ -4,7 +4,16 @@ import { Bank } from 'oldschooljs';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { resolveAttackStyles } from '@/lib/minions/functions/index.js';
 import { TeamLoot } from '@/lib/simulation/TeamLoot.js';
-import { rollTFALoot, TFA_BALANCING, TFABosses, TFALivingRecords, TFAUniques } from '@/lib/simulation/tfa.js';
+import {
+	rollTFALoot,
+	TFA_BALANCING,
+	TFABosses,
+	TFAFragments,
+	TFALivingRecords,
+	TFAUniques,
+	tfaDeathFee,
+	tfaQuartermasterRefund
+} from '@/lib/simulation/tfa.js';
 import { XPCounter } from '@/lib/structures/XPCounter.js';
 import type { FracturedArchiveTaskOptions } from '@/lib/types/minions.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
@@ -17,6 +26,14 @@ export const tfaTask: MinionTask = {
 		const allUsers = await Promise.all(users.map(id => mUserFetch(id)));
 		const startingKCs = await Promise.all(allUsers.map(user => user.fetchMinigameScore('fractured_archive')));
 		const teamLoot = new TeamLoot(TFAUniques);
+		const fragmentLogs = new Map(
+			allUsers.map(user => [user.id, user.cl.filter(item => TFAFragments.includes(item.id))])
+		);
+		if (data.fakeMass) {
+			for (const member of raids[0].members) {
+				if (member.id !== data.leader) fragmentLogs.set(member.id, fragmentLogs.get(data.leader)!.clone());
+			}
+		}
 		const simulatedLoot = new Map<string, Bank>();
 		const deathFees = new Map(users.map(id => [id, 0]));
 		const deathCounts = new Map(users.map(id => [id, 0]));
@@ -24,7 +41,10 @@ export const tfaTask: MinionTask = {
 		const results: string[] = [];
 		let completions = 0;
 		for (const [index, raid] of raids.entries()) {
-			const { loot, uniqueChance } = rollTFALoot(raid, rng);
+			const { loot, uniqueChance } = rollTFALoot(raid, rng, fragmentLogs);
+			for (const [id, bank] of loot) {
+				fragmentLogs.get(id)?.add(bank.filter(item => TFAFragments.includes(item.id)));
+			}
 			if (data.fakeMass) {
 				for (const member of raid.members) {
 					if (member.id === data.leader) continue;
@@ -37,13 +57,10 @@ export const tfaTask: MinionTask = {
 			for (const [userIndex, user] of allUsers.entries()) {
 				const member = raid.members.find(member => member.id === user.id)!;
 				deathCounts.set(user.id, deathCounts.get(user.id)! + member.deaths.length);
-				if (member.deaths.length > 0) {
-					const fee =
-						startingKCs[userIndex] + completions < TFA_BALANCING.learnerCompletions
-							? TFA_BALANCING.learnerDeathFee
-							: TFA_BALANCING.deathFee;
-					deathFees.set(user.id, deathFees.get(user.id)! + fee);
-				}
+				deathFees.set(
+					user.id,
+					deathFees.get(user.id)! + tfaDeathFee(raid, startingKCs[userIndex] + completions)
+				);
 				if (raid.wipedRoom !== null) continue;
 				const userLoot = loot.get(user.id)!;
 				teamLoot.add(user.id, userLoot);
@@ -81,8 +98,9 @@ export const tfaTask: MinionTask = {
 
 		const files = [];
 		const xpMessages = [];
+		const quartermasterMessages = [];
 		const costUsers = [];
-		const totalFees = new Bank();
+		const totalCost = new Bank();
 		for (const [index, user] of allUsers.entries()) {
 			const loot = teamLoot.get(user.id);
 			if (completions > 0) {
@@ -104,16 +122,32 @@ export const tfaTask: MinionTask = {
 			}
 			const fee = deathFees.get(user.id)!;
 			const refund = deathFeeReserved * raids.length - fee;
-			if (refund > 0) await user.addItemsToBank({ items: new Bank().add('Coins', refund), collectionLog: false });
-			const feeBank = new Bank().add('Coins', fee);
-			await user.statsBankUpdate('tfa_cost', feeBank);
+			// Older trips recorded supplies at departure. Only trips carrying this reservation
+			// can return quartermaster replacements and finalise their supply costs here.
+			const reservation = data.supplies?.find(supply => supply.userID === user.id);
+			const reserved = new Bank(reservation?.cost);
+			const supplyRefund = reservation
+				? raids.reduce(
+						(bank, raid) => bank.add(tfaQuartermasterRefund(raid, user.id, reserved, raids.length)),
+						new Bank()
+					)
+				: new Bank();
+			const returned = supplyRefund.clone().add('Coins', Math.max(0, refund));
+			if (returned.length > 0) await user.addItemsToBank({ items: returned, collectionLog: false });
+			if (supplyRefund.length > 0) {
+				quartermasterMessages.push(
+					`${user.mention}: the quartermaster replaced ${supplyRefund} of your carried supplies, which have been returned.`
+				);
+			}
+			const actualCost = reserved.remove(supplyRefund).add('Coins', fee);
+			await user.statsBankUpdate('tfa_cost', actualCost);
 			await user.statsBankUpdate('tfa_loot', loot);
 			await user.statsUpdate({
 				tfa_attempts: { increment: raids.length },
 				tfa_deaths: { increment: deathCounts.get(user.id)! }
 			});
-			costUsers.push({ id: user.id, cost: feeBank });
-			totalFees.add(feeBank);
+			costUsers.push({ id: user.id, cost: actualCost });
+			totalCost.add(actualCost);
 			const { previousCL } = await user.addItemsToBank({ items: loot, collectionLog: true });
 			if (loot.length > 0 && allUsers.length <= 3) {
 				files.push(
@@ -125,7 +159,7 @@ export const tfaTask: MinionTask = {
 			id: 'fractured_archive',
 			type: 'Minigame',
 			changeType: 'cost',
-			totalCost: totalFees,
+			totalCost,
 			users: costUsers
 		});
 		const totalLoot = teamLoot.totalLoot();
@@ -158,7 +192,7 @@ export const tfaTask: MinionTask = {
 			data,
 			loot: totalLoot,
 			message: {
-				content: `**The Fractured Archive: ${completions}/${raids.length} completed**\nYour minions have returned. Their understanding of the raid remains provisional.\n\n${results.join('\n\n')}\n\n${teamLoot.formatLoot()}\n${feesMessage}\n\n${xpMessages.join('\n')}${simulatedLootMessage}`,
+				content: `**The Fractured Archive: ${completions}/${raids.length} completed**\nYour minions have returned. Their understanding of the raid remains provisional.\n\n${results.join('\n\n')}\n\n${teamLoot.formatLoot()}\n${feesMessage}${quartermasterMessages.length > 0 ? `\n${quartermasterMessages.join('\n')}` : ''}\n\n${xpMessages.join('\n')}${simulatedLootMessage}`,
 				files
 			}
 		});

@@ -33,7 +33,9 @@ export type DegradeableItemColumns =
 	| 'blood_essence_charges'
 	| 'trident_charges'
 	| 'scythe_of_vitur_charges'
-	| 'venator_bow_charges';
+	| 'venator_bow_charges'
+	| 'obligator_charges'
+	| 'zorya_tome_charges';
 
 export type Exact<A, B> = A extends B ? (B extends A ? A : never) : never;
 

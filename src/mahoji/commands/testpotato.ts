@@ -16,6 +16,7 @@ import { spiritAnglerOutfit } from '@/lib/data/CollectionsExport.js';
 import { COXMaxMageGear, COXMaxMeleeGear, COXMaxRangeGear } from '@/lib/data/cox.js';
 import { leaguesCreatables } from '@/lib/data/creatables/leagueCreatables.js';
 import { Eatables } from '@/lib/data/eatables.js';
+import { TFAMaxMageGear, TFAMaxMeleeGear, TFAMaxRangeGear } from '@/lib/data/tfa.js';
 import { TOBMaxMageGear, TOBMaxMeleeGear, TOBMaxRangeGear } from '@/lib/data/tob.js';
 import { effectiveMonsters } from '@/lib/minions/data/killableMonsters/index.js';
 import potions from '@/lib/minions/data/potions.js';
@@ -173,12 +174,11 @@ for (const gear of Items.resolveItems([
 	doomMage.equip(Items.getOrThrow(gear));
 }
 
-// TFA currently uses CoX's gear scoring, so these are its maximum-score setups.
 const tfaGear = {
 	name: 'TFA',
-	melee: COXMaxMeleeGear.clone(),
-	range: COXMaxRangeGear.clone(),
-	mage: COXMaxMageGear.clone()
+	melee: TFAMaxMeleeGear.clone(),
+	range: TFAMaxRangeGear.clone(),
+	mage: TFAMaxMageGear.clone()
 };
 tfaGear.range.set('ammo', { item: itemID('Dragon arrow'), quantity: 100_000 });
 
@@ -456,7 +456,23 @@ const tfaPreset = new Bank()
 	.add(bossingPreset)
 	.add(tfaGear.melee.toBank())
 	.add(tfaGear.range.toBank())
-	.add(tfaGear.mage.toBank());
+	.add(tfaGear.mage.toBank())
+	.add('Scythe of vitur')
+	.add("Tumeken's shadow")
+	.add('Twinflame staff')
+	.add('Venator bow')
+	.add("Zorya's tome")
+	.add('Ascension crossbows')
+	.add('Ascension shards', 100_000)
+	.add('Ascension bolts', 100_000)
+	.add('Diamond ascension bolts (e)', 100_000)
+	.add('Onyx ascension bolts (e)', 100_000)
+	.add('Tome of water (empty)')
+	.add('Tome of earth (empty)')
+	.add('Wrath rune', 100_000)
+	.add('Burnt page', 100_000)
+	.add('Soaked page', 100_000)
+	.add('Soiled page', 100_000);
 
 const shadesPreset = new Bank().add('Olive oil(4)', 100_000).add('Sacred oil(4)', 100_000);
 for (const log of shadesLogs) {
@@ -1196,6 +1212,8 @@ export const testPotatoCommand = globalConfig.isProduction
 							blood_fury_charges: 10000,
 							tum_shadow_charges: 10000,
 							ayak_charges: 10000,
+							obligator_charges: 20_000,
+							zorya_tome_charges: 20_000,
 							blood_essence_charges: 10000,
 							ash_sanctifier_charges: 10000,
 							celestial_ring_charges: 10000,
@@ -1282,7 +1300,10 @@ export const testPotatoCommand = globalConfig.isProduction
 						await user.rawUpdate({
 							data: {
 								scythe_of_vitur_charges: Math.max(user.user.scythe_of_vitur_charges, 100_000),
-								tum_shadow_charges: Math.max(user.user.tum_shadow_charges, 100_000)
+								tum_shadow_charges: Math.max(user.user.tum_shadow_charges, 100_000),
+								venator_bow_charges: Math.max(user.user.venator_bow_charges, 100_000),
+								obligator_charges: 20_000,
+								zorya_tome_charges: 20_000
 							},
 							gearUpdates: [
 								{ setup: 'melee', gear: tfaGear.melee.raw() },
@@ -1296,7 +1317,7 @@ export const testPotatoCommand = globalConfig.isProduction
 								{ setup: 'mage', gear: tfaGear.mage.raw() }
 							]
 						});
-						return 'Spawned TFA gear, raid supplies and 100m GP. Equipped your melee, ranged and mage setups, loaded 100,000 dragon arrows, and topped up your Scythe and Shadow to at least 100,000 charges each. Your minion is fully equipped and still completely confused.';
+						return "Spawned TFA gear, raid supplies, elemental runes and pages, alternative weapons, Ascension ammunition and 100m GP. Equipped Inquisitor's with Obligator, Masori with Twisted bow, and Ancestral with Harmonised nightmare staff and Tome of fire. Loaded 100,000 dragon arrows, fully charged Obligator and Zorya's tome, and topped up your Scythe, Shadow and Venator bow. Your minion is fully equipped and still completely confused.";
 					}
 					return `Spawned: ${bankToGive.toString().slice(0, 1800)}.`;
 				}

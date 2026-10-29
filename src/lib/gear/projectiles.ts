@@ -32,6 +32,17 @@ export const projectiles = {
 		items: resolveItems(['Amethyst javelin', 'Rune javelin', 'Dragon javelin']),
 		savedByAvas: false,
 		weapons: resolveItems(['Heavy ballista'])
+	},
+	ascensionBolt: {
+		items: resolveItems([
+			'Ascension bolts',
+			'Diamond ascension bolts',
+			'Diamond ascension bolts (e)',
+			'Onyx ascension bolts',
+			'Onyx ascension bolts (e)'
+		]),
+		savedByAvas: true,
+		weapons: resolveItems(['Ascension crossbows'])
 	}
 } as const;
 export type ProjectileType = keyof typeof projectiles;

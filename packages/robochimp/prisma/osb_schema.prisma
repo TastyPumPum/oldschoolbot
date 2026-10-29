@@ -377,6 +377,8 @@ model User {
   blood_essence_charges  Int @default(0)
   trident_charges        Int @default(0)
   venator_bow_charges    Int @default(0)
+  obligator_charges      Int @default(0)
+  zorya_tome_charges     Int @default(0)
 
   scythe_of_vitur_charges Int @default(0)
 

@@ -3,9 +3,9 @@ import { formatDuration } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { userIsBusy } from '@/lib/cache.js';
-import { calculateUserGearPercents } from '@/lib/data/cox.js';
+import { calculateTFAGear, TFAElementalStaves, TFAElementalTomes, TFAMageWeapons } from '@/lib/data/tfa.js';
 import { degradeableItems, degradeChargeBank } from '@/lib/degradeableItems.js';
-import { trackLoot } from '@/lib/lootTrack.js';
+import { projectiles } from '@/lib/gear/projectiles.js';
 import {
 	resolveTFARoute,
 	simulateTFARaid,
@@ -30,10 +30,18 @@ const rangedBows = ['Twisted bow', 'Venator bow'];
 const rangedCrossbows = ['Dragon hunter crossbow', 'Armadyl crossbow', 'Zaryte crossbow'];
 const arrows = ['Rune arrow', 'Amethyst arrow', 'Dragon arrow'];
 const bolts = ['Ruby bolts (e)', 'Diamond bolts (e)', 'Ruby dragon bolts (e)', 'Diamond dragon bolts (e)'];
-const mageWeapons = ['Trident of the swamp', 'Sanguinesti staff', "Tumeken's shadow", 'Kodai wand', 'Eye of ayak'];
 
 // PROVISIONAL supply/charge costs, comparable to ToB with a little extra food for getting lost.
 function tfaInput(user: MUser, kc: number, quantity: number, deathFeeReserved: number) {
+	const runes = new Bank().add('Blood rune', 150).add('Death rune', 100).add('Water rune', 600);
+	const elementalStaff = user.gear.mage.hasEquipped(TFAElementalStaves);
+	const tome = TFAElementalTomes.find(t => user.gear.mage.hasEquipped([...t.items]));
+	if (elementalStaff) {
+		const casts = TFA_BALANCING.elementalCastsPerRaid;
+		runes.add('Wrath rune', casts);
+		for (const element of ['Air rune', 'Water rune', 'Earth rune', 'Fire rune']) runes.add(element, casts * 10);
+		if (tome?.element === 'earth') runes.clear('Earth rune');
+	}
 	const cost = new Bank()
 		.add('Super combat potion(4)')
 		.add('Ranging potion(4)')
@@ -41,7 +49,9 @@ function tfaInput(user: MUser, kc: number, quantity: number, deathFeeReserved: n
 		.add('Saradomin brew(4)', Math.max(2, 8 - Math.floor(kc / 20)))
 		.add('Super restore(4)', 3)
 		.add('Shark', 6)
-		.add(determineRunes(user, new Bank().add('Blood rune', 150).add('Death rune', 100).add('Water rune', 600)));
+		.add(determineRunes(user, runes));
+	// Pay pages directly, including for empty tomes, rather than inventing persistent tome charges.
+	if (elementalStaff && tome) cost.add(tome.page, Math.ceil(TFA_BALANCING.elementalCastsPerRaid / 20));
 	const range = user.gear.range;
 	if (range.hasEquipped('Toxic blowpipe')) {
 		const blowpipe = user.getBlowpipe();
@@ -84,20 +94,31 @@ export async function checkTFAUser(user: MUser, quantity = 1): Promise<[false] |
 			`${user.usernameOrMention} needs a melee weapon equipped. If it ran out of charges, recharge and re-equip the uncharged weapon from your bank.`
 		];
 	}
-	if (!user.gear.mage.hasEquipped(mageWeapons)) {
+	if (user.gear.melee.hasEquipped('Obligator (uncharged) (base)', false, false)) {
+		return [true, `${user.usernameOrMention} needs to charge their Obligator and equip the charged weapon.`];
+	}
+	if (!user.gear.mage.hasEquipped(TFAMageWeapons)) {
 		return [
 			true,
-			`${user.usernameOrMention} needs a charged trident, Sanguinesti staff, Tumeken's shadow, Eye of ayak or Kodai wand in their mage setup. If it ran out of charges, recharge and re-equip the uncharged weapon from your bank.`
+			`${user.usernameOrMention} needs a Harmonised nightmare staff, Twinflame staff, Kodai wand, charged trident, Sanguinesti staff, Tumeken's shadow, Zorya's tome or Eye of ayak in their mage setup. If it ran out of charges, recharge and re-equip the uncharged weapon from your bank.`
 		];
 	}
 	const range = user.gear.range;
-	if (!range.hasEquipped([...rangedBows, ...rangedCrossbows, 'Bow of faerdhinen (c)', 'Toxic blowpipe'])) {
+	if (
+		!range.hasEquipped([
+			...rangedBows,
+			...rangedCrossbows,
+			'Ascension crossbows',
+			'Bow of faerdhinen (c)',
+			'Toxic blowpipe'
+		])
+	) {
 		return [
 			true,
-			`${user.usernameOrMention} needs a Twisted/Venator bow, Bow of faerdhinen (c), charged Toxic blowpipe or a dragon hunter/Armadyl/Zaryte crossbow in their range setup.`
+			`${user.usernameOrMention} needs a Twisted/Venator bow, Bow of faerdhinen (c), charged Toxic blowpipe, Ascension crossbows or a dragon hunter/Armadyl/Zaryte crossbow in their range setup.`
 		];
 	}
-	const gear = calculateUserGearPercents(user);
+	const gear = calculateTFAGear(user);
 	if ([gear.melee, gear.range, gear.mage].some(i => i < TFA_BALANCING.minimumGearPercent)) {
 		return [
 			true,
@@ -111,7 +132,16 @@ export async function checkTFAUser(user: MUser, quantity = 1): Promise<[false] |
 		return [true, `${user.usernameOrMention} needs enchanted ruby or diamond bolts equipped.`];
 	}
 	if (
-		range.hasEquipped([...rangedBows, ...rangedCrossbows]) &&
+		range.hasEquipped('Ascension crossbows') &&
+		!projectiles.ascensionBolt.items.includes(range.get('ammo')?.item ?? 0)
+	) {
+		return [
+			true,
+			`${user.usernameOrMention} needs Ascension bolts or their diamond/onyx variants equipped for Ascension crossbows.`
+		];
+	}
+	if (
+		range.hasEquipped([...rangedBows, ...rangedCrossbows, 'Ascension crossbows']) &&
 		(range.get('ammo')?.quantity ?? 0) < TFA_BALANCING.ammunitionPerRaid * quantity
 	) {
 		return [
@@ -156,7 +186,7 @@ export async function tfaCheckCommand(user: MUser) {
 
 export async function tfaStatsCommand(user: MUser) {
 	const [kc, stats] = await Promise.all([user.fetchMinigameScore('fractured_archive'), user.fetchStats()]);
-	const gear = calculateUserGearPercents(user);
+	const gear = calculateTFAGear(user);
 	const member: TFATeamMember = { id: user.id, kc, attempts: stats.tfa_attempts, gear };
 	const deaths = Object.entries(TFABosses).map(
 		([boss, room]) => `${room.name}: ${tfaDeathChance(member, boss as keyof typeof TFABosses, false).toFixed(1)}%`
@@ -170,22 +200,30 @@ export async function tfaStatsCommand(user: MUser) {
 				value: `${kc} completions, ${stats.tfa_attempts} attempts, ${stats.tfa_deaths} deaths, ${TFAUniques.reduce((sum, id) => sum + user.cl.amount(id), 0)} uniques.`
 			},
 			{
-				name: 'Gear',
+				name: 'Estimated TFA gear scores',
 				value: `Melee ${gear.melee.toFixed(1)}%, Ranged ${gear.range.toFixed(1)}%, Magic ${gear.mage.toFixed(1)}%`
 			},
 			{ name: 'Estimated death chances per room (group)', value: deaths.join('\n') },
 			{
 				name: 'Estimated rewards',
-				value: `${TFA_BALANCING.uniquePercentPerPlayer}% purple chance per deathless player, one team roll, reduced by deaths. Three standard rolls each; one roll has 5x quantity if deathless (estimated, excludes fragments).`
+				value: `${TFA_BALANCING.uniquePercentPerPlayer}% purple chance per deathless player, one team roll, reduced by deaths. Three standard rolls each; one roll has 5x quantity if deathless (estimated trigger). Fragments roll separately at an estimated 1/${TFA_BALANCING.fragmentRate}, favouring your least-logged elements (estimated protection rule).`
 			},
-			{ name: 'Supplies per raid (charges extra)', value: tfaInput(user, kc, 1, 0).cost.toString() },
+			{ name: 'Supplies reserved per raid (charges extra)', value: tfaInput(user, kc, 1, 0).cost.toString() },
+			{
+				name: 'Quartermaster resupply',
+				value: 'After boss three, the quartermaster can replace up to two brews, one restore and food equivalent to two sharks. This estimated allowance depends on your survival in the first three rooms and is capped by your supplies for the final two rooms. Replaced supplies are returned and excluded from raid costs. Early wipes receive no resupply.'
+			},
 			{
 				name: 'Death fee',
-				value: `Up to ${TFA_BALANCING.deathFee.toLocaleString()} GP reserved per raid; unused GP is refunded. First ${TFA_BALANCING.learnerCompletions} completions: 75% discount.`
+				value: `Up to ${TFA_BALANCING.deathFee.toLocaleString()} GP reserved per raid, charged only on a team wipe; unused GP is refunded. First ${TFA_BALANCING.learnerCompletions} completions: 75% discount.`
 			},
 			{
 				name: 'Requirements',
 				value: `${TFA_BALANCING.questPoints} QP, ${formatSkillRequirements(TFA_BALANCING.skills)}, ${TFA_BALANCING.minimumGearPercent}% gear in each style.`
+			},
+			{
+				name: 'Gear effectiveness',
+				value: "Crush equipment is favoured for melee. Elemental staves and matching tomes help against the Guardian (fire), Dreadnoth (fire), Xarth (water) and the Dagon'hai. Venator bow helps against Moia and Dreadnoth. Room scores affect both speed and survival; all bonuses are estimates."
 			},
 			{
 				name: 'Boss routes',
@@ -279,7 +317,7 @@ async function startTFATrip(
 				member.fetchMinigameScore('fractured_archive'),
 				member.fetchStats()
 			]);
-			return { id: member.id, kc, attempts: stats.tfa_attempts, gear: calculateUserGearPercents(member) };
+			return { id: member.id, kc, attempts: stats.tfa_attempts, gear: calculateTFAGear(member) };
 		})
 	);
 	// Keep simulated IDs out of activity.users, supplies, stats and bank updates. Each copy is a
@@ -291,10 +329,15 @@ async function startTFATrip(
 	const maxTripLength = Math.min(...tripLimits);
 	const longestRoute = resolveTFARoute(
 		{
-			second: routeChoices.second ?? (TFABosses.ezekiel.minutes >= TFABosses.bork.minutes ? 'ezekiel' : 'bork'),
-			third: routeChoices.third ?? (TFABosses.moia.minutes >= TFABosses.dreadnoth.minutes ? 'moia' : 'dreadnoth'),
+			second:
+				routeChoices.second ??
+				(tfaRaidDuration(team, ['ezekiel']) >= tfaRaidDuration(team, ['bork']) ? 'ezekiel' : 'bork'),
+			third:
+				routeChoices.third ??
+				(tfaRaidDuration(team, ['moia']) >= tfaRaidDuration(team, ['dreadnoth']) ? 'moia' : 'dreadnoth'),
 			fourth:
-				routeChoices.fourth ?? (TFABosses.xarth.minutes >= TFABosses.dagonhai.minutes ? 'xarth' : 'dagonhai')
+				routeChoices.fourth ??
+				(tfaRaidDuration(team, ['xarth']) >= tfaRaidDuration(team, ['dagonhai']) ? 'xarth' : 'dagonhai')
 		},
 		rng
 	);
@@ -317,22 +360,18 @@ async function startTFATrip(
 	);
 	const duration = raids.reduce((sum, raid) => sum + raid.duration, 0);
 	const fakeDuration = raids.reduce((sum, raid) => sum + raid.fakeDuration, 0);
-	const totalCost = new Bank();
-	const costUsers = [];
+	const supplies: NonNullable<FracturedArchiveTaskOptions['supplies']> = [];
 	const costMessages = [];
 	for (const [index, member] of users.entries()) {
 		const { cost, charges } = tfaInput(member, team[index].kc, quantity, TFA_BALANCING.deathFee);
 		const { realCost } = await member.specialRemoveItems(cost);
 		const chargeMessage = await degradeChargeBank(member, charges);
 		const suppliesCost = realCost.clone().remove('Coins', TFA_BALANCING.deathFee * quantity);
-		await member.statsBankUpdate('tfa_cost', suppliesCost);
-		totalCost.add(suppliesCost);
-		costUsers.push({ id: member.id, cost: suppliesCost });
+		supplies.push({ userID: member.id, cost: suppliesCost.toJSON() });
 		costMessages.push(
-			`${member.usernameOrMention} used ${suppliesCost}.${chargeMessage ? `\n${chargeMessage}` : ''}`
+			`${member.usernameOrMention} reserved ${suppliesCost}. Supplies replaced by the quartermaster will be returned.${chargeMessage ? `\n${chargeMessage}` : ''}`
 		);
 	}
-	await trackLoot({ id: 'fractured_archive', type: 'Minigame', changeType: 'cost', totalCost, users: costUsers });
 	await ActivityManager.startTrip<FracturedArchiveTaskOptions>({
 		type: 'FracturedArchive',
 		userID: user.id,
@@ -347,6 +386,7 @@ async function startTFATrip(
 		maxTeamSize: maxSize,
 		routeChoices,
 		raids,
+		supplies,
 		fakeDuration,
 		deathFeeReserved: TFA_BALANCING.deathFee
 	});
@@ -364,12 +404,12 @@ async function startTFATrip(
 	const summary = `${party} set off for ${quantity}x Fractured Archive. Expected return: ${formatTripDuration(user, fakeDuration)}.
 ${TFA_PROVISIONAL_MESSAGE}
 ${routes.join('\n')}${fakeMassMessage}
-${(TFA_BALANCING.deathFee * quantity).toLocaleString()} GP per player is reserved for death fees; unused GP will be refunded.${options.auto_repeat ? '\nAuto-repeat is enabled. Your minion will keep getting lost until you use /raid tfa stop.' : ''}`;
-	const supplies = costMessages.join('\n');
-	if (summary.length + supplies.length + 1 > 1900) {
-		return { content: summary, files: [{ name: 'tfa-supplies.txt', buffer: Buffer.from(supplies) }] };
+${(TFA_BALANCING.deathFee * quantity).toLocaleString()} GP per player is reserved for team wipe fees; unused GP will be refunded.${options.auto_repeat ? '\nAuto-repeat is enabled. Your minion will keep getting lost until you use /raid tfa stop.' : ''}`;
+	const suppliesMessage = costMessages.join('\n');
+	if (summary.length + suppliesMessage.length + 1 > 1900) {
+		return { content: summary, files: [{ name: 'tfa-supplies.txt', buffer: Buffer.from(suppliesMessage) }] };
 	}
-	return `${summary}\n${supplies}`;
+	return `${summary}\n${suppliesMessage}`;
 }
 
 export async function tfaStopCommand(user: MUser) {

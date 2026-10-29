@@ -12,6 +12,8 @@ SELECT add_constraint('users', 'chk_ayak_charges_bounds', 'CHECK (ayak_charges >
 SELECT add_constraint('users', 'chk_blood_essence_charges_bounds', 'CHECK (blood_essence_charges >= 0)');
 SELECT add_constraint('users', 'chk_trident_charges_bounds', 'CHECK (trident_charges >= 0)');
 SELECT add_constraint('users', 'chk_venator_bow_charges_bounds', 'CHECK (venator_bow_charges >= 0)');
+SELECT add_constraint('users', 'chk_obligator_charges_bounds', 'CHECK (obligator_charges BETWEEN 0 AND 20000)');
+SELECT add_constraint('users', 'chk_zorya_tome_charges_bounds', 'CHECK (zorya_tome_charges BETWEEN 0 AND 20000)');
 SELECT add_constraint('users', 'chk_scythe_of_vitur_charges_bounds','CHECK (scythe_of_vitur_charges >= 0)');
 SELECT add_constraint('users', 'chk_lms_points_bounds', 'CHECK (lms_points >= 0)');
 SELECT add_constraint('users', 'chk_volcanic_mine_points_bounds', 'CHECK (volcanic_mine_points >= 0)');

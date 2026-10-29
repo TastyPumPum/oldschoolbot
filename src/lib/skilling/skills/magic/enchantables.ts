@@ -346,6 +346,26 @@ const jewelery: Enchantable[] = [
 
 const bolts = [
 	{
+		name: '10x Diamond ascension bolts',
+		id: itemID('Diamond ascension bolts'),
+		input: new Bank()
+			.add('Diamond ascension bolts', 10)
+			.add('Earth rune', 10)
+			.add('Cosmic rune')
+			.add('Law rune', 2),
+		output: new Bank().add('Diamond ascension bolts (e)', 10),
+		xp: 67,
+		level: 57
+	},
+	{
+		name: '10x Onyx ascension bolts',
+		id: itemID('Onyx ascension bolts'),
+		input: new Bank().add('Onyx ascension bolts', 10).add('Fire rune', 20).add('Death rune').add('Cosmic rune'),
+		output: new Bank().add('Onyx ascension bolts (e)', 10),
+		xp: 97,
+		level: 87
+	},
+	{
 		name: '10x Opal bolts',
 		id: itemID('Opal bolts'),
 		input: new Bank().add('Opal bolts', 10).add('Air rune', 2).add('Cosmic rune', 1),

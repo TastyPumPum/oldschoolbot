@@ -25,6 +25,31 @@ const multiVariantItem = {
 };
 
 describe('convertWikiJSONToItem', () => {
+	test('selects the item infobox when the page starts with an NPC infobox', () => {
+		const item = convertWikiJSONToItem(
+			{
+				title: 'Orion',
+				sections: [
+					{
+						title: '',
+						infoboxes: [
+							{ name: { text: 'Orion' }, id: { text: '16631', number: 16631 } },
+							{
+								name: { text: 'Orion' },
+								id: { text: '34646', number: 34646 },
+								members: { text: 'Yes' },
+								tradeable: { text: 'No' },
+								equipable: { text: 'No' }
+							}
+						]
+					}
+				]
+			},
+			34646
+		);
+		expect(item).toMatchObject({ id: 34646, name: 'Orion', members: true, tradeable: false, equipable: false });
+	});
+
 	test('selects fields belonging to the requested variant', () => {
 		const tradeableVariant = convertWikiJSONToItem(multiVariantItem, 33_093);
 		expect(tradeableVariant).toMatchObject({

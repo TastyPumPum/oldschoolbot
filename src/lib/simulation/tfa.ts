@@ -32,10 +32,20 @@ export const TFA_BALANCING = {
 	uniquePercentPerPlayer: 3,
 	maximumUniquePercent: 25,
 	standardRolls: 3,
-	// Guess: a deathless player receives one boosted roll. Fragments remain single items.
+	// Guess: a deathless player receives one boosted standard roll; the wiki's trigger is unknown.
 	deathlessLootMultiplier: 5,
 	standardWeight: 16,
-	fragmentWeight: 1,
+	// Estimated tertiary chance, close to the previous model's overall fragment frequency.
+	fragmentRate: 45,
+	elementalCastsPerRaid: 180,
+	quartermasterAfterBoss: 3,
+	// Estimated replacements from the Alliance Supplies stock, adjusted for early participation.
+	// Quartermaster food (e.g. manta rays) replaces carried sharks; nothing leaves the raid.
+	quartermasterSupplies: [
+		{ name: 'Saradomin brew(4)', maximum: 2 },
+		{ name: 'Super restore(4)', maximum: 1 },
+		{ name: 'Shark', maximum: 2 }
+	],
 	ammunitionPerRaid: 180,
 	blowpipeScalesPerRaid: 600,
 	itemChargesPerRaid: 250,
@@ -43,8 +53,8 @@ export const TFA_BALANCING = {
 	deathFee: 500_000,
 	learnerDeathFee: 125_000,
 	learnerCompletions: 5,
-	// Milestones are placeholders, following the existing raid cape rewards.
-	livingRecordKC: [1, 10, 50, 100, 500],
+	// https://oldschool.runescape.wiki/w/Living_record_(tier_1) through tier 5.
+	livingRecordKC: [100, 500, 1000, 1500, 2000],
 	xp: { melee: 48_000, ranged: 12_000, magic: 12_000, hitpoints: 24_000 },
 	tertiaries: [
 		{ name: 'Orion', rate: 650 },
@@ -54,15 +64,15 @@ export const TFA_BALANCING = {
 } as const;
 
 export const TFA_PROVISIONAL_MESSAGE =
-	'Your minion has no clue what they are doing. Good luck! TFA timings, difficulty and drop rates are provisional.';
+	'Your minion has no clue what they are doing. Good luck! TFA timings, gear scores, difficulty and drop rates are provisional.';
 
 export const TFABosses = {
 	guardian: { name: 'Archive Guardian', minutes: 10, difficulty: 0.9, styles: ['melee', 'mage', 'range'] },
 	ezekiel: { name: 'Ezekiel', minutes: 12, difficulty: 1.05, styles: ['melee', 'range'] },
-	bork: { name: 'Bork and the Smorks', minutes: 12, difficulty: 1, styles: ['melee', 'mage'] },
+	bork: { name: 'Bork and the Smorks', minutes: 12, difficulty: 1, styles: ['melee', 'range'] },
 	moia: { name: 'Moia', minutes: 13, difficulty: 1.1, styles: ['mage', 'range'] },
-	dreadnoth: { name: 'Dreadnoth the Jellied', minutes: 13, difficulty: 1.15, styles: ['melee', 'mage'] },
-	xarth: { name: 'Xarth', minutes: 14, difficulty: 1.1, styles: ['melee', 'range'] },
+	dreadnoth: { name: 'Dreadnoth the Jellied', minutes: 13, difficulty: 1.15, styles: ['mage', 'range'] },
+	xarth: { name: 'Xarth', minutes: 14, difficulty: 1.1, styles: ['melee', 'mage', 'range'] },
 	dagonhai: { name: "Dagon'hai Elder and monks", minutes: 14, difficulty: 1.05, styles: ['mage', 'range'] },
 	ocellus: { name: 'Ocellus', minutes: 22, difficulty: 1.3, styles: ['melee', 'mage', 'range'] }
 } as const;
@@ -78,7 +88,7 @@ export interface TFATeamMember {
 	id: string;
 	kc: number;
 	attempts: number;
-	gear: { melee: number; mage: number; range: number; total: number };
+	gear: { melee: number; mage: number; range: number; total: number; bosses?: Record<TFABoss, number> };
 }
 
 export interface TFARaidResult {
@@ -113,8 +123,7 @@ export const TFALivingRecords = resolveItems([
 	'Living record (tier 5)'
 ]);
 
-// Orion and the inert folio are absent from the current item definitions. Do not invent IDs or
-// substitute their charged forms; they become available here when the generated definitions arrive.
+// Keep unavailable rewards visible if item definitions lag behind a game update.
 export const TFAPendingRewards = TFA_BALANCING.tertiaries.filter(i => !Items.getItem(i.name));
 export const TFACollectionLog = [
 	...TFAUniques,
@@ -165,12 +174,9 @@ const standardLoot: [string, number, number][] = [
 	['Wine of zamorak', 32, 34]
 ];
 
-const standardTable = new SimpleTable<{ id: number; min: number; max: number; fragment: boolean }>();
+const standardTable = new SimpleTable<{ id: number; min: number; max: number }>();
 for (const [name, min, max] of standardLoot) {
-	standardTable.add({ id: Items.getOrThrow(name).id, min, max, fragment: false }, TFA_BALANCING.standardWeight);
-}
-for (const id of TFAFragments) {
-	standardTable.add({ id, min: 1, max: 1, fragment: true }, TFA_BALANCING.fragmentWeight);
+	standardTable.add({ id: Items.getOrThrow(name).id, min, max }, TFA_BALANCING.standardWeight);
 }
 
 export function resolveTFARoute(choices: TFARouteChoices, rng: RNGProvider): TFABoss[] {
@@ -189,7 +195,7 @@ function learning(member: TFATeamMember) {
 
 export function tfaDeathChance(member: TFATeamMember, boss: TFABoss, solo: boolean): number {
 	const room = TFABosses[boss];
-	const gear = room.styles.reduce((sum, style) => sum + member.gear[style], 0) / room.styles.length;
+	const gear = tfaBossGear(member, boss);
 	return Math.min(
 		95,
 		(TFA_BALANCING.baseDeathChance -
@@ -200,27 +206,37 @@ export function tfaDeathChance(member: TFATeamMember, boss: TFABoss, solo: boole
 	);
 }
 
+function tfaBossGear(member: TFATeamMember, boss: TFABoss): number {
+	const room = TFABosses[boss];
+	return (
+		member.gear.bosses?.[boss] ??
+		room.styles.reduce((sum, style) => sum + member.gear[style], 0) / room.styles.length
+	);
+}
+
 export function tfaRaidDuration(team: TFATeamMember[], route: TFABoss[]): number {
 	assert(team.length >= 1 && team.length <= 8, 'TFA requires 1-8 players.');
-	const averageReduction =
-		team.reduce(
-			(sum, member) =>
-				sum +
-				(member.gear.total / 100) * TFA_BALANCING.gearSpeedReduction +
-				learning(member) * TFA_BALANCING.learningSpeedReduction,
-			0
-		) / team.length;
+	const duration = route.reduce((sum, boss) => {
+		const averageReduction =
+			team.reduce(
+				(total, member) =>
+					total +
+					(tfaBossGear(member, boss) / 100) * TFA_BALANCING.gearSpeedReduction +
+					learning(member) * TFA_BALANCING.learningSpeedReduction,
+				0
+			) / team.length;
+		return sum + TFABosses[boss].minutes * Time.Minute * (1 - averageReduction);
+	}, 0);
 	// Solo HP scales to two players. Larger teams receive a modest speed benefit.
 	const scale = (Math.max(2, team.length) / team.length) * (1 - (team.length - 1) * 0.015);
-	return Math.floor(
-		route.reduce((sum, boss) => sum + TFABosses[boss].minutes * Time.Minute, 0) * (1 - averageReduction) * scale
-	);
+	return Math.floor(duration * scale);
 }
 
 export function simulateTFARaid(team: TFATeamMember[], route: TFABoss[], rng: RNGProvider): TFARaidResult {
 	assert(new Set(team.map(i => i.id)).size === team.length, 'TFA team members must be distinct.');
-	const fullDuration = Math.floor(rng.randomVariation(tfaRaidDuration(team, route), TFA_BALANCING.durationVariation));
-	const totalMinutes = route.reduce((sum, boss) => sum + TFABosses[boss].minutes, 0);
+	const roomDurations = route.map(boss => tfaRaidDuration(team, [boss]));
+	const totalDuration = roomDurations.reduce((sum, duration) => sum + duration, 0);
+	const fullDuration = Math.floor(rng.randomVariation(totalDuration, TFA_BALANCING.durationVariation));
 	const members = team.map(member => ({ id: member.id, deaths: [] as number[] }));
 	let duration = 0;
 	let wipedRoom: number | null = null;
@@ -230,7 +246,7 @@ export function simulateTFARaid(team: TFATeamMember[], route: TFABoss[], rng: RN
 				members[memberIndex].deaths.push(index);
 			}
 		}
-		const roomDuration = (TFABosses[boss].minutes / totalMinutes) * fullDuration;
+		const roomDuration = (roomDurations[index] / totalDuration) * fullDuration;
 		if (members.every(member => member.deaths.includes(index))) {
 			duration += roomDuration * rng.randFloat(0.3, 0.9);
 			wipedRoom = index;
@@ -249,7 +265,32 @@ export function simulateTFARaid(team: TFATeamMember[], route: TFABoss[], rng: RN
 	};
 }
 
-export function rollTFALoot(raid: TFARaidResult, rng: RNGProvider) {
+export function tfaDeathFee(raid: TFARaidResult, kc: number): number {
+	if (raid.wipedRoom === null) return 0;
+	return kc < TFA_BALANCING.learnerCompletions ? TFA_BALANCING.learnerDeathFee : TFA_BALANCING.deathFee;
+}
+
+export function tfaQuartermasterRefund(raid: TFARaidResult, userID: string, reserved: Bank, quantity = 1): Bank {
+	const refund = new Bank();
+	const afterBoss = TFA_BALANCING.quartermasterAfterBoss;
+	if (raid.wipedRoom !== null && raid.wipedRoom < afterBoss) return refund;
+	const member = raid.members.find(member => member.id === userID);
+	if (!member) return refund;
+	const participation = (afterBoss - member.deaths.filter(room => room < afterBoss).length) / afterBoss;
+	const remainingShare = (raid.route.length - afterBoss) / raid.route.length;
+	for (const { name, maximum } of TFA_BALANCING.quartermasterSupplies) {
+		const carriedPerRaid = Math.floor(reserved.amount(name) / quantity);
+		const amount = Math.min(Math.floor(maximum * participation), Math.floor(carriedPerRaid * remainingShare));
+		if (amount > 0) refund.add(name, amount);
+	}
+	return refund;
+}
+
+export function rollTFALoot(
+	raid: TFARaidResult,
+	rng: RNGProvider,
+	fragmentLogs: ReadonlyMap<string, Bank> = new Map()
+) {
 	const loot = new Map(raid.members.map(member => [member.id, new Bank()]));
 	if (raid.wipedRoom !== null) return { loot, uniqueChance: 0 };
 	const recipients = new SimpleTable<string>();
@@ -265,9 +306,15 @@ export function rollTFALoot(raid: TFARaidResult, rng: RNGProvider) {
 		}
 		for (let i = 0; i < TFA_BALANCING.standardRolls; i++) {
 			const drop = standardTable.rollOrThrow(rng);
-			const multiplier =
-				member.deaths.length === 0 && i === 0 && !drop.fragment ? TFA_BALANCING.deathlessLootMultiplier : 1;
+			const multiplier = member.deaths.length === 0 && i === 0 ? TFA_BALANCING.deathlessLootMultiplier : 1;
 			bank.add(drop.id, rng.randInt(drop.min, drop.max) * multiplier);
+		}
+		if (rng.roll(TFA_BALANCING.fragmentRate)) {
+			// Duplicate protection is confirmed, but the exact rule is not published. Our provisional
+			// model favours the least-awarded elements, using the log so consumed fragments still count.
+			const log = fragmentLogs.get(member.id);
+			const minimum = Math.min(...TFAFragments.map(id => log?.amount(id) ?? 0));
+			bank.add(rng.pick(TFAFragments.filter(id => (log?.amount(id) ?? 0) === minimum)));
 		}
 		for (const { name, rate } of TFA_BALANCING.tertiaries) {
 			const item = Items.getItem(name);

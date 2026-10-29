@@ -1,5 +1,6 @@
 import type { Fletchable } from '@/lib/skilling/types.js';
 import Arrows from './arrows.js';
+import AscensionBolts from './ascensionBolts.js';
 import Atlatl from './atlatl.js';
 import Bolts from './bolts.js';
 import Bows from './bows.js';
@@ -14,6 +15,7 @@ import TippedDragonBolts from './tippedDragonBolts.js';
 import Tips from './tips.js';
 
 export const Fletchables: Fletchable[] = [
+	...AscensionBolts,
 	...Bows,
 	...Shafts,
 	...Shields,

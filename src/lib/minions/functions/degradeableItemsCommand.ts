@@ -32,6 +32,9 @@ ${degradeableItems
 	const chargeInput = useAlt ? item.altChargeInput! : item.chargeInput;
 	const cost = chargeInput.cost.clone().multiply(number);
 	const amountOfCharges = chargeInput.charges * number;
+	if (item.maxCharges && user.user[item.settingsKey] + amountOfCharges > item.maxCharges) {
+		return `Your ${item.item.name} can hold at most ${item.maxCharges.toLocaleString()} charges. It currently has ${user.user[item.settingsKey].toLocaleString()}; each charging batch adds ${chargeInput.charges.toLocaleString()}.`;
+	}
 
 	if (!user.owns(cost)) {
 		return `You don't own ${cost}.`;

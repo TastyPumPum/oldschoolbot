@@ -28,6 +28,7 @@ export interface DegradeableItem {
 	};
 	unchargedItem?: Item;
 	convertOnCharge?: boolean;
+	maxCharges?: number;
 	emoji: string;
 }
 
@@ -57,6 +58,40 @@ interface RefundResult {
 }
 
 export const degradeableItems: DegradeableItem[] = [
+	{
+		item: Items.getOrThrow('Obligator (base)'),
+		settingsKey: 'obligator_charges',
+		itemsToRefundOnBreak: new Bank().add('Obligator (uncharged) (base)').freeze(),
+		refundVariants: [],
+		setup: 'melee',
+		aliases: ['obligator'],
+		// https://oldschool.runescape.wiki/w/Obligator#Charging
+		chargeInput: {
+			cost: new Bank().add('Ascension shards').add('Nature rune', 20).add('Death rune', 20).freeze(),
+			charges: 10
+		},
+		unchargedItem: Items.getOrThrow('Obligator (uncharged) (base)'),
+		convertOnCharge: true,
+		maxCharges: 20_000,
+		emoji: ''
+	},
+	{
+		item: Items.getOrThrow("Zorya's tome"),
+		settingsKey: 'zorya_tome_charges',
+		itemsToRefundOnBreak: new Bank().add("Zorya's tome (uncharged)").freeze(),
+		refundVariants: [],
+		setup: 'mage',
+		aliases: ['zorya', 'zoryas tome'],
+		// https://oldschool.runescape.wiki/w/Zorya%27s_tome#Charging
+		chargeInput: {
+			cost: new Bank().add('Astral rune', 3).add('Nature rune', 2).freeze(),
+			charges: 1
+		},
+		unchargedItem: Items.getOrThrow("Zorya's tome (uncharged)"),
+		convertOnCharge: true,
+		maxCharges: 20_000,
+		emoji: ''
+	},
 	{
 		item: Items.getOrThrow('Abyssal tentacle'),
 		settingsKey: 'tentacle_charges',

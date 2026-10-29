@@ -564,6 +564,8 @@ export interface FracturedArchiveTaskOptions extends ActivityTaskOptionsWithUser
 	maxTeamSize: number;
 	routeChoices: TFARouteChoices;
 	raids: TFARaidResult[];
+	/** New trips reserve supplies; costs are finalised after quartermaster replacements. */
+	supplies?: { userID: string; cost: ItemBank }[];
 	fakeDuration: number;
 	deathFeeReserved: number;
 }

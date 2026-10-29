@@ -65,11 +65,12 @@ function extractCombatStatsInfobox(sections: WikiItemJSON['sections']) {
 	return null;
 }
 
-function extractMainInfobox(sections: WikiItemJSON['sections']) {
+function extractMainInfobox(sections: WikiItemJSON['sections'], itemID?: number) {
 	for (const section of sections) {
 		if (section.infoboxes) {
 			for (const infobox of section.infoboxes) {
 				if (infobox.name || infobox.id || infobox.id1 || infobox.name1) {
+					if (itemID !== undefined && getInfoboxVariant(infobox, itemID) === null) continue;
 					return infobox;
 				}
 			}
@@ -126,7 +127,7 @@ function extractWeaponData(sections: WikiItemJSON['sections']) {
 }
 
 export function convertWikiJSONToItem(wikiJson: WikiItemJSON, itemID?: number): Item | null {
-	const mainInfobox = extractMainInfobox(wikiJson.sections);
+	const mainInfobox = extractMainInfobox(wikiJson.sections, itemID);
 	const combatInfobox = extractCombatStatsInfobox(wikiJson.sections);
 
 	if (!mainInfobox) return null;

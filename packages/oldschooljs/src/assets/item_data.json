@@ -211884,6 +211884,13 @@
 		"stackable": true,
 		"equipable": false
 	},
+	"34646": {
+		"name": "Orion",
+		"members": true,
+		"tradeable": false,
+		"tradeable_on_ge": false,
+		"equipable": false
+	},
 	"34657": {
 		"name": "Alliance's message",
 		"members": true,
@@ -212133,7 +212140,161 @@
 			"slot": "2h",
 			"requirements": null
 		},
-		"cost": 4000000
+		"cost": 4000000,
+		"price": 438567488
+	},
+	"34684": {
+		"name": "Ascension bolts",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"stackable": true,
+		"equipable": true,
+		"lowalch": 230,
+		"highalch": 345,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 53,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "ammo",
+			"requirements": null
+		},
+		"cost": 575,
+		"buy_limit": 11000,
+		"price": 203
+	},
+	"34690": {
+		"name": "Diamond ascension bolts",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"stackable": true,
+		"equipable": true,
+		"lowalch": 400,
+		"highalch": 600,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 58,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "ammo",
+			"requirements": null
+		},
+		"cost": 1000,
+		"price": 504
+	},
+	"34696": {
+		"name": "Diamond ascension bolts (e)",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"stackable": true,
+		"equipable": true,
+		"lowalch": 412,
+		"highalch": 618,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 58,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "ammo",
+			"requirements": null
+		},
+		"cost": 1030,
+		"buy_limit": 11000,
+		"price": 632
+	},
+	"34702": {
+		"name": "Onyx ascension bolts",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"stackable": true,
+		"equipable": true,
+		"lowalch": 5620,
+		"highalch": 8430,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 58,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "ammo",
+			"requirements": null
+		},
+		"cost": 14050,
+		"price": 8681
+	},
+	"34708": {
+		"name": "Onyx ascension bolts (e)",
+		"members": true,
+		"tradeable": true,
+		"tradeable_on_ge": true,
+		"stackable": true,
+		"equipable": true,
+		"lowalch": 6380,
+		"highalch": 9570,
+		"equipment": {
+			"attack_stab": 0,
+			"attack_slash": 0,
+			"attack_crush": 0,
+			"attack_magic": 0,
+			"attack_ranged": 0,
+			"defence_stab": 0,
+			"defence_slash": 0,
+			"defence_crush": 0,
+			"defence_magic": 0,
+			"defence_ranged": 0,
+			"melee_strength": 0,
+			"ranged_strength": 58,
+			"magic_damage": 0,
+			"prayer": 0,
+			"slot": "ammo",
+			"requirements": null
+		},
+		"cost": 15950,
+		"buy_limit": 11000,
+		"price": 8932
 	},
 	"34715": {
 		"name": "Obligator (base)",
@@ -212189,7 +212350,8 @@
 			"slot": "2h",
 			"requirements": null
 		},
-		"cost": 4000000
+		"cost": 4000000,
+		"price": 3128499999
 	},
 	"34719": {
 		"name": "Rondache",
@@ -212289,11 +212451,12 @@
 			"melee_strength": 0,
 			"ranged_strength": 0,
 			"magic_damage": 15,
-			"prayer": 0,
+			"prayer": 2,
 			"slot": "2h",
 			"requirements": null
 		},
-		"cost": 4000000
+		"cost": 4000000,
+		"price": 45312225
 	},
 	"34729": {
 		"name": "Alliance log",
