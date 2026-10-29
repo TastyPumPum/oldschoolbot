@@ -1,5 +1,5 @@
 import { EmbedBuilder } from '@oldschoolgg/discord';
-import { formatDuration } from '@oldschoolgg/toolkit';
+import { formatDuration, splitMessage } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { userIsBusy } from '@/lib/cache.js';
@@ -369,7 +369,7 @@ async function startTFATrip(
 		const suppliesCost = realCost.clone().remove('Coins', TFA_BALANCING.deathFee * quantity);
 		supplies.push({ userID: member.id, cost: suppliesCost.toJSON() });
 		costMessages.push(
-			`${member.usernameOrMention} reserved ${suppliesCost}. Supplies replaced by the quartermaster will be returned.${chargeMessage ? `\n${chargeMessage}` : ''}`
+			`${member.usernameOrMention} reserved ${suppliesCost}.${chargeMessage ? `\n${chargeMessage}` : ''}`
 		);
 	}
 	await ActivityManager.startTrip<FracturedArchiveTaskOptions>({
@@ -390,26 +390,25 @@ async function startTFATrip(
 		fakeDuration,
 		deathFeeReserved: TFA_BALANCING.deathFee
 	});
-	const routes = raids.map(
-		(raid, index) => `Raid ${index + 1}: ${raid.route.map(boss => TFABosses[boss].name).join(' → ')}`
-	);
+	const routes = [...new Set(raids.map(raid => raid.route.map(boss => TFABosses[boss].name).join(' → ')))];
 	const party =
 		fakeMass > 0
-			? `${user.usernameOrMention} and ${fakeMass} simulated ${fakeMass === 1 ? 'copy' : 'copies'} of their minion`
+			? `${user.usernameOrMention} + ${fakeMass} simulated ${fakeMass === 1 ? 'copy' : 'copies'}`
 			: users.map(member => member.usernameOrMention).join(', ');
-	const fakeMassMessage =
-		fakeMass > 0
-			? '\nYour minion has cloned their confusion. Supplies and death fees apply only to you; each copy keeps its own imaginary loot.'
-			: '';
-	const summary = `${party} set off for ${quantity}x Fractured Archive. Expected return: ${formatTripDuration(user, fakeDuration)}.
-${TFA_PROVISIONAL_MESSAGE}
-${routes.join('\n')}${fakeMassMessage}
-${(TFA_BALANCING.deathFee * quantity).toLocaleString()} GP per player is reserved for team wipe fees; unused GP will be refunded.${options.auto_repeat ? '\nAuto-repeat is enabled. Your minion will keep getting lost until you use /raid tfa stop.' : ''}`;
-	const suppliesMessage = costMessages.join('\n');
-	if (summary.length + suppliesMessage.length + 1 > 1900) {
-		return { content: summary, files: [{ name: 'tfa-supplies.txt', buffer: Buffer.from(suppliesMessage) }] };
-	}
-	return `${summary}\n${suppliesMessage}`;
+	const summary = `**TFA: ${quantity} ${quantity === 1 ? 'raid' : 'raids'}** — ${party}
+Returns ${formatTripDuration(user, fakeDuration)}.
+${routes.length === 1 ? `Route: ${routes[0]}` : `Routes:\n${routes.join('\n')}`}
+${(TFA_BALANCING.deathFee * quantity).toLocaleString()} GP${users.length > 1 ? ' per player' : ''} reserved for wipe fees; unused GP returned.
+Estimates are provisional. Quartermaster replacements are returned.${options.auto_repeat ? '\nAuto-repeat on. /raid tfa stop to stop.' : ''}`;
+	const suppliesMessage = costMessages.join('\n\n');
+	const content = `${summary}\n\n${suppliesMessage}`;
+	if (content.length <= 2000) return content;
+	return {
+		content: summary,
+		embeds: splitMessage(suppliesMessage, { maxLength: 4000 }).map(description =>
+			new EmbedBuilder().setDescription(description)
+		)
+	};
 }
 
 export async function tfaStopCommand(user: MUser) {

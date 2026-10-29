@@ -122,6 +122,17 @@
 		"output_multiple": 15
 	},
 	{
+		"name": "Ascension bolts",
+		"id": 34684,
+		"level": 86,
+		"xp": 140,
+		"input_items": {
+			"34669": 1
+		},
+		"tick_rate": 2,
+		"output_multiple": 10
+	},
+	{
 		"name": "Atlatl dart",
 		"id": 28991,
 		"level": 74,
@@ -276,6 +287,18 @@
 			"19584": 1
 		},
 		"tick_rate": 0.13
+	},
+	{
+		"name": "Diamond ascension bolts",
+		"id": 34690,
+		"level": 86,
+		"xp": 70,
+		"input_items": {
+			"9192": 10,
+			"34684": 10
+		},
+		"tick_rate": 2,
+		"output_multiple": 10
 	},
 	{
 		"name": "Diamond bolt tips",
@@ -956,6 +979,18 @@
 		},
 		"tick_rate": 2,
 		"output_multiple": 15
+	},
+	{
+		"name": "Onyx ascension bolts",
+		"id": 34702,
+		"level": 86,
+		"xp": 94,
+		"input_items": {
+			"9194": 10,
+			"34684": 10
+		},
+		"tick_rate": 2,
+		"output_multiple": 10
 	},
 	{
 		"name": "Onyx bolt tips",

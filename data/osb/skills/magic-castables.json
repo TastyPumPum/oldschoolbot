@@ -1,5 +1,20 @@
 [
 	{
+		"name": "10x Diamond ascension bolts",
+		"id": 34690,
+		"input": {
+			"557": 10,
+			"563": 2,
+			"564": 1,
+			"34690": 10
+		},
+		"output": {
+			"34696": 10
+		},
+		"xp": 67,
+		"level": 57
+	},
+	{
 		"name": "10x Diamond bolts",
 		"id": 9340,
 		"input": {
@@ -102,6 +117,21 @@
 		},
 		"xp": 19,
 		"level": 14
+	},
+	{
+		"name": "10x Onyx ascension bolts",
+		"id": 34702,
+		"input": {
+			"554": 20,
+			"560": 1,
+			"564": 1,
+			"34702": 10
+		},
+		"output": {
+			"34708": 10
+		},
+		"xp": 97,
+		"level": 87
 	},
 	{
 		"name": "10x Onyx bolts",

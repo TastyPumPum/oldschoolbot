@@ -53,7 +53,6 @@ export const tfaTask: MinionTask = {
 					simulatedLoot.set(member.id, bank);
 				}
 			}
-			const route = raid.route.map(boss => TFABosses[boss].name).join(' → ');
 			for (const [userIndex, user] of allUsers.entries()) {
 				const member = raid.members.find(member => member.id === user.id)!;
 				deathCounts.set(user.id, deathCounts.get(user.id)! + member.deaths.length);
@@ -86,19 +85,18 @@ export const tfaTask: MinionTask = {
 			}
 			if (raid.wipedRoom !== null) {
 				results.push(
-					`**Raid ${index + 1}:** Wiped at ${TFABosses[raid.route[raid.wipedRoom]].name}. Your minions have filed this under "learning experience".\n${route}`
+					`${raids.length > 1 ? `Raid ${index + 1}: ` : ''}Wiped at ${TFABosses[raid.route[raid.wipedRoom]].name}.`
 				);
 			} else {
 				completions++;
 				results.push(
-					`**Raid ${index + 1}:** Completed! Estimated team purple chance: ${uniqueChance.toFixed(2)}%.\n${route}`
+					`${raids.length > 1 ? `Raid ${index + 1}: completed · ` : ''}${uniqueChance.toFixed(2)}% estimated team purple chance.`
 				);
 			}
 		}
 
 		const files = [];
-		const xpMessages = [];
-		const quartermasterMessages = [];
+		const playerMessages = [];
 		const costUsers = [];
 		const totalCost = new Bank();
 		for (const [index, user] of allUsers.entries()) {
@@ -115,11 +113,10 @@ export const tfaTask: MinionTask = {
 				await user.incrementMinigameScore('fractured_archive', completions);
 			}
 			const xp = xpCounters.get(user.id)!;
-			if (xp.length > 0) {
-				xpMessages.push(
-					`${user.mention}: ${await user.addXPCounter({ xpCounter: xp, source: 'FracturedArchive', minimal: true })}`
-				);
-			}
+			const xpMessage =
+				xp.length > 0
+					? await user.addXPCounter({ xpCounter: xp, source: 'FracturedArchive', minimal: true })
+					: '';
 			const fee = deathFees.get(user.id)!;
 			const refund = deathFeeReserved * raids.length - fee;
 			// Older trips recorded supplies at departure. Only trips carrying this reservation
@@ -134,11 +131,18 @@ export const tfaTask: MinionTask = {
 				: new Bank();
 			const returned = supplyRefund.clone().add('Coins', Math.max(0, refund));
 			if (returned.length > 0) await user.addItemsToBank({ items: returned, collectionLog: false });
-			if (supplyRefund.length > 0) {
-				quartermasterMessages.push(
-					`${user.mention}: the quartermaster replaced ${supplyRefund} of your carried supplies, which have been returned.`
-				);
-			}
+			const deaths = deathCounts.get(user.id)!;
+			const purple = TFAUniques.some(id => loot.has(id));
+			playerMessages.push(
+				[
+					`${purple ? `${Emoji.Purple} ` : ''}${user.mention}${loot.length > 0 ? ` received ${purple ? `||${loot}||` : loot}.` : ''}`,
+					`${deaths} ${deaths === 1 ? 'death' : 'deaths'} · ${fee.toLocaleString()} GP fee${refund > 0 ? ` · ${refund.toLocaleString()} GP returned` : ''}`,
+					supplyRefund.length > 0 ? `Quartermaster returned ${supplyRefund}.` : '',
+					xpMessage
+				]
+					.filter(Boolean)
+					.join('\n')
+			);
 			const actualCost = reserved.remove(supplyRefund).add('Coins', fee);
 			await user.statsBankUpdate('tfa_cost', actualCost);
 			await user.statsBankUpdate('tfa_loot', loot);
@@ -172,27 +176,24 @@ export const tfaTask: MinionTask = {
 			totalLoot,
 			users: allUsers.map(user => ({ id: user.id, loot: teamLoot.get(user.id), duration }))
 		});
-		const feesMessage = allUsers
-			.map(
-				user =>
-					`${user.mention}: ${deathCounts.get(user.id)} deaths, ${deathFees.get(user.id)!.toLocaleString()} GP death fee`
-			)
-			.join('\n');
-		const simulatedLootMessage = data.fakeMass
-			? `\n\n**Simulated copies' loot (not banked):**\n${Array.from(simulatedLoot.values())
-					.map(
-						(loot, index) =>
-							`${TFAUniques.some(id => loot.has(id)) ? `${Emoji.Purple} ` : ''}Copy #${index + 1}: ||${loot.length > 0 ? loot.toString() : 'No loot. Still confused.'}||`
-					)
-					.join('\n')}`
-			: '';
+		const simulatedPurples = Array.from(simulatedLoot.values()).flatMap((loot, index) => {
+			const uniques = loot.filter(item => TFAUniques.includes(item.id));
+			return uniques.length > 0 ? [`${Emoji.Purple} Copy #${index + 1}: ||${uniques}||`] : [];
+		});
+		const content = [
+			`**TFA: ${completions}/${raids.length} completed**\n${results.join('\n')}`,
+			...playerMessages,
+			simulatedPurples.length > 0 ? `**Simulated purples (not banked):**\n${simulatedPurples.join('\n')}` : ''
+		]
+			.filter(Boolean)
+			.join('\n\n');
 		await handleTripFinish({
 			user: leader,
 			channelId,
 			data,
 			loot: totalLoot,
 			message: {
-				content: `**The Fractured Archive: ${completions}/${raids.length} completed**\nYour minions have returned. Their understanding of the raid remains provisional.\n\n${results.join('\n\n')}\n\n${teamLoot.formatLoot()}\n${feesMessage}${quartermasterMessages.length > 0 ? `\n${quartermasterMessages.join('\n')}` : ''}\n\n${xpMessages.join('\n')}${simulatedLootMessage}`,
+				content,
 				files
 			}
 		});
