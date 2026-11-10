@@ -1,31 +1,35 @@
 import { sumArr, Time } from '@oldschoolgg/toolkit';
 
 import { MAX_GLOBAL_QP, MAX_QP, quests } from '@/lib/minions/data/quests.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithNoChanges, SpecificQuestOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { hasSkillReqs } from '@/lib/util/smallUtils.js';
 
 export async function questCommand(user: MUser, channelId: string, name?: string) {
 	if (!user.hasMinion) {
-		return 'You need a minion to do a questing trip';
+		throw new TripError('You need a minion to do a questing trip', [user.id]);
 	}
 	if (await user.minionIsBusy()) {
-		return 'Your minion must not be busy to do a questing trip';
+		throw new TripError('Your minion must not be busy to do a questing trip', [user.id]);
 	}
 
 	if (name) {
 		const quest = quests.find(q => q.name.toLowerCase() === name.toLowerCase());
 		if (!quest) {
-			return `That's not a valid quest, the quests you can do are: ${quests.map(q => q.name).join(', ')}.`;
+			throw new TripError(
+				`That's not a valid quest, the quests you can do are: ${quests.map(q => q.name).join(', ')}.`,
+				[user.id]
+			);
 		}
 
 		if (user.user.finished_quest_ids.includes(quest.id)) {
-			return `You've already completed ${quest.name}.`;
+			throw new TripError(`You've already completed ${quest.name}.`, [user.id]);
 		}
 
 		if (quest.qpReq) {
 			if (user.QP < quest.qpReq) {
-				return `You need ${quest.qpReq} QP to do ${quest.name}.`;
+				throw new TripError(`You need ${quest.qpReq} QP to do ${quest.name}.`, [user.id]);
 			}
 		}
 
@@ -33,9 +37,12 @@ export async function questCommand(user: MUser, channelId: string, name?: string
 		if (quest.prerequisitesQuests) {
 			for (const prerequisite of quest.prerequisitesQuests) {
 				if (!user.user.finished_quest_ids.includes(prerequisite)) {
-					return `You need to complete "${quests.find(q => q.id === prerequisite)?.name}" before starting ${
-						quest.name
-					}.`;
+					throw new TripError(
+						`You need to complete "${quests.find(q => q.id === prerequisite)?.name}" before starting ${
+							quest.name
+						}.`,
+						[user.id]
+					);
 				}
 			}
 		}
@@ -43,13 +50,13 @@ export async function questCommand(user: MUser, channelId: string, name?: string
 		if (quest.skillReqs) {
 			const [hasReqs, reason] = hasSkillReqs(user, quest.skillReqs);
 			if (!hasReqs) {
-				return `To complete ${quest.name}, you need: ${reason}.`;
+				throw new TripError(`To complete ${quest.name}, you need: ${reason}.`, [user.id]);
 			}
 		}
 		if (user.isIronman && quest.ironmanSkillReqs) {
 			const [hasIronReqs, ironReason] = hasSkillReqs(user, quest.ironmanSkillReqs);
 			if (!hasIronReqs) {
-				return `To complete ${quest.name} as an ironman, you need: ${ironReason}.`;
+				throw new TripError(`To complete ${quest.name} as an ironman, you need: ${ironReason}.`, [user.id]);
 			}
 		}
 
@@ -68,7 +75,7 @@ export async function questCommand(user: MUser, channelId: string, name?: string
 
 	const currentQP = user.QP;
 	if (currentQP >= MAX_QP) {
-		return 'You already have the maximum amount of Quest Points.';
+		throw new TripError('You already have the maximum amount of Quest Points.', [user.id]);
 	}
 
 	const qpFromUnfinishedQuests = sumArr(
@@ -76,7 +83,10 @@ export async function questCommand(user: MUser, channelId: string, name?: string
 	);
 
 	if (qpFromUnfinishedQuests > 0 && currentQP >= MAX_GLOBAL_QP) {
-		return `You already have the maximum amount of Quest Points from doing quests, you can get ${qpFromUnfinishedQuests} more from specific quests.`;
+		throw new TripError(
+			`You already have the maximum amount of Quest Points from doing quests, you can get ${qpFromUnfinishedQuests} more from specific quests.`,
+			[user.id]
+		);
 	}
 
 	const boosts = [];

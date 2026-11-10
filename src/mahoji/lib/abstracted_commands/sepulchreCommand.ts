@@ -11,6 +11,7 @@ import { AmethystBroadBolts, BroadArrows, BroadBolts } from '@/lib/skilling/skil
 import TippedBolts from '@/lib/skilling/skills/fletching/fletchables/tippedBolts.js';
 import TippedDragonBolts from '@/lib/skilling/skills/fletching/fletchables/tippedDragonBolts.js';
 import type { Fletchable } from '@/lib/skilling/types.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { SepulchreActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -20,13 +21,16 @@ export async function sepulchreCommand(user: MUser, channelId: string, fletching
 	const thievingLevel = skills.thieving;
 
 	if (agilityLevel < sepulchreFloors[0].agilityLevel) {
-		return `You need at least level ${sepulchreFloors[0].agilityLevel} Agility to do the Hallowed Sepulchre.`;
+		throw new TripError(
+			`You need at least level ${sepulchreFloors[0].agilityLevel} Agility to do the Hallowed Sepulchre.`,
+			[user.id]
+		);
 	}
 	if (thievingLevel < 66) {
-		return 'You need at least level 66 Thieving to do the Hallowed Sepulchre.';
+		throw new TripError('You need at least level 66 Thieving to do the Hallowed Sepulchre.', [user.id]);
 	}
 	if (!user.hasGracefulEquipped()) {
-		return 'You need Graceful equipped in any setup to do the Hallowed Sepulchre.';
+		throw new TripError('You need Graceful equipped in any setup to do the Hallowed Sepulchre.', [user.id]);
 	}
 
 	// Base data
@@ -60,16 +64,22 @@ export async function sepulchreCommand(user: MUser, channelId: string, fletching
 
 	if (fletching) {
 		fletchable = zeroTimeFletchables.find(item => item.id === Number(fletching));
-		if (!fletchable) return 'That is not a valid item to fletch during Sepulchre.';
+		if (!fletchable) throw new TripError('That is not a valid item to fletch during Sepulchre.', [user.id]);
 
 		if (user.skillLevel('fletching') < fletchable.level) {
-			return `${user.minionName} needs ${fletchable.level} Fletching to fletch ${fletchable.name}.`;
+			throw new TripError(
+				`${user.minionName} needs ${fletchable.level} Fletching to fletch ${fletchable.name}.`,
+				[user.id]
+			);
 		}
 
 		if (fletchable.requiredSlayerUnlocks) {
 			const { success, errors } = user.checkHasSlayerUnlocks(fletchable.requiredSlayerUnlocks);
 			if (!success) {
-				return `You don't have the required Slayer Unlocks to create this item.\n\nRequired: ${errors}`;
+				throw new TripError(
+					`You don't have the required Slayer Unlocks to create this item.\n\nRequired: ${errors}`,
+					[user.id]
+				);
 			}
 		}
 
@@ -87,7 +97,7 @@ export async function sepulchreCommand(user: MUser, channelId: string, fletching
 				break;
 			}
 		}
-		if (timeToFletchSingleItem === 0) return 'Error selecting fletchable.';
+		if (timeToFletchSingleItem === 0) throw new TripError('Error selecting fletchable.', [user.id]);
 
 		fletchingQuantity = Math.floor(tripLength / timeToFletchSingleItem);
 		if (fletchable.outputMultiple) sets = ' sets of';
@@ -97,9 +107,12 @@ export async function sepulchreCommand(user: MUser, channelId: string, fletching
 
 		itemsNeeded = fletchable.inputItems.clone().multiply(fletchingQuantity);
 		if (!user.bankWithGP.has(itemsNeeded)) {
-			return `You don't have enough items. For ${fletchingQuantity}x ${fletchable.name}, you're missing **${itemsNeeded
-				.clone()
-				.remove(user.bank)}**.`;
+			throw new TripError(
+				`You don't have enough items. For ${fletchingQuantity}x ${fletchable.name}, you're missing **${itemsNeeded
+					.clone()
+					.remove(user.bank)}**.`,
+				[user.id]
+			);
 		}
 
 		await user.removeItemsFromBank(itemsNeeded);

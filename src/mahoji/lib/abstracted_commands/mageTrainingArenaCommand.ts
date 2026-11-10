@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items, LootTable } from 'oldschooljs';
 
 import { getMinigame } from '@/lib/settings/settings.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -112,7 +113,7 @@ Hint: Magic Training Arena is combined into 1 room, and 1 set of points - reward
 }
 
 export async function mageTrainingArenaStartCommand(user: MUser, channelId: string): CommandResponse {
-	if (await user.minionIsBusy()) return `${user.minionName} is currently busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is currently busy.`, [user.id]);
 
 	const roomDuration = Time.Minute * 14;
 	const quantity = Math.floor((await user.calcMaxTripLength('MageTrainingArena')) / roomDuration);
@@ -121,7 +122,7 @@ export async function mageTrainingArenaStartCommand(user: MUser, channelId: stri
 	const cost = determineRunes(user, new Bank().add(RuneTable.roll())).multiply(quantity);
 
 	if (!user.owns(cost)) {
-		return `You don't have enough items for this trip, you need: ${cost}.`;
+		throw new TripError(`You don't have enough items for this trip, you need: ${cost}.`, [user.id]);
 	}
 
 	await user.transactItems({ itemsToRemove: cost });

@@ -2,6 +2,7 @@ import { Emoji, formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit
 import { Bank } from 'oldschooljs';
 
 import TitheFarmBuyables from '@/lib/data/buyables/titheFarmBuyables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { TitheFarmActivityTaskOptions } from '@/lib/types/minions.js';
 
 async function determineDuration(user: MUser): Promise<[number, string[]]> {
@@ -31,11 +32,11 @@ async function determineDuration(user: MUser): Promise<[number, string[]]> {
 
 export async function titheFarmCommand(user: MUser, channelId: string) {
 	if (await user.minionIsBusy()) {
-		return 'Your minion must not be busy to use this command.';
+		throw new TripError('Your minion must not be busy to use this command.', [user.id]);
 	}
 	const skills = user.skillsAsLevels;
 	if (skills.farming < 34) {
-		return `${user} needs 34 Farming to use the Tithe Farm!`;
+		throw new TripError(`${user} needs 34 Farming to use the Tithe Farm!`, [user.id]);
 	}
 
 	const [duration, boostStr] = await determineDuration(user);

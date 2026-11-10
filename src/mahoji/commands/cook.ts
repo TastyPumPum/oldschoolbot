@@ -4,6 +4,7 @@ import { Bank, EItem, itemID } from 'oldschooljs';
 import Cooking, { Cookables, CookingMethodEnum, CookingMethods } from '@/lib/skilling/skills/cooking/cooking.js';
 import ForestryRations from '@/lib/skilling/skills/cooking/forestersRations.js';
 import { LeapingFish } from '@/lib/skilling/skills/cooking/leapingFish.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { CookingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { cutLeapingFishCommand } from '@/mahoji/lib/abstracted_commands/cutLeapingFishCommand.js';
@@ -74,7 +75,10 @@ export const cookCommand = defineCommand({
 
 		if (cookingMethod?.type === CookingMethodEnum.KarambwanShop) {
 			if (user.skillLevel('cooking') < cookingMethod.level) {
-				return `${user.minionName} needs ${cookingMethod.level} Cooking to do ${cookingMethod.name}.`;
+				throw new TripError(
+					`${user.minionName} needs ${cookingMethod.level} Cooking to do ${cookingMethod.name}.`,
+					[user.id]
+				);
 			}
 
 			const timeToCookSingleCookable = Time.Hour / cookingMethod.quantityPerHour;
@@ -84,21 +88,29 @@ export const cookCommand = defineCommand({
 				quantity = Math.min(quantity, Math.floor(Number(user.GP) / cookingMethod.gpCost));
 			}
 			if (quantity < 1) {
-				return `You need at least ${cookingMethod.gpCost.toLocaleString()} GP to buy Raw karambwan.`;
+				throw new TripError(
+					`You need at least ${cookingMethod.gpCost.toLocaleString()} GP to buy Raw karambwan.`,
+					[user.id]
+				);
 			}
 
 			const duration = quantity * timeToCookSingleCookable;
 			if (duration > maxTripLength) {
-				return `${user.minionName} can't go on trips longer than ${formatDuration(
-					maxTripLength
-				)} minutes, try a lower quantity. The highest amount of karambwans you can cook and drop is ${Math.floor(
-					maxTripLength / timeToCookSingleCookable
-				)}.`;
+				throw new TripError(
+					`${user.minionName} can't go on trips longer than ${formatDuration(
+						maxTripLength
+					)} minutes, try a lower quantity. The highest amount of karambwans you can cook and drop is ${Math.floor(
+						maxTripLength / timeToCookSingleCookable
+					)}.`,
+					[user.id]
+				);
 			}
 
 			const totalCost = new Bank().add('Coins', quantity * cookingMethod.gpCost);
 			if (!user.owns(totalCost)) {
-				return `You need ${totalCost} to buy ${quantity.toLocaleString()}x Raw karambwan.`;
+				throw new TripError(`You need ${totalCost} to buy ${quantity.toLocaleString()}x Raw karambwan.`, [
+					user.id
+				]);
 			}
 
 			await user.removeItemsFromBank(totalCost);
@@ -128,14 +140,19 @@ export const cookCommand = defineCommand({
 		);
 
 		if (!cookable) {
-			return `Thats not a valid item to cook. Valid cookables are ${[
-				...CookingMethods.map(method => method.name),
-				...Cooking.Cookables.map(item => item.name)
-			].join(', ')}.`;
+			throw new TripError(
+				`Thats not a valid item to cook. Valid cookables are ${[
+					...CookingMethods.map(method => method.name),
+					...Cooking.Cookables.map(item => item.name)
+				].join(', ')}.`,
+				[user.id]
+			);
 		}
 
 		if (user.skillLevel('cooking') < cookable.level) {
-			return `${user.minionName} needs ${cookable.level} Cooking to cook ${cookable.name}s.`;
+			throw new TripError(`${user.minionName} needs ${cookable.level} Cooking to cook ${cookable.name}s.`, [
+				user.id
+			]);
 		}
 
 		// These are just for notifying the user, they only take effect in the Activity.
@@ -174,17 +191,20 @@ export const cookCommand = defineCommand({
 		const totalCost = inputCost.clone().multiply(quantity);
 
 		if (!userBank.fits(totalCost)) {
-			return `You don't have enough items. You need: ${inputCost}.`;
+			throw new TripError(`You don't have enough items. You need: ${inputCost}.`, [user.id]);
 		}
 
 		const duration = quantity * timeToCookSingleCookable;
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)} minutes, try a lower quantity. The highest amount of ${cookable.name}s you can cook is ${Math.floor(
-				maxTripLength / timeToCookSingleCookable
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)} minutes, try a lower quantity. The highest amount of ${cookable.name}s you can cook is ${Math.floor(
+					maxTripLength / timeToCookSingleCookable
+				)}.`,
+				[user.id]
+			);
 		}
 
 		await user.removeItemsFromBank(totalCost);

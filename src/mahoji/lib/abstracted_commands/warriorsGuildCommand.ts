@@ -1,6 +1,7 @@
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank, EGear } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity, AnimatedArmourActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -37,9 +38,12 @@ async function tokensCommand(user: MUser, channelId: string, quantity: number | 
 
 	const armorSet = Armours.find(set => userBank.has(set.items));
 	if (!armorSet) {
-		return `You don't have any armor sets to use for getting tokens! Get a full helm, platebody and platelegs of one of the following: ${Armours.map(
-			t => t.name
-		).join(', ')}.`;
+		throw new TripError(
+			`You don't have any armor sets to use for getting tokens! Get a full helm, platebody and platelegs of one of the following: ${Armours.map(
+				t => t.name
+			).join(', ')}.`,
+			[user.id]
+		);
 	}
 
 	if (!quantity) {
@@ -49,11 +53,14 @@ async function tokensCommand(user: MUser, channelId: string, quantity: number | 
 	const duration = armorSet.timeToFinish * quantity;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of animated ${armorSet.name} armour you can kill is ${Math.floor(
-			maxTripLength / armorSet.timeToFinish
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of animated ${armorSet.name} armour you can kill is ${Math.floor(
+				maxTripLength / armorSet.timeToFinish
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await ActivityManager.startTrip<AnimatedArmourActivityTaskOptions>({
@@ -79,7 +86,7 @@ async function cyclopsCommand(user: MUser, channelId: string, quantity: number |
 	// Check if either 100 warrior guild tokens or attack cape (similar items in future)
 	const amountTokens = userBank.amount('Warrior guild token');
 	if (!hasAttackCape && amountTokens < 100) {
-		return 'You need at least 100 Warriors guild tokens to kill Cyclops.';
+		throw new TripError('You need at least 100 Warriors guild tokens to kill Cyclops.', [user.id]);
 	}
 	// If no quantity provided, set it to the max.
 	if (!quantity) {
@@ -92,21 +99,27 @@ async function cyclopsCommand(user: MUser, channelId: string, quantity: number |
 	const duration = Time.Second * 30 * quantity;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of cyclopes that can be killed is ${Math.floor(
-			maxTripLength / (Time.Second * 30)
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of cyclopes that can be killed is ${Math.floor(
+				maxTripLength / (Time.Second * 30)
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const tokensToSpend = Math.floor((duration / Time.Minute) * 10 + 10);
 
 	if (!hasAttackCape && amountTokens < tokensToSpend) {
-		return `You don't have enough Warrior guild tokens to kill cyclopes for ${formatDuration(
-			duration
-		)}, try a lower quantity. You need at least ${Math.floor(
-			(duration / Time.Minute) * 10 + 10
-		)}x Warrior guild tokens to kill ${quantity}x cyclopes.`;
+		throw new TripError(
+			`You don't have enough Warrior guild tokens to kill cyclopes for ${formatDuration(
+				duration
+			)}, try a lower quantity. You need at least ${Math.floor(
+				(duration / Time.Minute) * 10 + 10
+			)}x Warrior guild tokens to kill ${quantity}x cyclopes.`,
+			[user.id]
+		);
 	}
 
 	if (!hasAttackCape) {
@@ -144,7 +157,10 @@ export async function warriorsGuildCommand(
 	const atkLvl = user.skillLevel('attack');
 	const strLvl = user.skillLevel('strength');
 	if (atkLvl + strLvl < 130 && atkLvl !== 99 && strLvl !== 99) {
-		return "To enter the Warrior's Guild, your Attack and Strength levels must add up to at least 130, or you must have level 99 in either.";
+		throw new TripError(
+			"To enter the Warrior's Guild, your Attack and Strength levels must add up to at least 130, or you must have level 99 in either.",
+			[user.id]
+		);
 	}
 
 	if (choice === 'cyclops') {

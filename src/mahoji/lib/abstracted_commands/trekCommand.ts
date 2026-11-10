@@ -7,13 +7,14 @@ import TrekShopItems, { TrekExperience } from '@/lib/data/buyables/trekBuyables.
 import { difficulties, rewardTokens, trekBankBoosts } from '@/lib/minions/data/templeTrekking.js';
 import type { AddXpParams } from '@/lib/minions/types.js';
 import type { GearRequirement } from '@/lib/structures/Gear.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { TempleTrekkingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { readableStatName } from '@/lib/util/smallUtils.js';
 
 export async function trekCommand(user: MUser, channelId: string, difficulty: string, quantity: number | undefined) {
 	const tier = difficulties.find(item => stringMatches(item.difficulty, difficulty));
-	if (!tier) return 'that is not a valid difficulty';
+	if (!tier) throw new TripError('that is not a valid difficulty', [user.id]);
 	const minLevel = tier.minCombat;
 	const qp = user.QP;
 	const allGear = user.gear;
@@ -37,22 +38,27 @@ export async function trekCommand(user: MUser, channelId: string, difficulty: st
 
 				const [meetsRequirements, unmetKey, has] = gear.meetsStatRequirements(newRequirements);
 				if (!meetsRequirements) {
-					return `You don't have the requirements to do ${tier.difficulty} treks! Your ${readableStatName(
-						unmetKey!
-					)} stat in your ${setup} setup is ${has}, but you need at least ${
-						tier.minimumGearRequirements[setup]?.[unmetKey!]
-					}.`;
+					throw new TripError(
+						`You don't have the requirements to do ${tier.difficulty} treks! Your ${readableStatName(
+							unmetKey!
+						)} stat in your ${setup} setup is ${has}, but you need at least ${
+							tier.minimumGearRequirements[setup]?.[unmetKey!]
+						}.`,
+						[user.id]
+					);
 				}
 			}
 		}
 	}
 
 	if (qp < 30) {
-		return 'You need at least level 30 QP to do Temple Trekking.';
+		throw new TripError('You need at least level 30 QP to do Temple Trekking.', [user.id]);
 	}
 
 	if (minLevel !== undefined && user.combatLevel < minLevel) {
-		return `You need to be at least combat level ${minLevel} for ${difficulty} Temple Trekking.`;
+		throw new TripError(`You need to be at least combat level ${minLevel} for ${difficulty} Temple Trekking.`, [
+			user.id
+		]);
 	}
 
 	let tripTime = tier.time;

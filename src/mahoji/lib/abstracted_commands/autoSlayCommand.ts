@@ -6,6 +6,7 @@ import killableMonsters from '@/lib/minions/data/killableMonsters/index.js';
 import { type RunCommandArgs, runCommand } from '@/lib/settings/settings.js';
 import { AutoslayOptionsEnum, autoslayModes, SlayerMasterEnum } from '@/lib/slayer/constants.js';
 import { getCommonTaskName } from '@/lib/slayer/slayerUtil.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import { slayerNewTaskCommand } from '@/mahoji/lib/abstracted_commands/slayerTaskCommand.js';
 
 interface AutoslayLink {
@@ -527,7 +528,8 @@ export async function autoSlayCommand({
 		const allMonsters = killableMonsters.filter(m => {
 			return usersTask.assignedTask?.monsters.includes(m.id);
 		});
-		if (allMonsters.length === 0) return 'Please report this error. No monster variations found.';
+		if (allMonsters.length === 0)
+			throw new TripError('Please report this error. No monster variations found.', [user.id]);
 		let maxDiff = -1;
 		let maxMobName: string | null = null;
 
@@ -550,10 +552,9 @@ export async function autoSlayCommand({
 				...cmdRunOptions
 			});
 		}
-		return {
-			content: "Can't find any monsters you have the requirements to kill!",
+		throw new TripError("Can't find any monsters you have the requirements to kill!", [user.id], {
 			ephemeral: true
-		};
+		});
 	}
 	return runCommand({
 		commandName: 'k',

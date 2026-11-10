@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, itemID, resolveItems } from 'oldschooljs';
 
 import Smithing from '@/lib/skilling/skills/smithing/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { SmeltingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -55,15 +56,21 @@ export const smeltingCommand = defineCommand({
 
 		if (!bar) {
 			if (blast_furnace) {
-				return `Thats not a valid bar to blast furnace. Valid bars are ${Smithing.BlastableBars.map(
-					bar => bar.name
-				).join(', ')}.`;
+				throw new TripError(
+					`Thats not a valid bar to blast furnace. Valid bars are ${Smithing.BlastableBars.map(
+						bar => bar.name
+					).join(', ')}.`,
+					[user.id]
+				);
 			}
-			return `Thats not a valid bar to smelt. Valid bars are ${Smithing.Bars.map(bar => bar.name).join(', ')}.`;
+			throw new TripError(
+				`Thats not a valid bar to smelt. Valid bars are ${Smithing.Bars.map(bar => bar.name).join(', ')}.`,
+				[user.id]
+			);
 		}
 
 		if (user.skillsAsLevels.smithing < bar.level) {
-			return `${user.minionName} needs ${bar.level} Smithing to smelt ${bar.name}s.`;
+			throw new TripError(`${user.minionName} needs ${bar.level} Smithing to smelt ${bar.name}s.`, [user.id]);
 		}
 
 		// All bars take 2.4s to smith normally, add on quarter of a second to account for banking/etc.
@@ -79,9 +86,12 @@ export const smeltingCommand = defineCommand({
 				thieving: 13
 			};
 			if (!user.hasSkillReqs(requiredSkills)) {
-				return `You don't have the required stats to use the Blast Furnace, you need: ${formatSkillRequirements(
-					requiredSkills
-				)}`;
+				throw new TripError(
+					`You don't have the required stats to use the Blast Furnace, you need: ${formatSkillRequirements(
+						requiredSkills
+					)}`,
+					[user.id]
+				);
 			}
 
 			// Boosts
@@ -109,7 +119,7 @@ export const smeltingCommand = defineCommand({
 
 		const maxCanDo = user.bank.fits(itemsNeeded);
 		if (maxCanDo === 0) {
-			return "You don't have enough supplies to smelt even one of this item!";
+			throw new TripError("You don't have enough supplies to smelt even one of this item!", [user.id]);
 		}
 		if (maxCanDo < quantity) {
 			quantity = maxCanDo;
@@ -120,11 +130,14 @@ export const smeltingCommand = defineCommand({
 
 		const duration = quantity * timeToSmithSingleBar;
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${bar.name}s you can smelt is ${Math.floor(
-				maxTripLength / timeToSmithSingleBar
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${bar.name}s you can smelt is ${Math.floor(
+					maxTripLength / timeToSmithSingleBar
+				)}.`,
+				[user.id]
+			);
 		}
 
 		let coinsToRemove = 0;
@@ -133,7 +146,7 @@ export const smeltingCommand = defineCommand({
 			coinsToRemove = Math.floor(gpPerHour * (duration / Time.Hour));
 			const gp = user.GP;
 			if (gp < coinsToRemove) {
-				return `You need at least ${coinsToRemove} GP to work at the Blast Furnace.`;
+				throw new TripError(`You need at least ${coinsToRemove} GP to work at the Blast Furnace.`, [user.id]);
 			}
 
 			cost.add('Coins', coinsToRemove);

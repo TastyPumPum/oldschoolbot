@@ -1,6 +1,7 @@
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -12,7 +13,10 @@ export async function chargeWealthCommand(user: MUser, channelId: string, quanti
 
 	const amountHas = userBank.amount('Ring of wealth');
 	if (amountHas < wealthInventorySize) {
-		return `You don't have enough Rings of wealth to recharge. Your minion does trips of ${wealthInventorySize}x rings of wealth.`;
+		throw new TripError(
+			`You don't have enough Rings of wealth to recharge. Your minion does trips of ${wealthInventorySize}x rings of wealth.`,
+			[user.id]
+		);
 	}
 
 	const hasDiary = user.hasDiary('wilderness.hard');
@@ -32,16 +36,19 @@ export async function chargeWealthCommand(user: MUser, channelId: string, quanti
 	const duration = quantity * invDuration;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of inventories of rings of wealth you can recharge is ${Math.floor(
-			maxTripLength / invDuration
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of inventories of rings of wealth you can recharge is ${Math.floor(
+				maxTripLength / invDuration
+			)}.`,
+			[user.id]
+		);
 	}
 	const quantityWealths = wealthInventorySize * quantity;
 
 	if (userBank.amount('Ring of wealth') < quantityWealths) {
-		return `You don't have enough Rings of wealth, ${quantityWealths} required.`;
+		throw new TripError(`You don't have enough Rings of wealth, ${quantityWealths} required.`, [user.id]);
 	}
 
 	await ActivityManager.startTrip<ActivityTaskOptionsWithQuantity>({

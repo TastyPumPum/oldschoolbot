@@ -1,6 +1,7 @@
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -12,7 +13,10 @@ export async function chargeGloriesCommand(user: MUser, channelId: string, quant
 
 	const amountHas = userBank.amount('Amulet of glory');
 	if (amountHas < gloriesInventorySize) {
-		return `You don't have enough Amulets of glory to recharge. Your minion does trips of ${gloriesInventorySize}x glories.`;
+		throw new TripError(
+			`You don't have enough Amulets of glory to recharge. Your minion does trips of ${gloriesInventorySize}x glories.`,
+			[user.id]
+		);
 	}
 
 	const hasDiary = user.hasDiary('wilderness.elite');
@@ -32,16 +36,19 @@ export async function chargeGloriesCommand(user: MUser, channelId: string, quant
 	const duration = quantity * invDuration;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of inventories of glories you can recharge is ${Math.floor(
-			maxTripLength / invDuration
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of inventories of glories you can recharge is ${Math.floor(
+				maxTripLength / invDuration
+			)}.`,
+			[user.id]
+		);
 	}
 	const quantityGlories = gloriesInventorySize * quantity;
 
 	if (userBank.amount('Amulet of glory') < quantityGlories) {
-		return `You don't have enough ${quantityGlories}x Amulet of glory.`;
+		throw new TripError(`You don't have enough ${quantityGlories}x Amulet of glory.`, [user.id]);
 	}
 
 	await ActivityManager.startTrip<ActivityTaskOptionsWithQuantity>({

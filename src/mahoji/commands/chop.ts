@@ -3,6 +3,7 @@ import { Items, itemID, resolveItems } from 'oldschooljs';
 
 import { determineWoodcuttingTime } from '@/lib/skilling/functions/determineWoodcuttingTime.js';
 import Woodcutting from '@/lib/skilling/skills/woodcutting/woodcutting.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { WoodcuttingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -118,23 +119,23 @@ export const chopCommand = defineCommand({
 				log.aliases?.some(a => stringMatches(a, options.name))
 		);
 
-		if (!log) return "That's not a valid log to chop.";
+		if (!log) throw new TripError("That's not a valid log to chop.", [user.id]);
 
 		let { quantity, powerchop, forestry_events, twitchers_gloves } = options;
 
 		const skills = user.skillsAsLevels;
 
 		if (skills.woodcutting < log.level) {
-			return `${user.minionName} needs ${log.level} Woodcutting to chop ${log.name}.`;
+			throw new TripError(`${user.minionName} needs ${log.level} Woodcutting to chop ${log.name}.`, [user.id]);
 		}
 
 		const { QP } = user;
 		if (QP < log.qpRequired) {
-			return `${user.minionName} needs ${log.qpRequired} QP to cut ${log.name}.`;
+			throw new TripError(`${user.minionName} needs ${log.qpRequired} QP to cut ${log.name}.`, [user.id]);
 		}
 
 		if (twitchers_gloves && !user.hasEquipped("Twitcher's gloves")) {
-			return "You need to have Twitcher's gloves equipped to use them.";
+			throw new TripError("You need to have Twitcher's gloves equipped to use them.", [user.id]);
 		}
 
 		const boosts = [];

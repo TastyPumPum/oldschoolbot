@@ -4,6 +4,7 @@ import { Items } from 'oldschooljs';
 import { determineMiningTime } from '@/lib/skilling/functions/determineMiningTime.js';
 import { pickaxes } from '@/lib/skilling/functions/miningBoosts.js';
 import Mining from '@/lib/skilling/skills/mining.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MotherlodeMiningActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -20,7 +21,7 @@ export async function motherlodeMineCommand({
 }) {
 	let miningLevel = user.skillsAsLevels.mining;
 	if (miningLevel < 30) {
-		return `${user.minionName} needs 30 Mining to mine at the Motherlode Mine.`;
+		throw new TripError(`${user.minionName} needs 30 Mining to mine at the Motherlode Mine.`, [user.id]);
 	}
 
 	const motherlode = Mining.MotherlodeMine;

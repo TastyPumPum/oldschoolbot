@@ -4,6 +4,7 @@ import { Bank } from 'oldschooljs';
 import { type GiantsFoundryBank, TOTAL_GIANT_WEAPONS } from '@/lib/giantsFoundry.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import Smithing from '@/lib/skilling/skills/smithing/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { GiantsFoundryActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -159,11 +160,14 @@ export async function giantsFoundryStartCommand(
 	const alloy = giantsFoundryAlloys.find(i => stringMatches(i.name, name));
 
 	if (!alloy) {
-		return 'Error selecting alloy, please try again.';
+		throw new TripError('Error selecting alloy, please try again.', [user.id]);
 	}
 
 	if (userSmithingLevel < alloy.level) {
-		return `${user.minionName} needs at least level ${alloy.level} Smithing to user ${alloy.name} alloy in the Giants' Foundry.`;
+		throw new TripError(
+			`${user.minionName} needs at least level ${alloy.level} Smithing to user ${alloy.name} alloy in the Giants' Foundry.`,
+			[user.id]
+		);
 	}
 
 	// If they have the entire Smiths' Uniform, give an extra 15% speed bonus
@@ -192,17 +196,20 @@ export async function giantsFoundryStartCommand(
 	}
 	const duration = quantity * alloy.sections * timePerSection;
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower trip length. The highest amount of minutes you can send out is ${Math.floor(
-			maxTripLength / Time.Minute
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower trip length. The highest amount of minutes you can send out is ${Math.floor(
+				maxTripLength / Time.Minute
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const totalCost = new Bank(alloy.cost).clone().multiply(quantity);
 
 	if (!user.owns(totalCost)) {
-		return `You don't have the required materials for this trip. You need ${totalCost}.`;
+		throw new TripError(`You don't have the required materials for this trip. You need ${totalCost}.`, [user.id]);
 	}
 
 	await user.removeItemsFromBank(totalCost);

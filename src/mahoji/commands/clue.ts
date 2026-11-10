@@ -8,6 +8,7 @@ import { ClueTiers } from '@/lib/clues/clueTiers.js';
 import { BitField, MAX_CLUES_DROPPED } from '@/lib/constants.js';
 import { allOpenables, getOpenableLoot } from '@/lib/openables.js';
 import { getPOHObject } from '@/lib/poh/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ClueActivityTaskOptions } from '@/lib/types/minions.js';
 import { FriendlyTask } from '@/lib/util/FriendlyTask.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -275,7 +276,7 @@ export const clueCommand = defineCommand({
 		const clueTier = ClueTiers.find(
 			tier => stringMatches(tier.id.toString(), options.tier) || stringMatches(tier.name, options.tier)
 		);
-		if (!clueTier) return 'Invalid clue tier.';
+		if (!clueTier) throw new TripError('Invalid clue tier.', [user.id]);
 
 		const maxTripLength = await user.calcMaxTripLength('ClueCompletion');
 
@@ -285,10 +286,15 @@ export const clueCommand = defineCommand({
 
 		if (options.implings) {
 			if (!clueImpling) {
-				return `Invalid impling. Please check your entry, **${options.implings}** doesn't match any impling jars. Make sure the quantity isn't included, etc.`;
+				throw new TripError(
+					`Invalid impling. Please check your entry, **${options.implings}** doesn't match any impling jars. Make sure the quantity isn't included, etc.`,
+					[user.id]
+				);
 			}
-			if (!user.bank.has(clueImpling.id)) return `You don't have any ${clueImpling.name}s in your bank.`;
-			if (!clueTier.implings?.includes(clueImpling.id)) return `These clues aren't found in ${clueImpling.name}s`;
+			if (!user.bank.has(clueImpling.id))
+				throw new TripError(`You don't have any ${clueImpling.name}s in your bank.`, [user.id]);
+			if (!clueTier.implings?.includes(clueImpling.id))
+				throw new TripError(`These clues aren't found in ${clueImpling.name}s`, [user.id]);
 		}
 
 		const boosts = [];
@@ -361,13 +367,13 @@ export const clueCommand = defineCommand({
 			quantity = Math.min(quantity, bankedClues);
 
 			const cost = new Bank().add(clueTier.scrollID, quantity);
-			if (!user.owns(cost)) return `You don't own ${cost}.`;
+			if (!user.owns(cost)) throw new TripError(`You don't own ${cost}.`, [user.id]);
 			await user.removeItemsFromBank(new Bank().add(clueTier.scrollID, quantity));
 			cluesDone = quantity;
 		} else {
 			const implingJarOpenable = allOpenables.find(o => o.aliases.some(a => stringMatches(a, clueImpling.name)));
 			// If this triggers, it means OSJS probably broke / is missing an alias for an impling jar:
-			if (!implingJarOpenable) return 'Invalid impling jar.';
+			if (!implingJarOpenable) throw new TripError('Invalid impling jar.', [user.id]);
 
 			const bankedImplings = user.bank.amount(clueImpling.id);
 			let openedImplings = 0;
@@ -429,14 +435,20 @@ export const clueCommand = defineCommand({
 		}
 
 		if (quantity === 0) {
-			return `You don't have any ${clueTier.name} clue scrolls. Remember you can only stack up to ${MAX_CLUES_DROPPED} clues total.`;
+			throw new TripError(
+				`You don't have any ${clueTier.name} clue scrolls. Remember you can only stack up to ${MAX_CLUES_DROPPED} clues total.`,
+				[user.id]
+			);
 		}
 
 		const duration = timePerClue * quantity;
 		if (duration > maxTripLength || quantity > maxCanDo) {
-			return `${user.minionName} can't go on Clue trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount you can do for ${clueTier.name} is ${maxCanDo}.`;
+			throw new TripError(
+				`${user.minionName} can't go on Clue trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount you can do for ${clueTier.name} is ${maxCanDo}.`,
+				[user.id]
+			);
 		}
 
 		await ActivityManager.startTrip<ClueActivityTaskOptions>({

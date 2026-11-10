@@ -1,6 +1,7 @@
 import { formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -17,28 +18,34 @@ export async function driftNetCommand(
 	}
 
 	if (user.skillsAsLevels.fishing < 47 || user.skillsAsLevels.hunter < 44) {
-		return 'You need at least level 44 Hunter and 47 Fishing to do Drift net fishing.';
+		throw new TripError('You need at least level 44 Hunter and 47 Fishing to do Drift net fishing.', [user.id]);
 	}
 
 	if (!user.hasEquipped(['Graceful gloves', 'Graceful top', 'Graceful legs'])) {
-		return 'You need Graceful top, legs and gloves equipped to do Drift net fishing.';
+		throw new TripError('You need Graceful top, legs and gloves equipped to do Drift net fishing.', [user.id]);
 	}
 
 	if (!user.hasEquipped('Merfolk trident')) {
-		return 'You need a trident equipped to do Drift net fishing. Example of tridents are Merfolk trident and Uncharged trident.';
+		throw new TripError(
+			'You need a trident equipped to do Drift net fishing. Example of tridents are Merfolk trident and Uncharged trident.',
+			[user.id]
+		);
 	}
 
 	if (minutes < 1 || !Number.isInteger(minutes) || Number.isNaN(minutes))
-		return 'Please specify a valid number of minutes.';
+		throw new TripError('Please specify a valid number of minutes.', [user.id]);
 
 	const tripLength = Time.Minute * minutes;
 
 	if (tripLength > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower trip length. The highest amount of minutes you can send out is ${Math.floor(
-			maxTripLength / Time.Minute
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower trip length. The highest amount of minutes you can send out is ${Math.floor(
+				maxTripLength / Time.Minute
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const boosts = [];
@@ -69,7 +76,10 @@ export async function driftNetCommand(
 	itemsToRemove.add('Drift net', quantity);
 
 	if (!userBank.has(itemsToRemove)) {
-		return `You need ${quantity}x Drift net for the whole trip, try a lower trip length or make/buy more Drift net.`;
+		throw new TripError(
+			`You need ${quantity}x Drift net for the whole trip, try a lower trip length or make/buy more Drift net.`,
+			[user.id]
+		);
 	}
 
 	await ActivityManager.startTrip<ActivityTaskOptionsWithQuantity>({

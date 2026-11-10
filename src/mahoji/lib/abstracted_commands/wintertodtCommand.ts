@@ -4,6 +4,7 @@ import { Bank } from 'oldschooljs';
 import { Eatables } from '@/lib/data/eatables.js';
 import { warmGear } from '@/lib/data/filterables.js';
 import { trackLoot } from '@/lib/lootTrack.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -11,7 +12,7 @@ export async function wintertodtCommand(user: MUser, channelId: string, quantity
 	const fmLevel = user.skillsAsLevels.firemaking;
 	const wcLevel = user.skillsAsLevels.woodcutting;
 	if (fmLevel < 50) {
-		return 'You need 50 Firemaking to have a chance at defeating the Wintertodt.';
+		throw new TripError('You need 50 Firemaking to have a chance at defeating the Wintertodt.', [user.id]);
 	}
 
 	const messages = [];
@@ -47,11 +48,14 @@ export async function wintertodtCommand(user: MUser, channelId: string, quantity
 	const duration = durationPerTodt * quantity;
 
 	if (quantity > 1 && duration > maxTripLength) {
-		return `${user.minionName} can't go on PvM trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount you can do for Wintertodt is ${Math.floor(
-			maxTripLength / durationPerTodt
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on PvM trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount you can do for Wintertodt is ${Math.floor(
+				maxTripLength / durationPerTodt
+			)}.`,
+			[user.id]
+		);
 	}
 
 	for (const food of Eatables) {
@@ -59,9 +63,12 @@ export async function wintertodtCommand(user: MUser, channelId: string, quantity
 		const amountNeeded = Math.ceil(healAmountNeeded / healAmount) * quantity;
 		if (user.bank.amount(food.id) < amountNeeded) {
 			if (Eatables.indexOf(food) === Eatables.length - 1) {
-				return `You don't have enough food to do Wintertodt! You can use these food items: ${Eatables.map(
-					i => i.name
-				).join(', ')}.`;
+				throw new TripError(
+					`You don't have enough food to do Wintertodt! You can use these food items: ${Eatables.map(
+						i => i.name
+					).join(', ')}.`,
+					[user.id]
+				);
 			}
 			continue;
 		}

@@ -1,6 +1,7 @@
 import { stringMatches, Time } from '@oldschoolgg/toolkit';
 import { type Item, Items, itemID } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { Skills } from '@/lib/types/index.js';
 import type { PuroPuroActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -60,35 +61,44 @@ export async function puroPuroStartCommand(
 	const hunterLevel = skills.hunter;
 	const [hasReqs, reason] = hasSkillReqs(user, puroPuroSkillRequirements);
 	const [hasDarkLureSkillReqs, lureReason] = hasSkillReqs(user, darkLureSkillRequirements);
-	if (!hasReqs) return `To hunt in Puro-Puro, you need: ${reason}.`;
-	if (user.QP < 3) return 'To hunt in Puro-Puro, you need 3 QP.';
+	if (!hasReqs) throw new TripError(`To hunt in Puro-Puro, you need: ${reason}.`, [user.id]);
+	if (user.QP < 3) throw new TripError('To hunt in Puro-Puro, you need 3 QP.', [user.id]);
 	let impToHunt: PuroImpling;
 	const implingInput = impling?.trim();
 
-	if (implingInput?.length === 0) return 'Error selecting impling, please try again.';
+	if (implingInput?.length === 0) throw new TripError('Error selecting impling, please try again.', [user.id]);
 	const matchedImp = puroOptions.find(i => {
 		if (stringMatches(i.name, implingInput)) {
 			return true;
 		}
 		return i.tier !== undefined && stringMatches(i.tier.toString(), implingInput);
 	});
-	if (!matchedImp) return 'Error selecting impling, please try again.';
+	if (!matchedImp) throw new TripError('Error selecting impling, please try again.', [user.id]);
 	impToHunt = matchedImp;
 
 	if (hunterLevel < impToHunt.hunterLevel)
-		return `${user.minionName} needs at least level ${impToHunt.hunterLevel} hunter to hunt ${impToHunt.name} in Puro-Puro.`;
+		throw new TripError(
+			`${user.minionName} needs at least level ${impToHunt.hunterLevel} hunter to hunt ${impToHunt.name} in Puro-Puro.`,
+			[user.id]
+		);
 	if (!darkLure || (darkLure && !impToHunt.spell)) darkLure = false;
 	if (darkLure) {
-		if (user.QP < 9) return 'To use Dark Lure, you need 9 QP.';
-		if (!hasDarkLureSkillReqs) return `To use Dark Lure, you need: ${lureReason}.`;
+		if (user.QP < 9) throw new TripError('To use Dark Lure, you need 9 QP.', [user.id]);
+		if (!hasDarkLureSkillReqs) throw new TripError(`To use Dark Lure, you need: ${lureReason}.`, [user.id]);
 		const { bank } = user;
 		const natureRuneID = itemID('Nature rune');
 		const deathRuneID = itemID('Death rune');
 		if (impToHunt.tier === 2) {
 			if (bank.amount(natureRuneID) < 100 || bank.amount(deathRuneID) < 100)
-				return "You don't have enough Nature and Death runes to start this trip, you need at least 100 of each.";
+				throw new TripError(
+					"You don't have enough Nature and Death runes to start this trip, you need at least 100 of each.",
+					[user.id]
+				);
 		} else if (bank.amount(natureRuneID) < 300 || bank.amount(deathRuneID) < 300) {
-			return "You don't have enough Nature and Death runes to start this trip, you need at least 300 of each.";
+			throw new TripError(
+				"You don't have enough Nature and Death runes to start this trip, you need at least 300 of each.",
+				[user.id]
+			);
 		}
 	}
 

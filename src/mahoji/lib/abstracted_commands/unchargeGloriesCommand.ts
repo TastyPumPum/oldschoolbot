@@ -1,6 +1,7 @@
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -19,21 +20,24 @@ export async function unchargeGloriesCommand(
 	const amountHas = amountHas4 + amountHas6;
 
 	if (quantity !== undefined && quantity > amountHas) {
-		return `You don't have enough ${quantity}x Amulet of glory's.`;
+		throw new TripError(`You don't have enough ${quantity}x Amulet of glory's.`, [user.id]);
 	}
 
 	if (exchange) {
 		if (user.isIronman) {
-			return "You're an ironman, you can't use GE for instant glory uncharging.";
+			throw new TripError("You're an ironman, you can't use GE for instant glory uncharging.", [user.id]);
 		}
 
 		const quantityToConvert = quantity ?? amountHas;
 		if (quantityToConvert === 0) {
-			return "You don't have any Amulet of glory's to instantly uncharge.";
+			throw new TripError("You don't have any Amulet of glory's to instantly uncharge.", [user.id]);
 		}
 		const gpCost = quantityToConvert * gloryInstantExchangePrice;
 		if (user.GP < gpCost) {
-			return `You need ${gpCost.toLocaleString()} GP to instantly uncharge ${quantityToConvert}x Amulet of glory's.`;
+			throw new TripError(
+				`You need ${gpCost.toLocaleString()} GP to instantly uncharge ${quantityToConvert}x Amulet of glory's.`,
+				[user.id]
+			);
 		}
 
 		const itemsToRemove = new Bank();
@@ -60,21 +64,24 @@ export async function unchargeGloriesCommand(
 		quantity = max;
 	}
 	if (quantity === 0) {
-		return "You don't have any charged Amulet of glory's to uncharge.";
+		throw new TripError("You don't have any charged Amulet of glory's to uncharge.", [user.id]);
 	}
 
 	const duration = quantity * unchargeGloriesTime;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of glories you can uncharge is ${Math.floor(
-			maxTripLength / unchargeGloriesTime
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of glories you can uncharge is ${Math.floor(
+				maxTripLength / unchargeGloriesTime
+			)}.`,
+			[user.id]
+		);
 	}
 
 	if (amountHas < quantity) {
-		return `You don't have enough ${quantity}x Amulet of glory's.`;
+		throw new TripError(`You don't have enough ${quantity}x Amulet of glory's.`, [user.id]);
 	}
 	const itemsToRemove = new Bank();
 	if (quantity <= amountHas6) {

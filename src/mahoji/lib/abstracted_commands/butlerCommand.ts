@@ -3,6 +3,7 @@ import { Bank, Items, resolveItems, toKMB } from 'oldschooljs';
 import { clamp } from 'remeda';
 
 import { Planks } from '@/lib/minions/data/planks.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ButlerActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -36,12 +37,15 @@ export async function butlerCommand(user: MUser, plankName: string, quantity: nu
 	);
 
 	if (!plank) {
-		return `Thats not a valid plank to make. Valid planks are **${Planks.map(plank => plank.name).join(', ')}**.`;
+		throw new TripError(
+			`Thats not a valid plank to make. Valid planks are **${Planks.map(plank => plank.name).join(', ')}**.`,
+			[user.id]
+		);
 	}
 
 	const level = user.skillsAsLevels.construction;
 	if (level < 50) {
-		return 'You need level 50 Construction to use the demon butler.';
+		throw new TripError('You need level 50 Construction to use the demon butler.', [user.id]);
 	}
 
 	const timePerPlank = (Time.Second * 15) / 26;
@@ -59,7 +63,7 @@ export async function butlerCommand(user: MUser, plankName: string, quantity: nu
 	}
 
 	if (quantity === 0) {
-		return `You don't have any ${Items.itemNameFromId(plank.inputItem)}.`;
+		throw new TripError(`You don't have any ${Items.itemNameFromId(plank.inputItem)}.`, [user.id]);
 	}
 
 	const { GP } = user;
@@ -70,7 +74,7 @@ export async function butlerCommand(user: MUser, plankName: string, quantity: nu
 	cost += 1250 * inventories;
 
 	if (GP < cost) {
-		return `You need ${toKMB(cost)} GP to create ${quantity} planks.`;
+		throw new TripError(`You need ${toKMB(cost)} GP to create ${quantity} planks.`, [user.id]);
 	}
 
 	let earthRuneCost = 0;
@@ -111,19 +115,25 @@ export async function butlerCommand(user: MUser, plankName: string, quantity: nu
 	const userBank = user.bank;
 
 	if (!userBank.has(consumedItems)) {
-		return `You don't have the required runes to do ${quantity} planks. You need: ${new Bank(
-			consumedItems
-		)}, you're missing: ${new Bank(consumedItems).remove(userBank)}.`;
+		throw new TripError(
+			`You don't have the required runes to do ${quantity} planks. You need: ${new Bank(
+				consumedItems
+			)}, you're missing: ${new Bank(consumedItems).remove(userBank)}.`,
+			[user.id]
+		);
 	}
 
 	const duration = quantity * timePerPlank;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of planks you can make is ${Math.floor(
-			maxTripLength / timePerPlank
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of planks you can make is ${Math.floor(
+				maxTripLength / timePerPlank
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const costBank = new Bank(consumedItems).add('Coins', cost).add(plank?.inputItem, quantity);

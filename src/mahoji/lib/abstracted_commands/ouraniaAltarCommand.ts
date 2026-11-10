@@ -2,6 +2,7 @@ import { formatDuration, increaseNumByPercent, Time } from '@oldschoolgg/toolkit
 import { Bank, EItem } from 'oldschooljs';
 
 import Runecraft from '@/lib/skilling/skills/runecraft.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { OuraniaAltarOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -67,13 +68,19 @@ export async function ouraniaAltarStartCommand({
 	if (daeyalt_essence) {
 		if (!quantity) quantity = Math.min(daeyaltEssenceOwned, maxCanDo);
 		if (daeyaltEssenceOwned === 0 || quantity === 0 || daeyaltEssenceOwned < quantity) {
-			return "You don't have enough Daeyalt Essence to craft these runes. You can acquire Daeyalt Shards through Mining, and then exchange for essence with the `/create` command.";
+			throw new TripError(
+				"You don't have enough Daeyalt Essence to craft these runes. You can acquire Daeyalt Shards through Mining, and then exchange for essence with the `/create` command.",
+				[user.id]
+			);
 		}
 	} else {
 		if (!quantity) quantity = Math.min(numEssenceOwned, maxCanDo);
 
 		if (numEssenceOwned === 0 || quantity === 0 || numEssenceOwned < quantity) {
-			return "You don't have enough Pure Essence to craft these runes. You can acquire some through Mining, or purchasing from other players.";
+			throw new TripError(
+				"You don't have enough Pure Essence to craft these runes. You can acquire some through Mining, or purchasing from other players.",
+				[user.id]
+			);
 		}
 	}
 
@@ -81,9 +88,12 @@ export async function ouraniaAltarStartCommand({
 	const duration = numberOfInventories * timePerTrip;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of essence you can craft is ${Math.floor(maxCanDo)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of essence you can craft is ${Math.floor(maxCanDo)}.`,
+			[user.id]
+		);
 	}
 
 	const totalCost = new Bank();
@@ -97,21 +107,24 @@ export async function ouraniaAltarStartCommand({
 			totalCost.add(itemCost);
 			boosts.push('20% faster for using Stamina potions.');
 			if (!user.owns(totalCost)) {
-				return `You don't have enough Stamina potion(4) for this trip. You need ${Math.max(
-					Math.ceil(duration / (Time.Minute * 8)),
-					1
-				)}x Stamina potion(4).`;
+				throw new TripError(
+					`You don't have enough Stamina potion(4) for this trip. You need ${Math.max(
+						Math.ceil(duration / (Time.Minute * 8)),
+						1
+					)}x Stamina potion(4).`,
+					[user.id]
+				);
 			}
 		}
 	}
 
 	if (daeyalt_essence) {
 		totalCost.add('Daeyalt essence', quantity);
-		if (!user.owns(totalCost)) return `You don't own: ${totalCost}.`;
+		if (!user.owns(totalCost)) throw new TripError(`You don't own: ${totalCost}.`, [user.id]);
 	} else {
 		totalCost.add('Pure essence', quantity);
 	}
-	if (!user.owns(totalCost)) return `You don't own: ${totalCost}.`;
+	if (!user.owns(totalCost)) throw new TripError(`You don't own: ${totalCost}.`, [user.id]);
 
 	await user.removeItemsFromBank(totalCost);
 	await ClientSettings.updateBankSetting('runecraft_cost', totalCost);

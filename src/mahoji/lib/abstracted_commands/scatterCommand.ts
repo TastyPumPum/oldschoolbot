@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import Prayer from '@/lib/skilling/skills/prayer.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ScatteringActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -13,11 +14,11 @@ export async function scatterCommand(user: MUser, channelId: string, ashName: st
 	);
 
 	if (!ash) {
-		return "That's not a valid ash to scatter.";
+		throw new TripError("That's not a valid ash to scatter.", [user.id]);
 	}
 
 	if (user.skillsAsLevels.prayer < ash.level) {
-		return `${user.minionName} needs ${ash.level} Prayer to scatter ${ash.name}.`;
+		throw new TripError(`${user.minionName} needs ${ash.level} Prayer to scatter ${ash.name}.`, [user.id]);
 	}
 
 	const timeToScatterAnAsh = speedMod * (Time.Second * 1.2 + Time.Second / 4);
@@ -26,24 +27,27 @@ export async function scatterCommand(user: MUser, channelId: string, ashName: st
 
 	if (!quantity) {
 		const amountOfAshesOwned = user.bank.amount(ash.inputId);
-		if (!amountOfAshesOwned) return `You have no ${ash.name}.`;
+		if (!amountOfAshesOwned) throw new TripError(`You have no ${ash.name}.`, [user.id]);
 		quantity = Math.min(Math.floor(maxTripLength / timeToScatterAnAsh), amountOfAshesOwned);
 	}
 
 	const cost = new Bank({ [ash.inputId]: quantity });
 
 	if (!user.owns(cost)) {
-		return `You dont have ${cost}.`;
+		throw new TripError(`You dont have ${cost}.`, [user.id]);
 	}
 
 	const duration = quantity * timeToScatterAnAsh;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${ash.name}s you can scatter is ${Math.floor(
-			maxTripLength / timeToScatterAnAsh
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${ash.name}s you can scatter is ${Math.floor(
+				maxTripLength / timeToScatterAnAsh
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await user.transactItems({ itemsToRemove: cost });

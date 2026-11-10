@@ -28,10 +28,22 @@ import * as calcMaxTripLengthModule from '../../src/lib/util/calcMaxTripLength.j
 import { mockMUser } from './userutil.js';
 import '../../src/lib/util/clientSettings.js';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
 import { BitField } from '../../src/lib/constants.js';
 import { AutoFarmFilterEnum, activity_type_enum, CropUpgradeType } from '../../src/prisma/main/enums.js';
 import type { User } from '../../src/prisma/main.js';
+
+async function expectTripFailure(trip: Promise<unknown>): Promise<BaseSendableMessage> {
+	try {
+		await trip;
+	} catch (error) {
+		expect(error).toBeInstanceOf(TripError);
+		if (!(error instanceof TripError)) throw error;
+		return error.toResponse();
+	}
+	throw new Error('Expected the trip to fail.');
+}
 
 // Mock addSubTaskToActivityTask so we can inspect calls
 vi.mock('../../src/lib/util/addSubTaskToActivityTask.js', () => ({
@@ -217,11 +229,8 @@ describe('auto farm helpers', () => {
 
 		calcMaxTripLengthSpy.mockReturnValue(5 * 60 * 1000);
 
-		const response = await autoFarm(
-			user,
-			[],
-			{} as Record<FarmingPatchName, IPatchData>,
-			baseInteraction as MInteraction
+		const response = await expectTripFailure(
+			autoFarm(user, [], {} as Record<FarmingPatchName, IPatchData>, baseInteraction as MInteraction)
 		);
 
 		// Response should be something sendable (string or message-like)
@@ -505,11 +514,13 @@ describe('auto farm helpers', () => {
 		const transactSpy = vi.spyOn(user, 'transactItems');
 		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
 
-		const response = await autoFarm(
-			user,
-			[herbPatchDetailed],
-			herbPatches as Record<FarmingPatchName, IPatchData>,
-			baseInteraction as MInteraction
+		const response = await expectTripFailure(
+			autoFarm(
+				user,
+				[herbPatchDetailed],
+				herbPatches as Record<FarmingPatchName, IPatchData>,
+				baseInteraction as MInteraction
+			)
 		);
 		expect(response).toEqual(
 			expect.objectContaining({
@@ -667,11 +678,13 @@ describe('auto farm helpers', () => {
 
 		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
 
-		const response = await autoFarm(
-			user,
-			[herbPatchDetailed],
-			herbPatches as Record<FarmingPatchName, IPatchData>,
-			baseInteraction as MInteraction
+		const response = await expectTripFailure(
+			autoFarm(
+				user,
+				[herbPatchDetailed],
+				herbPatches as Record<FarmingPatchName, IPatchData>,
+				baseInteraction as MInteraction
+			)
 		);
 
 		// We don't require a specific content string here; just that
@@ -943,14 +956,17 @@ describe('auto farm helpers', () => {
 		const transactSpy = vi.spyOn(user, 'transactItems');
 		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
 
-		const response = await autoFarm(
-			user,
-			[herbPatchDetailed],
-			{} as Record<FarmingPatchName, IPatchData>,
-			baseInteraction as MInteraction
+		const response = await expectTripFailure(
+			autoFarm(
+				user,
+				[herbPatchDetailed],
+				{} as Record<FarmingPatchName, IPatchData>,
+				baseInteraction as MInteraction
+			)
 		);
 
-		expect(response).toBe('Unable to resolve patch data for Herb patch.');
+		expect(response.content).toContain('Unable to resolve patch data for Herb patch.');
+		expect(response.allowedMentions?.users).toEqual([user.id]);
 		expect(transactSpy).not.toHaveBeenCalled();
 		expect(addSubTaskToActivityTask).not.toHaveBeenCalled();
 	});
@@ -983,14 +999,17 @@ describe('auto farm helpers', () => {
 		);
 		calcMaxTripLengthSpy.mockReturnValue(300 * 1000);
 
-		const response = await autoFarm(
-			user,
-			[herbPatchDetailed],
-			herbPatches as Record<FarmingPatchName, IPatchData>,
-			baseInteraction as MInteraction
+		const response = await expectTripFailure(
+			autoFarm(
+				user,
+				[herbPatchDetailed],
+				herbPatches as Record<FarmingPatchName, IPatchData>,
+				baseInteraction as MInteraction
+			)
 		);
 
-		expect(response).toBe('Failed to queue activity.');
+		expect(response.content).toContain('Failed to queue activity.');
+		expect(response.allowedMentions?.users).toEqual([user.id]);
 		expect(transactSpy).toHaveBeenCalledTimes(2);
 		expect(transactSpy.mock.calls[0]?.[0].itemsToRemove?.amount('Guam seed')).toBe(4);
 		expect(transactSpy.mock.calls[0]?.[0].itemsToRemove?.amount('Compost')).toBe(4);

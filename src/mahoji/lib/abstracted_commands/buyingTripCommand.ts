@@ -2,6 +2,7 @@ import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank, EItem, Items } from 'oldschooljs';
 
 import type { TripBuyable } from '@/lib/data/buyables/tripBuyables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { BuyActivityTaskOptions } from '@/lib/types/minions.js';
 import { calculateShopBuyCost } from '@/lib/util/calculateShopBuyCost.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -27,9 +28,12 @@ export async function buyingTripCommand(
 	const gpCost = buyable.gpCost ?? 0;
 
 	if (buyable.skillsNeeded && !user.hasSkillReqs(buyable.skillsNeeded)) {
-		return `You don't have the required stats to buy this item. You need ${formatSkillRequirements(
-			buyable.skillsNeeded
-		)}.`;
+		throw new TripError(
+			`You don't have the required stats to buy this item. You need ${formatSkillRequirements(
+				buyable.skillsNeeded
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const maxTripLength = await user.calcMaxTripLength('Buy');
@@ -38,9 +42,12 @@ export async function buyingTripCommand(
 	}
 	const duration = quantity * timePerItem;
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on a trip longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount you can buy is ${Math.floor(maxTripLength / timePerItem)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on a trip longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount you can buy is ${Math.floor(maxTripLength / timePerItem)}.`,
+			[user.id]
+		);
 	}
 
 	const { totalCost, averageCost } = calculateShopBuyCost({
@@ -52,7 +59,7 @@ export async function buyingTripCommand(
 
 	const cost = new Bank().add('Coins', totalCost);
 	if (!user.owns(cost)) {
-		return `You need ${cost} to buy ${quantity}x ${itemDisplayName}.`;
+		throw new TripError(`You need ${cost} to buy ${quantity}x ${itemDisplayName}.`, [user.id]);
 	}
 
 	await interaction.confirmation(

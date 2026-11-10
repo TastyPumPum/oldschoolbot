@@ -6,6 +6,7 @@ import { trackLoot } from '@/lib/lootTrack.js';
 import { soteSkillRequirements } from '@/lib/skilling/functions/questRequirements.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
 import { HunterTechniqueEnum } from '@/lib/skilling/types.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { HunterActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { generateDailyPeakIntervals, type Peak } from '@/lib/util/peaks.js';
@@ -74,22 +75,30 @@ export const huntCommand = defineCommand({
 			)
 		);
 
-		if (!creature) return "That's not a valid creature to hunt.";
+		if (!creature) throw new TripError("That's not a valid creature to hunt.", [user.id]);
 
 		if (user.skillsAsLevels.hunter + (usingHuntPotion ? 2 : 0) < creature.level) {
-			return `${user.minionName} needs ${creature.level} Hunter to hunt ${creature.name}.`;
+			throw new TripError(`${user.minionName} needs ${creature.level} Hunter to hunt ${creature.name}.`, [
+				user.id
+			]);
 		}
 
 		if (creature.qpRequired && userQP < creature.qpRequired) {
-			return `${user.minionName} needs ${creature.qpRequired} QP to hunt ${creature.name}.`;
+			throw new TripError(`${user.minionName} needs ${creature.qpRequired} QP to hunt ${creature.name}.`, [
+				user.id
+			]);
 		}
 
 		if (creature.prayerLvl && user.skillsAsLevels.prayer < creature.prayerLvl) {
-			return `${user.minionName} needs ${creature.prayerLvl} Prayer to hunt ${creature.name}.`;
+			throw new TripError(`${user.minionName} needs ${creature.prayerLvl} Prayer to hunt ${creature.name}.`, [
+				user.id
+			]);
 		}
 
 		if (creature.herbloreLvl && user.skillsAsLevels.herblore < creature.herbloreLvl) {
-			return `${user.minionName} needs ${creature.herbloreLvl} Herblore to hunt ${creature.name}.`;
+			throw new TripError(`${user.minionName} needs ${creature.herbloreLvl} Herblore to hunt ${creature.name}.`, [
+				user.id
+			]);
 		}
 
 		if (creature.multiTraps) {
@@ -101,7 +110,10 @@ export const huntCommand = defineCommand({
 		if (creature.itemsRequired) {
 			for (const [item, quantity] of creature.itemsRequired.items()) {
 				if (userBank.amount(item.name) < quantity * traps) {
-					return `You don't have ${traps}x ${item.name}, hunter tools can be bought using the buy command.`;
+					throw new TripError(
+						`You don't have ${traps}x ${item.name}, hunter tools can be bought using the buy command.`,
+						[user.id]
+					);
 				}
 			}
 		}
@@ -111,10 +123,10 @@ export const huntCommand = defineCommand({
 		if (crystalImpling) {
 			const [hasReqs, reason] = hasSkillReqs(user, soteSkillRequirements);
 			if (!hasReqs) {
-				return `To hunt ${creature.name}, you need: ${reason}.`;
+				throw new TripError(`To hunt ${creature.name}, you need: ${reason}.`, [user.id]);
 			}
 			if (user.QP < 150) {
-				return `To hunt ${creature.name}, you need 150 QP.`;
+				throw new TripError(`To hunt ${creature.name}, you need 150 QP.`, [user.id]);
 			}
 		}
 
@@ -144,16 +156,16 @@ export const huntCommand = defineCommand({
 			const [bol, reason, score] = hasWildyHuntGearEquipped(user.gear.wildy.raw());
 			wildyScore = score;
 			if (!bol) {
-				return {
-					content: `<@${user.id}>, to hunt ${creature.name} in the wilderness you need to meet the following requirement: ${reason} Check your wildy gear.`,
-					allowedMentions: { users: [user.id] }
-				};
+				throw new TripError(
+					`<@${user.id}>, to hunt ${creature.name} in the wilderness you need to meet the following requirement: ${reason} Check your wildy gear.`,
+					[user.id]
+				);
 			}
 			if (userBank.amount('Saradomin brew(4)') < 10 || userBank.amount('Super restore(4)') < 5) {
-				return {
-					content: `<@${user.id}>, to hunt ${creature.name} in the wilderness you need to have 10x Saradomin brew(4) and 5x Super restore(4) for safety.`,
-					allowedMentions: { users: [user.id] }
-				};
+				throw new TripError(
+					`<@${user.id}>, to hunt ${creature.name} in the wilderness you need to have 10x Saradomin brew(4) and 5x Super restore(4) for safety.`,
+					[user.id]
+				);
 			}
 		}
 
@@ -179,11 +191,14 @@ export const huntCommand = defineCommand({
 		}
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${creature.name} you can hunt is ${Math.floor(
-				maxTripLength / ((catchTime * Time.Second) / traps)
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${creature.name} you can hunt is ${Math.floor(
+					maxTripLength / ((catchTime * Time.Second) / traps)
+				)}.`,
+				[user.id]
+			);
 		}
 
 		const removeBank = new Bank();
@@ -195,7 +210,7 @@ export const huntCommand = defineCommand({
 						quantity = Math.floor(userBank.amount(item.id) / qty);
 						duration = Math.floor(((quantity * catchTime) / traps) * Time.Second);
 					} else {
-						return `You don't have enough ${item.name}s.`;
+						throw new TripError(`You don't have enough ${item.name}s.`, [user.id]);
 					}
 				}
 				removeBank.add(item.id, qty * quantity);
@@ -215,7 +230,10 @@ export const huntCommand = defineCommand({
 						: Math.round(duration / (18 * Time.Minute));
 
 				if (userBank.amount('Stamina potion(4)') < staminaPotionQuantity) {
-					return `You need ${staminaPotionQuantity}x Stamina potion(4) to hunt for the whole trip, try a lower quantity or make/buy more potions.`;
+					throw new TripError(
+						`You need ${staminaPotionQuantity}x Stamina potion(4) to hunt for the whole trip, try a lower quantity or make/buy more potions.`,
+						[user.id]
+					);
 				}
 				removeBank.add('Stamina potion(4)', staminaPotionQuantity);
 				boosts.push(`20% boost for using ${staminaPotionQuantity}x Stamina potion(4)`);
@@ -225,7 +243,10 @@ export const huntCommand = defineCommand({
 		if (usingHuntPotion) {
 			const hunterPotionQuantity = Math.round(duration / (8 * Time.Minute));
 			if (userBank.amount('Hunter potion(4)') < hunterPotionQuantity) {
-				return `You need ${hunterPotionQuantity}x Hunter potion(4) to boost your level for the whole trip, try a lower quantity or make/buy more potions.`;
+				throw new TripError(
+					`You need ${hunterPotionQuantity}x Hunter potion(4) to boost your level for the whole trip, try a lower quantity or make/buy more potions.`,
+					[user.id]
+				);
 			}
 			removeBank.add(itemID('Hunter potion(4)'), hunterPotionQuantity);
 			boosts.push(`+2 hunter level for using ${hunterPotionQuantity}x Hunter potion(4) every 2nd minute.`);

@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import type { SkillNameType } from '@/lib/skilling/types.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { CollectingOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { getPOH } from '@/mahoji/lib/abstracted_commands/pohCommand.js';
@@ -16,20 +17,23 @@ export async function collectCommand(
 ) {
 	const collectable = collectables.find(c => stringMatches(c.item.name, objectName));
 	if (!collectable) {
-		return `That's not something your minion can collect, you can collect these things: ${collectables
-			.map(i => i.item.name)
-			.join(', ')}.`;
+		throw new TripError(
+			`That's not something your minion can collect, you can collect these things: ${collectables
+				.map(i => i.item.name)
+				.join(', ')}.`,
+			[user.id]
+		);
 	}
 
 	const maxTripLength = await user.calcMaxTripLength('Collecting');
 	if (collectable.qpRequired && user.QP < collectable.qpRequired) {
-		return `You need ${collectable.qpRequired} QP to collect ${collectable.item.name}.`;
+		throw new TripError(`You need ${collectable.qpRequired} QP to collect ${collectable.item.name}.`, [user.id]);
 	}
 
 	if (collectable.skillReqs) {
 		for (const [skillName, lvl] of Object.entries(collectable.skillReqs) as [SkillNameType, number][]) {
 			if (user.skillsAsLevels[skillName] < lvl) {
-				return `You need ${lvl} ${skillName} to collect ${collectable.item.name}.`;
+				throw new TripError(`You need ${lvl} ${skillName} to collect ${collectable.item.name}.`, [user.id]);
 			}
 		}
 	}
@@ -50,11 +54,14 @@ export async function collectCommand(
 	}
 	let duration = collectable.duration * quantity;
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on a trip longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount you can do for ${collectable.item.name} is ${Math.floor(
-			maxTripLength / collectable.duration
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on a trip longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount you can do for ${collectable.item.name} is ${Math.floor(
+				maxTripLength / collectable.duration
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const poh = await getPOH(user.id);
@@ -72,7 +79,7 @@ export async function collectCommand(
 			cost.remove('Stamina potion(4)', cost.amount('Stamina potion (4)'));
 		}
 		if (!user.owns(cost)) {
-			return `You don't have the items needed for this trip, you need: ${cost}.`;
+			throw new TripError(`You don't have the items needed for this trip, you need: ${cost}.`, [user.id]);
 		}
 		await user.transactItems({ itemsToRemove: cost });
 

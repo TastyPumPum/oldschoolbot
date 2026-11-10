@@ -2,6 +2,7 @@ import { calcWhatPercent, formatDuration, reduceNumByPercent, Time } from '@olds
 import { EMonster } from 'oldschooljs';
 
 import { soteSkillRequirements } from '@/lib/skilling/functions/questRequirements.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ZalcanoActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -21,10 +22,12 @@ function calcPerformance(kcLearned: number, skillPercentage: number) {
 export async function zalcanoCommand(rng: RNGProvider, user: MUser, channelId: string, quantity?: number) {
 	const hasReqs = user.hasSkillReqs(soteSkillRequirements);
 	if (!hasReqs) {
-		return `To fight Zalcano, you need: ${formatSkillRequirements(soteSkillRequirements)}.`;
+		throw new TripError(`To fight Zalcano, you need: ${formatSkillRequirements(soteSkillRequirements)}.`, [
+			user.id
+		]);
 	}
 	if (user.QP < 150) {
-		return 'To fight Zalcano, you need 150 QP.';
+		throw new TripError('To fight Zalcano, you need 150 QP.', [user.id]);
 	}
 
 	const kc = await user.getKC(EMonster.ZALCANO);
@@ -57,11 +60,14 @@ export async function zalcanoCommand(rng: RNGProvider, user: MUser, channelId: s
 	const duration = quantity * baseTime;
 
 	if (quantity > 1 && duration > maxTripLength) {
-		return `${user.minionName} can't go on PvM trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount you can do for Zalcano is ${Math.floor(
-			maxTripLength / baseTime
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on PvM trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount you can do for Zalcano is ${Math.floor(
+				maxTripLength / baseTime
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const { foodRemoved } = await user.removeFoodFromUser({

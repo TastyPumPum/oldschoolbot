@@ -1,6 +1,7 @@
 import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank, type Item, Items, LootTable, resolveItems } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type {
 	ShadesOfMortonOptions,
 	ShadesOfMortonPyreLogsOptions,
@@ -327,36 +328,36 @@ export async function shadesOfMortonStartCommand(user: MUser, channelId: string,
 	}
 
 	const logItem = Items.getItem(logStr);
-	if (!logItem) return 'Invalid logs item';
+	if (!logItem) throw new TripError('Invalid logs item', [user.id]);
 
 	const userBank = user.bank;
 	const logsOwned = userBank.amount(logItem.id);
-	if (logsOwned === 0) return `You don't own any ${logItem.name}!`;
+	if (logsOwned === 0) throw new TripError(`You don't own any ${logItem.name}!`, [user.id]);
 
 	const log = shadesLogs.find(i => i.oiledLog.id === logItem.id);
 	const shade = shades.find(i => i.shadeName === shadeStr);
-	if (!log || !shade) return 'Invalid item';
+	if (!log || !shade) throw new TripError('Invalid item', [user.id]);
 
 	const reqError = checkCremationRequirements(user, log, shade);
-	if (reqError) return reqError;
+	if (reqError) throw new TripError(reqError, [user.id]);
 
 	const shadesOwned = userBank.amount(shade.item.id);
-	if (!shadesOwned) return `You don't own any ${shade.item.name}! Go kill some shades.`;
+	if (!shadesOwned) throw new TripError(`You don't own any ${shade.item.name}! Go kill some shades.`, [user.id]);
 
 	const prayerXP = log.prayerXP[shade.shadeName];
 	if (!prayerXP) {
-		return `You can't use ${log.oiledLog.name} with ${shade.item.name}.`;
+		throw new TripError(`You can't use ${log.oiledLog.name} with ${shade.item.name}.`, [user.id]);
 	}
 
 	const quantity = Math.min(logsOwned, shadesOwned, Math.floor(totalTime / TIME_PER_CREMATION));
 	const duration = quantity * TIME_PER_CREMATION;
 
-	if (quantity < 1) return 'You cannot do any cremations in that time.';
+	if (quantity < 1) throw new TripError('You cannot do any cremations in that time.', [user.id]);
 
 	const cost = new Bank();
 	cost.add(log.oiledLog.id, quantity);
 	cost.add(shade.item.id, quantity);
-	if (!user.owns(cost)) return `You don't own: ${cost}.`;
+	if (!user.owns(cost)) throw new TripError(`You don't own: ${cost}.`, [user.id]);
 
 	await user.removeItemsFromBank(cost);
 	await user.statsBankUpdate('shades_of_morton_cost_bank', cost);
@@ -387,20 +388,20 @@ export async function shadesOfMortonSacredOilCommand(user: MUser, channelId: str
 
 	const userStats = user.skillsAsLevels;
 	if (userStats.firemaking < 5) {
-		return "You need at least 5 Firemaking to create sacred oil at the Mort'ton temple.";
+		throw new TripError("You need at least 5 Firemaking to create sacred oil at the Mort'ton temple.", [user.id]);
 	}
 
 	const oliveOilOwned = user.bank.amount(oliveOilItem.id);
-	if (oliveOilOwned === 0) return `You don't have any ${oliveOilItem.name} to upgrade!`;
+	if (oliveOilOwned === 0) throw new TripError(`You don't have any ${oliveOilItem.name} to upgrade!`, [user.id]);
 
 	const totalTime = await user.calcMaxTripLength('ShadesOfMortonSacredOil');
 	const quantity = Math.min(oliveOilOwned, Math.floor(totalTime / TIME_PER_SACRED_OIL));
-	if (quantity < 1) return 'You do not have enough time to create any sacred oil.';
+	if (quantity < 1) throw new TripError('You do not have enough time to create any sacred oil.', [user.id]);
 
 	const duration = quantity * TIME_PER_SACRED_OIL;
 	const cost = new Bank().add(oliveOilItem.id, quantity);
 
-	if (!user.owns(cost)) return `You don't own: ${cost}.`;
+	if (!user.owns(cost)) throw new TripError(`You don't own: ${cost}.`, [user.id]);
 	await user.removeItemsFromBank(cost);
 	await user.statsBankUpdate('shades_of_morton_cost_bank', cost);
 
@@ -426,27 +427,28 @@ export async function shadesOfMortonCreatePyreLogsCommand(
 	const recipe = pyreLogRecipes.find(r => r.log.name.toLowerCase() === logStr.toLowerCase());
 	if (!recipe) {
 		const validLogs = pyreLogRecipes.map(r => r.log.name).join(', ');
-		return `Invalid log type. Valid options: ${validLogs}.`;
+		throw new TripError(`Invalid log type. Valid options: ${validLogs}.`, [user.id]);
 	}
 
 	const pyreLog = shadesLogs.find(l => l.normalLog.id === recipe.log.id);
-	if (!pyreLog) return 'Could not find pyre log data.';
+	if (!pyreLog) throw new TripError('Could not find pyre log data.', [user.id]);
 
 	const logsOwned = user.bank.amount(recipe.log.id);
 	const sacredOilOwned = user.bank.amount(sacredOilItem.id);
 
-	if (logsOwned === 0) return `You don't have any ${recipe.log.name}!`;
-	if (sacredOilOwned === 0) return `You don't have any ${sacredOilItem.name}!`;
+	if (logsOwned === 0) throw new TripError(`You don't have any ${recipe.log.name}!`, [user.id]);
+	if (sacredOilOwned === 0) throw new TripError(`You don't have any ${sacredOilItem.name}!`, [user.id]);
 
 	const totalTime = await user.calcMaxTripLength('ShadesOfMortonPyreLogs');
 	const maxQuantity = Math.min(logsOwned, sacredOilOwned, Math.floor(totalTime / TIME_PER_PYRE_LOG));
 	const finalQuantity = quantity ? Math.min(quantity, maxQuantity) : maxQuantity;
-	if (finalQuantity < 1) return 'You do not have enough time or supplies to make any pyre logs.';
+	if (finalQuantity < 1)
+		throw new TripError('You do not have enough time or supplies to make any pyre logs.', [user.id]);
 
 	const duration = finalQuantity * TIME_PER_PYRE_LOG;
 	const cost = new Bank().add(recipe.log.id, finalQuantity).add(sacredOilItem.id, finalQuantity);
 
-	if (!user.owns(cost)) return `You don't own: ${cost}.`;
+	if (!user.owns(cost)) throw new TripError(`You don't own: ${cost}.`, [user.id]);
 	await user.removeItemsFromBank(cost);
 	await user.statsBankUpdate('shades_of_morton_cost_bank', cost);
 

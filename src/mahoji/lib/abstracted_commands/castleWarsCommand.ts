@@ -1,10 +1,11 @@
 import { Time } from '@oldschoolgg/toolkit';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function castleWarsStartCommand(user: MUser, channelId: string, quantity?: number) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	const gameLength = Time.Minute * 20;
 	const userMaxGames = Math.floor((await user.calcMaxTripLength('CastleWars')) / gameLength);
 	if (!quantity || quantity > userMaxGames) {

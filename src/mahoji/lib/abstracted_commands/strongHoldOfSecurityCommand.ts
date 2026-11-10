@@ -1,11 +1,12 @@
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, resolveItems } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 
 export async function strongHoldOfSecurityCommand({ rng, user, channelId }: OSInteraction) {
 	if (await user.minionIsBusy()) {
-		return 'Your minion is busy.';
+		throw new TripError('Your minion is busy.', [user.id]);
 	}
 	const count = await prisma.activity.count({
 		where: {

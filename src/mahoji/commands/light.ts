@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import Firemaking from '@/lib/skilling/skills/firemaking.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { FiremakingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -41,10 +42,10 @@ export const lightCommand = defineCommand({
 			log => stringMatches(log.name, options.name) || stringMatches(log.name.split(' ')[0], options.name)
 		);
 
-		if (!log) return "That's not a valid log to light.";
+		if (!log) throw new TripError("That's not a valid log to light.", [user.id]);
 
 		if (user.skillsAsLevels.firemaking < log.level) {
-			return `${user.minionName} needs ${log.level} Firemaking to light ${log.name}.`;
+			throw new TripError(`${user.minionName} needs ${log.level} Firemaking to light ${log.name}.`, [user.id]);
 		}
 
 		// All logs take 2.4s to light, add on quarter of a second to account for banking/etc.
@@ -57,20 +58,23 @@ export const lightCommand = defineCommand({
 		let { quantity } = options;
 		// If no quantity provided, set it to the max.
 		if (!quantity) {
-			if (!amountOfLogsOwned) return `You have no ${log.name}.`;
+			if (!amountOfLogsOwned) throw new TripError(`You have no ${log.name}.`, [user.id]);
 			quantity = Math.min(Math.floor(maxTripLength / timeToLightSingleLog), amountOfLogsOwned);
 		}
 		const duration = quantity * timeToLightSingleLog;
 
 		const cost = new Bank().add(log.inputLogs, quantity);
-		if (!user.owns(cost)) return `You dont have ${quantity}x ${log.name}.`;
+		if (!user.owns(cost)) throw new TripError(`You dont have ${quantity}x ${log.name}.`, [user.id]);
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${log.name}s you can light is ${Math.floor(
-				maxTripLength / timeToLightSingleLog
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${log.name}s you can light is ${Math.floor(
+					maxTripLength / timeToLightSingleLog
+				)}.`,
+				[user.id]
+			);
 		}
 
 		await user.transactItems({ itemsToRemove: cost });

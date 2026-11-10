@@ -1,6 +1,7 @@
 import { objectEntries, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements, hasSkillReqs } from '@/lib/util/smallUtils.js';
@@ -93,14 +94,17 @@ export const VolcanicMineShop: { name: string; output: Bank; cost: number; clOnl
 export async function volcanicMineCommand(user: MUser, channelId: string, gameQuantity: number | undefined) {
 	const skills = user.skillsAsLevels;
 	if (!hasSkillReqs(user, skillReqs)[0]) {
-		return `You are not skilled enough to participate in the Volcanic Mine. You need the following requirements: ${objectEntries(
-			skillReqs
-		)
-			.map(s => {
-				return skills[s[0]] < s[1] ? formatSkillRequirements({ [s[0]]: s[1] }, true) : undefined;
-			})
-			.filter(f => f)
-			.join(', ')}`;
+		throw new TripError(
+			`You are not skilled enough to participate in the Volcanic Mine. You need the following requirements: ${objectEntries(
+				skillReqs
+			)
+				.map(s => {
+					return skills[s[0]] < s[1] ? formatSkillRequirements({ [s[0]]: s[1] }, true) : undefined;
+				})
+				.filter(f => f)
+				.join(', ')}`,
+			[user.id]
+		);
 	}
 	const maxGamesUserCanDo = Math.floor((await user.calcMaxTripLength('VolcanicMine')) / VolcanicMineGameTime);
 	if (!gameQuantity || gameQuantity > maxGamesUserCanDo) gameQuantity = maxGamesUserCanDo;
@@ -149,7 +153,10 @@ export async function volcanicMineCommand(user: MUser, channelId: string, gameQu
 	suppliesUsage.multiply(gameQuantity);
 	const { bank } = user;
 	if (!bank.has(suppliesUsage)) {
-		return `You don't have all the required supplies for this number of games. You need ${suppliesUsage} for ${gameQuantity} games of Volcanic Mine.`;
+		throw new TripError(
+			`You don't have all the required supplies for this number of games. You need ${suppliesUsage} for ${gameQuantity} games of Volcanic Mine.`,
+			[user.id]
+		);
 	}
 
 	await user.transactItems({ itemsToRemove: suppliesUsage });

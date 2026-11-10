@@ -3,6 +3,7 @@ import { Bank, Monsters } from 'oldschooljs';
 
 import { activity_type_enum } from '@/prisma/main/enums.js';
 import { TokkulShopItems } from '@/lib/data/buyables/tokkulBuyables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { TokkulShopOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -76,17 +77,21 @@ export const tksCommand = defineCommand({
 		}
 	],
 	run: async ({ channelId, options, interaction, user }) => {
-		if (await user.minionIsBusy()) return `${user.minionName} is currently busy and cannot go to the Tzhaar shops.`;
+		if (await user.minionIsBusy())
+			throw new TripError(`${user.minionName} is currently busy and cannot go to the Tzhaar shops.`, [user.id]);
 
 		const hasKaramjaDiary = user.hasDiary('karamja.easy');
 		const item = TokkulShopItems.find(i => stringMatches(i.name, options.buy?.name ?? options.sell?.name ?? ''));
 		const hasKilledJad: boolean = (await user.getKC(TzTokJad.id)) >= 1;
 		const isIronman = !!user.user.minion_ironman;
 
-		if (!item) return "That's not a valid item.";
+		if (!item) throw new TripError("That's not a valid item.", [user.id]);
 
 		if (item.requireFireCape && !hasKilledJad) {
-			return `You are not worthy JalYt. Before you can buy/sell ${item.name}, you need to have defeated the mighty TzTok-Jad!`;
+			throw new TripError(
+				`You are not worthy JalYt. Before you can buy/sell ${item.name}, you need to have defeated the mighty TzTok-Jad!`,
+				[user.id]
+			);
 		}
 
 		// User bank, maxTripLength, quantity given
@@ -120,20 +125,21 @@ export const tksCommand = defineCommand({
 
 		// Calculate tokkul cost for buying or selling
 		if (options.buy) {
-			if (!item.diaryTokkulCost || !item.tokkulCost) return "You can't buy this item.";
+			if (!item.diaryTokkulCost || !item.tokkulCost) throw new TripError("You can't buy this item.", [user.id]);
 			const tokkulCost = (hasKaramjaDiary ? item.diaryTokkulCost : item.tokkulCost) * quantity;
-			if (!item.stock) return "This item isn't stocked.";
+			if (!item.stock) throw new TripError("This item isn't stocked.", [user.id]);
 			cost.add('Tokkul', tokkulCost);
 			loot.add(item.itemID, quantity);
 		} else {
-			if (!item.diaryTokkulReturn || !item.tokkulReturn) return "You can't sell this item.";
+			if (!item.diaryTokkulReturn || !item.tokkulReturn)
+				throw new TripError("You can't sell this item.", [user.id]);
 			const tokkulReturn = (hasKaramjaDiary ? item.diaryTokkulReturn : item.tokkulReturn) * quantity;
 			loot.add('Tokkul', tokkulReturn);
 			cost.add(item.itemID, quantity);
 		}
 
 		// If the user doesn't have the items or tokkul
-		if (!bank.has(cost)) return `You don't own ${cost}.`;
+		if (!bank.has(cost)) throw new TripError(`You don't own ${cost}.`, [user.id]);
 		const action = options.buy ? 'buy' : 'sell';
 
 		// Calculate the max amount of items the user can buy or sell
@@ -141,15 +147,18 @@ export const tksCommand = defineCommand({
 
 		// If the duration of the trip is longer than the users max allowed trip, give the reason why and the max they can buy or sell
 		if (duration > maxTripLength) {
-			return `This trip is too long. You need to ${action} less at a time, to fit your max trip length of ${formatDuration(
-				maxTripLength
-			)}. ${
-				maxCanTransact
-					? `The max ${item.name.toLowerCase()}s you can ${
-							action === 'buy' ? 'buy' : 'sell'
-						} is ${maxCanTransact}`
-					: ''
-			}`;
+			throw new TripError(
+				`This trip is too long. You need to ${action} less at a time, to fit your max trip length of ${formatDuration(
+					maxTripLength
+				)}. ${
+					maxCanTransact
+						? `The max ${item.name.toLowerCase()}s you can ${
+								action === 'buy' ? 'buy' : 'sell'
+							} is ${maxCanTransact}`
+						: ''
+				}`,
+				[user.id]
+			);
 		}
 
 		// Confirmation the user has to accept before trip is sent

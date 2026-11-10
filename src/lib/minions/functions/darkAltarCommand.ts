@@ -1,6 +1,7 @@
 import { increaseNumByPercent, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { DarkAltarOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { hasSkillReqs } from '@/lib/util/smallUtils.js';
@@ -38,20 +39,23 @@ export async function darkAltarCommand({
 	extracts?: boolean;
 }) {
 	const stats = user.skillsAsLevels;
-	if (!['blood', 'soul'].includes(name.toLowerCase().split(' ')[0])) return 'Invalid rune.';
+	if (!['blood', 'soul'].includes(name.toLowerCase().split(' ')[0])) throw new TripError('Invalid rune.', [user.id]);
 	const [hasReqs, neededReqs] = hasSkillReqs(user, {
 		mining: 38,
 		crafting: 38
 	});
 	if (!hasReqs) {
-		return `You can't craft Blood runes at the Dark Altar, because you don't have these required stats: ${neededReqs}.`;
+		throw new TripError(
+			`You can't craft Blood runes at the Dark Altar, because you don't have these required stats: ${neededReqs}.`,
+			[user.id]
+		);
 	}
 
 	const rune = name.toLowerCase().includes('soul') ? 'soul' : 'blood';
 	const runeData = darkAltarRunes[rune];
 
 	if (stats.runecraft < runeData.level) {
-		return `You need level ${runeData.level} Runecraft to craft ${runeData.item.name}'s.`;
+		throw new TripError(`You need level ${runeData.level} Runecraft to craft ${runeData.item.name}'s.`, [user.id]);
 	}
 
 	let timePerRune = runeData.baseTime;
@@ -86,11 +90,11 @@ export async function darkAltarCommand({
 		const extractsOwned = user.bank.amount('Scarred extract');
 		quantity = Math.min(quantity, extractsOwned);
 		if (extractsOwned === 0 || quantity === 0) {
-			return "You don't have enough Scarred extracts to craft these runes.";
+			throw new TripError("You don't have enough Scarred extracts to craft these runes.", [user.id]);
 		}
 		duration = quantity * timePerRune;
 		totalCost.add('Scarred extract', quantity);
-		if (!user.owns(totalCost)) return `You don't own: ${totalCost}.`;
+		if (!user.owns(totalCost)) throw new TripError(`You don't own: ${totalCost}.`, [user.id]);
 	}
 
 	if (totalCost.length > 0) {

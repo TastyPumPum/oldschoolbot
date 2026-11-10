@@ -9,6 +9,7 @@ import calculateMonsterFood from '@/lib/minions/functions/calculateMonsterFood.j
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
 import { Gear } from '@/lib/structures/Gear.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { NightmareActivityTaskOptions } from '@/lib/types/minions.js';
 import calcDurQty from '@/lib/util/calcMassDurationQuantity.js';
 import { getNightmareGearStats } from '@/lib/util/getNightmareGearStats.js';
@@ -50,19 +51,23 @@ const phosaniBISGear = new Gear({
 const shadowChargesPerKc = 40;
 const sangChargesPerKc = 60;
 
-async function checkReqs(user: MUser, monster: KillableMonster, isPhosani: boolean): Promise<string | undefined> {
+async function checkReqs(user: MUser, monster: KillableMonster, isPhosani: boolean): Promise<void> {
 	// Check the user has the requirements to kill The Nightmare
 	if (!user.hasMinion) {
-		return `${user.usernameOrMention} doesn't have a minion, so they can't fight the nightmare!`;
+		throw new TripError(`${user.usernameOrMention} doesn't have a minion, so they can't fight the nightmare!`, [
+			user.id
+		]);
 	}
 
 	if (await user.minionIsBusy()) {
-		return `${user.usernameOrMention} is busy right now and can't fight the nightmare!`;
+		throw new TripError(`${user.usernameOrMention} is busy right now and can't fight the nightmare!`, [user.id]);
 	}
 
 	const [hasReqs, reason] = user.hasMonsterRequirements(monster);
 	if (!hasReqs) {
-		return `${user.usernameOrMention} doesn't have the requirements for this monster: ${reason}`;
+		throw new TripError(`${user.usernameOrMention} doesn't have the requirements for this monster: ${reason}`, [
+			user.id
+		]);
 	}
 
 	if (isPhosani) {
@@ -75,10 +80,13 @@ async function checkReqs(user: MUser, monster: KillableMonster, isPhosani: boole
 			hitpoints: 90
 		});
 		if (!hasReqs) {
-			return `${user.usernameOrMention} doesn't meet the skill requirements.`;
+			throw new TripError(`${user.usernameOrMention} doesn't meet the skill requirements.`, [user.id]);
 		}
 		if ((await user.getKC(NightmareMonster.id)) < 50) {
-			return "You need to have killed The Nightmare at least 50 times before you can face the Phosani's Nightmare.";
+			throw new TripError(
+				"You need to have killed The Nightmare at least 50 times before you can face the Phosani's Nightmare.",
+				[user.id]
+			);
 		}
 	}
 }
@@ -96,15 +104,21 @@ function perUserCost(
 	const sangCharges = sangChargesPerKc * quantity;
 	if (isPhosani) {
 		if (hasShadow && user.user.tum_shadow_charges < tumCharges) {
-			return `You need at least ${tumCharges} Tumeken's shadow charges to use it, otherwise it has to be unequipped: ${globalClient.mentionCommand(
-				'minion',
-				'charge'
-			)}`;
+			throw new TripError(
+				`${user.mention}, you need at least ${tumCharges} Tumeken's shadow charges to use it, otherwise it has to be unequipped: ${globalClient.mentionCommand(
+					'minion',
+					'charge'
+				)}`,
+				[user.id]
+			);
 		} else if (hasSang && user.user.sang_charges < sangCharges) {
-			return `You need at least ${sangCharges} Sanguinesti staff charges to use it, otherwise it has to be unequipped: ${globalClient.mentionCommand(
-				'minion',
-				'charge'
-			)}`;
+			throw new TripError(
+				`${user.mention}, you need at least ${sangCharges} Sanguinesti staff charges to use it, otherwise it has to be unequipped: ${globalClient.mentionCommand(
+					'minion',
+					'charge'
+				)}`,
+				[user.id]
+			);
 		}
 
 		cost.add('Super combat potion(4)', Math.max(1, Math.floor(quantity / 2)))
@@ -119,7 +133,7 @@ function perUserCost(
 		}
 	}
 	if (!user.owns(cost)) {
-		return `${user} doesn't own ${cost}.`;
+		throw new TripError(`${user} doesn't own ${cost}.`, [user.id]);
 	}
 	return cost;
 }
@@ -138,8 +152,7 @@ export async function nightmareCommand(user: MUser, channelId: string, name: str
 	} else if (name.includes('mass')) {
 		type = 'mass';
 	}
-	const err = await checkReqs(user, NightmareMonster, isPhosani);
-	if (err) return err;
+	await checkReqs(user, NightmareMonster, isPhosani);
 
 	const users = type === 'mass' ? [user, user, user, user] : [user];
 	const soloBoosts: string[] = [];
@@ -241,14 +254,13 @@ export async function nightmareCommand(user: MUser, channelId: string, name: str
 		Time.Minute * 5,
 		Time.Minute * 30
 	);
-	if (typeof durQtyRes === 'string') return durQtyRes;
+	if (typeof durQtyRes === 'string') throw new TripError(durQtyRes, [user.id]);
 	const [quantity, duration, perKillTime] = durQtyRes;
 
 	const totalCost = new Bank();
 	let soloFoodUsage: Bank | null = null;
 	const [healAmountNeeded] = calculateMonsterFood(NightmareMonster, user);
 	const cost = perUserCost(user, quantity, isPhosani, hasShadow, hasSang, hasHarm);
-	if (typeof cost === 'string') return cost;
 
 	const healingMod = isPhosani ? 1.5 : 1;
 	try {
@@ -263,14 +275,14 @@ export async function nightmareCommand(user: MUser, channelId: string, name: str
 		const { realCost } = await user.specialRemoveItems(cost);
 
 		if (typeof realCost === 'string') {
-			return realCost;
+			throw new TripError(realCost, [user.id]);
 		}
 		soloFoodUsage = realCost.clone().add(foodRemoved);
 
 		totalCost.add(foodRemoved).add(realCost);
 	} catch (err: unknown) {
 		if (err instanceof UserError) {
-			return err.message;
+			throw new TripError(err.message, [user.id]);
 		}
 		throw err;
 	}

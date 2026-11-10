@@ -1,6 +1,7 @@
 import { calcWhatPercent, formatDuration, reduceNumByPercent, Time, toTitleCase } from '@oldschoolgg/toolkit';
 
 import { BitField } from '@/lib/constants.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { GauntletOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -43,18 +44,21 @@ export async function gauntletCommand(
 	channelId: string,
 	type: 'corrupted' | 'normal' = 'normal'
 ) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	if (user.QP < 200) {
-		return 'You need at least 200 QP to do the Gauntlet.';
+		throw new TripError('You need at least 200 QP to do the Gauntlet.', [user.id]);
 	}
 	const readableName = `${toTitleCase(type)} Gauntlet`;
 	const requiredSkills = type === 'corrupted' ? corruptedRequirements : standardRequirements;
 	const prayLevel = user.skillsAsLevels.prayer;
 
 	if (!user.hasSkillReqs(requiredSkills)) {
-		return `You don't have the required stats to do the ${readableName}, you need: ${formatSkillRequirements(
-			requiredSkills
-		)}.`;
+		throw new TripError(
+			`You don't have the required stats to do the ${readableName}, you need: ${formatSkillRequirements(
+				requiredSkills
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const minigameScores = await user.fetchMinigames();
@@ -62,7 +66,10 @@ export async function gauntletCommand(
 	const normalKC = minigameScores.gauntlet;
 
 	if (type === 'corrupted' && normalKC < 50) {
-		return "You can't attempt the Corrupted Gauntlet, you have less than 50 normal Gauntlets completed - you would not stand a chance in the Corrupted Gauntlet!";
+		throw new TripError(
+			"You can't attempt the Corrupted Gauntlet, you have less than 50 normal Gauntlets completed - you would not stand a chance in the Corrupted Gauntlet!",
+			[user.id]
+		);
 	}
 
 	// Base times for gauntlet prep.
@@ -129,11 +136,14 @@ export async function gauntletCommand(
 	const duration = quantity * gauntletLength;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${readableName} you can do is ${Math.floor(
-			maxTripLength / gauntletLength
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${readableName} you can do is ${Math.floor(
+				maxTripLength / gauntletLength
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await ActivityManager.startTrip<GauntletOptions>({

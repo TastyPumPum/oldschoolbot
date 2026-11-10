@@ -5,6 +5,7 @@ import { colosseumCommand } from '@/lib/colosseum.js';
 import type { PvMMethod } from '@/lib/constants.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { revenantMonsters } from '@/lib/minions/data/killableMonsters/revs.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MonsterActivityTaskOptions } from '@/lib/types/minions.js';
 import findMonster from '@/lib/util/findMonster.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -30,16 +31,18 @@ export async function minionKillCommand(
 	wilderness: boolean | undefined,
 	solo: boolean | undefined
 ): CommandResponse {
-	if (inputQuantity !== undefined && inputQuantity < 1) return 'Quantity must be greater than 0.';
+	if (inputQuantity !== undefined && inputQuantity < 1)
+		throw new TripError('Quantity must be greater than 0.', [user.id]);
 	if (await user.minionIsBusy()) {
-		return 'Your minion is busy.';
+		throw new TripError('Your minion is busy.', [user.id]);
 	}
 	const { minionName } = user;
 
-	if (!name) return invalidMonsterMsg;
+	if (!name) throw new TripError(invalidMonsterMsg, [user.id]);
 
 	if (stringMatches(name, 'colosseum')) return colosseumCommand(interaction);
-	if (stringMatches(name, 'doom')) return 'Use `/delves doom` to fight the Doom of Mokhaiotl.';
+	if (stringMatches(name, 'doom'))
+		throw new TripError('Use `/delves doom` to fight the Doom of Mokhaiotl.', [user.id]);
 	if (stringMatches(name, 'nex')) return nexCommand(interaction, user, channelId, solo);
 	if (stringMatches(name, 'zalcano')) return zalcanoCommand(rng, user, channelId, inputQuantity);
 	if (stringMatches(name, 'tempoross')) return temporossCommand(user, channelId, inputQuantity);
@@ -55,11 +58,14 @@ export async function minionKillCommand(
 		monster = matchedRevenantMonster;
 	}
 
-	if (!monster) return invalidMonsterMsg;
+	if (!monster) throw new TripError(invalidMonsterMsg, [user.id]);
 
 	const [hasReqs, reason] = user.hasMonsterRequirements(monster);
 	if (!hasReqs) {
-		return typeof reason === 'string' ? reason : "You don't have the requirements to fight this monster";
+		throw new TripError(
+			typeof reason === 'string' ? reason : "You don't have the requirements to fight this monster",
+			[user.id]
+		);
 	}
 
 	const slayerInfo = await user.fetchSlayerInfo();
@@ -97,16 +103,19 @@ export async function minionKillCommand(
 	});
 
 	if (typeof result === 'string') {
-		return result;
+		throw new TripError(result, [user.id]);
 	}
 
 	if (!user.allItemsOwned.has(result.updateBank.itemCostBank)) {
-		return `You don't have the items needed to kill this monster. You're missing: ${result.updateBank.itemCostBank.clone().remove(user.allItemsOwned)}`;
+		throw new TripError(
+			`You don't have the items needed to kill this monster. You're missing: ${result.updateBank.itemCostBank.clone().remove(user.allItemsOwned)}`,
+			[user.id]
+		);
 	}
 
 	const updateResult = await result.updateBank.transact(user);
 	if (typeof updateResult === 'string') {
-		return updateResult;
+		throw new TripError(updateResult, [user.id]);
 	}
 
 	if (updateResult.message.length > 0) result.messages.push(updateResult.message);

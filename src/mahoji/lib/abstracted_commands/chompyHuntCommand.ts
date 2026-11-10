@@ -2,6 +2,7 @@ import { Time, UserError } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { avasDevices, chompyHats } from '@/lib/data/CollectionsExport.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -30,12 +31,15 @@ export async function chompyHuntClaimCommand(user: MUser) {
 
 export async function chompyHuntCommand({ user, channelId, rng }: OSInteraction & { rng: RNGProvider }) {
 	if (user.QP < 10) {
-		return 'You need at least 10 QP to hunt Chompy birds.';
+		throw new TripError('You need at least 10 QP to hunt Chompy birds.', [user.id]);
 	}
 
 	const rangeGear = user.gear.range;
 	if (!rangeGear.hasEquipped('Ogre bow') || !rangeGear.hasEquipped('Ogre arrow')) {
-		return 'You need an Ogre bow equipped in your range outfit, and Ogre arrows to hunt Chompy birds!';
+		throw new TripError(
+			'You need an Ogre bow equipped in your range outfit, and Ogre arrows to hunt Chompy birds!',
+			[user.id]
+		);
 	}
 
 	const tripLength = await user.calcMaxTripLength('BigChompyBirdHunting');
@@ -69,7 +73,7 @@ export async function chompyHuntCommand({ user, channelId, rng }: OSInteraction 
 		realCost.add((await user.specialRemoveItems(cost)).realCost);
 	} catch (err: unknown) {
 		if (err instanceof UserError) {
-			return err.message;
+			throw new TripError(err.message, [user.id]);
 		}
 		throw err;
 	}

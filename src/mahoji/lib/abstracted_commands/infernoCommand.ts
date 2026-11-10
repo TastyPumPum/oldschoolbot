@@ -1,13 +1,13 @@
 import { calcPercentOfNum, Emoji, formatDuration, sumArr, Time, UserError } from '@oldschoolgg/toolkit';
 import { Bank, EMonster, type ItemBank, Items, itemID } from 'oldschooljs';
 
-import { MessageBuilder } from '@/discord/MessageBuilder.js';
 import { newChatHeadImage } from '@/lib/canvas/chatHeadImage.js';
 import { BitField } from '@/lib/constants.js';
 import { getSimilarItems } from '@/lib/data/similarItems.js';
 import { type ProjectileType, projectiles } from '@/lib/gear/projectiles.js';
 import { blowpipeDarts } from '@/lib/minions/functions/blowpipeCommand.js';
 import { PercentCounter } from '@/lib/structures/PercentCounter.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { Skills } from '@/lib/types/index.js';
 import type { InfernoOptions } from '@/lib/types/minions.js';
 
@@ -439,7 +439,7 @@ export async function infernoStartCommand({
 	});
 
 	if (typeof res === 'string') {
-		return {
+		throw new TripError(res, [user.id], {
 			files: [
 				{
 					name: 'image.jpg',
@@ -449,7 +449,7 @@ export async function infernoStartCommand({
 					})
 				}
 			]
-		};
+		});
 	}
 	const {
 		deathTime,
@@ -468,7 +468,9 @@ export async function infernoStartCommand({
 		realCost.add((await user.specialRemoveItems(cost)).realCost);
 	} catch (err: unknown) {
 		if (err instanceof UserError) {
-			return new MessageBuilder().addChatHeadImage('ketKeh', `${err.message}`);
+			throw new TripError(err.message, [user.id], {
+				files: [{ name: 'image.jpg', buffer: await newChatHeadImage({ content: err.message, head: 'ketKeh' }) }]
+			});
 		}
 		throw err;
 	}

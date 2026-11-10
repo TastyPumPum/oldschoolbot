@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import ForestryRations from '@/lib/skilling/skills/cooking/forestersRations.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { CreateForestersRationsActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -21,10 +22,10 @@ export async function forestersRationCommand({
 			stringMatches(foresterRation.name, name) || stringMatches(foresterRation.name.split(' ')[0], name)
 	);
 
-	if (!forestryFood) return 'That is not a valid ration';
+	if (!forestryFood) throw new TripError('That is not a valid ration', [user.id]);
 
 	if (user.skillLevel('woodcutting') < 35 || user.skillLevel('cooking') < 35) {
-		return 'You need 35 woodcutting and 35 cooking to create forestry rations.';
+		throw new TripError('You need 35 woodcutting and 35 cooking to create forestry rations.', [user.id]);
 	}
 
 	const rationCookTime = Time.Second * 1.9;
@@ -36,7 +37,10 @@ export async function forestersRationCommand({
 
 	const maxCanDo = user.bank.fits(baseCost);
 	if (maxCanDo === 0) {
-		return `You don't have enough supplies to create even one of this item!\nTo create a ${forestryFood.name}, you need to have ${baseCost}.`;
+		throw new TripError(
+			`You don't have enough supplies to create even one of this item!\nTo create a ${forestryFood.name}, you need to have ${baseCost}.`,
+			[user.id]
+		);
 	}
 	if (maxCanDo < quantity) {
 		quantity = maxCanDo;
@@ -45,18 +49,21 @@ export async function forestersRationCommand({
 	const duration = quantity * rationCookTime;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${forestryFood.name}'s you can create is ${Math.floor(
-			maxTripLength / rationCookTime
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${forestryFood.name}'s you can create is ${Math.floor(
+				maxTripLength / rationCookTime
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const finalCost = new Bank();
 	finalCost.add(baseCost.multiply(quantity));
 
 	if (!user.owns(finalCost)) {
-		return `You don't own: ${finalCost}.`;
+		throw new TripError(`You don't own: ${finalCost}.`, [user.id]);
 	}
 	await user.removeItemsFromBank(finalCost);
 

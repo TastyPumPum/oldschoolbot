@@ -2,6 +2,7 @@ import { formatDuration, round, stringMatches, Time } from '@oldschoolgg/toolkit
 import { Bank } from 'oldschooljs';
 
 import Constructables from '@/lib/skilling/skills/construction/constructables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { Skills } from '@/lib/types/index.js';
 import type { ConstructionActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -68,21 +69,28 @@ export const buildCommand = defineCommand({
 		);
 		const hasDs2Requirements = user.hasSkillReqs(ds2Requirements);
 
-		if (!object) return 'Thats not a valid object to build.';
+		if (!object) throw new TripError('Thats not a valid object to build.', [user.id]);
 
 		if (user.skillLevel('construction') < object.level) {
-			return `${user.minionName} needs ${object.level} Construction to create a ${object.name}.`;
+			throw new TripError(`${user.minionName} needs ${object.level} Construction to create a ${object.name}.`, [
+				user.id
+			]);
 		}
 
 		if (object.name === 'Mythical cape (mounted)') {
 			if (user.QP < 205) {
-				return `${user.minionName} needs 205 Quest Points to build a ${object.name}.`;
+				throw new TripError(`${user.minionName} needs 205 Quest Points to build a ${object.name}.`, [user.id]);
 			}
 			if (!hasDs2Requirements) {
-				return `In order to build a ${object.name}, you need to have completed the Dragon Slayer II quest, and have the prerequisite stats.`;
+				throw new TripError(
+					`In order to build a ${object.name}, you need to have completed the Dragon Slayer II quest, and have the prerequisite stats.`,
+					[user.id]
+				);
 			}
 			if (!user.hasEquippedOrInBank('Mythical cape')) {
-				return `${user.minionName} needs to own a Mythical cape to build a ${object.name}.`;
+				throw new TripError(`${user.minionName} needs to own a Mythical cape to build a ${object.name}.`, [
+					user.id
+				]);
 			}
 		}
 
@@ -110,16 +118,19 @@ export const buildCommand = defineCommand({
 		const duration = quantity * timeToBuildSingleObject;
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)} minutes, try a lower quantity. The highest amount of ${object.name}s you can build is ${Math.floor(
-				maxTripLength / timeToBuildSingleObject
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)} minutes, try a lower quantity. The highest amount of ${object.name}s you can build is ${Math.floor(
+					maxTripLength / timeToBuildSingleObject
+				)}.`,
+				[user.id]
+			);
 		}
 
 		const gpNeeded = Math.floor(10_000 * (invsPerTrip / 8));
 		cost.add('Coins', gpNeeded);
-		if (!user.owns(cost)) return `You don't own: ${cost}.`;
+		if (!user.owns(cost)) throw new TripError(`You don't own: ${cost}.`, [user.id]);
 
 		await user.transactItems({ itemsToRemove: cost });
 

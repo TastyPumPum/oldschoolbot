@@ -50,6 +50,7 @@ import {
 	DEATH_CHARGE_MAGIC_LEVEL,
 	deathChargeCastCost
 } from '@/lib/minions/functions/deathCharge.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { Skills } from '@/lib/types/index.js';
 import type { DoomActivityTrekData, DoomTaskOptions } from '@/lib/types/minions.js';
 import { arrows } from '@/lib/util/archery.js';
@@ -842,22 +843,22 @@ export async function doomCommand(
 ) {
 	const { user, rng } = itx;
 
-	if (!Number.isInteger(targetDelve)) return 'Target delve must be a whole number.';
+	if (!Number.isInteger(targetDelve)) throw new TripError('Target delve must be a whole number.', [user.id]);
 	if (quantity !== undefined && (!Number.isInteger(quantity) || quantity < 1))
-		return 'Quantity must be a positive whole number.';
+		throw new TripError('Quantity must be a positive whole number.', [user.id]);
 
 	const state = getDoomGearState(user, targetDelve, disableZcbBoost);
 	if (check) return buildDoomRequirementsChecklist(user, targetDelve, state);
 
 	if (await user.minionIsBusy()) {
-		return `${user.usernameOrMention} is busy`;
+		throw new TripError(`${user.usernameOrMention} is busy`, [user.id]);
 	}
 
 	const preflightError = getDoomPreflightError(user, targetDelve);
-	if (preflightError) return preflightError;
+	if (preflightError) throw new TripError(preflightError, [user.id]);
 
 	const gearError = getDoomGearError(user, state);
-	if (gearError) return gearError;
+	if (gearError) throw new TripError(gearError, [user.id]);
 	if (!state.meleePunishWeapon) throw new Error('Doom gear validated without a melee punish weapon.');
 	if (state.zcbBoostDisabled && !disableZcbBoost) {
 		await itx.confirmation(
@@ -955,7 +956,10 @@ export async function doomCommand(
 	}
 
 	if (quantity && plannedTaskDuration(quantity) > maxTripLength) {
-		return `You can't do that many Doom of Mohkaiotl Delve Treks! If you want to maximize your task length, then don't specify a quantity and you will do as many Delve Treks as you can by default.`;
+		throw new TripError(
+			`You can't do that many Doom of Mohkaiotl Delve Treks! If you want to maximize your task length, then don't specify a quantity and you will do as many Delve Treks as you can by default.`,
+			[user.id]
+		);
 	}
 
 	const treks: DoomActivityTrekData[] = [];
@@ -1077,7 +1081,10 @@ export async function doomCommand(
 	}
 	let estimate = buildEstimatedCost(treks.length);
 	if ('reason' in estimate && quantity)
-		return `You don't have enough supplies to complete this many Doom of Mokhaiotl Delve Treks. Missing: ${estimate.reason}`;
+		throw new TripError(
+			`You don't have enough supplies to complete this many Doom of Mokhaiotl Delve Treks. Missing: ${estimate.reason}`,
+			[user.id]
+		);
 	while ('reason' in estimate && treks.length > 1) {
 		const removedTrek = treks.pop()!;
 		totalDuration -= removedTrek.dur;
@@ -1086,7 +1093,10 @@ export async function doomCommand(
 		estimate = buildEstimatedCost(treks.length);
 	}
 	if ('reason' in estimate)
-		return `You don't have enough supplies to complete a Doom of Mokhaiotl Delve Trek. Missing: ${estimate.reason}`;
+		throw new TripError(
+			`You don't have enough supplies to complete a Doom of Mokhaiotl Delve Trek. Missing: ${estimate.reason}`,
+			[user.id]
+		);
 	if (removedTreks) {
 		logRemovedTreks('ORIGINAL LIST', '\x1b[33m', DELETE_COPY_originalTreks);
 		logRemovedTreks('NEW LIST', '\x1b[31m', treks);
@@ -1127,7 +1137,10 @@ export async function doomCommand(
 			trek.diedAt ? 1 : 0
 		);
 		if (!delveTrekCostVenomProtection) {
-			return 'Doom Error: The estimated venom protection did not cover the simulated Delve Treks. Please report this.';
+			throw new TripError(
+				'Doom Error: The estimated venom protection did not cover the simulated Delve Treks. Please report this.',
+				[user.id]
+			);
 		}
 		venomItemsUsed.add(delveTrekCostVenomProtection.itemCost);
 		effectiveVenomCost.add(delveTrekCostVenomProtection.effectiveCost);
@@ -1146,7 +1159,7 @@ export async function doomCommand(
 		replacementItems: new Bank(),
 		effectiveCost: estimatedEffectiveVenomCost
 	});
-	if (typeof costRemovalResult === 'string') return costRemovalResult;
+	if (typeof costRemovalResult === 'string') throw new TripError(costRemovalResult, [user.id]);
 	const { removedCost, effectiveCost } = costRemovalResult;
 	if ((state.hasTbow || state.hasSBow) && state.equippedArrowId !== null) {
 		const estimatedArrows = estimatedCost.amount(state.equippedArrowId);

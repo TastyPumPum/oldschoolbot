@@ -2,6 +2,7 @@ import { formatDuration, Time } from '@oldschoolgg/toolkit';
 import { Bank, EItem, type Item, Items, resolveItems, toKMB } from 'oldschooljs';
 import { clamp } from 'remeda';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { AlchingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -42,11 +43,11 @@ export async function alchCommand(
 	const [favAlchs] = user.favAlchs(maxTripLength);
 	if (!osItem) osItem = favAlchs;
 
-	if (!osItem) return 'Invalid item.';
-	if (!canAlchItem(osItem)) return 'This item cannot be alched.';
+	if (!osItem) throw new TripError('Invalid item.', [user.id]);
+	if (!canAlchItem(osItem)) throw new TripError('This item cannot be alched.', [user.id]);
 
 	if (user.skillsAsLevels.magic < 55) {
-		return 'You need level 55 Magic to cast High Alchemy';
+		throw new TripError('You need level 55 Magic to cast High Alchemy', [user.id]);
 	}
 
 	const maxCasts = Math.min(Math.floor(maxTripLength / timePerAlch), userBank.amount(osItem.id));
@@ -57,7 +58,7 @@ export async function alchCommand(
 	quantity = clamp(quantity, { min: 1, max: maxCasts });
 
 	if (quantity * timePerAlch > maxTripLength || quantity < 1 || maxCasts < 1) {
-		return `The max number of alchs you can do is ${maxCasts}!`;
+		throw new TripError(`The max number of alchs you can do is ${maxCasts}!`, [user.id]);
 	}
 
 	const duration = quantity * timePerAlch;
@@ -77,7 +78,7 @@ export async function alchCommand(
 	}
 
 	if (!user.owns(consumedItems)) {
-		return `You don't have the required items, you need ${consumedItems}`;
+		throw new TripError(`You don't have the required items, you need ${consumedItems}`, [user.id]);
 	}
 	if (interaction) {
 		await interaction.confirmation(

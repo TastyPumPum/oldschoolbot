@@ -8,6 +8,7 @@ import addSkillingClueToLoot from '@/lib/minions/functions/addSkillingClueToLoot
 import type { Star } from '@/lib/minions/types.js';
 import { determineMiningTime } from '@/lib/skilling/functions/determineMiningTime.js';
 import { pickaxes } from '@/lib/skilling/functions/miningBoosts.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskData, ShootingStarsOptions } from '@/lib/types/minions.js';
 import { makeShootingStarButton } from '@/lib/util/interactions.js';
 import { formatTripDuration, rollForMoonKeyHalf } from '@/lib/util/minionUtils.js';
@@ -179,7 +180,9 @@ export async function shootingStarsCommand({
 	let miningLevel = skills.mining;
 
 	if (skills.mining < star.level) {
-		return `${user.minionName} needs ${star.level} Mining to mine a Crashed star size ${star.size}.`;
+		throw new TripError(`${user.minionName} needs ${star.level} Mining to mine a Crashed star size ${star.size}.`, [
+			user.id
+		]);
 	}
 
 	// Checks if user own Celestial ring or Celestial signet
