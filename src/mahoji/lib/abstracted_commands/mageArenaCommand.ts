@@ -2,12 +2,13 @@ import { Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function mageArenaCommand(rng: RNGProvider, user: MUser, channelId: string) {
 	if (user.skillsAsLevels.magic < 60) {
-		return 'You need level 60 Magic to do the Mage Arena.';
+		throw new TripError('You need level 60 Magic to do the Mage Arena.', [user.id]);
 	}
 	const duration = rng.randomVariation(Time.Minute * 10, 5);
 
@@ -19,7 +20,9 @@ export async function mageArenaCommand(rng: RNGProvider, user: MUser, channelId:
 	});
 
 	if (!user.owns(itemsNeeded)) {
-		return `You don't own the needed items to do the Mage Arena, you need: ${itemsNeeded}.`;
+		throw new TripError(`You don't own the needed items to do the Mage Arena, you need: ${itemsNeeded}.`, [
+			user.id
+		]);
 	}
 
 	const { foodRemoved } = await removeFoodFromUser({

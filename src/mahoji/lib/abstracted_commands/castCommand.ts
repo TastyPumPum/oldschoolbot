@@ -1,6 +1,7 @@
 import { formatDuration, reduceNumByPercent, stringMatches, Time } from '@oldschoolgg/toolkit';
 
 import { Castables } from '@/lib/skilling/skills/magic/castables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { CastingActivityTaskOptions } from '@/lib/types/minions.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -11,21 +12,22 @@ export async function castCommand(channelId: string, user: MUser, name: string, 
 	const missedBoosts = [];
 
 	if (!spell) {
-		return `That is not a valid spell to cast, the spells you can cast are: ${Castables.map(i => i.name).join(
-			', '
-		)}.`;
+		throw new TripError(
+			`That is not a valid spell to cast, the spells you can cast are: ${Castables.map(i => i.name).join(', ')}.`,
+			[user.id]
+		);
 	}
 
 	if (user.skillsAsLevels.magic < spell.level) {
-		return `${user.minionName} needs ${spell.level} Magic to cast ${spell.name}.`;
+		throw new TripError(`${user.minionName} needs ${spell.level} Magic to cast ${spell.name}.`, [user.id]);
 	}
 
 	if (spell.craftLevel && user.skillsAsLevels.crafting < spell.craftLevel) {
-		return `${user.minionName} needs ${spell.craftLevel} Crafting to cast ${spell.name}.`;
+		throw new TripError(`${user.minionName} needs ${spell.craftLevel} Crafting to cast ${spell.name}.`, [user.id]);
 	}
 
 	if (spell.qpRequired && user.QP < spell.qpRequired) {
-		return `${user.minionName} needs ${spell.qpRequired} QP to cast ${spell.name}.`;
+		throw new TripError(`${user.minionName} needs ${spell.qpRequired} QP to cast ${spell.name}.`, [user.id]);
 	}
 
 	const userBank = user.bank;
@@ -78,17 +80,23 @@ export async function castCommand(channelId: string, user: MUser, name: string, 
 	const duration = quantity * castTimeMilliSeconds;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${spell.name}s you can cast is ${Math.floor(
-			maxTripLength / castTimeMilliSeconds
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${spell.name}s you can cast is ${Math.floor(
+				maxTripLength / castTimeMilliSeconds
+			)}.`,
+			[user.id]
+		);
 	}
 	const cost = determineRunes(user, spell.input.clone().multiply(quantity));
 	if (!userBank.has(cost)) {
-		return `You don't have the materials needed to cast ${quantity}x ${spell.name}, you need ${
-			spell.input
-		}, you're missing **${cost.clone().remove(userBank)}** (Cost: ${cost}).`;
+		throw new TripError(
+			`You don't have the materials needed to cast ${quantity}x ${spell.name}, you need ${
+				spell.input
+			}, you're missing **${cost.clone().remove(userBank)}** (Cost: ${cost}).`,
+			[user.id]
+		);
 	}
 
 	const userGP = user.GP;
@@ -97,7 +105,7 @@ export async function castCommand(channelId: string, user: MUser, name: string, 
 	if (spell.gpCost) {
 		gpCost = spell.gpCost * quantity;
 		if (gpCost > userGP) {
-			return `You need ${gpCost} GP to create ${quantity} planks.`;
+			throw new TripError(`You need ${gpCost} GP to create ${quantity} planks.`, [user.id]);
 		}
 		cost.add('Coins', gpCost);
 	}

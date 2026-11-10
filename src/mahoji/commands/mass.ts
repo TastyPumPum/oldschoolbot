@@ -6,6 +6,7 @@ import calculateMonsterFood from '@/lib/minions/functions/calculateMonsterFood.j
 import hasEnoughFoodForMonster from '@/lib/minions/functions/hasEnoughFoodForMonster.js';
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
 import type { KillableMonster } from '@/lib/minions/types.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { GroupMonsterActivityTaskOptions } from '@/lib/types/minions.js';
 import calcDurQty from '@/lib/util/calcMassDurationQuantity.js';
 import findMonster from '@/lib/util/findMonster.js';
@@ -66,13 +67,13 @@ export const massCommand = defineCommand({
 	run: async ({ interaction, options, user, channelId }) => {
 		await interaction.defer();
 
-		if (user.user.minion_ironman) return 'Ironmen cannot do masses.';
+		if (user.user.minion_ironman) throw new TripError('Ironmen cannot do masses.', [user.id]);
 		const monster = findMonster(options.monster);
-		if (!monster) return "That monster doesn't exist!";
-		if (!monster.groupKillable) return "This monster can't be killed in groups!";
+		if (!monster) throw new TripError("That monster doesn't exist!", [user.id]);
+		if (!monster.groupKillable) throw new TripError("This monster can't be killed in groups!", [user.id]);
 
 		const check = await checkReqs([user], monster, 2);
-		if (check) return check;
+		if (check) throw new TripError(check, [user.id]);
 
 		const users: MUser[] = await globalClient.makeParty({
 			interaction,
@@ -100,11 +101,19 @@ export const massCommand = defineCommand({
 		const usersKickedForBusy = unchangedUsers.filter(i => !users.includes(i));
 
 		const durQtyRes = await calcDurQty(users, monster, undefined);
-		if (typeof durQtyRes === 'string') return durQtyRes;
+		if (typeof durQtyRes === 'string')
+			throw new TripError(
+				durQtyRes,
+				users.map(u => u.id)
+			);
 		const [quantity, duration, perKillTime, boostMsgs] = durQtyRes;
 
 		const checkRes = await checkReqs(users, monster, quantity);
-		if (checkRes) return checkRes;
+		if (checkRes)
+			throw new TripError(
+				checkRes,
+				users.map(u => u.id)
+			);
 
 		if (1 > 2 && monster.healAmountNeeded) {
 			for (const user of users) {

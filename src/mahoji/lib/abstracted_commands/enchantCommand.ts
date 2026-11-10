@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Items } from 'oldschooljs';
 
 import { Enchantables } from '@/lib/skilling/skills/magic/enchantables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { EnchantingActivityTaskOptions } from '@/lib/types/minions.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -15,11 +16,13 @@ export async function enchantCommand(user: MUser, channelId: string, name: strin
 	);
 
 	if (!enchantable) {
-		return 'That is not a valid item to enchant.';
+		throw new TripError('That is not a valid item to enchant.', [user.id]);
 	}
 
 	if (user.skillsAsLevels.magic < enchantable.level) {
-		return `${user.minionName} needs ${enchantable.level} Magic to enchant ${enchantable.name}.`;
+		throw new TripError(`${user.minionName} needs ${enchantable.level} Magic to enchant ${enchantable.name}.`, [
+			user.id
+		]);
 	}
 
 	const userBank = user.bank;
@@ -38,19 +41,25 @@ export async function enchantCommand(user: MUser, channelId: string, name: strin
 	const duration = quantity * timeToEnchantTen;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${enchantable.name}s you can enchant is ${Math.floor(
-			maxTripLength / timeToEnchantTen
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${enchantable.name}s you can enchant is ${Math.floor(
+				maxTripLength / timeToEnchantTen
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const cost = determineRunes(user, enchantable.input.clone().multiply(quantity));
 
 	if (!userBank.has(cost)) {
-		return `You don't have the materials needed to enchant ${quantity}x ${enchantable.name}, you need ${
-			enchantable.input
-		}, you're missing **${cost.clone().remove(userBank)}**.`;
+		throw new TripError(
+			`You don't have the materials needed to enchant ${quantity}x ${enchantable.name}, you need ${
+				enchantable.input
+			}, you're missing **${cost.clone().remove(userBank)}**.`,
+			[user.id]
+		);
 	}
 	await user.transactItems({ itemsToRemove: cost });
 

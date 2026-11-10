@@ -13,6 +13,7 @@ import {
 	mixologyHerbs
 } from '@/lib/minions/data/masteringMixology.js';
 import { QuestID } from '@/lib/minions/data/quests.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import * as tripLength from '@/lib/util/calcMaxTripLength.js';
 import {
 	MasteringMixologyBuyCommand,
@@ -23,6 +24,7 @@ import {
 
 function mockMixologyUser(overrides: Record<string, unknown> = {}) {
 	return {
+		id: '123',
 		bank: new Bank(),
 		user: {},
 		skillLevel: () => 99,
@@ -99,9 +101,14 @@ describe('Mastering Mixology', () => {
 			new Bank(),
 			new Bank().add('Mox paste', 20).add('Aga paste', 10)
 		])('rejects paste that cannot fund an unlocked contract', async bank => {
-			const result = await MasteringMixologyContractStartCommand(contractUser(bank, 60), '1');
+			const user = contractUser(bank, 60);
+			const result = MasteringMixologyContractStartCommand(user, '1');
 
-			expect(result).toContain("You're out of paste!");
+			await expect(result).rejects.toBeInstanceOf(TripError);
+			await expect(result).rejects.toMatchObject({
+				message: expect.stringContaining("You're out of paste!"),
+				userIds: [user.id]
+			});
 			expect(ActivityManager.startTrip).not.toHaveBeenCalled();
 		});
 
@@ -217,7 +224,12 @@ describe('Mastering Mixology', () => {
 			}
 		});
 
-		await expect(MixologyPasteCreationCommand(user, '1', 'Guam leaf', 1)).resolves.toEqual('Test minion is busy.');
+		const result = MixologyPasteCreationCommand(user, '1', 'Guam leaf', 1);
+		await expect(result).rejects.toBeInstanceOf(TripError);
+		await expect(result).rejects.toMatchObject({
+			message: 'Test minion is busy.',
+			userIds: [user.id]
+		});
 		expect(removeItemsFromBank).not.toHaveBeenCalled();
 	});
 

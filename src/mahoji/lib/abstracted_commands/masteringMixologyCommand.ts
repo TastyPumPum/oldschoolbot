@@ -12,6 +12,7 @@ import {
 	mixologyHerbUseDuration
 } from '@/lib/minions/data/masteringMixology.js';
 import { QuestID } from '@/lib/minions/data/quests.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type {
 	MasteringMixologyContractActivityTaskOptions,
 	MasteringMixologyContractCreatingTaskOptions
@@ -25,25 +26,29 @@ export async function MixologyPasteCreationCommand(
 	optionQuantity?: number
 ) {
 	const currentLevel = user.skillLevel('herblore');
-	if (currentLevel < 60) return 'You need at least 60 Herblore to participate in the mixology.';
+	if (currentLevel < 60)
+		throw new TripError('You need at least 60 Herblore to participate in the mixology.', [user.id]);
 
 	if (!user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)) {
-		return `You need to complete the "Children of the Sun" quest before you can participate in the mixology. Send your minion to do the quest using: ${globalClient.mentionCommand(
-			'activities',
-			'quest'
-		)}.`;
+		throw new TripError(
+			`You need to complete the "Children of the Sun" quest before you can participate in the mixology. Send your minion to do the quest using: ${globalClient.mentionCommand(
+				'activities',
+				'quest'
+			)}.`,
+			[user.id]
+		);
 	}
 
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 
 	const herb = mixologyHerbs.find(h => h.name.toLowerCase() === herbName.toLowerCase());
 	if (!herb) {
-		return 'That is not a valid herb for mixology paste.';
+		throw new TripError('That is not a valid herb for mixology paste.', [user.id]);
 	}
 
 	const bankQty = user.bank.amount(herb.name);
 	if (bankQty === 0) {
-		return `You don't have any ${herb.name} to convert into ${herb.paste} paste.`;
+		throw new TripError(`You don't have any ${herb.name} to convert into ${herb.paste} paste.`, [user.id]);
 	}
 
 	const maxTripLength = await calcMaxTripLength(user, 'MixologyPasteCreation');
@@ -52,14 +57,17 @@ export async function MixologyPasteCreationCommand(
 
 	let quantity = optionQuantity ?? Math.min(maxByTime, maxByItems);
 	if (quantity < 1) {
-		return `You don't have enough ${herb.name} or time to make any paste.`;
+		throw new TripError(`You don't have enough ${herb.name} or time to make any paste.`, [user.id]);
 	}
 
 	if (quantity > maxByItems) quantity = maxByItems;
 	if (quantity > maxByTime) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}. Try a lower quantity. You can make up to ${maxByTime}x.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}. Try a lower quantity. You can make up to ${maxByTime}x.`,
+			[user.id]
+		);
 	}
 
 	const pasteYield = quantity * herb.quantity;
@@ -67,7 +75,7 @@ export async function MixologyPasteCreationCommand(
 	const cost = new Bank().add(herb.name, quantity);
 
 	if (!user.owns(cost)) {
-		return `You're missing items to mix ${quantity}x ${herb.name}.`;
+		throw new TripError(`You're missing items to mix ${quantity}x ${herb.name}.`, [user.id]);
 	}
 
 	await user.removeItemsFromBank(cost);
@@ -139,23 +147,30 @@ export async function MasteringMixologyBuyCommand(user: MUser, input = '', quant
 export async function MasteringMixologyContractStartCommand(user: MUser, channelID: string, contracts?: number) {
 	const currentLevel = user.skillLevel('herblore');
 
-	if (currentLevel < 60) return 'You need at least 60 Herblore to participate in the mixology.';
+	if (currentLevel < 60)
+		throw new TripError('You need at least 60 Herblore to participate in the mixology.', [user.id]);
 
 	if (!user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)) {
-		return `You need to complete the "Children of the Sun" quest before you can participate in the mixology. Send your minion to do the quest using: ${globalClient.mentionCommand(
-			'activities',
-			'quest'
-		)}.`;
+		throw new TripError(
+			`You need to complete the "Children of the Sun" quest before you can participate in the mixology. Send your minion to do the quest using: ${globalClient.mentionCommand(
+				'activities',
+				'quest'
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const eligibleContracts = mixologyContracts.filter(c => currentLevel >= c.requiredLevel);
 	const remainingPaste = user.bank.clone();
 	if (!eligibleContracts.some(c => remainingPaste.has(getMixologyContractCost(c.pasteSequence)))) {
-		return `You're out of paste! Each contract requires 30 paste (3 batches of 10), or 60 for contracts using all three pastes. \nCreate more using ${globalClient.mentionCommand(
-			'minigames',
-			'mastering_mixology',
-			'create'
-		)} before starting any contracts.`;
+		throw new TripError(
+			`You're out of paste! Each contract requires 30 paste (3 batches of 10), or 60 for contracts using all three pastes. \nCreate more using ${globalClient.mentionCommand(
+				'minigames',
+				'mastering_mixology',
+				'create'
+			)} before starting any contracts.`,
+			[user.id]
+		);
 	}
 
 	const maxTripLength = await calcMaxTripLength(user, 'MasteringMixologyContract');
@@ -166,7 +181,10 @@ export async function MasteringMixologyContractStartCommand(user: MUser, channel
 	}
 
 	if (contracts < 1 || contracts > maxContracts) {
-		return `You can only complete between 1 and ${maxContracts} contracts based on your current max trip length.`;
+		throw new TripError(
+			`You can only complete between 1 and ${maxContracts} contracts based on your current max trip length.`,
+			[user.id]
+		);
 	}
 	const contractIDs: number[] = [];
 	let totalDuration = 0;

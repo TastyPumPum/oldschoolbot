@@ -3,6 +3,7 @@ import { Emoji, getNextUTCReset, notEmpty, objectEntries, Time } from '@oldschoo
 
 import { CONSTANTS } from '@/lib/constants.js';
 import type { SkillNameType } from '@/lib/skilling/types.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -49,29 +50,38 @@ function getTearsOfGuthixMissingSkillMessage(user: MUser): string | null {
 }
 
 export async function tearsOfGuthixCommand(user: MUser, channelId: string) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	const currentStats = await user.fetchStats();
 	const lastPlayedDate = Number(currentStats.last_tears_of_guthix_timestamp);
 	const nextReset = getNextUTCReset(lastPlayedDate, CONSTANTS.TEARS_OF_GUTHIX_CD);
 
 	// If they have already claimed a ToG in the past 7days
 	if (Date.now() < nextReset) {
-		return `**${Emoji.Snake} Juna says...** You can drink from the Tears of Guthix in ${dateFm(new Date(nextReset))}`;
+		throw new TripError(
+			`**${Emoji.Snake} Juna says...** You can drink from the Tears of Guthix in ${dateFm(new Date(nextReset))}`,
+			[user.id]
+		);
 	}
 
 	// 43 QP for the quest
 	const userQP = user.QP;
 	if (userQP < 43) {
-		return `**${Emoji.Snake} Juna says...** You can drink from the Tears of Guthix when you have 43+ QP.`;
+		throw new TripError(
+			`**${Emoji.Snake} Juna says...** You can drink from the Tears of Guthix when you have 43+ QP.`,
+			[user.id]
+		);
 	}
 
 	const missingSkillsMessage = getTearsOfGuthixMissingSkillMessage(user);
 	const missingIronmanSkillMessage = getTearsOfGuthixMissingIronmanMessage(user);
 
 	if (missingSkillsMessage || missingIronmanSkillMessage) {
-		return `You are not skilled enough to participate in Tears of Guthix. ${
-			missingSkillsMessage ?? ''
-		} ${missingIronmanSkillMessage ?? ''}`.trim();
+		throw new TripError(
+			`You are not skilled enough to participate in Tears of Guthix. ${
+				missingSkillsMessage ?? ''
+			} ${missingIronmanSkillMessage ?? ''}`.trim(),
+			[user.id]
+		);
 	}
 
 	const duration = Math.min(Time.Minute * 2 + Time.Second * 0.6 * userQP, Time.Minute * 30);

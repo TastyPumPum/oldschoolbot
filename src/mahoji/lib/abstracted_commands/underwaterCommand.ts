@@ -2,6 +2,7 @@ import { formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import type { UnderwaterAgilityThievingTrainingSkill } from '@/lib/skilling/skills/agility.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { UnderwaterAgilityThievingTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -28,21 +29,24 @@ export async function underwaterAgilityThievingCommand({
 	}
 
 	if (!user.hasEquipped(['Graceful gloves', 'Graceful top', 'Graceful legs'])) {
-		return 'You need Graceful top, legs and gloves to do Underwater Agility and Thieving.';
+		throw new TripError('You need Graceful top, legs and gloves to do Underwater Agility and Thieving.', [user.id]);
 	}
 
 	if (minutes < 1 || !Number.isInteger(minutes) || Number.isNaN(minutes)) {
-		return 'Please specify a valid number of minutes.';
+		throw new TripError('Please specify a valid number of minutes.', [user.id]);
 	}
 
 	const tripLength = Time.Minute * minutes;
 
 	if (tripLength > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower trip length. The highest amount of minutes you can send out is ${Math.floor(
-			maxTripLength / Time.Minute
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower trip length. The highest amount of minutes you can send out is ${Math.floor(
+				maxTripLength / Time.Minute
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const boosts: string[] = [];
@@ -80,7 +84,10 @@ export async function underwaterAgilityThievingCommand({
 	const duration = quantity * oneLootActionTime;
 
 	if (!userBank.has(itemsToRemove)) {
-		return `You need ${quantity}x Stamina potion(4) for the whole trip, try a lower trip length, turn of stamina usage or make/buy more Stamina potion(4).`;
+		throw new TripError(
+			`You need ${quantity}x Stamina potion(4) for the whole trip, try a lower trip length, turn of stamina usage or make/buy more Stamina potion(4).`,
+			[user.id]
+		);
 	}
 
 	await ActivityManager.startTrip<UnderwaterAgilityThievingTaskOptions>({

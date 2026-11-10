@@ -3,6 +3,7 @@ import { Bank } from 'oldschooljs';
 
 import Smithing from '@/lib/skilling/skills/smithing/index.js';
 import smithables from '@/lib/skilling/skills/smithing/smithables/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { SmithingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { pluraliseItemName } from '@/lib/util/smallUtils.js';
@@ -43,18 +44,23 @@ export const smithCommand = defineCommand({
 			stringMatches(_smithedItem.name, options.name)
 		);
 
-		if (!smithedItem) return 'That is not a valid item to smith.';
+		if (!smithedItem) throw new TripError('That is not a valid item to smith.', [user.id]);
 
 		if (user.skillsAsLevels.smithing < smithedItem.level) {
-			return `${user.minionName} needs ${smithedItem.level} Smithing to smith ${pluraliseItemName(
-				smithedItem.name
-			)}.`;
+			throw new TripError(
+				`${user.minionName} needs ${smithedItem.level} Smithing to smith ${pluraliseItemName(
+					smithedItem.name
+				)}.`,
+				[user.id]
+			);
 		}
 
 		const userQP = user.QP;
 
 		if (smithedItem.qpRequired && userQP < smithedItem.qpRequired) {
-			return `${user.minionName} needs ${smithedItem.qpRequired} QP to smith ${smithedItem.name}.`;
+			throw new TripError(`${user.minionName} needs ${smithedItem.qpRequired} QP to smith ${smithedItem.name}.`, [
+				user.id
+			]);
 		}
 		// If they have the entire Smiths' Uniform, give 100% chance save 1 tick each item
 		let setBonus = 0;
@@ -105,7 +111,7 @@ export const smithCommand = defineCommand({
 
 		const maxCanDo = user.bank.fits(baseCost);
 		if (maxCanDo === 0) {
-			return "You don't have enough supplies to smith even one of this item!";
+			throw new TripError("You don't have enough supplies to smith even one of this item!", [user.id]);
 		}
 		if (maxCanDo < quantity) {
 			quantity = maxCanDo;
@@ -116,11 +122,14 @@ export const smithCommand = defineCommand({
 
 		const duration = quantity * timeToSmithSingleBar;
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${smithedItem.name}${
-				smithedItem.name.charAt(smithedItem.name.length - 1).toLowerCase() === 's' ? '' : 's'
-			} you can smith is ${Math.floor(maxTripLength / timeToSmithSingleBar)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${smithedItem.name}${
+					smithedItem.name.charAt(smithedItem.name.length - 1).toLowerCase() === 's' ? '' : 's'
+				} you can smith is ${Math.floor(maxTripLength / timeToSmithSingleBar)}.`,
+				[user.id]
+			);
 		}
 
 		await user.transactItems({ itemsToRemove: cost });

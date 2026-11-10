@@ -4,6 +4,7 @@ import { Bank, EItem, type Item, Items, itemID } from 'oldschooljs';
 import { ValeTotemsBuyables, ValeTotemsSellables } from '@/lib/data/buyables/valeTotemsBuyables.js';
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { claimValeOfferings } from '@/lib/minions/data/valeTotems.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ValeTotemsActivityTaskOptions } from '@/lib/types/minions.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -26,30 +27,33 @@ export async function valeTotemsStartCommand(
 	staminaPot?: boolean | undefined
 ) {
 	if (await user.minionIsBusy()) {
-		return `${user.usernameOrMention} is busy`;
+		throw new TripError(`${user.usernameOrMention} is busy`, [user.id]);
 	}
 
 	if (!user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)) {
-		return `${user.minionName} needs to complete the "Children of the Sun" quest before ${user.minionName} can start Vale Totems minigame.`;
+		throw new TripError(
+			`${user.minionName} needs to complete the "Children of the Sun" quest before ${user.minionName} can start Vale Totems minigame.`,
+			[user.id]
+		);
 	}
 
 	const fletchingLvl = user.skillLevel('fletching');
 	if (fletchingLvl < 20) {
-		return `${user.minionName} needs 20 Fletching to start Vale Totems minigame.`;
+		throw new TripError(`${user.minionName} needs 20 Fletching to start Vale Totems minigame.`, [user.id]);
 	}
 
 	if (!itemToFletch) {
-		return `${user.minionName} have to select an item to fletch during Vale Totems.`;
+		throw new TripError(`${user.minionName} have to select an item to fletch during Vale Totems.`, [user.id]);
 	}
 
 	const fletchableItem = Items.getItem(itemToFletch);
 	if (!fletchableItem) {
-		return `That is not a valid item.`;
+		throw new TripError(`That is not a valid item.`, [user.id]);
 	}
 
 	const decoration = ValeTotemsDecorations.find(i => i.item.id === fletchableItem.id);
 	if (!decoration) {
-		return `That is not a valid item to use for Vale Totems minigame.`;
+		throw new TripError(`That is not a valid item to use for Vale Totems minigame.`, [user.id]);
 	}
 
 	const userBank = user.bank;
@@ -58,15 +62,19 @@ export async function valeTotemsStartCommand(
 	const logsOwned = userBank.amount(logType);
 
 	if (logsOwned < decoration.logAmount) {
-		return `${user.minionName} doesn't own: ${logCostLap}x ${logType.name}.`;
+		throw new TripError(`${user.minionName} doesn't own: ${logCostLap}x ${logType.name}.`, [user.id]);
 	}
 
 	if (fletchingLvl < decoration.level) {
-		return `${user.minionName} needs ${decoration.level} Fletching to fletch ${decoration.item.name}.`;
+		throw new TripError(
+			`${user.minionName} needs ${decoration.level} Fletching to fletch ${decoration.item.name}.`,
+			[user.id]
+		);
 	}
 
 	if (staminaPot) {
-		if (userBank.amount(EItem.STAMINA_POTION4) < 1) return `${user.minionName} doesn't own: Stamina Potion(4).`;
+		if (userBank.amount(EItem.STAMINA_POTION4) < 1)
+			throw new TripError(`${user.minionName} doesn't own: Stamina Potion(4).`, [user.id]);
 	}
 
 	const AVG_TIME_PER_LAP = decoration.secondsPerLap * Time.Second;
@@ -91,7 +99,10 @@ export async function valeTotemsStartCommand(
 
 	if (decoration.stringing) {
 		if (userBank.amount(EItem.BOW_STRING) < STRINGS_PER_LAP)
-			return `${user.minionName} need at least ${STRINGS_PER_LAP} Bow strings to fletch ${decoration.item.name}!`;
+			throw new TripError(
+				`${user.minionName} need at least ${STRINGS_PER_LAP} Bow strings to fletch ${decoration.item.name}!`,
+				[user.id]
+			);
 		if (!user.hasEquippedOrInBank(itemID('Bow string spool'))) {
 			timePerLap += STRING_NO_SPOOL_PENALTY;
 		} else {

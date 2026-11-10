@@ -1,6 +1,7 @@
 import { choicesOf } from '@/discord/index.js';
 import { toaHelpCommand, toaStartCommand } from '@/lib/simulation/toa.js';
 import { mileStoneBaseDeathChances } from '@/lib/simulation/toaUtils.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import { coxBoostsCommand, coxCommand, coxStatsCommand } from '@/mahoji/lib/abstracted_commands/coxCommand.js';
 import { tobCheckCommand, tobStartCommand, tobStatsCommand } from '@/mahoji/lib/abstracted_commands/tobCommand.js';
 
@@ -184,7 +185,7 @@ export const raidCommand = defineCommand({
 		if (tob?.check) return tobCheckCommand(user, Boolean(tob.check.hard_mode));
 		if (options.toa?.help) return toaHelpCommand(user, channelId);
 
-		if (await user.minionIsBusy()) return "Your minion is busy, you can't do this.";
+		if (await user.minionIsBusy()) throw new TripError("Your minion is busy, you can't do this.", [user.id]);
 
 		if (cox?.start) {
 			return coxCommand(
@@ -222,6 +223,6 @@ export const raidCommand = defineCommand({
 			);
 		}
 
-		return 'Invalid command.';
+		throw new TripError('Invalid command.', [user.id]);
 	}
 });

@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import Runecraft from '@/lib/skilling/skills/runecraft.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { TiaraRunecraftActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -22,11 +23,14 @@ export async function tiaraRunecraftCommand({
 	);
 
 	if (!tiaraObj) {
-		return `That's not a valid tiara. Valid tiaras are ${Runecraft.Tiaras.map(_tiara => _tiara.name).join(', ')}.`;
+		throw new TripError(
+			`That's not a valid tiara. Valid tiaras are ${Runecraft.Tiaras.map(_tiara => _tiara.name).join(', ')}.`,
+			[user.id]
+		);
 	}
 
 	if (tiaraObj.qpRequired && user.QP < tiaraObj.qpRequired) {
-		return `You need ${tiaraObj.qpRequired} QP to craft this tiara.`;
+		throw new TripError(`You need ${tiaraObj.qpRequired} QP to craft this tiara.`, [user.id]);
 	}
 
 	const bank = new Bank(user.bank);
@@ -60,15 +64,21 @@ export async function tiaraRunecraftCommand({
 	}
 
 	if (numTiaraOwned === 0 || numTalismansOwned === 0) {
-		return `You don't have ${
-			numTiaraOwned === 0
-				? 'any tiaras. You can acquire some through crafting at a furnance, or purchasing from other players.'
-				: `${tiaraObj.inputTalisman}. You can acquire some from PvM, or purchasing from other players.`
-		}`;
+		throw new TripError(
+			`You don't have ${
+				numTiaraOwned === 0
+					? 'any tiaras. You can acquire some through crafting at a furnance, or purchasing from other players.'
+					: `${tiaraObj.inputTalisman}. You can acquire some from PvM, or purchasing from other players.`
+			}`,
+			[user.id]
+		);
 	} else if (numTalismansOwned < quantity || numTiaraOwned < quantity) {
-		return `You don't have enough ${
-			numTiaraOwned < quantity ? 'tiaras' : `${tiaraObj.inputTalisman}`
-		} to craft ${quantity}x ${tiaraObj.name}. You can acquire some from PvM, or purchasing from other players.`;
+		throw new TripError(
+			`You don't have enough ${
+				numTiaraOwned < quantity ? 'tiaras' : `${tiaraObj.inputTalisman}`
+			} to craft ${quantity}x ${tiaraObj.name}. You can acquire some from PvM, or purchasing from other players.`,
+			[user.id]
+		);
 	}
 
 	const numberOfInventories = Math.floor(quantity / TIARAS_PER_INVENTORY);
@@ -77,11 +87,14 @@ export async function tiaraRunecraftCommand({
 	if (quantityInLastInv > 0) duration += tripLength + makeTiaraTime * quantityInLastInv;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${tiaraObj.name} you can craft is ${
-			maxCanDoOwned < maxCanDo ? maxCanDoOwned : maxCanDo
-		}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${tiaraObj.name} you can craft is ${
+				maxCanDoOwned < maxCanDo ? maxCanDoOwned : maxCanDo
+			}.`,
+			[user.id]
+		);
 	}
 
 	const totalCost = new Bank();

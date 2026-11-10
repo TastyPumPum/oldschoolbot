@@ -8,6 +8,7 @@ import { sinsOfTheFatherSkillRequirements } from '@/lib/skilling/functions/quest
 import Mining from '@/lib/skilling/skills/mining.js';
 import type { Ore } from '@/lib/skilling/types.js';
 import type { GearBank } from '@/lib/structures/GearBank.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MiningActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -232,35 +233,44 @@ export const mineCommand = defineCommand({
 		);
 
 		if (!ore) {
-			return `Thats not a valid ore to mine. Valid ores are ${Mining.Ores.map(oreToMine => oreToMine.name).join(
-				', '
-			)}, or ${Mining.MotherlodeMine.name}.`;
+			throw new TripError(
+				`Thats not a valid ore to mine. Valid ores are ${Mining.Ores.map(oreToMine => oreToMine.name).join(
+					', '
+				)}, or ${Mining.MotherlodeMine.name}.`,
+				[user.id]
+			);
 		}
 
 		if (user.skillsAsLevels.mining < ore.level) {
-			return `${user.minionName} needs ${ore.level} Mining to mine ${ore.name}.`;
+			throw new TripError(`${user.minionName} needs ${ore.level} Mining to mine ${ore.name}.`, [user.id]);
 		}
 		if (ore.prayerLevel && user.skillsAsLevels.prayer < ore.prayerLevel) {
-			return `${user.minionName} needs ${ore.prayerLevel} Prayer to mine ${ore.name}.`;
+			throw new TripError(`${user.minionName} needs ${ore.prayerLevel} Prayer to mine ${ore.name}.`, [user.id]);
 		}
 		if (ore.fixedRatePerHour && !pickaxes.some(pickaxe => user.gearBank.hasEquippedOrInBank(pickaxe.id))) {
-			return `You need a pickaxe equipped or in your bank to mine ${ore.name}.`;
+			throw new TripError(`You need a pickaxe equipped or in your bank to mine ${ore.name}.`, [user.id]);
 		}
 
 		// Check for daeyalt shard requirements.
 		const hasDaeyaltReqs = user.hasSkillReqs(sinsOfTheFatherSkillRequirements);
 		if (ore.name === 'Daeyalt essence rock') {
 			if (!hasDaeyaltReqs) {
-				return `To mine ${ore.name}, you need ${formatSkillRequirements(sinsOfTheFatherSkillRequirements)}.`;
+				throw new TripError(
+					`To mine ${ore.name}, you need ${formatSkillRequirements(sinsOfTheFatherSkillRequirements)}.`,
+					[user.id]
+				);
 			}
 			if (user.QP < 125) {
-				return `To mine ${ore.name}, you need at least 125 Quest Points.`;
+				throw new TripError(`To mine ${ore.name}, you need at least 125 Quest Points.`, [user.id]);
 			}
 		}
 
 		if (ore.name === 'Tainted essence chunk') {
 			if (!user.user.finished_quest_ids.includes(QuestID.DesertTreasureII)) {
-				return 'You need to have completed the Desert Treasure II quest to access the scar essence mine.';
+				throw new TripError(
+					'You need to have completed the Desert Treasure II quest to access the scar essence mine.',
+					[user.id]
+				);
 			}
 		}
 

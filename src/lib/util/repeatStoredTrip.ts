@@ -25,6 +25,7 @@ import {
 	FishingStoredTripError
 } from '@/lib/skilling/skills/fishing/fishingRework.js';
 import Hunter from '@/lib/skilling/skills/hunter/hunter.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type {
 	ActivityTaskData,
 	ActivityTaskOptionsWithQuantity,
@@ -989,7 +990,9 @@ async function handleSlayerTaskFinishedPrompt(
 	);
 	const selectedActivity = alternatives.find(alternative => alternative.id.toString() === selectedActivityID);
 	if (!selectedActivity) {
-		await actionInteraction.reply({ content: "Couldn't find that trip to repeat.", ephemeral: true });
+		await actionInteraction.reply(
+			await new TripError("Couldn't find that trip to repeat.", [user.id], { ephemeral: true }).toResponse()
+		);
 		return SpecialResponse.RespondedManually;
 	}
 
@@ -1005,7 +1008,7 @@ export async function repeatTrip(
 	options?: { showSlayerTaskIntervention?: boolean; slayerTaskInterventionTimeout?: number }
 ): CommandResponse {
 	if (!activity || !activity.data || !activity.type) {
-		return { content: "Couldn't find any trip to repeat.", ephemeral: true };
+		throw new TripError("Couldn't find any trip to repeat.", [user.id], { ephemeral: true });
 	}
 	const handler = tripHandlers[activity.type];
 	const args: ActivityTaskData = ActivityManager.convertStoredActivityToFlatActivity(activity, interaction);
@@ -1027,7 +1030,7 @@ export async function repeatTrip(
 		commandArgs = handler.args(args as any) as CommandOptions;
 	} catch (err) {
 		if (err instanceof FishingStoredTripError) {
-			return { content: FISHING_REWORK_MESSAGE, ephemeral: true };
+			throw new TripError(FISHING_REWORK_MESSAGE, [user.id], { ephemeral: true });
 		}
 		throw err;
 	}

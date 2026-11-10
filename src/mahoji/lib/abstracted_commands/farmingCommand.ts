@@ -11,6 +11,7 @@ import {
 	formatFarmingBoosts,
 	pushFarmingCropYieldBoosts
 } from '@/lib/skilling/skills/farming/utils/farmingFormatters.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -26,19 +27,22 @@ export async function harvestCommand({
 	channelId?: string;
 }) {
 	if (await user.minionIsBusy()) {
-		return 'Your minion must not be busy to use this command.';
+		throw new TripError('Your minion must not be busy to use this command.', [user.id]);
 	}
 	const { GP } = user;
 	const currentWoodcuttingLevel = user.skillsAsLevels.woodcutting;
 	const currentDate = Date.now();
 	if (!Farming.isPatchName(seedType)) {
-		return `That is not a valid patch type! The available patches are: ${Farming.farmingPatchNames.join(
-			', '
-		)}. *Don't include numbers, this command harvests all crops available of the specified patch type.*`;
+		throw new TripError(
+			`That is not a valid patch type! The available patches are: ${Farming.farmingPatchNames.join(
+				', '
+			)}. *Don't include numbers, this command harvests all crops available of the specified patch type.*`,
+			[user.id]
+		);
 	}
 	const { patchesDetailed, patches } = await Farming.getFarmingInfoFromUser(user);
 	const patch = patchesDetailed.find(i => i.patchName === seedType)!;
-	if (patch.ready === null) return 'You have nothing planted in those patches.';
+	if (patch.ready === null) throw new TripError('You have nothing planted in those patches.', [user.id]);
 
 	const upgradeType = null;
 	let returnMessageStr = '';
@@ -48,13 +52,16 @@ export async function harvestCommand({
 	const plant = Farming.findPlant(patch.lastPlanted)!;
 
 	if (!patch.ready) {
-		return `Please come back when your crops have finished growing in ${formatDuration(patch.readyIn!)}!`;
+		throw new TripError(
+			`Please come back when your crops have finished growing in ${formatDuration(patch.readyIn!)}!`,
+			[user.id]
+		);
 	}
 
 	const treeCheckResult = !plant
 		? { error: null, fee: 0 }
 		: treeCheck(plant, currentWoodcuttingLevel, GP, patch.lastQuantity);
-	if (treeCheckResult.error) return treeCheckResult.error;
+	if (treeCheckResult.error) throw new TripError(treeCheckResult.error, [user.id]);
 
 	const timePerPatchTravel = Time.Second * plant.timePerPatchTravel;
 	const timePerPatchHarvest = Time.Second * plant.timePerHarvest;
@@ -75,9 +82,10 @@ export async function harvestCommand({
 	const maxTripLength = await user.calcMaxTripLength('Farming');
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(maxTripLength)}, try a lower quantity.`,
+			[user.id]
+		);
 	}
 
 	pushFarmingCropYieldBoosts(user, boostStr);
@@ -123,7 +131,7 @@ export async function farmingPlantCommand({
 	pay: boolean;
 }): Promise<string> {
 	if (await user.minionIsBusy()) {
-		return 'Your minion must not be busy to use this command.';
+		throw new TripError('Your minion must not be busy to use this command.', [user.id]);
 	}
 	const alwaysPay = user.user.minion_defaultPay;
 	const questPoints = user.QP;
@@ -135,15 +143,18 @@ export async function farmingPlantCommand({
 	const plant = Farming.findPlant(plantName);
 
 	if (!plant) {
-		return `That's not a valid seed to plant. Valid seeds are ${Farming.Plants.map(plants => plants.name).join(
-			', '
-		)}. *Make sure you are not attempting to farm 0 crops.*`;
+		throw new TripError(
+			`That's not a valid seed to plant. Valid seeds are ${Farming.Plants.map(plants => plants.name).join(
+				', '
+			)}. *Make sure you are not attempting to farm 0 crops.*`,
+			[user.id]
+		);
 	}
 
 	const wantsToPay = (pay || alwaysPay) && plant.canPayFarmer;
 
 	if (user.skillsAsLevels.farming < plant.level) {
-		return `${user.minionName} needs ${plant.level} Farming to plant ${plant.name}.`;
+		throw new TripError(`${user.minionName} needs ${plant.level} Farming to plant ${plant.name}.`, [user.id]);
 	}
 
 	const { patchesDetailed, patches } = user.farmingInfo();
@@ -151,13 +162,16 @@ export async function farmingPlantCommand({
 
 	const [numOfPatches] = calcNumOfPatches(plant, user, questPoints);
 	if (numOfPatches === 0) {
-		return 'There are no patches available for you.';
+		throw new TripError('There are no patches available for you.', [user.id]);
 	}
 
 	const maxTripLength = await user.calcMaxTripLength('Farming');
 
 	if (quantity !== null && quantity > numOfPatches) {
-		return `There are not enough ${plant.seedType} patches to plant that many. The max amount of patches to plant in is ${numOfPatches}.`;
+		throw new TripError(
+			`There are not enough ${plant.seedType} patches to plant that many. The max amount of patches to plant in is ${numOfPatches}.`,
+			[user.id]
+		);
 	}
 
 	const compostTier = (user.user.minion_defaultCompostToUse as CropUpgradeType) ?? 'compost';
@@ -173,7 +187,7 @@ export async function farmingPlantCommand({
 		compostTier
 	});
 	if (!prepared.success) {
-		return prepared.error;
+		throw new TripError(prepared.error, [user.id]);
 	}
 
 	quantity = prepared.data.quantity;
@@ -189,7 +203,7 @@ export async function farmingPlantCommand({
 	infoStr.push(...preparedInfo);
 	boostStr.push(...preparedBoosts);
 
-	if (!user.owns(cost)) return `You don't own ${cost}.`;
+	if (!user.owns(cost)) throw new TripError(`You don't own ${cost}.`, [user.id]);
 	await user.transactItems({ itemsToRemove: cost });
 
 	await ClientSettings.updateBankSetting('farming_cost_bank', cost);

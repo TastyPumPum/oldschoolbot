@@ -2,6 +2,7 @@ import { calcPercentOfNum, calcWhatPercent, stringMatches, Time } from '@oldscho
 import { Bank, Items } from 'oldschooljs';
 
 import { Plank } from '@/lib/skilling/skills/construction/constructables.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MahoganyHomesActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -148,7 +149,7 @@ export async function mahoganyHomesBuildCommand(
 	channelId: string,
 	tier?: string
 ): CommandResponse {
-	if (await user.minionIsBusy()) return `${user.minionName} is currently busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is currently busy.`, [user.id]);
 
 	const conLevel = user.skillsAsLevels.construction;
 	const kc = await user.fetchMinigameScore('mahogany_homes');
@@ -158,7 +159,9 @@ export async function mahoganyHomesBuildCommand(
 	if (tier) {
 		tierData = contractTiers.find(contractTier => Number(tier) === contractTier.tier) || tierData;
 		if (tierData.level > conLevel) {
-			return `You need ${tierData.level} Construction for this contract, you have ${conLevel}.`;
+			throw new TripError(`You need ${tierData.level} Construction for this contract, you have ${conLevel}.`, [
+				user.id
+			]);
 		}
 	} else {
 		tierData = contractTiers.find(contractTier => conLevel >= contractTier.level)!;
@@ -174,7 +177,7 @@ export async function mahoganyHomesBuildCommand(
 	);
 
 	if (!user.owns(itemsNeeded)) {
-		return `You don't have enough items for this trip. You need: ${itemsNeeded}.`;
+		throw new TripError(`You don't have enough items for this trip. You need: ${itemsNeeded}.`, [user.id]);
 	}
 	await user.removeItemsFromBank(itemsNeeded);
 

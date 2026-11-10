@@ -2,6 +2,7 @@ import { Bank, EItem } from 'oldschooljs';
 import { expect, test } from 'vitest';
 
 import birdhouses from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
+import { expectTripFailure } from '../../test-utils/tripAssertions.js';
 import { createTestUser } from '../util.js';
 
 test('Birdhouses', async () => {
@@ -23,17 +24,17 @@ test('Birdhouses', async () => {
 	});
 
 	{
-		expect((await birdHouseTrip('Basdfsde')).commandResult).toContain('not a valid birdhouse');
-		expect((await birdHouseTrip('Bird house')).commandResult).toContain('needs 5 Hunter to place');
+		expectTripFailure((await birdHouseTrip('Basdfsde')).commandResult, user, 'not a valid birdhouse');
+		expectTripFailure((await birdHouseTrip('Bird house')).commandResult, user, 'needs 5 Hunter to place');
 		await user.setLevel('hunter', 20);
 
-		expect((await birdHouseTrip('Bird house')).commandResult).toContain(' needs 3 QP to do Birdhouse run');
+		expectTripFailure((await birdHouseTrip('Bird house')).commandResult, user, ' needs 3 QP to do Birdhouse run');
 		await user.setQP(5);
 
-		expect((await birdHouseTrip('Bird house')).commandResult).toContain(' needs 5 Crafting');
+		expectTripFailure((await birdHouseTrip('Bird house')).commandResult, user, ' needs 5 Crafting');
 		await user.setLevel('crafting', 20);
 
-		expect((await birdHouseTrip('Bird house')).commandResult).toContain("You don't have enough seeds");
+		expectTripFailure((await birdHouseTrip('Bird house')).commandResult, user, "You don't have enough seeds");
 
 		await user.addItemsToBank({ items: new Bank().add(EItem.HAMMERSTONE_SEED, 1000).add(EItem.LOGS, 1000) });
 		const workingResult = await birdHouseTrip('Bird house');

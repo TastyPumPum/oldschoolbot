@@ -5,6 +5,7 @@ import { TimerManager } from '@sapphire/timer-manager';
 import { partyLockCache } from '@/lib/cache.js';
 import { SILENT_ERROR } from '@/lib/constants.js';
 import { InteractionID } from '@/lib/InteractionID.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MakePartyOptions } from '@/lib/types/index.js';
 
 export async function makeParty(options: MakePartyOptions): Promise<MUser[]> {
@@ -54,7 +55,12 @@ export async function makeParty(options: MakePartyOptions): Promise<MUser[]> {
 		massStarted = true;
 		await interaction.reply({ content: (await getMessageContent()).content, components: [] });
 		if (!partyCancelled && usersWhoConfirmed.length < options.minSize) {
-			reject(new Error('SILENT_ERROR'));
+			reject(
+				new TripError(
+					`Your party couldn't start because it needs at least ${options.minSize} players.`,
+					usersWhoConfirmed
+				)
+			);
 			return;
 		}
 		const members: MUser[] = [];
@@ -76,101 +82,97 @@ export async function makeParty(options: MakePartyOptions): Promise<MUser[]> {
 		});
 
 		collector.on('collect', async (bi: ButtonMInteraction) => {
-			if (options.usersAllowed && !options.usersAllowed.includes(bi.userId)) {
-				await bi.reply({
-					content: 'You are not allowed to join this mass.',
-					ephemeral: true
-				});
-				return;
-			}
-			const user = await mUserFetch(bi.userId);
-			if ((!options.ironmanAllowed && user.isIronman) || (await user.minionIsBusy()) || !user.hasMinion) {
-				await bi.reply({
-					content: `You cannot mass if you are busy${!options.ironmanAllowed ? ', an ironman' : ''}, or have no minion.`,
-					ephemeral: true
-				});
-				return;
-			}
+			try {
+				if (options.usersAllowed && !options.usersAllowed.includes(bi.userId)) {
+					throw new TripError('You are not allowed to join this mass.', [bi.userId], { ephemeral: true });
+				}
+				const user = await mUserFetch(bi.userId);
+				if ((!options.ironmanAllowed && user.isIronman) || (await user.minionIsBusy()) || !user.hasMinion) {
+					throw new TripError(
+						`You cannot mass if you are busy${!options.ironmanAllowed ? ', an ironman' : ''}, or have no minion.`,
+						[user.id],
+						{ ephemeral: true }
+					);
+				}
 
-			const id = bi.customId;
+				const id = bi.customId;
 
-			if (
-				![
-					InteractionID.Party.Join,
-					InteractionID.Party.Leave,
-					InteractionID.Party.Cancel,
-					InteractionID.Party.Start
-				].includes(id as 'PARTY_START')
-			) {
-				throw new Error(
-					`When making a party for ${JSON.stringify({ ...options, userId: interaction.userId })}, received invalid button ID: ${id}`
-				);
-			}
+				if (
+					![
+						InteractionID.Party.Join,
+						InteractionID.Party.Leave,
+						InteractionID.Party.Cancel,
+						InteractionID.Party.Start
+					].includes(id as 'PARTY_START')
+				) {
+					throw new Error(
+						`When making a party for ${JSON.stringify({ ...options, userId: interaction.userId })}, received invalid button ID: ${id}`
+					);
+				}
 
-			if (id === InteractionID.Party.Join) {
-				if (options.customDenier) {
-					const [denied, reason] = await options.customDenier(user);
-					if (denied) {
-						await bi.reply({
-							content: `You couldn't join this mass, for this reason: ${reason}`,
-							ephemeral: true
-						});
+				if (id === InteractionID.Party.Join) {
+					if (options.customDenier) {
+						const [denied, reason] = await options.customDenier(user);
+						if (denied) {
+							throw new TripError(`You couldn't join this mass, for this reason: ${reason}`, [user.id], {
+								ephemeral: true
+							});
+						}
+					}
+					if (usersWhoConfirmed.includes(bi.userId)) {
+						await bi.reply({ content: 'You are already in this mass.', ephemeral: true });
 						return;
 					}
-				}
-				if (usersWhoConfirmed.includes(bi.userId)) {
-					await bi.reply({ content: 'You are already in this mass.', ephemeral: true });
+					if (partyLockCache.has(bi.userId)) {
+						throw new TripError('You cannot join this mass.', [bi.userId], { ephemeral: true });
+					}
+					usersWhoConfirmed.push(bi.userId);
+					partyLockCache.add(bi.userId);
+					await bi.silentButtonAck();
+					updateUsersIn();
+					if (usersWhoConfirmed.length >= options.maxSize) collector.stop('everyoneJoin');
 					return;
 				}
-				if (partyLockCache.has(bi.userId)) {
-					await bi.reply({ content: 'You cannot join this mass.', ephemeral: true });
-					return;
-				}
-				usersWhoConfirmed.push(bi.userId);
-				partyLockCache.add(bi.userId);
-				await bi.silentButtonAck();
-				updateUsersIn();
-				if (usersWhoConfirmed.length >= options.maxSize) collector.stop('everyoneJoin');
-				return;
-			}
 
-			if (id === InteractionID.Party.Leave) {
-				if (!usersWhoConfirmed.includes(bi.userId) || bi.userId === options.leader.id) {
-					await bi.reply({ content: 'You cannot leave this mass.', ephemeral: true });
+				if (id === InteractionID.Party.Leave) {
+					if (!usersWhoConfirmed.includes(bi.userId) || bi.userId === options.leader.id) {
+						await bi.reply({ content: 'You cannot leave this mass.', ephemeral: true });
+						return;
+					}
+					partyLockCache.delete(bi.userId);
+					removeUser(bi.userId);
+					bi.silentButtonAck();
 					return;
 				}
-				partyLockCache.delete(bi.userId);
-				removeUser(bi.userId);
-				bi.silentButtonAck();
-				return;
-			}
 
-			if (id === InteractionID.Party.Cancel) {
-				if (bi.userId !== options.leader.id) {
-					await bi.reply({ content: 'You cannot cancel this mass.', ephemeral: true });
+				if (id === InteractionID.Party.Cancel) {
+					if (bi.userId !== options.leader.id) {
+						await bi.reply({ content: 'You cannot cancel this mass.', ephemeral: true });
+						return;
+					}
+					partyCancelled = true;
+					bi.silentButtonAck();
+					collector.stop('partyCreatorEnd');
+					interaction.reply({ content: 'The party was cancelled.', components: [] });
+					reject(new Error(SILENT_ERROR));
 					return;
 				}
-				partyCancelled = true;
-				bi.silentButtonAck();
-				collector.stop('partyCreatorEnd');
-				interaction.reply({ content: 'The party was cancelled.', components: [] });
-				reject(new Error(SILENT_ERROR));
-				return;
-			}
 
-			if (id === InteractionID.Party.Start) {
-				if (bi.userId !== options.leader.id) {
-					await bi.reply({ content: 'You cannot start this party.', ephemeral: true });
-					return;
+				if (id === InteractionID.Party.Start) {
+					if (bi.userId !== options.leader.id) {
+						throw new TripError('You cannot start this party.', [bi.userId], { ephemeral: true });
+					}
+					const error = checkParty();
+					if (error) {
+						throw new TripError(error, [user.id], { ephemeral: true });
+					}
+					bi.silentButtonAck();
+					collector.stop('partyCreatorEnd');
+					await startTrip(resolve, reject);
 				}
-				const error = checkParty();
-				if (error) {
-					await bi.reply({ content: error, ephemeral: true });
-					return;
-				}
-				bi.silentButtonAck();
-				collector.stop('partyCreatorEnd');
-				await startTrip(resolve, reject);
+			} catch (err) {
+				if (!(err instanceof TripError)) throw err;
+				await bi.reply(err.toResponse());
 			}
 		});
 

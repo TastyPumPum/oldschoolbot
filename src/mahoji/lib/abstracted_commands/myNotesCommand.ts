@@ -1,12 +1,13 @@
 import { Time } from '@oldschoolgg/toolkit';
 
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function myNotesCommand(user: MUser, channelId: string) {
 	if (await user.minionIsBusy()) {
-		return 'Your minion is busy.';
+		throw new TripError('Your minion is busy.', [user.id]);
 	}
 	const oneSkeleton = 5 * Time.Second;
 	const maxTripLength = await user.calcMaxTripLength('MyNotes');

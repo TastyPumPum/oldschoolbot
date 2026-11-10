@@ -5,6 +5,7 @@ import type { NMZStrategy } from '@/lib/constants.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { MAX_QP } from '@/lib/minions/data/quests.js';
 import { resolveAttackStyles } from '@/lib/minions/functions/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { Skills } from '@/lib/types/index.js';
 import type { NightmareZoneActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -318,15 +319,18 @@ export async function nightmareZoneStartCommand(user: MUser, strategy: NMZStrate
 
 	const [hasReqs] = hasSkillReqs(user, skillReqs);
 	if (!hasReqs) {
-		return `You don't meet skill requirements, you need ${Object.entries(skillReqs)
-			.map(([name, lvl]) => `${lvl} ${name}`)
-			.join(', ')}.`;
+		throw new TripError(
+			`You don't meet skill requirements, you need ${Object.entries(skillReqs)
+				.map(([name, lvl]) => `${lvl} ${name}`)
+				.join(', ')}.`,
+			[user.id]
+		);
 	}
 
 	const { QP } = user;
 
 	if (QP < 100) {
-		return `The Nightmare Zone minigame requires **100 QP**, and you have ${QP} QP.`;
+		throw new TripError(`The Nightmare Zone minigame requires **100 QP**, and you have ${QP} QP.`, [user.id]);
 	}
 
 	// Check if user have full dharok's
@@ -336,7 +340,10 @@ export async function nightmareZoneStartCommand(user: MUser, strategy: NMZStrate
 			'every'
 		)
 	) {
-		return "The Nightmare Zone minigame requires full Dharok's equipment for optimal experience/points gained.";
+		throw new TripError(
+			"The Nightmare Zone minigame requires full Dharok's equipment for optimal experience/points gained.",
+			[user.id]
+		);
 	}
 
 	const boosts = [];
@@ -348,7 +355,10 @@ export async function nightmareZoneStartCommand(user: MUser, strategy: NMZStrate
 	});
 	const skillTotal = sumArr(attackStyles.map(s => user.skillLevel(s))) + user.skillsAsLevels.hitpoints;
 	if (attackStyles.includes('ranged') || attackStyles.includes('magic')) {
-		return 'The Nightmare Zone minigame requires melee combat for efficiency, swap training style using `/minion train style:`';
+		throw new TripError(
+			'The Nightmare Zone minigame requires melee combat for efficiency, swap training style using `/minion train style:`',
+			[user.id]
+		);
 	}
 
 	let percent = round(calcWhatPercent(skillTotal, (attackStyles.length + 1) * 99), 2);
@@ -382,7 +392,7 @@ export async function nightmareZoneStartCommand(user: MUser, strategy: NMZStrate
 	const totalCost = new Bank(dreamCost).clone();
 
 	if (!user.owns(totalCost)) {
-		return `You don't have the required gold coins for this trip. You need ${totalCost}.`;
+		throw new TripError(`You don't have the required gold coins for this trip. You need ${totalCost}.`, [user.id]);
 	}
 
 	await user.removeItemsFromBank(totalCost);

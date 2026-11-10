@@ -4,6 +4,7 @@ import { Bank, ItemGroups, Items, resolveItems } from 'oldschooljs';
 import { Offerables } from '@/lib/data/offerData.js';
 import { birdsNestID, treeSeedsNest } from '@/lib/simulation/birdsNest.js';
 import Prayer from '@/lib/skilling/skills/prayer.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { OfferingActivityTaskOptions } from '@/lib/types/minions.js';
 import { makeBankImage } from '@/lib/util/makeBankImage.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -216,17 +217,17 @@ export const offerCommand = defineCommand({
 		);
 
 		if (!bone) {
-			return "That's not a valid bone to offer.";
+			throw new TripError("That's not a valid bone to offer.", [user.id]);
 		}
 
 		if (user.skillsAsLevels.prayer < bone.level) {
-			return `${user.minionName} needs ${bone.level} Prayer to offer ${bone.name}.`;
+			throw new TripError(`${user.minionName} needs ${bone.level} Prayer to offer ${bone.name}.`, [user.id]);
 		}
 
 		const timeToBuryABone = speedMod * (Time.Second * 1.2 + Time.Second / 4);
 
 		const amountOfThisBone = userBank.amount(bone.inputId);
-		if (!amountOfThisBone) return `You have no ${bone.name}.`;
+		if (!amountOfThisBone) throw new TripError(`You have no ${bone.name}.`, [user.id]);
 
 		const maxTripLength = await user.calcMaxTripLength('Offering');
 
@@ -237,17 +238,20 @@ export const offerCommand = defineCommand({
 
 		// Check the user has the required bones to bury.
 		if (amountOfThisBone < quantity) {
-			return `You dont have ${quantity}x ${bone.name}.`;
+			throw new TripError(`You dont have ${quantity}x ${bone.name}.`, [user.id]);
 		}
 
 		const duration = quantity * timeToBuryABone;
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${bone.name}s you can bury is ${Math.floor(
-				maxTripLength / timeToBuryABone
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${bone.name}s you can bury is ${Math.floor(
+					maxTripLength / timeToBuryABone
+				)}.`,
+				[user.id]
+			);
 		}
 
 		await user.removeItemsFromBank(new Bank().add(bone.inputId, quantity));

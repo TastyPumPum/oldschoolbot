@@ -7,6 +7,7 @@ import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
 import { Thieving } from '@/lib/skilling/skills/thieving/index.js';
 import { type Stealable, stealables } from '@/lib/skilling/skills/thieving/stealables.js';
 import { calcLootXPChest } from '@/lib/skilling/skills/thieving/thievingUtils.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { PickpocketActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { calcLootXPPickpocketing } from '@/tasks/minions/pickpocketActivity.js';
@@ -53,15 +54,21 @@ export const stealCommand = defineCommand({
 		);
 
 		if (!stealable) {
-			return `That is not a valid NPC/Stall to pickpocket or steal from, try pickpocketing or stealing from one of the following: ${stealables
-				.map(obj => obj.name)
-				.join(', ')}.`;
+			throw new TripError(
+				`That is not a valid NPC/Stall to pickpocket or steal from, try pickpocketing or stealing from one of the following: ${stealables
+					.map(obj => obj.name)
+					.join(', ')}.`,
+				[user.id]
+			);
 		}
 
 		if (stealable.qpRequired && user.QP < stealable.qpRequired) {
-			return `You need at least **${stealable.qpRequired}** QP to ${
-				stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
-			} a ${stealable.name}.`;
+			throw new TripError(
+				`You need at least **${stealable.qpRequired}** QP to ${
+					stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
+				} a ${stealable.name}.`,
+				[user.id]
+			);
 		}
 
 		if (stealable.requiredQuests) {
@@ -69,30 +76,42 @@ export const stealCommand = defineCommand({
 				quest => !user.user.finished_quest_ids.includes(quest)
 			);
 			if (incompleteQuest) {
-				return `You need to have completed the ${bold(
-					quests.find(i => i.id === incompleteQuest)!.name
-				)} quest to steal from ${stealable.name}.`;
+				throw new TripError(
+					`You need to have completed the ${bold(
+						quests.find(i => i.id === incompleteQuest)!.name
+					)} quest to steal from ${stealable.name}.`,
+					[user.id]
+				);
 			}
 		}
 
 		if (stealable.fireCapeRequired) {
 			if (user.cl.amount('Fire cape') === 0) {
-				return `In order to ${
-					stealable.type === 'pickpockable' ? 'pickpocket this NPC' : 'steal from this stall'
-				}, you need a fire cape in your collection log.`;
+				throw new TripError(
+					`In order to ${
+						stealable.type === 'pickpockable' ? 'pickpocket this NPC' : 'steal from this stall'
+					}, you need a fire cape in your collection log.`,
+					[user.id]
+				);
 			}
 		}
 
 		if (user.skillsAsLevels.thieving < stealable.level) {
-			return `${user.minionName} needs ${stealable.level} Thieving to ${
-				stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
-			} a ${stealable.name}.`;
+			throw new TripError(
+				`${user.minionName} needs ${stealable.level} Thieving to ${
+					stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
+				} a ${stealable.name}.`,
+				[user.id]
+			);
 		}
 
 		if (stealable.prayerLevelRequired && user.skillsAsLevels.prayer < stealable.prayerLevelRequired) {
-			return `${user.minionName} needs ${stealable.prayerLevelRequired} Prayer to ${
-				stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
-			} a ${stealable.name}.`;
+			throw new TripError(
+				`${user.minionName} needs ${stealable.prayerLevelRequired} Prayer to ${
+					stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
+				} a ${stealable.name}.`,
+				[user.id]
+			);
 		}
 
 		const timeToTheft =
@@ -103,7 +122,7 @@ export const stealCommand = defineCommand({
 				userID: user.id,
 				stealable: stealable.name
 			});
-			return 'This NPC/Stall is missing variable respawnTime.';
+			throw new TripError('This NPC/Stall is missing variable respawnTime.', [user.id]);
 		}
 
 		const maxTripLength =
@@ -115,11 +134,14 @@ export const stealCommand = defineCommand({
 		const duration = quantity * timeToTheft;
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of times you can ${
-				stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
-			} a ${stealable.name} is ${Math.floor(maxTripLength / timeToTheft)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of times you can ${
+					stealable.type === 'pickpockable' ? 'pickpocket' : 'steal from'
+				} a ${stealable.name} is ${Math.floor(maxTripLength / timeToTheft)}.`,
+				[user.id]
+			);
 		}
 
 		const boosts = [];
@@ -170,7 +192,7 @@ export const stealCommand = defineCommand({
 				});
 			} catch (err: unknown) {
 				if (err instanceof UserError) {
-					return err.message;
+					throw new TripError(err.message, [user.id]);
 				}
 				throw err;
 			}
@@ -206,7 +228,10 @@ export const stealCommand = defineCommand({
 						potionsToRemove.add(prayerPotionName, remainingPotionsRequired);
 					}
 				} else {
-					return `You need at least ${potionsRequired} total ${blightedRestoreName} or ${prayerPotionName} to keep Protect from Melee active while stealing from ${stealable.name}.`;
+					throw new TripError(
+						`You need at least ${potionsRequired} total ${blightedRestoreName} or ${prayerPotionName} to keep Protect from Melee active while stealing from ${stealable.name}.`,
+						[user.id]
+					);
 				}
 
 				if (!hasMediumDiary) {

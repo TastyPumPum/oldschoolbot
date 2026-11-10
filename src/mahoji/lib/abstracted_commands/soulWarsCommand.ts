@@ -1,6 +1,7 @@
 import { stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -131,7 +132,7 @@ export const soulWarsImbueables = [
 ];
 
 export async function soulWarsStartCommand(rng: RNGProvider, user: MUser, channelId: string) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	const perDuration = rng.randomVariation(Time.Minute * 7, 5);
 	const quantity = Math.floor((await user.calcMaxTripLength('SoulWars')) / perDuration);
 	const duration = quantity * perDuration;

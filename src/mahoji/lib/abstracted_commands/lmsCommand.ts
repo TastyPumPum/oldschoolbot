@@ -2,6 +2,7 @@ import { stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { LMSBuyables } from '@/lib/data/CollectionsExport.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { getUsersLMSStats } from '@/tasks/minions/minigames/lmsActivity.js';
@@ -82,7 +83,7 @@ export async function lmsCommand(
 	}
 
 	if (await user.minionIsBusy()) {
-		return 'Your minion must not be busy to do an LMS trip';
+		throw new TripError('Your minion must not be busy to do an LMS trip', [user.id]);
 	}
 	const durationPerGame = Time.Minute * 5.5;
 	const quantity = Math.floor((await user.calcMaxTripLength('LastManStanding')) / durationPerGame);

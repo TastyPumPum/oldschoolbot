@@ -1,6 +1,7 @@
 import { reduceNumByPercent, stringMatches, Time, toTitleCase } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { hasSkillReqs, isValidSkill } from '@/lib/util/smallUtils.js';
@@ -174,9 +175,9 @@ export async function pestControlBuyCommand(user: MUser, input: string) {
 }
 
 export async function pestControlStartCommand(user: MUser, channelId: string) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	if (user.combatLevel < 40) {
-		return 'You need a combat level of at least 40 to do Pest Control.';
+		throw new TripError('You need a combat level of at least 40 to do Pest Control.', [user.id]);
 	}
 
 	let gameLength = Time.Minute * 2.8;

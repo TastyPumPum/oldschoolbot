@@ -4,7 +4,7 @@ import { Bank } from 'oldschooljs';
 
 import type { CropUpgradeType } from '@/prisma/main/enums.js';
 import { AutoFarmFilterEnum } from '@/prisma/main/enums.js';
-import { MessageBuilder } from '@/discord/MessageBuilder.js';
+import { resolveBotSendableMessage } from '@/discord/utils.js';
 import { InteractionID } from '@/lib/InteractionID.js';
 import { allFarm, replant } from '@/lib/minions/functions/autoFarmFilters.js';
 import {
@@ -21,6 +21,7 @@ import { plants } from '@/lib/skilling/skills/farming/index.js';
 import { formatFarmingBoosts, formatItemsUsed } from '@/lib/skilling/skills/farming/utils/farmingFormatters.js';
 import type { FarmingPatchName } from '@/lib/skilling/skills/farming/utils/farmingHelpers.js';
 import type { IPatchData, IPatchDataDetailed } from '@/lib/skilling/skills/farming/utils/types.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { AutoFarmStepData, FarmingActivityTaskOptions } from '@/lib/types/minions.js';
 import addSubTaskToActivityTask from '@/lib/util/addSubTaskToActivityTask.js';
 import { calcMaxTripLength } from '@/lib/util/calcMaxTripLength.js';
@@ -175,7 +176,7 @@ export async function autoFarm(
 	interaction: MInteraction
 ) {
 	if (await user.minionIsBusy()) {
-		return 'Your minion must not be busy to use this command.';
+		throw new TripError('Your minion must not be busy to use this command.', [user.id]);
 	}
 
 	const planning = await planAutoFarmTrip(user, patchesDetailed, patches);
@@ -193,12 +194,13 @@ export async function autoFarm(
 	} = planning;
 
 	if (blockedResponse) {
-		return blockedResponse;
+		const message = await resolveBotSendableMessage(blockedResponse as SendableMessage);
+		throw new TripError(message.content ?? errorString, [user.id]);
 	}
 
 	if (plannedSteps.length === 0) {
 		if (firstPrepareError !== null) {
-			return firstPrepareError;
+			throw new TripError(firstPrepareError, [user.id]);
 		}
 
 		const checkPatchesButton = new ButtonBuilder()
@@ -209,19 +211,17 @@ export async function autoFarm(
 
 		const components: ButtonBuilder[] = [checkPatchesButton];
 
-		const noCropsResponse = new MessageBuilder().setContent(errorString).addComponents(components);
-
 		const repeated = await tryRepeatPreviousTrip({ user, interaction, errorString });
 		if (repeated !== null) {
 			return repeated;
 		}
 
-		return noCropsResponse;
+		throw new TripError(errorString, [user.id], { components });
 	}
 
 	const firstStep = autoFarmPlan[0];
 	if (!firstStep) {
-		return errorString;
+		throw new TripError(errorString, [user.id]);
 	}
 
 	const channelId = interaction.channelId;
@@ -248,7 +248,7 @@ export async function autoFarm(
 	let chargedCost = false;
 	try {
 		if (!user.owns(totalCost)) {
-			return `You don't own ${totalCost}.`;
+			throw new TripError(`You don't own ${totalCost}.`, [user.id]);
 		}
 		if (totalCost.length > 0) {
 			await user.transactItems({ itemsToRemove: totalCost });
@@ -270,9 +270,9 @@ export async function autoFarm(
 			}
 		}
 		if (err instanceof Error) {
-			return err.message;
+			throw new TripError(err.message, [user.id]);
 		}
-		return 'There was an error starting your activity.';
+		throw new TripError('There was an error starting your activity.', [user.id]);
 	}
 	await ClientSettings.updateBankSetting('farming_cost_bank', totalCost);
 	await user.statsBankUpdate('farming_plant_cost_bank', totalCost);

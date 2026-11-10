@@ -4,6 +4,7 @@ import { Bank } from 'oldschooljs';
 
 import { quests } from '@/lib/minions/data/quests.js';
 import { courses } from '@/lib/skilling/skills/agility.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { AgilityActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { timePerAlchAgility } from '@/mahoji/lib/abstracted_commands/alchCommand.js';
@@ -109,24 +110,29 @@ export const lapsCommand = defineCommand({
 		);
 
 		if (!course) {
-			return 'Thats not a valid course.';
+			throw new TripError('Thats not a valid course.', [user.id]);
 		}
 
 		if (user.skillsAsLevels.agility < course.level) {
-			return `${user.minionName} needs ${course.level} agility to train at ${course.name}.`;
+			throw new TripError(`${user.minionName} needs ${course.level} agility to train at ${course.name}.`, [
+				user.id
+			]);
 		}
 
 		if (course.qpRequired && user.QP < course.qpRequired) {
-			return `You need at least ${course.qpRequired} Quest Points to do this course.`;
+			throw new TripError(`You need at least ${course.qpRequired} Quest Points to do this course.`, [user.id]);
 		}
 
 		// Check for quest requirements
 		if (course.requiredQuests) {
 			const incompleteQuest = course.requiredQuests.find(quest => !user.user.finished_quest_ids.includes(quest));
 			if (incompleteQuest) {
-				return `You need to have completed the ${bold(
-					quests.find(i => i.id === incompleteQuest)!.name
-				)} quest to attempt the ${course.name} agility course.`;
+				throw new TripError(
+					`You need to have completed the ${bold(
+						quests.find(i => i.id === incompleteQuest)!.name
+					)} quest to attempt the ${course.name} agility course.`,
+					[user.id]
+				);
 			}
 		}
 
@@ -141,11 +147,14 @@ export const lapsCommand = defineCommand({
 		const duration = quantity * timePerLap;
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${course.name} laps you can do is ${Math.floor(
-				maxTripLength / timePerLap
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${course.name} laps you can do is ${Math.floor(
+					maxTripLength / timePerLap
+				)}.`,
+				[user.id]
+			);
 		}
 
 		let response = `${user.minionName} is now doing ${quantity}x ${
@@ -155,7 +164,7 @@ export const lapsCommand = defineCommand({
 		const alchResult = course.name === 'Ape Atoll Agility Course' || !options.alch ? null : alching(user, duration);
 		if (alchResult !== null) {
 			if (!user.owns(alchResult.bankToRemove)) {
-				return `You don't own ${alchResult.bankToRemove}.`;
+				throw new TripError(`You don't own ${alchResult.bankToRemove}.`, [user.id]);
 			}
 
 			await user.removeItemsFromBank(alchResult.bankToRemove);

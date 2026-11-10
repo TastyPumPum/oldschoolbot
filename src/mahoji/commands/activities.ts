@@ -7,6 +7,7 @@ import birdhouses from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
 import { Castables } from '@/lib/skilling/skills/magic/castables.js';
 import { Enchantables } from '@/lib/skilling/skills/magic/enchantables.js';
 import Prayer from '@/lib/skilling/skills/prayer.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import { aerialFishingCommand } from '@/mahoji/lib/abstracted_commands/aerialFishingCommand.js';
 import { alchCommand } from '@/mahoji/lib/abstracted_commands/alchCommand.js';
 import { birdhouseCheckCommand, birdhouseHarvestCommand } from '@/mahoji/lib/abstracted_commands/birdhousesCommand.js';
@@ -524,7 +525,7 @@ export const activitiesCommand = defineCommand({
 		// Minion must be free
 		const isBusy = await user.minionIsBusy();
 		const busyStr = `${user.minionName} is currently busy.`;
-		if (isBusy) return busyStr;
+		if (isBusy) throw new TripError(busyStr, [user.id]);
 
 		if (options.other) {
 			return otherActivitiesCommand({ interaction, type: options.other.activity, user, channelId, rng });
@@ -624,6 +625,6 @@ export const activitiesCommand = defineCommand({
 			}
 		}
 
-		return 'Invalid command.';
+		throw new TripError('Invalid command.', [user.id]);
 	}
 });

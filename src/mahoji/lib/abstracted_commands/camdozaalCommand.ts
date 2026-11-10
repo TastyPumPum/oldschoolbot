@@ -5,13 +5,14 @@ import { determineMiningTime } from '@/lib/skilling/functions/determineMiningTim
 import { pickaxes } from '@/lib/skilling/functions/miningBoosts.js';
 import { Fishing } from '@/lib/skilling/skills/fishing/fishing.js';
 import Mining from '@/lib/skilling/skills/mining.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithQuantity } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 async function miningCommand(rng: RNGProvider, user: MUser, channelId: string, quantity: number | undefined) {
 	let miningLevel = user.skillsAsLevels.mining;
 	if (miningLevel < 14) {
-		return 'You need at least level 14 Mining to mine in the Ruins of Camdozaal.';
+		throw new TripError('You need at least level 14 Mining to mine in the Ruins of Camdozaal.', [user.id]);
 	}
 
 	const boosts = [];
@@ -88,7 +89,7 @@ async function miningCommand(rng: RNGProvider, user: MUser, channelId: string, q
 
 async function smithingCommand(user: MUser, channelId: string, quantity: number | undefined) {
 	if (user.skillsAsLevels.smithing < 14) {
-		return 'You need at least level 14 Smithing to smith in the Ruins of Camdozaal.';
+		throw new TripError('You need at least level 14 Smithing to smith in the Ruins of Camdozaal.', [user.id]);
 	}
 
 	const maxTripLength = await user.calcMaxTripLength('CamdozaalSmithing');
@@ -100,7 +101,7 @@ async function smithingCommand(user: MUser, channelId: string, quantity: number 
 	const itemsNeeded = new Bank({ 'Barronite deposit': 1 }).clone();
 	const maxCanDo = user.bank.fits(itemsNeeded);
 	if (maxCanDo === 0) {
-		return "You don't own a single Barronite deposit!";
+		throw new TripError("You don't own a single Barronite deposit!", [user.id]);
 	}
 	if (maxCanDo < quantity) {
 		quantity = maxCanDo;
@@ -108,11 +109,14 @@ async function smithingCommand(user: MUser, channelId: string, quantity: number 
 
 	const duration = timePerSmith * quantity;
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of Barronite deposits you can smith is ${Math.floor(
-			maxTripLength / timePerSmith
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of Barronite deposits you can smith is ${Math.floor(
+				maxTripLength / timePerSmith
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await user.removeItemsFromBank(new Bank().add('Barronite deposit', quantity));
@@ -130,7 +134,7 @@ async function smithingCommand(user: MUser, channelId: string, quantity: number 
 
 async function fishingCommand(user: MUser, channelId: string, quantity: number | undefined) {
 	if (user.skillsAsLevels.fishing < 7) {
-		return 'You need at least level 7 Fishing to fish in the Ruins of Camdozaal.';
+		throw new TripError('You need at least level 7 Fishing to fish in the Ruins of Camdozaal.', [user.id]);
 	}
 	const inputQuantity = quantity;
 
@@ -144,11 +148,14 @@ async function fishingCommand(user: MUser, channelId: string, quantity: number |
 	const duration = timePerFish * quantity;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of Camdozaal fish you can catch is ${Math.floor(
-			maxTripLength / timePerFish
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of Camdozaal fish you can catch is ${Math.floor(
+				maxTripLength / timePerFish
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await ActivityManager.startTrip<ActivityTaskOptionsWithQuantity>({
@@ -171,7 +178,10 @@ export async function camdozaalCommand(
 ) {
 	const qp = user.QP;
 	if (qp <= 16) {
-		return "You haven't completed enough quests to enter the Ruins of Camdozaal, return when you have at least 17 quest points.";
+		throw new TripError(
+			"You haven't completed enough quests to enter the Ruins of Camdozaal, return when you have at least 17 quest points.",
+			[user.id]
+		);
 	}
 	if (choice === 'mining') {
 		return miningCommand(rng, user, channelId, quantity);

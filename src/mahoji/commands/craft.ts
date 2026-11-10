@@ -1,6 +1,7 @@
 import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 
 import { Craftables } from '@/lib/skilling/skills/crafting/craftables/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { CraftingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -44,7 +45,7 @@ export const craftCommand = defineCommand({
 			item => stringMatches(item.name, options.name) || item.alias?.some(a => stringMatches(a, options.name))
 		);
 
-		if (!craftable) return 'That is not a valid craftable item.';
+		if (!craftable) throw new TripError('That is not a valid craftable item.', [user.id]);
 		let sets = 'x';
 		if (craftable.outputMultiple) {
 			sets = ' sets of';
@@ -54,15 +55,22 @@ export const craftCommand = defineCommand({
 		const currentWoodcutLevel = user.skillsAsLevels.woodcutting;
 
 		if (craftable.qpRequired && userQP < craftable.qpRequired) {
-			return `${user.minionName} needs ${craftable.qpRequired} QP to craft ${craftable.name}.`;
+			throw new TripError(`${user.minionName} needs ${craftable.qpRequired} QP to craft ${craftable.name}.`, [
+				user.id
+			]);
 		}
 
 		if (craftable.wcLvl && currentWoodcutLevel < craftable.wcLvl) {
-			return `${user.minionName} needs ${craftable.wcLvl} Woodcutting Level to craft ${craftable.name}.`;
+			throw new TripError(
+				`${user.minionName} needs ${craftable.wcLvl} Woodcutting Level to craft ${craftable.name}.`,
+				[user.id]
+			);
 		}
 
 		if (user.skillsAsLevels.crafting < craftable.level) {
-			return `${user.minionName} needs ${craftable.level} Crafting to craft ${craftable.name}.`;
+			throw new TripError(`${user.minionName} needs ${craftable.level} Crafting to craft ${craftable.name}.`, [
+				user.id
+			]);
 		}
 
 		const userBank = user.bankWithGP;
@@ -84,20 +92,26 @@ export const craftCommand = defineCommand({
 
 		const duration = quantity * timeToCraftSingleItem;
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${craftable.name}s you can craft is ${Math.floor(
-				maxTripLength / timeToCraftSingleItem
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${craftable.name}s you can craft is ${Math.floor(
+					maxTripLength / timeToCraftSingleItem
+				)}.`,
+				[user.id]
+			);
 		}
 
 		const itemsNeeded = craftable.inputItems.clone().multiply(quantity);
 
 		// Check the user has all the required items to craft.
 		if (!userBank.has(itemsNeeded)) {
-			return `You don't have enough items. For ${quantity}x ${craftable.name}, you're missing **${itemsNeeded
-				.clone()
-				.remove(userBank)}**.`;
+			throw new TripError(
+				`You don't have enough items. For ${quantity}x ${craftable.name}, you're missing **${itemsNeeded
+					.clone()
+					.remove(userBank)}**.`,
+				[user.id]
+			);
 		}
 
 		await user.removeItemsFromBank(itemsNeeded);

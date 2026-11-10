@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import { LeapingFish } from '@/lib/skilling/skills/cooking/leapingFish.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { CutLeapingFishActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -23,7 +24,7 @@ export async function cutLeapingFishCommand({
 			_leapingFish.aliases.some(alias => stringMatches(alias, name))
 	);
 
-	if (!barbarianFish) return 'That is not a valid fish to cut.';
+	if (!barbarianFish) throw new TripError('That is not a valid fish to cut.', [user.id]);
 
 	const requiredItems = barbarianFish.item.name;
 
@@ -37,7 +38,10 @@ export async function cutLeapingFishCommand({
 
 	const maxCanDo = user.bank.fits(baseCost);
 	if (maxCanDo === 0) {
-		return `You don't have enough supplies to cut even one of this item!\nTo cut a ${barbarianFish.item.name}, you need to have ${baseCost}.`;
+		throw new TripError(
+			`You don't have enough supplies to cut even one of this item!\nTo cut a ${barbarianFish.item.name}, you need to have ${baseCost}.`,
+			[user.id]
+		);
 	}
 	if (maxCanDo < quantity) {
 		quantity = maxCanDo;
@@ -46,18 +50,21 @@ export async function cutLeapingFishCommand({
 	const duration = quantity * timeToCutSingleItem;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${barbarianFish.item.name}'s you can cut is ${Math.floor(
-			maxTripLength / timeToCutSingleItem
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${barbarianFish.item.name}'s you can cut is ${Math.floor(
+				maxTripLength / timeToCutSingleItem
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const finalCost = new Bank();
 	finalCost.add(baseCost.multiply(quantity));
 
 	if (!user.owns(finalCost)) {
-		return `You don't own: ${finalCost}.`;
+		throw new TripError(`You don't own: ${finalCost}.`, [user.id]);
 	}
 	await user.removeItemsFromBank(finalCost);
 

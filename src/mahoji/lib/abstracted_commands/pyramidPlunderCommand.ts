@@ -1,16 +1,17 @@
 import { formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 
 import { plunderBoosts, plunderRooms } from '@/lib/minions/data/plunder.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { PlunderActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function pyramidPlunderCommand(user: MUser, channelId: string) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	const skills = user.skillsAsLevels;
 	const thievingLevel = skills.thieving;
 	const minLevel = plunderRooms[0].thievingLevel;
 	if (thievingLevel < minLevel) {
-		return `You need at least level ${minLevel} Thieving to do the Pyramid Plunder.`;
+		throw new TripError(`You need at least level ${minLevel} Thieving to do the Pyramid Plunder.`, [user.id]);
 	}
 
 	const completableRooms = plunderRooms.filter(room => thievingLevel >= room.thievingLevel);

@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import Herblore from '@/lib/skilling/skills/herblore/herblore.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { HerbloreActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -52,14 +53,20 @@ export const mixCommand = defineCommand({
 		const mixableItem = Herblore.Mixables.find(
 			i => stringMatches(i.item.name, options.name) || i.aliases.some(alias => stringMatches(alias, options.name))
 		);
-		if (!mixableItem) return 'That is not a valid mixable item.';
+		if (!mixableItem) throw new TripError('That is not a valid mixable item.', [user.id]);
 
 		if (user.skillsAsLevels.herblore < mixableItem.level) {
-			return `${user.minionName} needs ${mixableItem.level} Herblore to make ${mixableItem.item.name}.`;
+			throw new TripError(
+				`${user.minionName} needs ${mixableItem.level} Herblore to make ${mixableItem.item.name}.`,
+				[user.id]
+			);
 		}
 
 		if (mixableItem.qpRequired && user.QP < mixableItem.qpRequired) {
-			return `You need at least **${mixableItem.qpRequired}** QP to make ${mixableItem.item.name}.`;
+			throw new TripError(
+				`You need at least **${mixableItem.qpRequired}** QP to make ${mixableItem.item.name}.`,
+				[user.id]
+			);
 		}
 
 		const requiredItems = new Bank(mixableItem.inputItems);
@@ -93,7 +100,9 @@ export const mixCommand = defineCommand({
 		const maxCanMix = Math.floor(maxTripLength / timeToMixSingleItem);
 
 		if (!user.owns(requiredItems)) {
-			return `You don't have the required items for ${mixableItem.item.name}: ${requiredItems}.`;
+			throw new TripError(`You don't have the required items for ${mixableItem.item.name}: ${requiredItems}.`, [
+				user.id
+			]);
 		}
 
 		if (!quantity) {
@@ -104,15 +113,21 @@ export const mixCommand = defineCommand({
 		quantity = Math.max(1, quantity);
 
 		if (quantity * timeToMixSingleItem > maxTripLength)
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${itemName} you can mix is ${maxCanMix}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${itemName} you can mix is ${maxCanMix}.`,
+				[user.id]
+			);
 
 		const finalCost = requiredItems.clone().multiply(quantity);
 		if (!user.owns(finalCost)) {
-			return `You don't have enough items. For ${quantity}x ${itemName}, you're missing **${finalCost
-				.clone()
-				.remove(userBank)}**.`;
+			throw new TripError(
+				`You don't have enough items. For ${quantity}x ${itemName}, you're missing **${finalCost
+					.clone()
+					.remove(userBank)}**.`,
+				[user.id]
+			);
 		}
 
 		await user.transactItems({ itemsToRemove: finalCost });

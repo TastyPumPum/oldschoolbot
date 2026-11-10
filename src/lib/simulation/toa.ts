@@ -30,6 +30,7 @@ import {
 	type RaidLevel
 } from '@/lib/simulation/toaUtils.js';
 import { constructGearSetup } from '@/lib/structures/Gear.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MakePartyOptions, Skills } from '@/lib/types/index.js';
 import type { TOAOptions } from '@/lib/types/minions.js';
 import { assert } from '@/lib/util/logError.js';
@@ -1032,10 +1033,7 @@ async function checkTOAUser(
 	}));
 	const unmetReqs = reqResults.filter(i => typeof i.result === 'string');
 	if (unmetReqs.length > 0) {
-		return [
-			true,
-			`${user.usernameOrMention} doesn't meet the requirements: ${unmetReqs.map(i => i.result).join(', ')}.`
-		];
+		return [true, `${user.mention} doesn't meet the requirements: ${unmetReqs.map(i => i.result).join(', ')}.`];
 	}
 
 	const { cost, serpHelmCharges } = await calcTOAInput({ user, duration, quantity });
@@ -1108,11 +1106,11 @@ export async function toaStartCommand(
 ): CommandResponse {
 	const { user, rng } = interaction;
 	if (await user.minionIsBusy()) {
-		return `${user.usernameOrMention} minion is busy`;
+		throw new TripError(`${user.usernameOrMention} minion is busy`, [user.id]);
 	}
 
 	if (!mileStoneBaseDeathChances.some(i => i.level === _raidLevel)) {
-		return 'Invalid raid level.';
+		throw new TripError('Invalid raid level.', [user.id]);
 	}
 
 	const raidLevel = _raidLevel as RaidLevel;
@@ -1126,11 +1124,11 @@ export async function toaStartCommand(
 		1
 	);
 	if (initialCheck[0]) {
-		return initialCheck[1];
+		throw new TripError(initialCheck[1], [user.id]);
 	}
 
 	if (await user.minionIsBusy()) {
-		return "Your minion is busy, so you can't start a raid.";
+		throw new TripError("Your minion is busy, so you can't start a raid.", [user.id]);
 	}
 
 	const maxSize = mahojiParseNumber({ input: teamSize, min: 2, max: 8 }) ?? 8;
@@ -1153,17 +1151,18 @@ export async function toaStartCommand(
 
 	const users: MUser[] = solo ? [user] : await globalClient.makeParty(partyOptions);
 	if (await ActivityManager.anyMinionIsBusy(users)) {
-		return `All team members must have their minions free.`;
+		throw new TripError(
+			`All team members must have their minions free.`,
+			users.map(u => u.id)
+		);
 	}
 
 	const teamCheckFailure = await checkTOATeam(users, raidLevel, 1);
 	if (teamCheckFailure) {
-		return {
-			content: `Your mass failed to start because of this reason: ${teamCheckFailure} ${users}`,
-			allowedMentions: {
-				users: users.map(i => i.id)
-			}
-		};
+		throw new TripError(
+			`Your mass failed to start because of this reason: ${teamCheckFailure} ${users}`,
+			users.map(u => u.id)
+		);
 	}
 	const toaSimUsers = await Promise.all(
 		users.map(async i => ({
@@ -1199,12 +1198,10 @@ export async function toaStartCommand(
 
 	const secondaryTeamCheckFailure = await checkTOATeam(users, raidLevel, quantity);
 	if (secondaryTeamCheckFailure) {
-		return {
-			content: `Your mass failed to start because of this reason: ${secondaryTeamCheckFailure} ${users}`,
-			allowedMentions: {
-				users: users.map(i => i.id)
-			}
-		};
+		throw new TripError(
+			`Your mass failed to start because of this reason: ${secondaryTeamCheckFailure} ${users}`,
+			users.map(u => u.id)
+		);
 	}
 
 	let debugStr = '';

@@ -2,6 +2,7 @@ import { calcWhatPercent, formatDuration, reduceNumByPercent, Time } from '@olds
 import { Bank } from 'oldschooljs';
 
 import { getPOHObject } from '@/lib/poh/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { GnomeRestaurantActivityTaskOptions } from '@/lib/types/minions.js';
 import { getPOH } from '@/mahoji/lib/abstracted_commands/pohCommand.js';
 
@@ -11,7 +12,7 @@ export async function gnomeRestaurantCommand(rng: RNGProvider, user: MUser, chan
 	const itemsToRemove = new Bank();
 	const gp = user.GP;
 	if (gp < 5000) {
-		return 'You need at least 5k GP to work at the Gnome Restaurant.';
+		throw new TripError('You need at least 5k GP to work at the Gnome Restaurant.', [user.id]);
 	}
 	itemsToRemove.add('Coins', 5000);
 
@@ -86,7 +87,7 @@ export async function gnomeRestaurantCommand(rng: RNGProvider, user: MUser, chan
 	}
 
 	if (!user.owns(itemsToRemove)) {
-		return `You don't own the required items: ${itemsToRemove}.`;
+		throw new TripError(`You don't own the required items: ${itemsToRemove}.`, [user.id]);
 	}
 
 	await user.removeItemsFromBank(itemsToRemove);

@@ -4,6 +4,7 @@ import { Bank, Items, itemID } from 'oldschooljs';
 import { darkAltarCommand } from '@/lib/minions/functions/darkAltarCommand.js';
 import { sinsOfTheFatherSkillRequirements } from '@/lib/skilling/functions/questRequirements.js';
 import Runecraft from '@/lib/skilling/skills/runecraft.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { RunecraftActivityTaskOptions } from '@/lib/types/minions.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -107,7 +108,10 @@ export const runecraftCommand = defineCommand({
 			_rune => stringMatches(_rune.name, rune) || stringMatches(_rune.name.split(' ')[0], rune)
 		);
 		if (!runeObj) {
-			return `That's not a valid rune. Valid rune are ${Runecraft.Runes.map(_rune => _rune.name).join(', ')}.`;
+			throw new TripError(
+				`That's not a valid rune. Valid rune are ${Runecraft.Runes.map(_rune => _rune.name).join(', ')}.`,
+				[user.id]
+			);
 		}
 
 		if (usestams === undefined) {
@@ -121,11 +125,14 @@ export const runecraftCommand = defineCommand({
 		const quantityPerEssence = calcMaxRCQuantity(runeObj, user);
 
 		if (quantityPerEssence === 0) {
-			return `${user.minionName} needs ${runeObj.levels[0][0]} Runecraft to create ${runeObj.name}s.`;
+			throw new TripError(
+				`${user.minionName} needs ${runeObj.levels[0][0]} Runecraft to create ${runeObj.name}s.`,
+				[user.id]
+			);
 		}
 
 		if (runeObj.qpRequired && user.user.QP < runeObj.qpRequired) {
-			return `You need ${runeObj.qpRequired} QP to craft this rune.`;
+			throw new TripError(`You need ${runeObj.qpRequired} QP to craft this rune.`, [user.id]);
 		}
 
 		const { bank } = user;
@@ -179,13 +186,19 @@ export const runecraftCommand = defineCommand({
 		if (daeyalt_essence) {
 			if (!quantity) quantity = Math.min(daeyaltEssenceOwned, maxCanDo);
 			if (daeyaltEssenceOwned === 0 || quantity === 0 || daeyaltEssenceOwned < quantity) {
-				return "You don't have enough Daeyalt Essence to craft these runes. You can acquire Daeyalt Shards through Mining, and then exchange for essence with the `/create` command.";
+				throw new TripError(
+					"You don't have enough Daeyalt Essence to craft these runes. You can acquire Daeyalt Shards through Mining, and then exchange for essence with the `/create` command.",
+					[user.id]
+				);
 			}
 		} else {
 			if (!quantity) quantity = Math.min(numEssenceOwned, maxCanDo);
 
 			if (numEssenceOwned === 0 || quantity === 0 || numEssenceOwned < quantity) {
-				return "You don't have enough Pure Essence to craft these runes. You can acquire some through Mining, or purchasing from other players.";
+				throw new TripError(
+					"You don't have enough Pure Essence to craft these runes. You can acquire some through Mining, or purchasing from other players.",
+					[user.id]
+				);
 			}
 		}
 
@@ -196,7 +209,7 @@ export const runecraftCommand = defineCommand({
 				extractsOwned = bank.amount(item.name);
 				if (extracts) {
 					totalCost.add(item, quantity);
-					if (!user.owns(totalCost)) return `You don't own: ${totalCost}.`;
+					if (!user.owns(totalCost)) throw new TripError(`You don't own: ${totalCost}.`, [user.id]);
 				}
 				break;
 			}
@@ -205,7 +218,10 @@ export const runecraftCommand = defineCommand({
 		if (extracts) {
 			if (!quantity) quantity = Math.min(extractsOwned, maxCanDo);
 			if (extractsOwned === 0 || quantity === 0 || extractsOwned < quantity) {
-				return "You don't have enough Extracts to craft these runes. You can acquire Tainted Essence Chunks through Mining, and then exchange for extracts with the `/create` command.";
+				throw new TripError(
+					"You don't have enough Extracts to craft these runes. You can acquire Tainted Essence Chunks through Mining, and then exchange for extracts with the `/create` command.",
+					[user.id]
+				);
 			}
 		}
 
@@ -213,15 +229,21 @@ export const runecraftCommand = defineCommand({
 		let duration = numberOfInventories * tripLength;
 
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${runeObj.name} you can craft is ${Math.floor(maxCanDo)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${runeObj.name} you can craft is ${Math.floor(maxCanDo)}.`,
+				[user.id]
+			);
 		}
 
 		if (rune === 'blood') {
 			const hasBloodReqs = user.hasSkillReqs(sinsOfTheFatherSkillRequirements);
 			if (!hasBloodReqs) {
-				return `To runecraft ${rune}, you need ${formatSkillRequirements(sinsOfTheFatherSkillRequirements)}.`;
+				throw new TripError(
+					`To runecraft ${rune}, you need ${formatSkillRequirements(sinsOfTheFatherSkillRequirements)}.`,
+					[user.id]
+				);
 			}
 		}
 
@@ -244,26 +266,35 @@ export const runecraftCommand = defineCommand({
 			} else {
 				removeTalismanAndOrRunes.add(runeObj.inputTalisman.clone().multiply(numberOfInventories));
 				if (!bank.has(removeTalismanAndOrRunes)) {
-					return `You need enough Magic Imbue runes and 82 Magic, *or* Talismans to craft this rune. You don't have enough talismans for this trip. You need ${runeObj.inputTalisman
-						.clone()
-						.multiply(numberOfInventories)}.`;
+					throw new TripError(
+						`You need enough Magic Imbue runes and 82 Magic, *or* Talismans to craft this rune. You don't have enough talismans for this trip. You need ${runeObj.inputTalisman
+							.clone()
+							.multiply(numberOfInventories)}.`,
+						[user.id]
+					);
 				}
 			}
 			removeTalismanAndOrRunes.add(runeObj.inputRune?.clone().multiply(quantity));
 			if (!user.owns(removeTalismanAndOrRunes)) {
-				return `You don't have enough runes for this trip. You need ${runeObj.inputRune
-					?.clone()
-					.multiply(quantity)}.`;
+				throw new TripError(
+					`You don't have enough runes for this trip. You need ${runeObj.inputRune
+						?.clone()
+						.multiply(quantity)}.`,
+					[user.id]
+				);
 			}
 			removeTalismanAndOrRunes.add(
 				'Binding necklace',
 				Math.max(Math.floor(numberOfInventories / (16 / Math.ceil(inventorySize / 28))), 1)
 			);
 			if (!user.owns(removeTalismanAndOrRunes)) {
-				return `You don't have enough Binding necklaces for this trip. You need ${Math.max(
-					Math.floor(numberOfInventories / (16 / Math.ceil(inventorySize / 28))),
-					1
-				)}x Binding necklace.`;
+				throw new TripError(
+					`You don't have enough Binding necklaces for this trip. You need ${Math.max(
+						Math.floor(numberOfInventories / (16 / Math.ceil(inventorySize / 28))),
+						1
+					)}x Binding necklace.`,
+					[user.id]
+				);
 			}
 			if (user.skillsAsLevels.crafting >= 99 && user.hasEquippedOrInBank('Crafting cape')) {
 				teleportReduction = 2;
@@ -290,17 +321,23 @@ export const runecraftCommand = defineCommand({
 				);
 			}
 			if (!user.owns(removeTalismanAndOrRunes)) {
-				return `You don't have enough Ring of dueling(8) for this trip. You need ${Math.ceil(
-					numberOfInventories / (4 * teleportReduction)
-				)}x Ring of dueling(8).`;
+				throw new TripError(
+					`You don't have enough Ring of dueling(8) for this trip. You need ${Math.ceil(
+						numberOfInventories / (4 * teleportReduction)
+					)}x Ring of dueling(8).`,
+					[user.id]
+				);
 			}
 			if (usestams) {
 				removeTalismanAndOrRunes.add('Stamina potion(4)', Math.max(Math.ceil(duration / (Time.Minute * 8)), 1));
 				if (!user.owns(removeTalismanAndOrRunes)) {
-					return `You don't have enough Stamina potion(4) for this trip. You need ${Math.max(
-						Math.ceil(duration / (Time.Minute * 8)),
-						1
-					)}x Stamina potion(4).`;
+					throw new TripError(
+						`You don't have enough Stamina potion(4) for this trip. You need ${Math.max(
+							Math.ceil(duration / (Time.Minute * 8)),
+							1
+						)}x Stamina potion(4).`,
+						[user.id]
+					);
 				}
 			}
 			totalCost.add(removeTalismanAndOrRunes);
@@ -311,7 +348,7 @@ export const runecraftCommand = defineCommand({
 		} else {
 			totalCost.add('Pure essence', quantity);
 		}
-		if (!user.owns(totalCost)) return `You don't own: ${totalCost}.`;
+		if (!user.owns(totalCost)) throw new TripError(`You don't own: ${totalCost}.`, [user.id]);
 
 		await user.removeItemsFromBank(totalCost);
 		await ClientSettings.updateBankSetting('runecraft_cost', totalCost);

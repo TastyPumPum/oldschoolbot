@@ -1,7 +1,7 @@
-import { UserError } from '@oldschoolgg/toolkit';
 import { omit } from 'remeda';
 
 import type { Prisma } from '@/prisma/main.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskData, ActivityTaskOptions } from '@/lib/types/minions.js';
 import { isGroupActivity } from '@/lib/util/activityTypeCheck.js';
 
@@ -22,10 +22,11 @@ export default async function addSubTaskToActivityTask(taskToAdd: Omit<ActivityT
 		}
 	});
 	if (existingActivities > 0) {
-		throw new UserError(
+		throw new TripError(
 			userIds.length > 1
 				? 'One or more users have an existing activity already in progress.'
-				: 'You have an existing activity already in progress.'
+				: 'You have an existing activity already in progress.',
+			userIds
 		);
 	}
 
@@ -65,6 +66,6 @@ export default async function addSubTaskToActivityTask(taskToAdd: Omit<ActivityT
 			user_id: taskToAdd.userID,
 			data: JSON.stringify(data)
 		});
-		throw new UserError('There was an error starting your activity.');
+		throw new TripError('There was an error starting your activity.', userIds);
 	}
 }

@@ -4,6 +4,7 @@ import { Bank } from 'oldschooljs';
 
 import { trackLoot } from '@/lib/lootTrack.js';
 import { calculateNexDetails, checkNexUser } from '@/lib/simulation/nex.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { NexTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -15,7 +16,7 @@ export async function nexCommand(
 ) {
 	const ownerCheck = checkNexUser(user);
 	if (ownerCheck[1]) {
-		return `You can't start a Nex mass: ${ownerCheck[1]}`;
+		throw new TripError(`You can't start a Nex mass: ${ownerCheck[1]}`, [user.id]);
 	}
 
 	await interaction.defer();
@@ -36,7 +37,7 @@ export async function nexCommand(
 		});
 
 		if (usersWhoConfirmed.length < 1 || usersWhoConfirmed.length > 10) {
-			return `${user}, your mass didn't start because it needs between 1-10 users.`;
+			throw new TripError(`${user}, your mass didn't start because it needs between 1-10 users.`, [user.id]);
 		}
 		mahojiUsers = await Promise.all(usersWhoConfirmed.map(i => mUserFetch(i.id)));
 	}
@@ -44,7 +45,7 @@ export async function nexCommand(
 	for (const user of mahojiUsers) {
 		const result = checkNexUser(user);
 		if (result[1]) {
-			return result[1];
+			throw new TripError(result[1], [user.id]);
 		}
 	}
 
@@ -58,7 +59,9 @@ export async function nexCommand(
 	for (const user of effectiveTeam) {
 		const mUser = await mUserFetch(user.id);
 		if (!mUser.allItemsOwned.has(user.cost)) {
-			return `${mUser.usernameOrMention} doesn't have the required items: ${user.cost}.`;
+			throw new TripError(`${mUser.usernameOrMention} doesn't have the required items: ${user.cost}.`, [
+				mUser.id
+			]);
 		}
 	}
 

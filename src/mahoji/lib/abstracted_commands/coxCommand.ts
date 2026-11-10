@@ -16,6 +16,7 @@ import {
 import { getSimilarItems } from '@/lib/data/similarItems.js';
 import { degradeItem } from '@/lib/degradeableItems.js';
 import { trackLoot } from '@/lib/lootTrack.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MakePartyOptions } from '@/lib/types/index.js';
 import type { RaidsOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -134,7 +135,10 @@ export async function coxCommand(
 	_quantity?: number
 ) {
 	if (type !== 'mass' && type !== 'solo' && type !== 'fakemass') {
-		return 'Specify your team setup for Chambers of Xeric, either solo, mass, or mass (4 bots teammates).';
+		throw new TripError(
+			'Specify your team setup for Chambers of Xeric, either solo, mass, or mass (4 bots teammates).',
+			[user.id]
+		);
 	}
 
 	const minigameID = isChallengeMode ? 'raids_challenge_mode' : 'raids';
@@ -142,11 +146,14 @@ export async function coxCommand(
 	if (isChallengeMode) {
 		const normalKC = await user.fetchMinigameScore('raids');
 		if (normalKC < 200) {
-			return 'You need at least 200 completions of the Chambers of Xeric before you can attempt Challenge Mode.';
+			throw new TripError(
+				'You need at least 200 completions of the Chambers of Xeric before you can attempt Challenge Mode.',
+				[user.id]
+			);
 		}
 	}
 	if (await user.minionIsBusy()) {
-		return "Your minion is busy, so you can't start a raid.";
+		throw new TripError("Your minion is busy, so you can't start a raid.", [user.id]);
 	}
 
 	const maxSize = mahojiParseNumber({ input: maxSizeInput, min: 2, max: 15 }) ?? 15;
@@ -209,7 +216,10 @@ export async function coxCommand(
 	} else if (type === 'mass') {
 		users = await globalClient.makeParty(partyOptions);
 		if (await ActivityManager.anyMinionIsBusy(users)) {
-			return `All team members must have their minions free.`;
+			throw new TripError(
+				`All team members must have their minions free.`,
+				users.map(u => u.id)
+			);
 		}
 	} else {
 		users = [user];
@@ -227,7 +237,10 @@ export async function coxCommand(
 
 	const teamCheckFailure = await checkCoxTeam(users, isChallengeMode, quantity);
 	if (teamCheckFailure) {
-		return `Your mass failed to start because of this reason: ${teamCheckFailure}`;
+		throw new TripError(
+			`Your mass failed to start because of this reason: ${teamCheckFailure}`,
+			users.map(u => u.id)
+		);
 	}
 
 	// add variance to cox raid time

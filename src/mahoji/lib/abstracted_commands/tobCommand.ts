@@ -14,6 +14,7 @@ import {
 import { checkUserCanUseDegradeableItem, degradeItem } from '@/lib/degradeableItems.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { blowpipeDarts } from '@/lib/minions/functions/blowpipeCommand.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MakePartyOptions } from '@/lib/types/index.js';
 import type { TheatreOfBloodTaskOptions } from '@/lib/types/minions.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
@@ -286,21 +287,24 @@ export async function tobStartCommand(
 	quantity: number | undefined
 ) {
 	if (await user.minionIsBusy()) {
-		return `${user.usernameOrMention} minion is busy`;
+		throw new TripError(`${user.usernameOrMention} minion is busy`, [user.id]);
 	}
 	const initialCheck = await checkTOBUser(user, isHardMode);
 	if (initialCheck[0]) {
-		return initialCheck[1];
+		throw new TripError(initialCheck[1], [user.id]);
 	}
 
 	if (isHardMode) {
 		const normalKC = await user.fetchMinigameScore('tob');
 		if (normalKC < 250) {
-			return 'You need at least 250 completions of the Theatre of Blood before you can attempt Hard Mode.';
+			throw new TripError(
+				'You need at least 250 completions of the Theatre of Blood before you can attempt Hard Mode.',
+				[user.id]
+			);
 		}
 	}
 	if (await user.minionIsBusy()) {
-		return "Your minion is busy, so you can't start a raid.";
+		throw new TripError("Your minion is busy, so you can't start a raid.", [user.id]);
 	}
 
 	const maxSize = mahojiParseNumber({ input: maxSizeInput, min: 2, max: 5 }) ?? 5;
@@ -325,7 +329,10 @@ export async function tobStartCommand(
 
 	const users = solo ? [user, user, user] : await globalClient.makeParty(partyOptions);
 	if (await ActivityManager.anyMinionIsBusy(users)) {
-		return `All team members must have their minions free.`;
+		throw new TripError(
+			`All team members must have their minions free.`,
+			users.map(u => u.id)
+		);
 	}
 
 	const team = await Promise.all(
@@ -352,14 +359,20 @@ export async function tobStartCommand(
 
 	const qty = quantity ?? maxTripsCanFit;
 	if (qty > maxTripsCanFit) {
-		return `Your minion cannot go on trips longer than ${formatDuration(
-			maxTripLength
-		)}. The most you can do with your teams setup is ${maxTripsCanFit}.`;
+		throw new TripError(
+			`Your minion cannot go on trips longer than ${formatDuration(
+				maxTripLength
+			)}. The most you can do with your teams setup is ${maxTripsCanFit}.`,
+			users.map(u => u.id)
+		);
 	}
 
 	const teamCheckFailure = await checkTOBTeam(users, isHardMode, solo, qty);
 	if (teamCheckFailure) {
-		return `Your mass failed to start because of this reason: ${teamCheckFailure} ${users}`;
+		throw new TripError(
+			`Your mass failed to start because of this reason: ${teamCheckFailure} ${users}`,
+			users.map(u => u.id)
+		);
 	}
 
 	let totalDuration = 0;
@@ -479,7 +492,10 @@ export async function tobStartCommand(
 export async function tobCheckCommand(user: MUser, hardMode: boolean) {
 	const result = await checkTOBUser(user, hardMode, 5);
 	if (result[0]) {
-		return `You aren't able to join a Theatre of Blood raid, address these issues first: ${result[1]}`;
+		throw new TripError(
+			`You aren't able to join a Theatre of Blood raid, address these issues first: ${result[1]}`,
+			[user.id]
+		);
 	}
 	return 'You are ready to do the Theatre of Blood!';
 }

@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import Prayer from '@/lib/skilling/skills/prayer.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { BuryingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -13,11 +14,11 @@ export async function buryCommand(user: MUser, channelId: string, boneName: stri
 	);
 
 	if (!bone) {
-		return "That's not a valid bone to bury.";
+		throw new TripError("That's not a valid bone to bury.", [user.id]);
 	}
 
 	if (user.skillsAsLevels.prayer < bone.level) {
-		return `${user.minionName} needs ${bone.level} Prayer to bury ${bone.name}.`;
+		throw new TripError(`${user.minionName} needs ${bone.level} Prayer to bury ${bone.name}.`, [user.id]);
 	}
 
 	const timeToBuryABone = speedMod * (Time.Second * 1.2 + Time.Second / 4);
@@ -26,24 +27,27 @@ export async function buryCommand(user: MUser, channelId: string, boneName: stri
 
 	if (!quantity) {
 		const amountOfBonesOwned = user.bank.amount(bone.inputId);
-		if (!amountOfBonesOwned) return `You have no ${bone.name}.`;
+		if (!amountOfBonesOwned) throw new TripError(`You have no ${bone.name}.`, [user.id]);
 		quantity = Math.min(Math.floor(maxTripLength / timeToBuryABone), amountOfBonesOwned);
 	}
 
 	const cost = new Bank({ [bone.inputId]: quantity });
 
 	if (!user.owns(cost)) {
-		return `You dont have ${cost}.`;
+		throw new TripError(`You dont have ${cost}.`, [user.id]);
 	}
 
 	const duration = quantity * timeToBuryABone;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of ${bone.name}s you can bury is ${Math.floor(
-			maxTripLength / timeToBuryABone
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of ${bone.name}s you can bury is ${Math.floor(
+				maxTripLength / timeToBuryABone
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await user.transactItems({ itemsToRemove: cost });

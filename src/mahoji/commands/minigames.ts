@@ -5,6 +5,7 @@ import { ValeTotemsBuyables, ValeTotemsSellables } from '@/lib/data/buyables/val
 import { LMSBuyables } from '@/lib/data/CollectionsExport.js';
 import { masteringMixologyBuyables, mixologyHerbs } from '@/lib/minions/data/masteringMixology.js';
 import { zeroTimeFletchables } from '@/lib/skilling/skills/fletching/fletchables/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import {
 	agilityArenaBuyables,
 	agilityArenaBuyCommand,
@@ -1660,6 +1661,6 @@ export const minigamesCommand = defineCommand({
 			);
 		}
 
-		return 'Invalid command.';
+		throw new TripError('Invalid command.', [user.id]);
 	}
 });

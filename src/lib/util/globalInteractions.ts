@@ -1,5 +1,5 @@
 import { type APIMessageComponentInteraction, SpecialResponse } from '@oldschoolgg/discord';
-import { formatDuration, removeFromArr, stringMatches, Time, uniqueArr } from '@oldschoolgg/toolkit';
+import { formatDuration, removeFromArr, stringMatches, Time, UserError, uniqueArr } from '@oldschoolgg/toolkit';
 import { cryptoRng } from 'node-rng/crypto';
 import { Bank, type ItemBank } from 'oldschooljs';
 
@@ -11,6 +11,7 @@ import { InteractionID } from '@/lib/InteractionID.js';
 import { toggleAutoRummage } from '@/lib/minions/data/valeTotems.js';
 import { type RunCommandArgs, runCommand } from '@/lib/settings/settings.js';
 import { Farming } from '@/lib/skilling/skills/farming/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import { updateGiveawayMessage } from '@/lib/util/giveaway.js';
 import { fetchRepeatTrips, repeatTrip } from '@/lib/util/repeatStoredTrip.js';
 import { autoSlayCommand } from '@/mahoji/lib/abstracted_commands/autoSlayCommand.js';
@@ -120,11 +121,11 @@ async function giveawayButtonHandler(user: MUser, customID: string, interaction:
 
 async function repeatTripHandler(user: MUser, id: string, interaction: OSInteraction): CommandResponse {
 	if (await user.minionIsBusy()) {
-		return { content: 'Your minion is busy.', ephemeral: true };
+		throw new TripError('Your minion is busy.', [user.id], { ephemeral: true });
 	}
 	const trips = await fetchRepeatTrips(user);
 	if (trips.length === 0) {
-		return { content: "Couldn't find a trip to repeat.", ephemeral: true };
+		throw new TripError("Couldn't find a trip to repeat.", [user.id], { ephemeral: true });
 	}
 	if (id === InteractionID.Commands.RepeatAnyway) {
 		return repeatTrip(user, interaction, trips[0]);
@@ -159,16 +160,17 @@ async function handleGearPresetEquip(user: MUser, id: string, interaction: OSInt
 
 async function handlePinnedTripRepeat(user: MUser, id: string, interaction: OSInteraction): CommandResponse {
 	const [, pinnedTripID] = id.split('_');
-	if (!pinnedTripID) return { content: 'Invalid pinned trip.', ephemeral: true };
+	if (!pinnedTripID) throw new TripError('Invalid pinned trip.', [user.id], { ephemeral: true });
 	const trip = await prisma.pinnedTrip.findFirst({
 		where: { user_id: user.id, id: pinnedTripID },
 		include: { activity: true }
 	});
 	if (!trip || !trip.activity) {
-		return {
-			content: "You don't have a pinned trip with this ID, and you cannot repeat trips of other users.",
-			ephemeral: true
-		};
+		throw new TripError(
+			"You don't have a pinned trip with this ID, and you cannot repeat trips of other users.",
+			[user.id],
+			{ ephemeral: true }
+		);
 	}
 	return repeatTrip(user, interaction, trip.activity);
 }
@@ -236,20 +238,22 @@ async function globalButtonInteractionHandler({
 	});
 
 	if (globalClient.isShuttingDown) {
-		return {
-			content: 'The bot is currently rebooting, please try again in a couple minutes.',
-			ephemeral: true
-		};
+		throw new TripError(
+			'The bot is currently rebooting, please try again in a couple minutes.',
+			[interaction.userId],
+			{ ephemeral: true }
+		);
 	}
 
 	const userID = interaction.userId;
 
 	const ratelimit = await Cache.tryRatelimit(userID, 'global_buttons');
 	if (!ratelimit.success) {
-		return {
-			content: `You're on cooldown from clicking buttons, please wait: ${formatDuration(ratelimit.timeRemainingMs, true)}.`,
-			ephemeral: true
-		};
+		throw new TripError(
+			`You're on cooldown from clicking buttons, please wait: ${formatDuration(ratelimit.timeRemainingMs, true)}.`,
+			[interaction.userId],
+			{ ephemeral: true }
+		);
 	}
 
 	const user = interaction.user;
@@ -266,7 +270,7 @@ async function globalButtonInteractionHandler({
 	if (id === InteractionID.Commands.ToggleAutoRummage) return toggleAutoRummage(user);
 
 	if (await user.getIsLocked()) {
-		return { content: 'You cannot use a command right now.', ephemeral: true };
+		throw new TripError('You cannot use a command right now.', [interaction.userId], { ephemeral: true });
 	}
 
 	const options: Pick<RunCommandArgs, 'user' | 'interaction' | 'continueDeltaMillis' | 'ignoreUserIsBusy'> = {
@@ -348,17 +352,17 @@ async function globalButtonInteractionHandler({
 	if (id === InteractionID.Open.MasterCasket) return openCasket('Master');
 
 	if (await user.minionIsBusy()) {
-		return { content: `${user.minionName} is busy.`, ephemeral: true };
+		throw new TripError(`${user.minionName} is busy.`, [interaction.userId], { ephemeral: true });
 	}
 
 	if (id.startsWith('FARMING_PATRON_HARVEST_')) {
 		const patchType = id.split('_')[3];
 		if (!Farming.isPatchName(patchType)) {
-			return { content: 'Invalid patch type.', ephemeral: true };
+			throw new TripError('Invalid patch type.', [interaction.userId], { ephemeral: true });
 		}
 		const perkTier = await user.fetchPerkTier();
 		if (perkTier < 4) {
-			return { content: 'You cannot use this button.', ephemeral: true };
+			throw new TripError('You cannot use this button.', [interaction.userId], { ephemeral: true });
 		}
 		return runCommand({
 			commandName: 'farming',
@@ -473,10 +477,7 @@ async function globalButtonInteractionHandler({
 				errorMessage = 'You have already mined this shooting star.';
 			}
 			if (errorMessage || !validStar) {
-				return {
-					content: errorMessage!,
-					ephemeral: true
-				};
+				throw new TripError(errorMessage!, [interaction.userId], { ephemeral: true });
 			}
 			await prisma.shootingStars.update({
 				where: {
@@ -513,7 +514,13 @@ export async function globalButtonInteractionHandlerWrapper(
 	if (!id) return;
 	if ((ignoredInteractionIDs as string[]).includes(id)) return;
 	if (['DYN_', 'LP_'].some(s => id.startsWith(s))) return;
-	const response = await globalButtonInteractionHandler({ interaction, id, rng: cryptoRng });
+	let response: Awaited<CommandResponse> | null;
+	try {
+		response = await globalButtonInteractionHandler({ interaction, id, rng: cryptoRng });
+	} catch (err) {
+		if (!(err instanceof UserError)) throw err;
+		response = (err instanceof TripError ? err : new TripError(err.message, [interaction.userId])).toResponse();
+	}
 	if (
 		response === null ||
 		response === SpecialResponse.PaginatedMessageResponse ||

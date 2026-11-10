@@ -1,16 +1,20 @@
 import { Time } from '@oldschoolgg/toolkit';
 import { Bank, ItemGroups } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 
 export async function championsChallengeCommand({ user, channelId, rng }: OSInteraction) {
 	if (await user.minionIsBusy()) {
-		return 'Your minion is busy.';
+		throw new TripError('Your minion is busy.', [user.id]);
 	}
 
 	const { bank } = user;
 	if (!bank.has(ItemGroups.championScrolls)) {
-		return "You don't have a set of Champion Scrolls to do the Champion's Challenge! You need 1 of each.";
+		throw new TripError(
+			"You don't have a set of Champion Scrolls to do the Champion's Challenge! You need 1 of each.",
+			[user.id]
+		);
 	}
 
 	const cost = new Bank();

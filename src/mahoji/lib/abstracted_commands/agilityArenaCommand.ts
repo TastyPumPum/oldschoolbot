@@ -2,6 +2,7 @@ import { stringMatches, Time } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 
 import chatHeadImage from '@/lib/canvas/chatHeadImage.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -68,14 +69,18 @@ export async function agilityArenaCommand(
 	const duration = quantity * Time.Minute;
 
 	if (!user.hasGracefulEquipped()) {
-		return {
-			files: [
-				await chatHeadImage({
-					content: 'Ahoy there! You need full Graceful equipped to do the Brimhaven Agility Arena!',
-					head: 'izzy'
-				})
-			]
-		};
+		throw new TripError(
+			'Ahoy there! You need full Graceful equipped to do the Brimhaven Agility Arena!',
+			[user.id],
+			{
+				files: [
+					await chatHeadImage({
+						content: 'Ahoy there! You need full Graceful equipped to do the Brimhaven Agility Arena!',
+						head: 'izzy'
+					})
+				]
+			}
+		);
 	}
 
 	const boosts: string[] = [];

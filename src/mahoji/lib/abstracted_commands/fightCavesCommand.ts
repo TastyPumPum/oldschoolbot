@@ -2,6 +2,7 @@ import { calcWhatPercent, formatDuration, reduceNumByPercent, Time } from '@olds
 import { Bank, EMonster, itemID } from 'oldschooljs';
 
 import { newChatHeadImage } from '@/lib/canvas/chatHeadImage.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { FightCavesActivityTaskOptions } from '@/lib/types/minions.js';
 
 export const fightCavesCost = new Bank({
@@ -102,14 +103,14 @@ export async function fightCavesCommand({
 }): CommandResponse {
 	const gearFailure = checkGear(user);
 	if (gearFailure) {
-		return {
+		throw new TripError(gearFailure, [user.id], {
 			files: [
 				{
 					buffer: await newChatHeadImage({ content: gearFailure, head: 'mejJal' }),
 					name: 'fightcaves.jpg'
 				}
 			]
-		};
+		});
 	}
 
 	let [duration, debugStr] = await determineDuration(user);

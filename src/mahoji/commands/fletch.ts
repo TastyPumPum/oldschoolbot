@@ -2,6 +2,7 @@ import { formatDuration, stringMatches, Time } from '@oldschoolgg/toolkit';
 
 import { Fletchables } from '@/lib/skilling/skills/fletching/fletchables/index.js';
 import Fletching from '@/lib/skilling/skills/fletching/index.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { FletchingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -39,20 +40,26 @@ export const fletchCommand = defineCommand({
 	run: async ({ options, user, channelId }) => {
 		const fletchable = Fletching.Fletchables.find(item => stringMatches(item.name, options.name));
 
-		if (!fletchable) return 'That is not a valid fletchable item.';
+		if (!fletchable) throw new TripError('That is not a valid fletchable item.', [user.id]);
 		let sets = 'x';
 		if (fletchable.outputMultiple) {
 			sets = ' sets of';
 		}
 
 		if (user.skillLevel('fletching') < fletchable.level) {
-			return `${user.minionName} needs ${fletchable.level} Fletching to fletch ${fletchable.name}.`;
+			throw new TripError(
+				`${user.minionName} needs ${fletchable.level} Fletching to fletch ${fletchable.name}.`,
+				[user.id]
+			);
 		}
 
 		if (fletchable.requiredSlayerUnlocks) {
 			const { success, errors } = user.checkHasSlayerUnlocks(fletchable.requiredSlayerUnlocks);
 			if (!success) {
-				return `You don't have the required Slayer Unlocks to create this item.\n\nRequired: ${errors}`;
+				throw new TripError(
+					`You don't have the required Slayer Unlocks to create this item.\n\nRequired: ${errors}`,
+					[user.id]
+				);
 			}
 		}
 
@@ -85,18 +92,24 @@ export const fletchCommand = defineCommand({
 
 		const duration = quantity * timeToFletchSingleItem;
 		if (duration > maxTripLength) {
-			return `${user.minionName} can't go on trips longer than ${formatDuration(
-				maxTripLength
-			)}, try a lower quantity. The highest amount of ${fletchable.name}s you can fletch is ${Math.floor(
-				maxTripLength / timeToFletchSingleItem
-			)}.`;
+			throw new TripError(
+				`${user.minionName} can't go on trips longer than ${formatDuration(
+					maxTripLength
+				)}, try a lower quantity. The highest amount of ${fletchable.name}s you can fletch is ${Math.floor(
+					maxTripLength / timeToFletchSingleItem
+				)}.`,
+				[user.id]
+			);
 		}
 
 		const itemsNeeded = fletchable.inputItems.clone().multiply(quantity);
 		if (!userBank.has(itemsNeeded)) {
-			return `You don't have enough items. For ${quantity}x ${fletchable.name}, you're missing **${itemsNeeded
-				.clone()
-				.remove(userBank)}**.`;
+			throw new TripError(
+				`You don't have enough items. For ${quantity}x ${fletchable.name}, you're missing **${itemsNeeded
+					.clone()
+					.remove(userBank)}**.`,
+				[user.id]
+			);
 		}
 
 		await user.transactItems({ itemsToRemove: itemsNeeded });

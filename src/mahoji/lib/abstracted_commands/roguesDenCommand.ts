@@ -1,13 +1,14 @@
 import { formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { MinigameActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function roguesDenCommand(user: MUser, channelId: string) {
-	if (await user.minionIsBusy()) return `${user.minionName} is busy.`;
+	if (await user.minionIsBusy()) throw new TripError(`${user.minionName} is busy.`, [user.id]);
 	if (user.skillsAsLevels.agility < 50 || user.skillsAsLevels.thieving < 50) {
-		return "To attempt the Rogues' Den maze you need 50 Agility and 50 Thieving.";
+		throw new TripError("To attempt the Rogues' Den maze you need 50 Agility and 50 Thieving.", [user.id]);
 	}
 
 	const staminasToRemove = new Bank();

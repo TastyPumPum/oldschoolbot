@@ -1,12 +1,13 @@
 import { calcWhatPercent, formatDuration, reduceNumByPercent, Time } from '@oldschoolgg/toolkit';
 
+import { TripError } from '@/lib/structures/TripError.js';
 import type { TemporossActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function temporossCommand(user: MUser, channelId: string, quantity: number | undefined) {
 	const fLevel = user.skillLevel('fishing');
 	if (fLevel < 35) {
-		return 'You need 35 Fishing to have a chance at defeating Tempoross.';
+		throw new TripError('You need 35 Fishing to have a chance at defeating Tempoross.', [user.id]);
 	}
 
 	const messages = [];
@@ -50,11 +51,14 @@ export async function temporossCommand(user: MUser, channelId: string, quantity:
 	const duration = durationPerRoss * quantity;
 
 	if (duration > maxTripLength) {
-		return `${user.minionName} can't go on trips longer than ${formatDuration(
-			maxTripLength
-		)}, try a lower quantity. The highest amount of Tempoross that you can kill is ${Math.floor(
-			maxTripLength / durationPerRoss
-		)}.`;
+		throw new TripError(
+			`${user.minionName} can't go on trips longer than ${formatDuration(
+				maxTripLength
+			)}, try a lower quantity. The highest amount of Tempoross that you can kill is ${Math.floor(
+				maxTripLength / durationPerRoss
+			)}.`,
+			[user.id]
+		);
 	}
 
 	await ActivityManager.startTrip<TemporossActivityTaskOptions>({

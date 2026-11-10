@@ -3,6 +3,7 @@ import { stringMatches } from '@oldschoolgg/toolkit';
 import { Bank, Items } from 'oldschooljs';
 
 import birdhouses, { birdhouseSeeds } from '@/lib/skilling/skills/hunter/birdHouseTrapping.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { BirdhouseActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
@@ -40,18 +41,26 @@ export async function birdhouseHarvestCommand(user: MUser, channelId: string, in
 	if (!birdhouseToPlant && existingBirdhouse.birdhouse) birdhouseToPlant = existingBirdhouse.birdhouse;
 
 	if (!birdhouseToPlant) {
-		return `That's not a valid birdhouse. Valid bird houses are ${birdhouses
-			.map(_birdhouse => _birdhouse.name)
-			.join(', ')}.`;
+		throw new TripError(
+			`That's not a valid birdhouse. Valid bird houses are ${birdhouses
+				.map(_birdhouse => _birdhouse.name)
+				.join(', ')}.`,
+			[user.id]
+		);
 	}
 
 	const skills = user.skillsAsLevels;
 	if (skills.hunter < birdhouseToPlant.huntLvl) {
-		return `${user.minionName} needs ${birdhouseToPlant.huntLvl} Hunter to place ${birdhouseToPlant.name}.`;
+		throw new TripError(
+			`${user.minionName} needs ${birdhouseToPlant.huntLvl} Hunter to place ${birdhouseToPlant.name}.`,
+			[user.id]
+		);
 	}
 
 	if (user.QP < birdhouseToPlant.qpRequired) {
-		return `${user.minionName} needs ${birdhouseToPlant.qpRequired} QP to do Birdhouse runs.`;
+		throw new TripError(`${user.minionName} needs ${birdhouseToPlant.qpRequired} QP to do Birdhouse runs.`, [
+			user.id
+		]);
 	}
 
 	let duration: number = birdhouseToPlant.runTime;
@@ -69,7 +78,10 @@ export async function birdhouseHarvestCommand(user: MUser, channelId: string, in
 		removeBank.add(premadeBankCost);
 	} else {
 		if (skills.crafting < birdhouseToPlant.craftLvl) {
-			return `${user.minionName} needs ${birdhouseToPlant.craftLvl} Crafting to make ${birdhouseToPlant.name} during the run or write \`/activities birdhouse run --nocraft\`.`;
+			throw new TripError(
+				`${user.minionName} needs ${birdhouseToPlant.craftLvl} Crafting to make ${birdhouseToPlant.name} during the run or write \`/activities birdhouse run --nocraft\`.`,
+				[user.id]
+			);
 		}
 		gotCraft = true;
 		removeBank.add(birdhouseToPlant.craftItemReq.clone().multiply(birdhouseLimit));
@@ -90,7 +102,7 @@ export async function birdhouseHarvestCommand(user: MUser, channelId: string, in
 				break;
 			}
 		}
-		if (!canPay) return "You don't have enough favourited seeds to bait the birdhouses.";
+		if (!canPay) throw new TripError("You don't have enough favourited seeds to bait the birdhouses.", [user.id]);
 	} else {
 		for (const currentSeed of birdhouseSeeds) {
 			const seedCost = new Bank().add(currentSeed.item.id, currentSeed.amount * birdhouseLimit);
@@ -104,9 +116,9 @@ export async function birdhouseHarvestCommand(user: MUser, channelId: string, in
 	}
 
 	if (!canPay) {
-		return "You don't have enough seeds to bait the birdhouses.";
+		throw new TripError("You don't have enough seeds to bait the birdhouses.", [user.id]);
 	}
-	if (!user.owns(removeBank)) return `You don't own: ${removeBank}.`;
+	if (!user.owns(removeBank)) throw new TripError(`You don't own: ${removeBank}.`, [user.id]);
 
 	await ClientSettings.updateBankSetting('farming_cost_bank', removeBank);
 	await user.transactItems({ itemsToRemove: removeBank });

@@ -20,6 +20,7 @@ import { degradeChargeBank } from '@/lib/degradeableItems.js';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { QuestID } from '@/lib/minions/data/quests.js';
 import { ChargeBank } from '@/lib/structures/Bank.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { Skills } from '@/lib/types/index.js';
 import type { ColoTaskOptions } from '@/lib/types/minions.js';
 import { formatList, formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -461,14 +462,17 @@ export const startColosseumRun = (options: {
 export async function colosseumCommand(itx: OSInteraction) {
 	const { user, rng } = itx;
 	if (await user.minionIsBusy()) {
-		return `${user.usernameOrMention} is busy`;
+		throw new TripError(`${user.usernameOrMention} is busy`, [user.id]);
 	}
 
 	if (!user.user.finished_quest_ids.includes(QuestID.ChildrenOfTheSun)) {
-		return `You need to complete the "Children of the Sun" quest before you can enter the Colosseum. Send your minion to do the quest using: ${globalClient.mentionCommand(
-			'activities',
-			'quest'
-		)}.`;
+		throw new TripError(
+			`You need to complete the "Children of the Sun" quest before you can enter the Colosseum. Send your minion to do the quest using: ${globalClient.mentionCommand(
+				'activities',
+				'quest'
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const skillReqs: Skills = {
@@ -482,7 +486,7 @@ export async function colosseumCommand(itx: OSInteraction) {
 	};
 
 	if (!user.hasSkillReqs(skillReqs)) {
-		return `You need ${formatSkillRequirements(skillReqs)} to enter the Colosseum.`;
+		throw new TripError(`You need ${formatSkillRequirements(skillReqs)} to enter the Colosseum.`, [user.id]);
 	}
 
 	const requiredItems: Partial<Record<GearSetupType, Partial<Record<EquipmentSlot, number[]>>>> = {
@@ -514,26 +518,35 @@ export async function colosseumCommand(itx: OSInteraction) {
 		if (!gearNeeded) continue;
 		for (const items of Object.values(gearNeeded)) {
 			if (!items.some(g => gear.hasEquipped(g))) {
-				return `You need one of these equipped in your ${gearType} setup to enter the Colosseum: ${formatList(
-					items.map(i => Items.itemNameFromId(i)),
-					'or'
-				)}.`;
+				throw new TripError(
+					`You need one of these equipped in your ${gearType} setup to enter the Colosseum: ${formatList(
+						items.map(i => Items.itemNameFromId(i)),
+						'or'
+					)}.`,
+					[user.id]
+				);
 			}
 		}
 	}
 
 	if (!meleeWeapons.some(i => user.gear.melee.hasEquipped(i, true, true))) {
-		return `You need one of these equipped in your melee setup to enter the Colosseum: ${formatList(
-			meleeWeapons.map(i => Items.itemNameFromId(i)),
-			'or'
-		)}.`;
+		throw new TripError(
+			`You need one of these equipped in your melee setup to enter the Colosseum: ${formatList(
+				meleeWeapons.map(i => Items.itemNameFromId(i)),
+				'or'
+			)}.`,
+			[user.id]
+		);
 	}
 
 	if (!rangeWeapons.some(i => user.gear.range.hasEquipped(i, true, true))) {
-		return `You need one of these equipped in your range setup to enter the Colosseum: ${formatList(
-			rangeWeapons.map(i => Items.itemNameFromId(i)),
-			'or'
-		)}.`;
+		throw new TripError(
+			`You need one of these equipped in your range setup to enter the Colosseum: ${formatList(
+				rangeWeapons.map(i => Items.itemNameFromId(i)),
+				'or'
+			)}.`,
+			[user.id]
+		);
 	}
 
 	const messages: string[] = [];
@@ -576,7 +589,7 @@ export async function colosseumCommand(itx: OSInteraction) {
 	} else if (user.bank.has('Bastion potion(4)')) {
 		cost.add('Bastion potion(4)');
 	} else {
-		return 'You need to have a Ranging potion(4) or Bastion potion(4) in your bank.';
+		throw new TripError('You need to have a Ranging potion(4) or Bastion potion(4) in your bank.', [user.id]);
 	}
 
 	if (hasScythe) {
@@ -635,7 +648,7 @@ export async function colosseumCommand(itx: OSInteraction) {
 		realCost.add(result.realCost);
 	} catch (err: unknown) {
 		if (err instanceof UserError) {
-			return err.message;
+			throw new TripError(err.message, [user.id]);
 		}
 		throw err;
 	}
@@ -659,7 +672,7 @@ export async function colosseumCommand(itx: OSInteraction) {
 	if (chargeBank.length() > 0) {
 		const hasChargesResult = user.hasCharges(chargeBank);
 		if (!hasChargesResult.hasCharges) {
-			return hasChargesResult.fullUserString!;
+			throw new TripError(hasChargesResult.fullUserString!, [user.id]);
 		}
 
 		const degradeResults = await degradeChargeBank(user, chargeBank);

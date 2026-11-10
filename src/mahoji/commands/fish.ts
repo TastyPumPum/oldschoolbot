@@ -7,6 +7,7 @@ import {
 	type SharkLureQuantity,
 	sharkLureQuantities
 } from '@/lib/skilling/skills/fishing/fishingUtil.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { FishingActivityTaskOptions } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 import { bankToStrShortNames, formatSkillRequirements } from '@/lib/util/smallUtils.js';
@@ -68,42 +69,49 @@ export const fishCommand = defineCommand({
 			fish => stringSearch(fish.name, options.name) || fish.alias?.includes(options.name.toLowerCase())
 		);
 		if (!spot) {
-			return 'Thats not a valid spot you can fish at.';
+			throw new TripError('Thats not a valid spot you can fish at.', [user.id]);
 		}
 
 		if (!spot.subfishes || spot.subfishes.length === 0) {
-			return `${spot.name} is not supported yet.`;
+			throw new TripError(`${spot.name} is not supported yet.`, [user.id]);
 		}
 
 		if (spot.skillReqs && !user.hasSkillReqs(spot.skillReqs)) {
-			return `To fish ${spot.name}, you need ${formatSkillRequirements(spot.skillReqs)}.`;
+			throw new TripError(`To fish ${spot.name}, you need ${formatSkillRequirements(spot.skillReqs)}.`, [
+				user.id
+			]);
 		}
 
 		const minimumFishingLevel = Math.min(...spot.subfishes.map(sub => sub.level ?? 1));
 		if (user.skillsAsLevels.fishing < minimumFishingLevel) {
-			return `${user.minionName} needs ${minimumFishingLevel} Fishing to fish ${spot.name}.`;
+			throw new TripError(`${user.minionName} needs ${minimumFishingLevel} Fishing to fish ${spot.name}.`, [
+				user.id
+			]);
 		}
 
 		if (spot.qpRequired && user.QP < spot.qpRequired) {
-			return `You need ${spot.qpRequired} qp to catch those!`;
+			throw new TripError(`You need ${spot.qpRequired} qp to catch those!`, [user.id]);
 		}
 
 		if (spot.name === 'Infernal eel') {
 			const jadKC = await user.getKC(Monsters.TzTokJad.id);
 			if (jadKC === 0) {
-				return 'You are not worthy JalYt. Before you can fish Infernal Eels, you need to have defeated the mighty TzTok-Jad!';
+				throw new TripError(
+					'You are not worthy JalYt. Before you can fish Infernal Eels, you need to have defeated the mighty TzTok-Jad!',
+					[user.id]
+				);
 			}
 		}
 
 		if (spot.name === 'Minnow' && anglerItemsArr.some(piece => !user.hasEquippedOrInBank(piece.id))) {
-			return 'You need to own the Angler Outfit to fish for Minnows.';
+			throw new TripError('You need to own the Angler Outfit to fish for Minnows.', [user.id]);
 		}
 
 		const maxTripLength = await user.calcMaxTripLength('Fishing');
 		const hasWildyEliteDiary = user.hasDiary('wilderness.elite');
 		const sharkLureQuantity = (options.shark_lure ?? 0) as SharkLureQuantity;
 		if (sharkLureQuantity > 0 && spot.name !== 'Shark') {
-			return 'Shark lures can only be used while fishing Sharks.';
+			throw new TripError('Shark lures can only be used while fishing Sharks.', [user.id]);
 		}
 
 		const result = Fishing.util.calcFishingTripStart({
@@ -118,7 +126,7 @@ export const fishCommand = defineCommand({
 		});
 
 		if (typeof result === 'string') {
-			return result;
+			throw new TripError(result, [user.id]);
 		}
 
 		if (result.featherPacksToOpen && result.featherPacksToOpen > 0) {
@@ -130,7 +138,7 @@ export const fishCommand = defineCommand({
 				});
 			} catch (err) {
 				if (err instanceof Error) {
-					return err.message;
+					throw new TripError(err.message, [user.id]);
 				}
 				throw err;
 			}
@@ -141,7 +149,7 @@ export const fishCommand = defineCommand({
 				await user.transactItems({ itemsToRemove: result.suppliesToRemove });
 			} catch (err) {
 				if (err instanceof Error) {
-					return err.message;
+					throw new TripError(err.message, [user.id]);
 				}
 				throw err;
 			}

@@ -6,6 +6,7 @@ import { convertAPIOptionsToCommandOptions } from '@/discord/index.js';
 import { preCommand } from '@/discord/preCommand.js';
 import { BitField, busyImmuneCommands, SILENT_ERROR } from '@/lib/constants.js';
 import { RawSQL } from '@/lib/rawSql.js';
+import { TripError } from '@/lib/structures/TripError.js';
 
 export async function rawCommandHandlerInner({
 	interaction,
@@ -30,10 +31,9 @@ export async function rawCommandHandlerInner({
 			interaction.member !== null &&
 			(await globalClient.memberHasPermissions(interaction.member, command.requiredPermissions));
 		if (!hasPerms) {
-			return {
-				content: "You don't have permission to use this command.",
+			return new TripError("You don't have permission to use this command.", [interaction.userId], {
 				ephemeral: true
-			};
+			}).toResponse();
 		}
 	}
 	const user = interaction.user;
@@ -45,10 +45,7 @@ export async function rawCommandHandlerInner({
 	const shouldIgnoreBusy = user.isAdmin() || ignoreUserIsBusy || busyImmuneCommands.includes(command.name);
 
 	if (!shouldIgnoreBusy && (await user.getIsLocked())) {
-		return {
-			content: 'You cannot use a command right now.',
-			ephemeral: true
-		};
+		return new TripError('You cannot use a command right now.', [user.id], { ephemeral: true }).toResponse();
 	}
 	if (!shouldIgnoreBusy) {
 		user.modifyBusy('lock', `Running command: ${command.name}`);
@@ -64,10 +61,11 @@ export async function rawCommandHandlerInner({
 			continueDeltaMs
 		});
 		if (inhibitedResponse) {
-			return {
+			const { content, ...options } = inhibitedResponse.reason;
+			return new TripError(content ?? 'You cannot use this command right now.', [user.id], {
 				ephemeral: true,
-				...inhibitedResponse.reason
-			};
+				...options
+			}).toResponse();
 		}
 
 		const runClosure = () =>
@@ -88,8 +86,9 @@ export async function rawCommandHandlerInner({
 			: await runClosure();
 		return response;
 	} catch (err) {
+		if (err instanceof TripError) return err.toResponse();
 		if (err instanceof UserError) {
-			await interaction.reply({ content: err.message });
+			await interaction.reply(new TripError(err.message, [user.id]).toResponse());
 			return SpecialResponse.RespondedManually;
 		}
 		if ((err as Error).message === SILENT_ERROR) return SpecialResponse.SilentErrorResponse;
@@ -107,9 +106,7 @@ export async function rawCommandHandlerInner({
 				options: JSON.stringify(options)
 			}
 		});
-		return {
-			content: `An error occurred while running this command.`
-		};
+		return new TripError('An error occurred while running this command.', [user.id]).toResponse();
 	} finally {
 		if (!shouldIgnoreBusy) {
 			user.modifyBusy('unlock', `Finished running command: ${command.name}`);

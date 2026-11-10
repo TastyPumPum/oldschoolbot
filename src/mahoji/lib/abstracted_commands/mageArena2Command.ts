@@ -2,15 +2,16 @@ import { Time } from '@oldschoolgg/toolkit';
 import { Bank } from 'oldschooljs';
 
 import removeFoodFromUser from '@/lib/minions/functions/removeFoodFromUser.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { ActivityTaskOptionsWithNoChanges } from '@/lib/types/minions.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
 
 export async function mageArena2Command(rng: RNGProvider, user: MUser, channelId: string) {
 	if (user.skillsAsLevels.magic < 75) {
-		return 'You need level 75 Magic to do the Mage Arena II.';
+		throw new TripError('You need level 75 Magic to do the Mage Arena II.', [user.id]);
 	}
 	if (user.cl.amount('Saradomin cape') === 0) {
-		return 'You need to have completed Mage Arena I before doing part II.';
+		throw new TripError('You need to have completed Mage Arena I before doing part II.', [user.id]);
 	}
 	const duration = rng.randomVariation(Time.Minute * 25, 3);
 
@@ -24,7 +25,9 @@ export async function mageArena2Command(rng: RNGProvider, user: MUser, channelId
 	});
 
 	if (!user.owns(itemsNeeded)) {
-		return `You don't own the needed items to do the Mage Arena II, you need: ${itemsNeeded}.`;
+		throw new TripError(`You don't own the needed items to do the Mage Arena II, you need: ${itemsNeeded}.`, [
+			user.id
+		]);
 	}
 
 	const { foodRemoved } = await removeFoodFromUser({

@@ -4,6 +4,7 @@ import { Bank, Items, itemID } from 'oldschooljs';
 import { trackLoot } from '@/lib/lootTrack.js';
 import { pickaxes, varrockArmours } from '@/lib/skilling/functions/miningBoosts.js';
 import Runecraft from '@/lib/skilling/skills/runecraft.js';
+import { TripError } from '@/lib/structures/TripError.js';
 import type { GuardiansOfTheRiftActivityTaskOptions } from '@/lib/types/minions.js';
 import { determineRunes } from '@/lib/util/determineRunes.js';
 import { formatTripDuration } from '@/lib/util/minionUtils.js';
@@ -16,7 +17,7 @@ export async function guardiansOfTheRiftStartCommand(
 ) {
 	const rcLevel = user.skillLevel('runecraft');
 	if (rcLevel < 27) {
-		return 'You need 27 Runecraft to access the Temple of the Eye.';
+		throw new TripError('You need 27 Runecraft to access the Temple of the Eye.', [user.id]);
 	}
 
 	const timePerGame = Time.Minute * 10;
@@ -138,15 +139,21 @@ export async function guardiansOfTheRiftStartCommand(
 				.multiply(quantity * 5)
 		);
 		if (user.skillsAsLevels.magic < 82 || !bank.has(magicImbueRuneCost)) {
-			return `You need enough Magic Imbue runes and 82 Magic. You don't have enough runes and or Magic lvl. You need ${magicImbueRuneCost}`;
+			throw new TripError(
+				`You need enough Magic Imbue runes and 82 Magic. You don't have enough runes and or Magic lvl. You need ${magicImbueRuneCost}`,
+				[user.id]
+			);
 		}
 		removeRunesAndNecks.add(magicImbueRuneCost);
 		removeRunesAndNecks.add('Binding necklace', Math.max(quantity, 1));
 		if (!user.owns(removeRunesAndNecks)) {
-			return `You don't have enough Binding necklaces for this trip. You need ${Math.max(
-				quantity,
-				1
-			)}x Binding necklace.`;
+			throw new TripError(
+				`You don't have enough Binding necklaces for this trip. You need ${Math.max(
+					quantity,
+					1
+				)}x Binding necklace.`,
+				[user.id]
+			);
 		}
 		rolls += 2;
 		boosts.push('Extra 2 rolls for Combination runecrafting');
