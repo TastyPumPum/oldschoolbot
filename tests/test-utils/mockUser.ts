@@ -25,6 +25,7 @@ import { ironmanCommand } from '@/mahoji/lib/abstracted_commands/ironmanCommand.
 import { handleTripFinishResults, mockedId } from './misc.js';
 import { TestClient } from './mockClient.js';
 import { mockInteraction } from './mockInteraction.js';
+import { expectTripFailure } from './tripAssertions.js';
 
 export class TestUser extends MUserClass {
 	public client!: TestClient;
@@ -181,7 +182,7 @@ export class TestUser extends MUserClass {
 			wilderness
 		});
 		if (shouldFail) {
-			expect(commandResult).not.toContain('is now killing');
+			expect(expectTripFailure(commandResult, this)).not.toContain('is now killing');
 		}
 		const tripStartBank = this.bank.clone();
 		const activityResult = (await this.runActivity()) as MonsterActivityTaskOptions | null;

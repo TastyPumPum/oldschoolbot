@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_LEVEL } from '../../../src/lib/constants.js';
 import { formatSkillRequirements } from '../../../src/lib/util/smallUtils.js';
 import { fishCommand } from '../../../src/mahoji/commands/fish.js';
+import { expectTripFailure } from '../../test-utils/tripAssertions.js';
 import { createTestUser, mockClient } from '../util.js';
 
 describe('Fish Command', async () => {
@@ -12,7 +13,7 @@ describe('Fish Command', async () => {
 	it('should handle insufficient fishing level', async () => {
 		const user = await createTestUser();
 		const res = await user.runCommand(fishCommand, { name: 'Trout/Salmon', quantity: 1 });
-		expect(res).toEqual('<:minion:778418736180494347> Your minion needs 20 Fishing to fish Trout/Salmon.');
+		expectTripFailure(res, user, '<:minion:778418736180494347> Your minion needs 20 Fishing to fish Trout/Salmon.');
 	});
 
 	it('should handle insufficient QP', async () => {
@@ -22,20 +23,22 @@ describe('Fish Command', async () => {
 			QP: 0
 		});
 		const res = await user.runCommand(fishCommand, { name: 'Karambwanji', quantity: 1 });
-		expect(res).toEqual('You need 15 qp to catch those!');
+		expectTripFailure(res, user, 'You need 15 qp to catch those!');
 	});
 
 	it('should handle invalid fish', async () => {
 		const user = await createTestUser();
 		const res = await user.runCommand(fishCommand, { name: 'asdf' });
-		expect(res).toEqual('Thats not a valid spot you can fish at.');
+		expectTripFailure(res, user, 'Thats not a valid spot you can fish at.');
 	});
 
 	it('should handle insufficient barb fishing levels', async () => {
 		const user = await createTestUser();
 		await user.update({ skills_fishing: 1 });
 		const res = await user.runCommand(fishCommand, { name: 'Barbarian fishing' });
-		expect(res).toEqual(
+		expectTripFailure(
+			res,
+			user,
 			`To fish Barbarian fishing, you need ${formatSkillRequirements({ agility: 15, strength: 15 })}.`
 		);
 	});
@@ -57,7 +60,7 @@ describe('Fish Command', async () => {
 		await user.setBank(new Bank());
 		await user.equip('skilling', [EItem.PEARL_BARBARIAN_ROD]);
 		const res = await user.runCommand('fish', { name: 'Barbarian fishing' });
-		expect(res).toEqual('You need Feather to fish Barbarian fishing!');
+		expectTripFailure(res, user, 'You need Feather to fish Barbarian fishing!');
 	});
 
 	it('should do barb fishing when has feathers', async () => {
@@ -86,7 +89,7 @@ describe('Fish Command', async () => {
 	it('should handle using flakes without flakes in bank', async () => {
 		const user = await createTestUser();
 		const res = await user.runCommand(fishCommand, { name: 'Shrimp/Anchovies', spirit_flakes: true });
-		expect(res).toEqual('You need to have at least one Spirit flake!');
+		expectTripFailure(res, user, 'You need to have at least one Spirit flake!');
 	});
 
 	it('should fish with flakes', async () => {
@@ -165,7 +168,7 @@ describe('Fish Command', async () => {
 		const user = await createTestUser();
 		await user.update({ skills_fishing: 100_000 });
 		const res = await user.runCommand(fishCommand, { name: 'Sardine/Herring', quantity: 50 });
-		expect(res).toContain('You need Fishing bait');
+		expectTripFailure(res, user, 'You need Fishing bait');
 	});
 
 	it('should give angler boost', async () => {
@@ -188,7 +191,7 @@ describe('Fish Command', async () => {
 	it('should reject shark lures on non-shark spots', async () => {
 		const user = await createTestUser();
 		const res = await user.runCommand(fishCommand, { name: 'shrimp', shark_lure: 1 });
-		expect(res).toEqual('Shark lures can only be used while fishing Sharks.');
+		expectTripFailure(res, user, 'Shark lures can only be used while fishing Sharks.');
 	});
 
 	it('should consume shark lures when fishing sharks', async () => {

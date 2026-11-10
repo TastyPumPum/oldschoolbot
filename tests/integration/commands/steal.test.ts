@@ -1,20 +1,21 @@
 import { Bank, convertLVLtoXP } from 'oldschooljs';
 import { describe, expect, it } from 'vitest';
 
+import { expectTripFailure } from '../../test-utils/tripAssertions.js';
 import { createTestUser } from '../util.js';
 
 describe('Steal Command', async () => {
 	it('should reject invalid steal targets', async () => {
 		const user = await createTestUser();
 		const res = await user.runCommand('steal', { name: 'not-real' });
-		expect(res).toContain('That is not a valid NPC/Stall to pickpocket or steal from');
+		expectTripFailure(res, user, 'That is not a valid NPC/Stall to pickpocket or steal from');
 	});
 
 	it('should require thieving level for chests', async () => {
 		const user = await createTestUser();
 		await user.update({ skills_thieving: convertLVLtoXP(1) });
 		const res = await user.runCommand('steal', { name: '50 coin chest', quantity: 1 });
-		expect(res).toContain('needs 43 Thieving to steal from a 50 coin chest.');
+		expectTripFailure(res, user, 'needs 43 Thieving to steal from a 50 coin chest.');
 	});
 
 	it('should allow stealing from chests', async () => {
@@ -28,14 +29,14 @@ describe('Steal Command', async () => {
 		const user = await createTestUser();
 		await user.update({ skills_thieving: convertLVLtoXP(99), skills_prayer: convertLVLtoXP(1) });
 		const res = await user.runCommand('steal', { name: "Rogues' Castle chest", quantity: 1 });
-		expect(res).toContain("needs 43 Prayer to steal from a Rogues' Castle chest.");
+		expectTripFailure(res, user, "needs 43 Prayer to steal from a Rogues' Castle chest.");
 	});
 
 	it('should require potions for Rogues Castle chest', async () => {
 		const user = await createTestUser();
 		await user.update({ skills_thieving: convertLVLtoXP(99), skills_prayer: convertLVLtoXP(99) });
 		const res = await user.runCommand('steal', { name: "Rogues' Castle chest", quantity: 1 });
-		expect(res).toContain("to keep Protect from Melee active while stealing from Rogues' Castle chest.");
+		expectTripFailure(res, user, "to keep Protect from Melee active while stealing from Rogues' Castle chest.");
 	});
 
 	it('should use blighted restores before prayer potions for Rogues Castle chest', async () => {

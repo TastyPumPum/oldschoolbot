@@ -3,6 +3,7 @@ import { Bank } from 'oldschooljs';
 import { describe, expect, test } from 'vitest';
 
 import { mineCommand } from '@/mahoji/commands/mine.js';
+import { expectTripFailure } from '../../test-utils/tripAssertions.js';
 import { mockClient } from '../util.js';
 
 describe('Mine Command', async () => {
@@ -17,7 +18,7 @@ describe('Mine Command', async () => {
 		});
 
 		const res = await user.runCommand(mineCommand, { name: 'infernal shale', quantity: 100 });
-		expect(res).toEqual(`${user.minionName} needs 78 Mining to mine Infernal shale.`);
+		expectTripFailure(res, user, `${user.minionName} needs 78 Mining to mine Infernal shale.`);
 	});
 
 	test('requires 43 Prayer for Infernal shale', async () => {
@@ -29,7 +30,7 @@ describe('Mine Command', async () => {
 		});
 
 		const res = await user.runCommand(mineCommand, { name: 'infernal shale', quantity: 100 });
-		expect(res).toEqual(`${user.minionName} needs 43 Prayer to mine Infernal shale.`);
+		expectTripFailure(res, user, `${user.minionName} needs 43 Prayer to mine Infernal shale.`);
 	});
 
 	test('mines Infernal shale directly into crushed infernal shale', async () => {
@@ -59,7 +60,7 @@ describe('Mine Command', async () => {
 		});
 
 		const res = await user.runCommand(mineCommand, { name: 'infernal shale', quantity: 100 });
-		expect(res).toEqual('You need a pickaxe equipped or in your bank to mine Infernal shale.');
+		expectTripFailure(res, user, 'You need a pickaxe equipped or in your bank to mine Infernal shale.');
 	});
 
 	test('Infernal shale full trips are within the expected crushed shale rate', async () => {

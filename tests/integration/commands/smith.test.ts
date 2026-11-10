@@ -2,6 +2,7 @@ import { Bank, convertLVLtoXP } from 'oldschooljs';
 import { describe, expect, test } from 'vitest';
 
 import { smithCommand } from '@/mahoji/commands/smith.js';
+import { expectTripFailure } from '../../test-utils/tripAssertions.js';
 import { createTestUser } from '../util.js';
 
 describe('Smith Command', async () => {
@@ -11,7 +12,7 @@ describe('Smith Command', async () => {
 		});
 
 		const res = await user.runCommand(smithCommand, { name: 'Infernal nugget', quantity: 1 });
-		expect(res).toEqual(`${user.minionName} needs 83 Smithing to smith Infernal nuggets.`);
+		expectTripFailure(res, user, `${user.minionName} needs 83 Smithing to smith Infernal nuggets.`);
 	});
 
 	test('smiths Infernal nuggets from crushed shale and Oathplate shards', async () => {

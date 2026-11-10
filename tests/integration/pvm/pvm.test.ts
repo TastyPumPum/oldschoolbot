@@ -9,6 +9,7 @@ import { getPOHObject } from '@/lib/poh/index.js';
 import { Gear } from '@/lib/structures/Gear.js';
 import { minionKCommand } from '@/mahoji/commands/k.js';
 import { delvesCommand } from '@/mahoji/lib/abstracted_commands/delveCommand.js';
+import { expectTripFailure } from '../../test-utils/tripAssertions.js';
 import { createTestUser, mockClient, mockUser } from '../util.js';
 
 describe('PVM', async () => {
@@ -18,7 +19,7 @@ describe('PVM', async () => {
 	it('Should reject Doom through the kill command', async () => {
 		const user = await createTestUser();
 		const result = await user.runCommand(minionKCommand, { name: 'doom' });
-		expect(result).toEqual('Use `/delves doom` to fight the Doom of Mokhaiotl.');
+		expectTripFailure(result, user, 'Use `/delves doom` to fight the Doom of Mokhaiotl.');
 	});
 
 	it('requires Dexterous prayer scroll to fight Doom', async () => {
@@ -26,7 +27,9 @@ describe('PVM', async () => {
 		await user.update({ finished_quest_ids: [QuestID.TheFinalDawn] });
 
 		const result = await user.runCommand(delvesCommand, { doom: { target_delve: 1 } });
-		expect(result).toEqual(
+		expectTripFailure(
+			result,
+			user,
 			'You need to use a Dexterous prayer scroll to unlock Rigour before you can fight the Doom of Mokhaiotl.'
 		);
 	});
@@ -259,8 +262,8 @@ describe('PVM', async () => {
 		await userWithoutFood.update({ finished_quest_ids: [QuestID.TheHeartOfDarkness] });
 
 		const noFoodResult = await userWithoutFood.kill(EMonster.AMOXLIATL, { quantity: 1, shouldFail: true });
-		expect(noFoodResult.commandResult).toContain("You don't have enough food to kill Amoxliatl");
-		expect(noFoodResult.commandResult).not.toContain('5% for no food');
+		expectTripFailure(noFoodResult.commandResult, userWithoutFood, "You don't have enough food to kill Amoxliatl");
+		expect(expectTripFailure(noFoodResult.commandResult, userWithoutFood)).not.toContain('5% for no food');
 
 		const userWithFood = await client.mockUser({
 			bank: new Bank().add('Prayer potion(4)', 100).add('Shark', 100),
@@ -287,8 +290,8 @@ describe('PVM', async () => {
 		await user.setAttackStyle(['ranged']);
 
 		const result = await user.kill(EMonster.ZULRAH, { quantity: 1, shouldFail: true });
-		expect(result.commandResult).toContain("You don't have enough food to kill Zulrah");
-		expect(result.commandResult).not.toContain('5% for no food');
+		expectTripFailure(result.commandResult, user, "You don't have enough food to kill Zulrah");
+		expect(expectTripFailure(result.commandResult, user)).not.toContain('5% for no food');
 	});
 
 	it('Should remove charges', async () => {
@@ -345,14 +348,16 @@ describe('PVM', async () => {
 			slayerLevel: 70,
 			bank: new Bank().add('Shark', 10000)
 		});
-		expect(await user.runCommand(minionKCommand, { name: 'hydra' })).to.contain('You need Boots of stone');
+		expectTripFailure(await user.runCommand(minionKCommand, { name: 'hydra' }), user, 'You need Boots of stone');
 		await user.equip('melee', resolveItems(['Boots of stone']));
-		expect(await user.runCommand(minionKCommand, { name: 'hydra' })).to.contain(
+		expectTripFailure(
+			await user.runCommand(minionKCommand, { name: 'hydra' }),
+			user,
 			"You don't meet the skill requirement"
 		);
 		await user.setLevel('slayer', 95);
 		const x = await user.runCommand(minionKCommand, { name: 'hydra' });
-		expect(x).to.contain("You don't have the items");
+		expectTripFailure(x, user, "You don't have the items");
 		await user.addItemsToBank({ items: new Bank().add('Anti-venom+(4)', 1) });
 		const result = await user.kill(EMonster.HYDRA);
 		expect(result.commandResult).to.contain('is now killing 10x Hydra');
@@ -367,7 +372,7 @@ describe('PVM', async () => {
 			mageGear: resolveItems(['Ancient staff'])
 		});
 		const result = await user.kill(EMonster.BLOODVELD, { method: 'barrage', shouldFail: true });
-		expect(result.commandResult).toEqual('Bloodveld cannot be barraged or burst.');
+		expectTripFailure(result.commandResult, user, 'Bloodveld cannot be barraged or burst.');
 	});
 
 	it('should check slayer level requirement', async () => {
@@ -378,7 +383,7 @@ describe('PVM', async () => {
 			mageGear: resolveItems(['Ancient staff'])
 		});
 		const result = await user.kill(EMonster.NECHRYAEL, { method: 'barrage', shouldFail: true });
-		expect(result.commandResult).toContain("You don't meet the skill requirements");
+		expectTripFailure(result.commandResult, user, "You don't meet the skill requirements");
 	});
 
 	it('cant barrage nechs', async () => {
@@ -389,7 +394,7 @@ describe('PVM', async () => {
 			mageGear: resolveItems(['Ancient staff'])
 		});
 		const result = await user.kill(EMonster.NECHRYAEL, { method: 'barrage', shouldFail: true });
-		expect(result.commandResult).toEqual('Nechryael cannot be barraged or burst.');
+		expectTripFailure(result.commandResult, user, 'Nechryael cannot be barraged or burst.');
 	});
 
 	it('barrages abby demons', async () => {
@@ -478,7 +483,7 @@ describe('PVM', async () => {
 		});
 		await user.setAttackStyle(['ranged']);
 		const result = await user.kill(EMonster.MANIACAL_MONKEY, { method: 'cannon', shouldFail: true });
-		expect(result.commandResult).toContain("You don't have the items needed to kill this monster");
+		expectTripFailure(result.commandResult, user, "You don't have the items needed to kill this monster");
 		expect(user.bank.amount('Cannonball')).toEqual(0);
 	});
 
@@ -545,7 +550,7 @@ describe('PVM', async () => {
 		for (const quantity of [undefined, 1, 2, 5]) {
 			it(`should fail to kill with input of ${quantity}`, async () => {
 				const result = await user.kill(EMonster.SKOTIZO, { quantity });
-				expect(result.commandResult).toContain("You don't have the items");
+				expectTripFailure(result.commandResult, user, "You don't have the items");
 			});
 		}
 	});
@@ -803,6 +808,6 @@ describe('PVM', async () => {
 		});
 
 		const res = await user.kill(EMonster.YAMA, { quantity: 1, shouldFail: true });
-		expect(res.commandResult).toContain("You're missing Purging staff");
+		expectTripFailure(res.commandResult, user, "You're missing Purging staff");
 	});
 });
