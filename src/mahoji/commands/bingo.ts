@@ -130,7 +130,8 @@ async function makeTeamCommand(
 		content: `${allUsers.map(i => userMention(i.id)).join(', ')} - Do you want to join a bingo team with eachother? All ${
 			bingo.teamSize
 		} users need to confirm. ${bold(`You will be charged ${toKMB(bingo.ticketPrice)}`)}`,
-		users: allUsers.map(i => i.id)
+		users: allUsers.map(i => i.id),
+		timeout: Time.Minute * 5
 	});
 
 	for (const user of allUsers) {
