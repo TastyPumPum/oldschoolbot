@@ -1,15 +1,23 @@
 import { bold, dateFm, userMention } from '@oldschoolgg/discord';
-import { Emoji, formatOrdinal, notEmpty, Time, truncateString, uniqueArr } from '@oldschoolgg/toolkit';
+import { Emoji, formatOrdinal, notEmpty, Time, truncateString, UserError, uniqueArr } from '@oldschoolgg/toolkit';
 import { isValidDiscordSnowflake } from '@oldschoolgg/util';
 import { Bank, type ItemBank, toKMB } from 'oldschooljs';
 
-import type { Prisma } from '@/prisma/main.js';
+import type { Bingo, Prisma } from '@/prisma/main.js';
 import { cachedBingoBoard } from '@/lib/bingo/bingoRenderer.js';
 import { clImageGenerator } from '@/lib/collectionLogTask.js';
 import { BOT_TYPE } from '@/lib/constants.js';
 import { doMenuWrapper } from '@/lib/menuWrapper.js';
 import { isValidNickname } from '@/lib/util/smallUtils.js';
 import { BingoManager, BingoTrophies } from '@/mahoji/lib/bingo/BingoManager.js';
+import {
+	bingoTransaction,
+	createBingoTeam,
+	joinBingoTeam,
+	leaveBingoTeam,
+	manageBingoTeam,
+	showBingoTeamLobby
+} from '@/mahoji/lib/bingo/bingoTeams.js';
 import { bingoTileQuantity, getAllTileItems } from '@/mahoji/lib/bingo/bingoUtil.js';
 import {
 	importBingoConfiguration,
@@ -41,6 +49,7 @@ const bingoAutocomplete = async ({ value, user, guildId }: StringAutoComplete) =
 };
 
 type MakeTeamOptions = {
+	same_server_only?: boolean;
 	second_user?: MahojiUserOption;
 	third_user?: MahojiUserOption;
 	fourth_user?: MahojiUserOption;
@@ -104,121 +113,28 @@ async function bingoTeamLeaderboard(interaction: MInteraction, bingo: BingoManag
 	});
 }
 
-async function makeTeamCommand(
-	interaction: MInteraction,
-	bingo: BingoManager,
-	creatorUser: MUser,
-	options: MakeTeamOptions
-) {
-	if (bingo.isActive()) {
-		return 'You cannot make a Bingo team, because the bingo has already started!';
-	}
-	const allUsers = await Promise.all(
-		uniqueArr(
-			[
-				creatorUser.id,
-				options.second_user?.user.id,
-				options.third_user?.user.id,
-				options.fourth_user?.user.id,
-				options.fifth_user?.user.id
-			].filter(notEmpty)
-		).map(id => mUserFetch(id))
+async function makeTeamCommand(interaction: MInteraction, bingo: Bingo, creatorUser: MUser, options: MakeTeamOptions) {
+	const invitedIds = uniqueArr(
+		[
+			options.second_user?.user.id,
+			options.third_user?.user.id,
+			options.fourth_user?.user.id,
+			options.fifth_user?.user.id
+		].filter(notEmpty)
+	).filter(id => id !== creatorUser.id);
+	if (invitedIds.length + 1 > bingo.team_size) return `Your team can have at most ${bingo.team_size} players.`;
+	await interaction.confirmation(
+		`Create a team lobby for **${bingo.title}**? Your ${toKMB(Number(bingo.ticket_price))} GP ticket will be charged when you finalise the full roster. Ironmen enter free. Invited players must join themselves.`
 	);
-	if (allUsers.length !== bingo.teamSize) return `Your team must have only ${bingo.teamSize} users, no more or less.`;
-
-	await interaction.confirmation({
-		content: `${allUsers.map(i => userMention(i.id)).join(', ')} - Do you want to join a bingo team with eachother? All ${
-			bingo.teamSize
-		} users need to confirm. ${bold(`You will be charged ${toKMB(bingo.ticketPrice)}`)}`,
-		users: allUsers.map(i => i.id),
-		timeout: Time.Minute * 5
-	});
-
-	for (const user of allUsers) {
-		const teamWithUser = await bingo.findTeamWithUser(user.id);
-		if (teamWithUser) {
-			return `${user} is already in a team.`;
-		}
-		if (!user.isIronman && user.GP < bingo.ticketPrice) {
-			return `${user} doesn't have enough GP to buy a ticket! They need ${toKMB(
-				bingo.ticketPrice
-			)} GP, but only have ${toKMB(user.GP)} GP.`;
-		}
-		const isBlacklisted = await Cache.isUserBlacklisted(user.id);
-		if (isBlacklisted) {
-			return `${user} is blacklisted and cannot join bingo teams.`;
-		}
-	}
-	await prisma.$transaction([
-		prisma.user.updateMany({
-			where: {
-				id: {
-					in: allUsers.filter(i => !i.isIronman).map(i => i.id)
-				}
-			},
-			data: {
-				GP: {
-					decrement: bingo.ticketPrice
-				}
-			}
-		}),
-		prisma.bingoTeam.create({
-			data: {
-				bingo_id: bingo.id,
-				users: {
-					createMany: {
-						data: allUsers.map(u => ({
-							user_id: u.id,
-							tickets_bought: 1,
-							bingo_id: bingo.id
-						}))
-					}
-				}
-			}
-		})
-	]);
-
-	return "Successfully created a bingo team! Have fun. You can leave the team before the bingo starts if you'd like, but doing so will delete the team, causing all users to have to join or make a new team.";
+	const team = await createBingoTeam(bingo.id, creatorUser.id, interaction.guildId, options.same_server_only ?? true);
+	return showBingoTeamLobby(interaction, bingo, team, invitedIds);
 }
 
 async function leaveTeamCommand(interaction: MInteraction, bingo: BingoManager) {
-	if (bingo.isActive()) return "You can't leave a bingo team after bingo has started.";
-	if (bingo.wasFinalized) {
-		return "You can't leave a bingo team after bingo has ended.";
-	}
-
-	const team = await bingo.findTeamWithUser(interaction.userId);
-	if (!team) return "You're not in a team for this bingo.";
-
 	await interaction.confirmation(
-		'Are you sure you want to leave your team? Doing so will delete/disband the team, and all of you will need to join a new team.'
+		'Leave your team? Leaving an unfinished lobby removes only you. If you created the lobby, or the team is already finalised, the whole team is disbanded and paid tickets are refunded.'
 	);
-
-	const allUsers = await Promise.all(team.participants.map(i => i.user).map(id => mUserFetch(id.id)));
-	await prisma.$transaction([
-		prisma.user.updateMany({
-			where: {
-				id: {
-					in: allUsers.filter(i => !i.isIronman).map(i => i.id)
-				}
-			},
-			data: {
-				GP: {
-					increment: bingo.ticketPrice
-				}
-			}
-		}),
-		prisma.bingoTeam.delete({
-			where: {
-				id: team.team_id
-			}
-		})
-	]);
-	return `${team.participants
-		.map(pt => userMention(pt.user_id))
-		.join(
-			', '
-		)} Your Bingo team was deleted, you no longer are in a team. All non-ironmen were refunded their ticket price of ${bingo.ticketPrice.toLocaleString()} GP.`;
+	return leaveBingoTeam(bingo.id, interaction.userId);
 }
 
 export async function getBingoFromUserInput(input: string | undefined, userID?: string, guildID?: string | null) {
@@ -307,25 +223,94 @@ export const bingoCommand = defineCommand({
 				{
 					type: 'User',
 					name: 'second_user',
-					description: 'The second user.',
+					description: 'Invite a second player to join your lobby.',
 					required: false
 				},
 				{
 					type: 'User',
 					name: 'third_user',
-					description: 'The third user.',
+					description: 'Invite a third player to join your lobby.',
 					required: false
 				},
 				{
 					type: 'User',
 					name: 'fourth_user',
-					description: 'The fourth user.',
+					description: 'Invite a fourth player to join your lobby.',
 					required: false
 				},
 				{
 					type: 'User',
 					name: 'fifth_user',
-					description: 'The fifth user.',
+					description: 'Invite a fifth player to join your lobby.',
+					required: false
+				},
+				{
+					type: 'Boolean',
+					name: 'same_server_only',
+					description:
+						'Only allow joins from this server (default: true). Private bingos always require their server.',
+					required: false
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'join',
+			description: 'Join a bingo team lobby and agree to its ticket price.',
+			options: [
+				{
+					type: 'String',
+					name: 'bingo',
+					description: 'The bingo.',
+					required: true,
+					autocomplete: bingoAutocomplete
+				},
+				{
+					type: 'Integer',
+					name: 'team',
+					description: 'The team ID shown when its creator made the lobby.',
+					required: true,
+					min_value: 1
+				}
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'kick',
+			description: 'Kick a player from your unfinished bingo team lobby and prevent them rejoining.',
+			options: [
+				{
+					type: 'String',
+					name: 'bingo',
+					description: 'The bingo.',
+					required: true,
+					autocomplete: bingoAutocomplete
+				},
+				{ type: 'User', name: 'user', description: 'The player to kick.', required: true }
+			]
+		},
+		{
+			type: 'Subcommand',
+			name: 'manage_team',
+			description: 'Finalise or cancel your bingo team.',
+			options: [
+				{
+					type: 'String',
+					name: 'bingo',
+					description: 'The bingo.',
+					required: true,
+					autocomplete: bingoAutocomplete
+				},
+				{
+					type: 'Boolean',
+					name: 'finalize_players',
+					description: 'Close registration and pay for the full team roster.',
+					required: false
+				},
+				{
+					type: 'Boolean',
+					name: 'cancel',
+					description: 'Cancel your team and refund any paid tickets before the bingo starts.',
 					required: false
 				}
 			]
@@ -538,7 +523,9 @@ export const bingoCommand = defineCommand({
 
 			if (!bingoParticipant) return 'Invalid bingo.';
 			const bingo = new BingoManager(bingoParticipant.bingo);
-			const teamProgress = (await bingo.determineProgressOfTeam(bingoParticipant.bingo_team_id))!;
+			const teamProgress = await bingo.determineProgressOfTeam(bingoParticipant.bingo_team_id);
+			if (!teamProgress)
+				return 'Your team is still a lobby. Its creator must finalise the full roster before the bingo starts.';
 
 			const clItems: number[] = [];
 
@@ -582,7 +569,30 @@ export const bingoCommand = defineCommand({
 		if (options.make_team) {
 			const bingo = await getBingoFromUserInput(options.make_team.bingo);
 			if (!bingo) return 'Invalid bingo.';
-			return makeTeamCommand(interaction, new BingoManager(bingo), user, options.make_team);
+			return makeTeamCommand(interaction, bingo, user, options.make_team);
+		}
+		if (options.join) {
+			const bingo = await getBingoFromUserInput(options.join.bingo);
+			if (!bingo) return 'Invalid bingo.';
+			await interaction.confirmation(
+				`Join team ${options.join.team} for **${bingo.title}**? You agree to pay ${toKMB(Number(bingo.ticket_price))} GP when its creator finalises the roster. Ironmen enter free. You can leave before finalisation.`
+			);
+			return joinBingoTeam(bingo.id, options.join.team, user.id, guildId);
+		}
+		if (options.kick || options.manage_team) {
+			const input = options.kick ?? options.manage_team!;
+			const bingo = await getBingoFromUserInput(input.bingo);
+			if (!bingo) return 'Invalid bingo.';
+			if (options.kick) return manageBingoTeam(bingo.id, user.id, 'kick', options.kick.user.user.id);
+			const manage = options.manage_team!;
+			if (Boolean(manage.finalize_players) === Boolean(manage.cancel))
+				return 'Choose either finalize_players or cancel.';
+			await interaction.confirmation(
+				manage.cancel
+					? 'Cancel your team? Any paid tickets will be refunded and all players will need to join or create another team.'
+					: 'Finalise your full team roster? Non-ironmen will be charged their ticket price. Players cannot join or be kicked afterwards.'
+			);
+			return manageBingoTeam(bingo.id, user.id, manage.cancel ? 'cancel' : 'finalize');
 		}
 		if (options.leave_team) {
 			const bingo = await getBingoFromUserInput(options.leave_team.bingo);
@@ -736,24 +746,36 @@ ${Emoji.Warning} **You will pay a ${toKMB(fee)} GP fee to create this bingo, you
 				if (bingo.wasFinalized) {
 					return 'This bingo was already finalized.';
 				}
-				const loot = new Bank().add('Coins', await bingo.countTotalGPInPrizePool());
 				await interaction.confirmation(
 					`Are you sure you want to end the Bingo? ${bold('This cannot be undone.')}
 
 The creator of the bingo (${userMention(
 						bingo.creatorID
-					)}) will receive the ${loot} prize pool, so they can distribute it.`
+					)}) will receive the prize pool (currently ${toKMB(await bingo.countTotalGPInPrizePool())} GP), so they can distribute it. Unfinished team lobbies are excluded.`
 				);
 
-				await creator.addItemsToBank({ items: loot, collectionLog: false });
-				await prisma.bingo.update({
-					where: {
-						id: bingo.id
-					},
-					data: {
-						was_finalized: true
-					}
+				const prize = await bingoTransaction(async tx => {
+					const current = await tx.bingo.findUniqueOrThrow({ where: { id: bingo.id } });
+					if (current.was_finalized) throw new UserError('This bingo was already finalised.');
+					await tx.bingo.update({ where: { id: bingo.id }, data: { was_finalized: true } });
+					const tickets = await tx.bingoParticipant.aggregate({
+						where: {
+							bingo_id: bingo.id,
+							user: { minion_ironman: false },
+							team: { players_finalized: true }
+						},
+						_sum: { tickets_bought: true }
+					});
+					const amount = BigInt(tickets._sum.tickets_bought ?? 0) * current.ticket_price + current.extra_gp;
+					const { count } = await tx.user.updateMany({
+						where: { id: creator.id, minion_ironman: false },
+						data: { GP: { increment: amount } }
+					});
+					if (count !== 1) throw new UserError('Ironmen cannot receive the bingo prize pool.');
+					return amount;
 				});
+				await creator.sync();
+				const loot = new Bank().add('Coins', Number(prize));
 				return `${creator} received ${loot}. The Bingo has now ended.`;
 			}
 			if (options.manage_bingo.csv_dump) {
@@ -877,6 +899,12 @@ The creator of the bingo (${userMention(
 			}
 
 			const { teams } = await bingo.fetchAllParticipants();
+			const lobbies = await prisma.bingoTeam.findMany({
+				where: { bingo_id: bingo.id, players_finalized: false },
+				include: { users: { select: { user_id: true } } },
+				orderBy: { id: 'asc' }
+			});
+			const yourLobby = lobbies.find(team => team.users.some(p => p.user_id === user.id));
 			const yourTeam = teams.find(t => t.participants.some(p => p.user_id === user.id));
 			const yourParticipant = yourTeam?.participants.find(p => p.user_id === user.id);
 
@@ -902,9 +930,27 @@ ${yourTeam.bingoTableStr}`
 				}
 			}
 
+			let lobbyString = '';
+			if (yourLobby) {
+				lobbyString = `**Your team lobby:** ${yourLobby.id} (${yourLobby.users.length}/${bingo.teamSize} players): ${yourLobby.users.map(p => userMention(p.user_id)).join(', ')}. No tickets have been charged.\n`;
+			}
+			if (!bingo.wasFinalized && new Date() < bingo.startDate) {
+				lobbyString += `**Team lobbies:** ${lobbies.length}. Use /bingo make_team or /bingo join with a team ID. Players can join until a team is full or its creator finalises. The creator must use /bingo manage_team finalize_players:true before the start.\n`;
+				lobbyString += lobbies
+					.slice(0, 5)
+					.map(
+						team =>
+							`Team ${team.id}: ${team.users.length}/${bingo.teamSize}, creator ${team.creator_id ? userMention(team.creator_id) : 'unknown'}`
+					)
+					.join('\n');
+			} else if (yourLobby) {
+				lobbyString +=
+					'Registration has closed. This unfinished lobby will not score or be charged. Leave it with /bingo leave_team, or cancel it with /bingo manage_team cancel:true.\n';
+			}
 			const str = `**${bingo.title}** ${teams.length} teams, ${toKMB(await bingo.countTotalGPInPrizePool())} GP Prize Pool
 **Start:** ${dateFm(bingo.startDate)}
 **Finish:** ${dateFm(bingo.endDate)}
+${lobbyString}
 ${progressString}
 `;
 			if (bingo.theme) {

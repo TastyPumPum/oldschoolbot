@@ -133,7 +133,8 @@ export class BingoManager {
 		const bingoParticipant = await prisma.bingoTeam.findFirst({
 			where: {
 				id: teamID,
-				bingo_id: this.id
+				bingo_id: this.id,
+				players_finalized: true
 			},
 			include: {
 				users: true
@@ -199,6 +200,7 @@ export class BingoManager {
 				user: {
 					minion_ironman: false
 				},
+				team: { players_finalized: true },
 				bingo_id: this.id
 			}
 		});
@@ -214,6 +216,7 @@ export class BingoManager {
 			},
 			include: {
 				bingo_participant: {
+					where: { team: { players_finalized: true } },
 					include: {
 						user: {
 							select: {
@@ -295,7 +298,8 @@ ${teams
 		const bingoParticipant = await prisma.bingoParticipant.findFirst({
 			where: {
 				user_id: userID,
-				bingo_id: this.id
+				bingo_id: this.id,
+				team: { players_finalized: true }
 			}
 		});
 		if (!bingoParticipant) return;
@@ -363,7 +367,8 @@ export async function findBingosWithUserParticipating(userID: string) {
 			},
 			bingo_participant: {
 				some: {
-					user_id: userID
+					user_id: userID,
+					team: { players_finalized: true }
 				}
 			}
 		}

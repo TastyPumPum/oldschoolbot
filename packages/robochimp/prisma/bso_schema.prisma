@@ -1487,6 +1487,12 @@ model Bingo {
 model BingoTeam {
   id Int @id @default(autoincrement())
 
+  creator_id        String?  @db.VarChar(19)
+  guild_id          String?  @db.VarChar(19)
+  same_server_only  Boolean  @default(true)
+  players_finalized Boolean  @default(true)
+  kicked_user_ids   String[] @default([])
+
   bingo    Bingo @relation(fields: [bingo_id], references: [id])
   bingo_id Int
 

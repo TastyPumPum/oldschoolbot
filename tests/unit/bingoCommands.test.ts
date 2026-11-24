@@ -5,6 +5,23 @@ import { convertCommandOptionToAPIOption } from '@/discord/commands/commandOptio
 import { bingoCommand } from '@/mahoji/commands/bingo.js';
 
 describe('Bingo Discord command registration', () => {
+	it('publishes persistent team registration and creator controls', () => {
+		for (const name of ['join', 'kick', 'manage_team']) {
+			const option = bingoCommand.options.find(option => option.name === name)!;
+			const api = convertCommandOptionToAPIOption(option);
+			expect(api.type).toBe(ApplicationCommandOptionType.Subcommand);
+		}
+		const manage = convertCommandOptionToAPIOption(
+			bingoCommand.options.find(option => option.name === 'manage_team')!
+		);
+		if (manage.type !== ApplicationCommandOptionType.Subcommand) throw new Error('Expected a subcommand.');
+		expect(manage.options).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ name: 'finalize_players', type: ApplicationCommandOptionType.Boolean }),
+				expect.objectContaining({ name: 'cancel', type: ApplicationCommandOptionType.Boolean })
+			])
+		);
+	});
 	it('includes optional seasonal settings in the published creation command', () => {
 		const create = bingoCommand.options.find(option => option.name === 'create_bingo')!;
 		const api = convertCommandOptionToAPIOption(create);
